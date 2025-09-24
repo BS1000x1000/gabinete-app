@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "1000x1000": {
+    "frontend": {
       "projectType": "application",
       "schematics": {},
       "root": "",

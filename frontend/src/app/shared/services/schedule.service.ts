@@ -1,7 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
-import { calendarEvents, eventsData, lessonsData } from '../shared/components/utils/data';
+import { calendarEvents } from '../components/utils/data';
 
 @Injectable({
   providedIn: 'root'

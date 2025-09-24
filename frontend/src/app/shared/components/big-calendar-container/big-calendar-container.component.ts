@@ -4,10 +4,8 @@ import { Observable, map, of } from 'rxjs';
 
 // Importa los componentes y servicios necesarios
 import { BigCalendarComponent } from '../big-calendar/big-calendar.component';
-import { ScheduleService } from '../../../services/schedule.service';
-import { BrowserModule } from '@angular/platform-browser';
-import { adapterFactory } from 'angular-calendar/date-adapters/date-fns';
 import { lessonsData, mockLessons } from '../utils/data';
+import { ScheduleService } from '../../services/schedule.service';
 
 // Define las interfaces para la tipificación
 interface Lesson {

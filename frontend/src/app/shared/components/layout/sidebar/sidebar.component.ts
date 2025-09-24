@@ -4,9 +4,9 @@ import { RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 
 // Asume que este es un servicio de autenticación
-import { AuthService, User } from '../../../../services/auth.service';
 import { HeaderComponent } from '../header/header.component';
 import { NgScrollbar } from 'ngx-scrollbar';
+import { AuthService } from '../../../services/auth.service';
 
 interface MenuItem {
   icon: string;

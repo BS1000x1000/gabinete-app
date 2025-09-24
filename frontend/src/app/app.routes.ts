@@ -6,7 +6,7 @@ export const routes: Routes = [
 //   { path: 'students', component: StudentsComponent, title: 'Students' },
 
   // Ruta para la página de profesores
-  { path: 'login', component: LoginComponent, title: 'Login' },
+  { path: 'login', component: LoginComponent, title: 'Login'},
 
   // Ruta para la página de profesores
   { path: 'usuario', component: UsuarioComponent, title: 'Usuario' },

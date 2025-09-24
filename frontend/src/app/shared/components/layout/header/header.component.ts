@@ -5,8 +5,8 @@ import { FormsModule } from '@angular/forms';
 import { Observable } from 'rxjs';
 
 // Asume que este es un servicio de autenticación que proporciona datos del usuario
-import { AuthService, User } from '../../../../services/auth.service';
 import { ClicableComponent } from '../../clicable-image/clicable-image.component';
+import { AuthService, User } from '../../../services/auth.service';
 
 @Component({
   selector: 'app-header',

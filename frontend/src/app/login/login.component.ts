@@ -46,7 +46,7 @@ export class LoginComponent {
         this.isError = false;
         // En una aplicación real, llamarías a un servicio de autenticación
         // y luego redirigirías al usuario.
-        this.router.navigate(['/teachers']);
+        this.router.navigate(['/usuario']);
       } else {
         this.message = 'Usuario o contraseña incorrectos. Inténtalo de nuevo.';
         this.isError = true;
