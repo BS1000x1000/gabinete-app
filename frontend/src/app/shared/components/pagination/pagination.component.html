@@ -1,0 +1,26 @@
+<div class="p-4 flex items-center justify-between text-gray-500">
+  <button
+    [disabled]="!hasPrev"
+    class="py-2 px-4 rounded-md bg-slate-200 text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+    (click)="changePage(page - 1)"
+  >
+    Prev
+  </button>
+  <div class="flex items-center gap-2 text-sm">
+    <button
+      *ngFor="let pageIndex of pages"
+      [class.bg-lamaSky]="page === pageIndex"
+      class="px-2 rounded-sm"
+      (click)="changePage(pageIndex)"
+    >
+      {{ pageIndex }}
+    </button>
+  </div>
+  <button
+    [disabled]="!hasNext"
+    class="py-2 px-4 rounded-md bg-slate-200 text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+    (click)="changePage(page + 1)"
+  >
+    Next
+  </button>
+</div>

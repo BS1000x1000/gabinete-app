@@ -1,0 +1,17 @@
+
+.content {
+  background-color: lightgray;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: calc(100% - 220px);
+}
+
+.content-scrollable {
+  flex: 1 1 auto;
+  overflow-y: auto;
+}
+
+.layout {
+  display: flex;
+}

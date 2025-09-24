@@ -1,0 +1,6 @@
+<div class="calendar-container">
+  <app-big-calendar *ngIf="schedule$ | async as schedule" [data]="schedule"></app-big-calendar>
+  <div *ngIf="!(schedule$ | async)" class="loading-state">
+    Cargando calendario...
+  </div>
+</div>

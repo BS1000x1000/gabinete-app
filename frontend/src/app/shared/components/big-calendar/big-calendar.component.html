@@ -1,0 +1,26 @@
+<div class="calendar-container">
+  <div class="header-view">
+    <button (click)="setView(CalendarView.Week)">Semana</button>
+    <button (click)="setView(CalendarView.Day)">Día</button>
+  </div>
+
+  <mwl-calendar-week-view
+    *ngIf="view === 'week'"
+    [viewDate]="viewDate"
+    [events]="events"
+    [hourSegments]="2"
+    [dayStartHour]="minHour.getHours()"
+    [dayEndHour]="maxHour.getHours()"
+  >
+  </mwl-calendar-week-view>
+
+  <mwl-calendar-day-view
+    *ngIf="view === 'day'"
+    [viewDate]="viewDate"
+    [events]="events"
+    [hourSegments]="2"
+    [dayStartHour]="minHour.getHours()"
+    [dayEndHour]="maxHour.getHours()"
+  >
+  </mwl-calendar-day-view>
+</div>

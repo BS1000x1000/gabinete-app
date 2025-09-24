@@ -1,0 +1,65 @@
+<nav class="navbar navbar-light mx-4">
+  <!-- Contenedor principal para la navbar, usa Flexbox para alinear elementos -->
+  <div
+    *ngIf="user$ | async as user; else loading"
+    class="d-flex w-100 align-items-center justify-content-between"
+  >
+    <!-- Contenedor para el campo de búsqueda (izquierdo) -->
+    <div class="form-group flex-grow-1 me-4">
+      <input type="text" placeholder="Buscar" class="form-control" />
+    </div>
+
+    <!-- Contenedor para los elementos de la derecha, usa Flexbox para alinearlos -->
+    <div class="d-flex align-items-center gap-5">
+      <!-- Mensajes -->
+      <a class="nav-link bg-white position-relative p-2 rounded-pill">
+        <i class="bi bi-megaphone ped-icon"></i>
+        <span
+          class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+          >10+</span
+        >
+      </a>
+
+      <!-- Icono de Anuncios -->
+      <a class="nav-link">
+        Anuncios
+        <!-- <img
+          src="assets/images/announcement.png"
+          alt="Anuncios"
+          width="20"
+          height="20"
+        /> -->
+      </a>
+
+      <!-- Nombre de usuario y rol -->
+      <div class="d-flex flex-column align-items-end">
+        <span class="">{{ user.username }}</span>
+        <small class="text-muted">{{ user.role }}</small>
+      </div>
+
+      <!-- Avatar de usuario -->
+      <a [routerLink]="['/profile']" class="nav-link bg-white rounded-pill">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="40"
+          height="40"
+          fill="currentColor"
+          class="bi bi-person-circle"
+          viewBox="0 0 16 16"
+        >
+          <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0" />
+          <path
+            fill-rule="evenodd"
+            d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"
+          />
+        </svg>
+      </a>
+    </div>
+  </div>
+
+  <ng-template #loading>
+    <div class="d-flex w-100 justify-content-center align-items-center p-4">
+      <div class="text-gray-500">Cargando...</div>
+    </div>
+  </ng-template>
+</nav>

@@ -1,0 +1,33 @@
+<div class=" d-flex wrapper container flex-column">
+  <div class="header pt-3">
+    <h3>Hola User</h3>
+    <hr class="light-gray" />
+  </div>
+
+  <div class="content-scrollable sidebar-content">
+    <ng-scrollbar
+      autoheightDisabled="false"
+      class="my-scrollbar"
+      trackClass="scrollbar"
+      thumbClass="scrollbar-thumb"
+      visibility="hover"
+    >
+      <div class="row">
+        <div class="col-12">
+          <ul>
+            <li *ngFor="let item of visibleMenuItems()" (click)="onSelect(item)">
+              <i class="bi bi-{{item.icon}} ped-icon me-2"></i>
+              <span class="ml-1">{{ item.label }}</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="row mb-2">
+        <a href="#">
+          <span class="dark-orange-100">Log out</span>
+        </a>
+      </div>
+    </ng-scrollbar>
+  </div>
+</div>

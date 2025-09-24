@@ -1,0 +1,11 @@
+<div [ngClass]="{'hidden': hidden, 'flex flex-col gap-2 w-full md:w-1/4': !hidden}">
+  <label class="text-xs text-gray-500">{{ label }}</label>
+  <input
+    [type]="type"
+    [formControl]="control"
+    class="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
+  />
+  <p *ngIf="control?.invalid && control?.touched" class="text-xs text-red-400">
+    {{ errorMessage }}
+  </p>
+</div>

@@ -1,0 +1,29 @@
+.ped-card {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  border-radius: 8px;
+  box-shadow: 0px 4px 16px rgba(44, 44, 44, 0.1);
+  padding: 0.75rem;
+  margin: 1rem 0 1rem 0;
+  background-color: white;
+}
+
+.ped-card > ul {
+  padding: 0;
+  list-style: none;
+}
+
+.ped-card > ul > li {
+  border-top: 1px solid lightgray;
+  padding: 0.875rem 0.313rem;
+}
+
+.ped-card > li:nth-child(1) {
+  border-top: none;
+}
+
+.ped-icon {
+    width: 20px;
+    height: 20px;
+}

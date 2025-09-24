@@ -1,0 +1,51 @@
+
+.left-sidebar {
+  background-color: #a0c9f1;
+  width: 100%;
+  flex: 0 0 220px;
+}
+
+.sidebar-content {
+  ul {
+    line-height: 3rem;
+    padding: 0;
+  }
+
+  ul li {
+    list-style: none;
+    padding-left: 0px;
+    cursor: pointer;
+  }
+
+  ul li:hover {
+    background-color: lightblue;
+  }
+
+  ul li.active {
+    background-color: light;
+  }
+}
+
+.wrapper {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.content-scrollable {
+  /* Ocupa todo el espacio vertical restante */
+  flex-grow: 1; 
+  /* Asegura que el contenido con scrollbar se expanda */
+  display: flex;
+  flex-direction: column;
+}
+
+.my-scrollbar {
+  /* Se estira para ocupar el 100% de la altura de su padre */
+  flex-grow: 1;
+}
+
+.my-scrollbar .ng-scroll-content {
+  /* Asegura que el contenido interno de la barra de desplazamiento se estire */
+  height: 100%;
+}

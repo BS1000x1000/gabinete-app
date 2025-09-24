@@ -1,0 +1,177 @@
+// schema.prisma
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Rol {
+  id          String   @id @default(uuid())
+  nombreRol   String   @unique @map("nombre_rol")
+  codigo      String   @unique @map("codigo_rol")
+  descripcion String?
+  createdAt   DateTime @default(now()) @map("fecha_creacion")
+  updatedAt   DateTime @updatedAt @map("ultima_actualizacion")
+
+  trabajadores Trabajador[]
+}
+
+model Trabajador {
+  id                String    @id @default(uuid())
+  username          String    @unique
+  passwordHash      String    @map("password_hash")
+  nombre            String
+  apellidos         String
+  email             String    @unique
+  telefono          String?
+  img               String?   @map("url_imagen_perfil")
+  fechaContratacion DateTime? @map("fecha_contratacion")
+  activo            Boolean   @default(true)
+  createdAt         DateTime  @default(now()) @map("fecha_creacion")
+  updatedAt         DateTime  @updatedAt @map("ultima_actualizacion")
+
+  rolId String @map("id_rol")
+  rol   Rol    @relation(fields: [rolId], references: [id])
+
+  clientesAsignados ClienteTrabajador[]
+
+  horarios           Horario[]
+  informes           Informe[]
+  registrosCreados   RegistroDiario[]
+  objetivosAsignados Objetivo[]       @relation("ObjetivosAsignados") // Nuevo: Objetivos de los que es responsable
+}
+
+model Colegio {
+  id          String   @id @default(uuid())
+  nombre      String   @unique
+  emailTutor  String?  @map("email_tutor")
+  emailOrientador String?  @map("email_orientador")
+  createdAt   DateTime @default(now()) @map("fecha_creacion")
+  updatedAt   DateTime @updatedAt @map("ultima_actualizacion")
+
+  clientes Cliente[]
+}
+
+model Cliente {
+  id              String    @id @default(uuid())
+  nombre          String
+  apellidos       String
+  fechaNacimiento DateTime? @map("fecha_nacimiento")
+  alergias        String?   @db.Text
+  activo          Boolean   @default(true)
+  adaptaciones    Boolean   @default(false)
+  apoyos          Boolean   @default(false)
+  createdAt       DateTime  @default(now()) @map("fecha_creacion")
+  updatedAt       DateTime  @updatedAt @map("ultima_actualizacion")
+
+  trabajadoresAsignados ClienteTrabajador[]
+
+  colegioId String?  @map("id_colegio")
+  colegio   Colegio? @relation(fields: [colegioId], references: [id])
+
+  horarios            Horario[]
+  informes            Informe[]
+  contactosFamiliares Familiar[]       @relation("ClienteContactos")
+  registrosDiarios    RegistroDiario[]
+  objetivos           Objetivo[] // Nuevo: Objetivos asociados a este cliente
+}
+
+model ClienteTrabajador {
+  clienteId    String   @map("id_cliente")
+  trabajadorId String   @map("id_trabajador")
+  createdAt    DateTime @default(now()) @map("fecha_asignacion")
+  tipoTerapia  String?  @map("tipo_terapia")
+
+  cliente    Cliente    @relation(fields: [clienteId], references: [id])
+  trabajador Trabajador @relation(fields: [trabajadorId], references: [id])
+
+  @@id([clienteId, trabajadorId])
+  @@map("clientes_trabajadores")
+}
+
+model Horario {
+  id              String   @id @default(uuid())
+  fechaHoraInicio DateTime @map("fecha_hora_inicio")
+  fechaHoraFin    DateTime @map("fecha_hora_fin")
+  tipoSesion      String   @map("tipo_sesion")
+  estado          String   @default("programada")
+  notas           String?  @db.Text
+  createdAt       DateTime @default(now()) @map("fecha_creacion")
+  updatedAt       DateTime @updatedAt @map("ultima_actualizacion")
+
+  clienteId String  @map("id_cliente")
+  cliente   Cliente @relation(fields: [clienteId], references: [id])
+
+  trabajadorId String     @map("id_trabajador")
+  trabajador   Trabajador @relation(fields: [trabajadorId], references: [id])
+}
+
+model Informe {
+  id               String    @id @default(uuid())
+  titulo           String
+  contenido        String    @db.Text
+  fechaCreacion    DateTime  @default(now()) @map("fecha_creacion")
+  fechaVencimiento DateTime? @map("fecha_vencimiento")
+  estado           String    @default("borrador")
+  createdAt        DateTime  @default(now()) @map("fecha_creacion_registro")
+  updatedAt        DateTime  @updatedAt @map("ultima_actualizacion")
+
+  clienteId String  @map("id_cliente")
+  cliente   Cliente @relation(fields: [clienteId], references: [id])
+
+  trabajadorId String     @map("id_trabajador")
+  trabajador   Trabajador @relation(fields: [trabajadorId], references: [id])
+}
+
+model Familiar {
+  id               String   @id @default(uuid())
+  nombreContacto   String   @map("nombre_contacto")
+  parentesco       String?
+  telefonoMadre    String?  @map("telefono_madre")
+  emailMadre       String?  @map("email_madre")
+  telefonoPadre    String?  @map("telefono_padre")
+  emailPadre       String?  @map("email_padre")
+  telefonoWhatsapp String?  @map("telefono_whatsapp")
+  createdAt        DateTime @default(now()) @map("fecha_creacion")
+  updatedAt        DateTime @updatedAt @map("ultima_actualizacion")
+
+  clienteId String  @map("id_cliente")
+  cliente   Cliente @relation("ClienteContactos", fields: [clienteId], references: [id])
+}
+
+model RegistroDiario {
+  id            String   @id @default(uuid())
+  fechaRegistro DateTime @default(now()) @map("fecha_registro")
+  contenido     String   @db.Text
+  createdAt     DateTime @default(now()) @map("fecha_creacion_registro")
+  updatedAt     DateTime @updatedAt @map("ultima_actualizacion")
+
+  clienteId String  @map("id_cliente")
+  cliente   Cliente @relation(fields: [clienteId], references: [id])
+
+  trabajadorId String     @map("id_trabajador")
+  trabajador   Trabajador @relation(fields: [trabajadorId], references: [id])
+}
+
+model Objetivo {
+  id               String    @id @default(uuid())
+  titulo           String // Título breve del objetivo (ej. "Mejorar lectoescritura")
+  descripcion      String?   @db.Text // Descripción más detallada del objetivo, cómo lograrlo, etc.
+  fechaInicio      DateTime  @default(now()) @map("fecha_inicio") // Cuándo se define el objetivo
+  fechaFinPrevista DateTime? @map("fecha_fin_prevista") // Fecha límite estimada
+  estado           String    @default("pendiente") // 'pendiente', 'en_progreso', 'completado', 'cancelado'
+  createdAt        DateTime  @default(now()) @map("fecha_creacion_registro")
+  updatedAt        DateTime  @updatedAt @map("ultima_actualizacion")
+
+  // Relación: Un objetivo se asocia a un Cliente
+  clienteId String  @map("id_cliente")
+  cliente   Cliente @relation(fields: [clienteId], references: [id])
+
+  // Relación: Un objetivo es responsabilidad de un Trabajador
+  trabajadorResponsableId String     @map("id_trabajador_responsable")
+  trabajadorResponsable   Trabajador @relation("ObjetivosAsignados", fields: [trabajadorResponsableId], references: [id])
+}

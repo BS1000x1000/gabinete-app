@@ -1,0 +1,122 @@
+<form [formGroup]="studentForm" (ngSubmit)="onSubmit()" class="flex flex-col gap-8">
+  <h1 class="text-xl font-semibold">
+    {{ type === 'create' ? 'Create a new student' : 'Update the student' }}
+  </h1>
+  <span class="text-xs text-gray-400 font-medium">
+    Authentication Information
+  </span>
+  <div class="flex justify-between flex-wrap gap-4">
+    <app-input-field
+      label="Username"
+      controlName="username"
+      [parentForm]="studentForm"
+    ></app-input-field>
+    <app-input-field
+      label="Email"
+      controlName="email"
+      type="email"
+      [parentForm]="studentForm"
+    ></app-input-field>
+    <app-input-field
+      label="Password"
+      controlName="password"
+      type="password"
+      [parentForm]="studentForm"
+    ></app-input-field>
+  </div>
+  <span class="text-xs text-gray-400 font-medium">
+    Personal Information
+  </span>
+
+  <!-- <app-file-upload (imageUploaded)="onImageUploaded($event)"></app-file-upload> -->
+
+  <div class="flex justify-between flex-wrap gap-4">
+    <app-input-field
+      label="First Name"
+      controlName="name"
+      [parentForm]="studentForm"
+    ></app-input-field>
+    <app-input-field
+      label="Last Name"
+      controlName="surname"
+      [parentForm]="studentForm"
+    ></app-input-field>
+    <app-input-field
+      label="Phone"
+      controlName="phone"
+      [parentForm]="studentForm"
+    ></app-input-field>
+    <app-input-field
+      label="Address"
+      controlName="address"
+      [parentForm]="studentForm"
+    ></app-input-field>
+    <app-input-field
+      label="Blood Type"
+      controlName="bloodType"
+      [parentForm]="studentForm"
+    ></app-input-field>
+    <app-input-field
+      label="Birthday"
+      controlName="birthday"
+      type="date"
+      [parentForm]="studentForm"
+    ></app-input-field>
+    <app-input-field
+      label="Parent Id"
+      controlName="parentId"
+      [parentForm]="studentForm"
+    ></app-input-field>
+    <input type="hidden" formControlName="id" />
+  </div>
+
+  <div class="flex flex-col gap-2 w-full md:w-1/4">
+    <label class="text-xs text-gray-500">Sex</label>
+    <select
+      formControlName="sex"
+      class="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
+    >
+      <option value="MALE">Male</option>
+      <option value="FEMALE">Female</option>
+    </select>
+    <ng-container *ngIf="studentForm.get('sex')?.invalid && studentForm.get('sex')?.touched">
+      <p class="text-xs text-red-400">Sex is required.</p>
+    </ng-container>
+  </div>
+  
+  <div class="flex flex-col gap-2 w-full md:w-1/4">
+    <label class="text-xs text-gray-500">Grade</label>
+    <select
+      formControlName="gradeId"
+      class="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
+    >
+      <option *ngFor="let grade of relatedData?.grades" [value]="grade.id">
+        {{ grade.level }}
+      </option>
+    </select>
+    <ng-container *ngIf="studentForm.get('gradeId')?.invalid && studentForm.get('gradeId')?.touched">
+      <p class="text-xs text-red-400">Grade is required.</p>
+    </ng-container>
+  </div>
+  
+  <div class="flex flex-col gap-2 w-full md:w-1/4">
+    <label class="text-xs text-gray-500">Class</label>
+    <select
+      formControlName="classId"
+      class="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
+    >
+      <option *ngFor="let classItem of relatedData?.classes" [value]="classItem.id">
+        ({{ classItem.name }} - {{ classItem._count.students + "/" + classItem.capacity }} Capacity)
+      </option>
+    </select>
+    <ng-container *ngIf="studentForm.get('classId')?.invalid && studentForm.get('classId')?.touched">
+      <p class="text-xs text-red-400">Class is required.</p>
+    </ng-container>
+  </div>
+
+  <span *ngIf="state().error" class="text-red-500">Something went wrong!</span>
+  
+  <button type="submit" class="bg-blue-400 text-white p-2 rounded-md" [disabled]="studentForm.invalid">
+    {{ type === 'create' ? 'Create' : 'Update' }}
+  </button>
+</form>
