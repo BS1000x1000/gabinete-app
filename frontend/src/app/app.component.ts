@@ -57,7 +57,7 @@ export class AppComponent {
       const { username, password } = this.loginForm.value; // Obtiene los valores del formulario
 
       // Lógica de autenticación simulada
-      if (username === 'admin' && password === 'password123') {
+      if (username === 'admin' && password === '12345') {
         this.message = '¡Inicio de sesión exitoso! Redirigiendo...';
         this.isError = false;
         // En una aplicación real, llamarías a un servicio de autenticación

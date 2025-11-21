@@ -1,0 +1,38 @@
+Proyecto 1000x1000
+
+- Correo / gmail
+- Drive con una carpeta con cada niño -> posible automatizacion que genere una carpeta con el nombre del niño con X ficheros generados de forma predeterminada.
+   - Hojas de registro
+        > Cada dia, tres puntos: 
+         1. Lo que se ha hecho ese dia
+         2. Lo que se hará en la proxima sesión
+         3. Planificacion de la semana = Plan de actuación
+    -------------------------------------------------------
+        Modelo de tabla: 
+
+        Sesion X                        | Fecha        |
+        Que se hizo hoy                 | Descripcion  |
+        Que se hará la proxima sesion   | Descripcion  |
+        Deberes                         | Descripcion  |
+    -------------------------------------------------------
+    
+   - Material
+    > Segun la semana, formato tabla también quizás, que se ponga que semana sería quizás y se ponga que material será necesario.
+    ----------------------------------------------------------------------
+        Modelo de tabla: 
+
+        Fecha por semana ( Por ejemplo Marzo semana 1) | Material        |
+        Fecha                                          | Tipo material   |
+    ----------------------------------------------------------------------
+   - Plantilla de los bonos
+    > que genere un fichero quizás por cada bono comprado
+    > cada dia que se "fiche" se inserte la fecha y el sesion X+1
+    -------------------------------------------------------
+        Modelo de tabla: 
+
+        Bono X Sesiones                 |              |
+        Sesion X                        | Fecha        |
+        Sesion X                        | Fecha        |
+        Sesion X                        | Fecha        |
+        Sesion X                        | Fecha        |
+    -------------------------------------------------------
