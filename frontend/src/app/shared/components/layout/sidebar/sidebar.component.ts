@@ -52,6 +52,12 @@ export class SidebarComponent implements OnInit {
       label: 'Documentacion',
       href: '/list/lessons',
       visible: ['admin', 'teacher'],
+    },
+        {
+      icon: 'book',
+      label: 'Alta Drive',
+      href: '/list/lessons',
+      visible: ['admin',],
     }
   ];
 
