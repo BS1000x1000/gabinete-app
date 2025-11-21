@@ -1,15 +1,13 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
 import { N8nService } from '../n8n/n8n.service'; 
-import { Prisma } from '@prisma/client';
-import { CreateClienteDto } from './dto/create-cliente.dto'; 
-import { N8nClienteOnboardingPayload } from '../n8n/n8n-payload.interface';
+import { N8nClienteOnboardingPayload } from 'src/n8n/interface/n8n-cliente.interface';
+import { CreateClienteDto } from './dto/clientedto-interface';
+import { prisma } from 'src/lib/prisma';
 
 
 @Injectable()
 export class ClientesService {
   constructor(
-    private prisma: PrismaService, // Inyección del servicio de Prisma
     private n8nService: N8nService, // Inyección del servicio de n8n
   ) {}
 
@@ -19,13 +17,12 @@ export class ClientesService {
    * @param data DTO con los datos del nuevo cliente.
    * @returns El objeto Cliente recién creado por Prisma.
    */
-  async create(data: CreateClienteDto): Promise<Prisma.Cliente> {
+  async create(data: CreateClienteDto): Promise<any> {
     try {
       // 1. Lógica de Upsert para el Colegio (crear o actualizar si ya existe)
-      let colegioExistente: Prisma.Colegio | null = null;
-      
+      let colegioExistente: any = null;
       if (data.nombreDelCentro) {
-        colegioExistente = await this.prisma.colegio.upsert({
+        colegioExistente = await prisma.colegio.upsert({
           where: { nombre: data.nombreDelCentro },
           update: {
             direccionColegio: data.direccionColegio, 
@@ -38,7 +35,7 @@ export class ClientesService {
       }
 
       // 2. Crear el Cliente y el Contacto Familiar en una sola transacción anidada
-      const nuevoCliente = await this.prisma.cliente.create({
+      const nuevoCliente = await prisma.cliente.create({
         data: {
           nombre: data.nombre,
           apellidos: data.apellidos,
@@ -48,9 +45,9 @@ export class ClientesService {
           
           domicilio: data.domicilio, 
           curso: data.cursoEscolar, 
-          diagnostico: data.diagnostico,
-          tratamientos: data.otrosTratamientos, 
-          medicacion: data.medicacion, 
+          diagnostico: data.diagnostico ?? "",
+          tratamientos: data.otrosTratamientos ?? "", 
+          medicacion: data.medicacion ?? "", 
 
           // Campos booleanos basados en la presencia de datos
           adaptaciones: data.tipoAdaptaciones ? true : false, 
@@ -62,7 +59,7 @@ export class ClientesService {
           // Creación anidada del contacto familiar (asumo que es una relación 1:N)
           contactosFamiliares: {
             create: {
-              nombreContacto: data.nombrePadre || data.nombreMadre || data.otroContactoNombre || 'Contacto Principal', 
+              nombreContacto: data.nombreMadre || data.nombrePadre || data.otroContactoNombre || 'Contacto Principal', 
               parentesco: 'Contacto Principal', 
               
               emailPadre: data.emailPadre,
@@ -83,22 +80,22 @@ export class ClientesService {
       });
       
       // 3. Preparación del Payload para n8n
-      const contacto = nuevoCliente.contactosFamiliares[0] || {} as Prisma.Familiar;
-      const colegioInfo: Prisma.Colegio | null = nuevoCliente.colegio;
+      const contacto = nuevoCliente.contactosFamiliares[0] || {} as any;
+      const colegioInfo: any = nuevoCliente.colegio;
 
       const n8nPayload: N8nClienteOnboardingPayload = {
         id_cliente_interno: nuevoCliente.id, 
         
         Nombre: nuevoCliente.nombre,
         Apellidos: nuevoCliente.apellidos,
-        "Fecha de nacimiento": nuevoCliente.fechaNacimiento ? nuevoCliente.fechaNacimiento.toISOString().split('T')[0] : undefined, 
+        "Fecha de nacimiento": nuevoCliente.fechaNacimiento!.toISOString().split('T')[0], 
         Domicilio: nuevoCliente.domicilio, 
 
         "Nombre del padre": contacto.nombreContacto, 
-        "Email padre": contacto.emailPadre,
+        "Email padre": contacto.emailPadre ?? "",
         "Telefono padre": contacto.telefonoPadre ? Number(contacto.telefonoPadre) : undefined, 
         "Nombre madre": data.nombreMadre, 
-        "Email madre": contacto.emailMadre,
+        "Email madre": contacto.emailMadre ?? "",
         "Telefono madre": contacto.telefonoMadre ? Number(contacto.telefonoMadre) : undefined,
         "Otro contacto nombre": data.otroContactoNombre, 
         "Otro contacto email": data.otroContactoEmail, 
@@ -113,7 +110,7 @@ export class ClientesService {
         Diagnóstico: nuevoCliente.diagnostico,
         "Otros tratamientos": nuevoCliente.tratamientos, 
         Medicación: nuevoCliente.medicacion,
-        Alergias: nuevoCliente.alergias, 
+        Alergias: nuevoCliente.alergias ?? "No", 
         "Numero de sesiones": data.numeroDeSesiones, 
 
         "Contacto Colegio 1": undefined, 
@@ -131,7 +128,7 @@ export class ClientesService {
 
     } catch (error) {
       // 5. Manejo y relanzamiento de excepciones
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error) {
         // Loguear el error de Prisma
         console.error('Prisma Error:', error.code, error.message);
         throw new InternalServerErrorException(`Error de base de datos (Prisma): ${error.message}`);

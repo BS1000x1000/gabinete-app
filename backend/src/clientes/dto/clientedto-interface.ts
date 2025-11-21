@@ -1,4 +1,4 @@
-export interface CreateClienteDto {
+export class CreateClienteDto {
     nombre: string;
     apellidos: string;
     fechaNacimiento: Date; 
@@ -20,7 +20,7 @@ export interface CreateClienteDto {
     otroContactoEmail?: string;
     otroContactoTelefono?: number;
     
-    domicilio?: string;
+    domicilio: string;
     diagnostico?: string;
     otrosTratamientos?: string;
     medicacion?: string;

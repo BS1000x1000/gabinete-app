@@ -1,7 +1,7 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import { N8nClienteOnboardingPayload } from './n8n-payload.interface'; 
+import { N8nClienteOnboardingPayload } from './interface/n8n-cliente.interface.js';
 
 @Injectable()
 export class N8nService {
