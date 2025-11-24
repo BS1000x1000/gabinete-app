@@ -22,9 +22,9 @@ export class CreateClienteDto {
 
     ctoColegioUno?: string; // Contacto Colegio Uno
     ctoEmailColegioUno?: string; // Contacto Email Colegio Uno
-    relacionCtoColegioUno?: string; // Relacion Contacto Email Colegio Uno
+    ctoRelacionColegioUno?: string; // Relacion Contacto Email Colegio Uno
     ctoColegioDos?: string;
-    relacionCtoColegioDos: string;
+    ctoRelacionColegioDos: string;
     ctoEmailColegioDos?: string;
 
     

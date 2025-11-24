@@ -47,13 +47,15 @@ model Trabajador {
 }
 
 model Colegio {
-  id               String   @id @default(uuid())
-  nombre           String   @unique
-  direccionColegio String   @map("direccion_colegio")
-  emailTutor       String?  @map("email_tutor")
-  emailOrientador  String?  @map("email_orientador")
-  createdAt        DateTime @default(now()) @map("fecha_creacion")
-  updatedAt        DateTime @updatedAt @map("ultima_actualizacion")
+  id                    String   @id @default(uuid())
+  nombre                String   @unique
+  direccionColegio      String   @map("direccion_colegio")
+  ctoEmailColegioUno    String?  @map("email_primero")
+  ctoRelacionColegioUno String?  @map("txt_primero")
+  ctoEmailColegioDos    String?  @map("email_segundo")
+  ctoRelacionColegioDos String?  @map("txt_segundo")
+  createdAt             DateTime @default(now()) @map("fecha_creacion")
+  updatedAt             DateTime @updatedAt @map("ultima_actualizacion")
 
   clientes Cliente[]
 }

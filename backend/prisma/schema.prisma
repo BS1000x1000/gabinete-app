@@ -51,9 +51,9 @@ model Colegio {
   nombre      String   @unique
   direccionColegio String @map("direccion_colegio")
   ctoEmailColegioUno  String?  @map("email_primero")
-  relacionCtoColegioUno  String?  @map("txt_primero")
+  ctoRelacionColegioUno  String?  @map("txt_primero")
   ctoEmailColegioDos String?  @map("email_segundo")
-  relacionCtoColegioDos  String?  @map("txt_segundo")
+  ctoRelacionColegioDos  String?  @map("txt_segundo")
   createdAt   DateTime @default(now()) @map("fecha_creacion")
   updatedAt   DateTime @updatedAt @map("ultima_actualizacion")
 

@@ -4270,8 +4270,10 @@ export namespace Prisma {
     id: string | null
     nombre: string | null
     direccionColegio: string | null
-    emailTutor: string | null
-    emailOrientador: string | null
+    ctoEmailColegioUno: string | null
+    ctoRelacionColegioUno: string | null
+    ctoEmailColegioDos: string | null
+    ctoRelacionColegioDos: string | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -4280,8 +4282,10 @@ export namespace Prisma {
     id: string | null
     nombre: string | null
     direccionColegio: string | null
-    emailTutor: string | null
-    emailOrientador: string | null
+    ctoEmailColegioUno: string | null
+    ctoRelacionColegioUno: string | null
+    ctoEmailColegioDos: string | null
+    ctoRelacionColegioDos: string | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -4290,8 +4294,10 @@ export namespace Prisma {
     id: number
     nombre: number
     direccionColegio: number
-    emailTutor: number
-    emailOrientador: number
+    ctoEmailColegioUno: number
+    ctoRelacionColegioUno: number
+    ctoEmailColegioDos: number
+    ctoRelacionColegioDos: number
     createdAt: number
     updatedAt: number
     _all: number
@@ -4302,8 +4308,10 @@ export namespace Prisma {
     id?: true
     nombre?: true
     direccionColegio?: true
-    emailTutor?: true
-    emailOrientador?: true
+    ctoEmailColegioUno?: true
+    ctoRelacionColegioUno?: true
+    ctoEmailColegioDos?: true
+    ctoRelacionColegioDos?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -4312,8 +4320,10 @@ export namespace Prisma {
     id?: true
     nombre?: true
     direccionColegio?: true
-    emailTutor?: true
-    emailOrientador?: true
+    ctoEmailColegioUno?: true
+    ctoRelacionColegioUno?: true
+    ctoEmailColegioDos?: true
+    ctoRelacionColegioDos?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -4322,8 +4332,10 @@ export namespace Prisma {
     id?: true
     nombre?: true
     direccionColegio?: true
-    emailTutor?: true
-    emailOrientador?: true
+    ctoEmailColegioUno?: true
+    ctoRelacionColegioUno?: true
+    ctoEmailColegioDos?: true
+    ctoRelacionColegioDos?: true
     createdAt?: true
     updatedAt?: true
     _all?: true
@@ -4405,8 +4417,10 @@ export namespace Prisma {
     id: string
     nombre: string
     direccionColegio: string
-    emailTutor: string | null
-    emailOrientador: string | null
+    ctoEmailColegioUno: string | null
+    ctoRelacionColegioUno: string | null
+    ctoEmailColegioDos: string | null
+    ctoRelacionColegioDos: string | null
     createdAt: Date
     updatedAt: Date
     _count: ColegioCountAggregateOutputType | null
@@ -4432,8 +4446,10 @@ export namespace Prisma {
     id?: boolean
     nombre?: boolean
     direccionColegio?: boolean
-    emailTutor?: boolean
-    emailOrientador?: boolean
+    ctoEmailColegioUno?: boolean
+    ctoRelacionColegioUno?: boolean
+    ctoEmailColegioDos?: boolean
+    ctoRelacionColegioDos?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     clientes?: boolean | Colegio$clientesArgs<ExtArgs>
@@ -4444,8 +4460,10 @@ export namespace Prisma {
     id?: boolean
     nombre?: boolean
     direccionColegio?: boolean
-    emailTutor?: boolean
-    emailOrientador?: boolean
+    ctoEmailColegioUno?: boolean
+    ctoRelacionColegioUno?: boolean
+    ctoEmailColegioDos?: boolean
+    ctoRelacionColegioDos?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }, ExtArgs["result"]["colegio"]>
@@ -4454,8 +4472,10 @@ export namespace Prisma {
     id?: boolean
     nombre?: boolean
     direccionColegio?: boolean
-    emailTutor?: boolean
-    emailOrientador?: boolean
+    ctoEmailColegioUno?: boolean
+    ctoRelacionColegioUno?: boolean
+    ctoEmailColegioDos?: boolean
+    ctoRelacionColegioDos?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }, ExtArgs["result"]["colegio"]>
@@ -4464,13 +4484,15 @@ export namespace Prisma {
     id?: boolean
     nombre?: boolean
     direccionColegio?: boolean
-    emailTutor?: boolean
-    emailOrientador?: boolean
+    ctoEmailColegioUno?: boolean
+    ctoRelacionColegioUno?: boolean
+    ctoEmailColegioDos?: boolean
+    ctoRelacionColegioDos?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type ColegioOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nombre" | "direccionColegio" | "emailTutor" | "emailOrientador" | "createdAt" | "updatedAt", ExtArgs["result"]["colegio"]>
+  export type ColegioOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nombre" | "direccionColegio" | "ctoEmailColegioUno" | "ctoRelacionColegioUno" | "ctoEmailColegioDos" | "ctoRelacionColegioDos" | "createdAt" | "updatedAt", ExtArgs["result"]["colegio"]>
   export type ColegioInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     clientes?: boolean | Colegio$clientesArgs<ExtArgs>
     _count?: boolean | ColegioCountOutputTypeDefaultArgs<ExtArgs>
@@ -4487,8 +4509,10 @@ export namespace Prisma {
       id: string
       nombre: string
       direccionColegio: string
-      emailTutor: string | null
-      emailOrientador: string | null
+      ctoEmailColegioUno: string | null
+      ctoRelacionColegioUno: string | null
+      ctoEmailColegioDos: string | null
+      ctoRelacionColegioDos: string | null
       createdAt: Date
       updatedAt: Date
     }, ExtArgs["result"]["colegio"]>
@@ -4918,8 +4942,10 @@ export namespace Prisma {
     readonly id: FieldRef<"Colegio", 'String'>
     readonly nombre: FieldRef<"Colegio", 'String'>
     readonly direccionColegio: FieldRef<"Colegio", 'String'>
-    readonly emailTutor: FieldRef<"Colegio", 'String'>
-    readonly emailOrientador: FieldRef<"Colegio", 'String'>
+    readonly ctoEmailColegioUno: FieldRef<"Colegio", 'String'>
+    readonly ctoRelacionColegioUno: FieldRef<"Colegio", 'String'>
+    readonly ctoEmailColegioDos: FieldRef<"Colegio", 'String'>
+    readonly ctoRelacionColegioDos: FieldRef<"Colegio", 'String'>
     readonly createdAt: FieldRef<"Colegio", 'DateTime'>
     readonly updatedAt: FieldRef<"Colegio", 'DateTime'>
   }
@@ -13491,8 +13517,10 @@ export namespace Prisma {
     id: 'id',
     nombre: 'nombre',
     direccionColegio: 'direccionColegio',
-    emailTutor: 'emailTutor',
-    emailOrientador: 'emailOrientador',
+    ctoEmailColegioUno: 'ctoEmailColegioUno',
+    ctoRelacionColegioUno: 'ctoRelacionColegioUno',
+    ctoEmailColegioDos: 'ctoEmailColegioDos',
+    ctoRelacionColegioDos: 'ctoRelacionColegioDos',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
   };
@@ -13870,8 +13898,10 @@ export namespace Prisma {
     id?: StringFilter<"Colegio"> | string
     nombre?: StringFilter<"Colegio"> | string
     direccionColegio?: StringFilter<"Colegio"> | string
-    emailTutor?: StringNullableFilter<"Colegio"> | string | null
-    emailOrientador?: StringNullableFilter<"Colegio"> | string | null
+    ctoEmailColegioUno?: StringNullableFilter<"Colegio"> | string | null
+    ctoRelacionColegioUno?: StringNullableFilter<"Colegio"> | string | null
+    ctoEmailColegioDos?: StringNullableFilter<"Colegio"> | string | null
+    ctoRelacionColegioDos?: StringNullableFilter<"Colegio"> | string | null
     createdAt?: DateTimeFilter<"Colegio"> | Date | string
     updatedAt?: DateTimeFilter<"Colegio"> | Date | string
     clientes?: ClienteListRelationFilter
@@ -13881,8 +13911,10 @@ export namespace Prisma {
     id?: SortOrder
     nombre?: SortOrder
     direccionColegio?: SortOrder
-    emailTutor?: SortOrderInput | SortOrder
-    emailOrientador?: SortOrderInput | SortOrder
+    ctoEmailColegioUno?: SortOrderInput | SortOrder
+    ctoRelacionColegioUno?: SortOrderInput | SortOrder
+    ctoEmailColegioDos?: SortOrderInput | SortOrder
+    ctoRelacionColegioDos?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     clientes?: ClienteOrderByRelationAggregateInput
@@ -13895,8 +13927,10 @@ export namespace Prisma {
     OR?: ColegioWhereInput[]
     NOT?: ColegioWhereInput | ColegioWhereInput[]
     direccionColegio?: StringFilter<"Colegio"> | string
-    emailTutor?: StringNullableFilter<"Colegio"> | string | null
-    emailOrientador?: StringNullableFilter<"Colegio"> | string | null
+    ctoEmailColegioUno?: StringNullableFilter<"Colegio"> | string | null
+    ctoRelacionColegioUno?: StringNullableFilter<"Colegio"> | string | null
+    ctoEmailColegioDos?: StringNullableFilter<"Colegio"> | string | null
+    ctoRelacionColegioDos?: StringNullableFilter<"Colegio"> | string | null
     createdAt?: DateTimeFilter<"Colegio"> | Date | string
     updatedAt?: DateTimeFilter<"Colegio"> | Date | string
     clientes?: ClienteListRelationFilter
@@ -13906,8 +13940,10 @@ export namespace Prisma {
     id?: SortOrder
     nombre?: SortOrder
     direccionColegio?: SortOrder
-    emailTutor?: SortOrderInput | SortOrder
-    emailOrientador?: SortOrderInput | SortOrder
+    ctoEmailColegioUno?: SortOrderInput | SortOrder
+    ctoRelacionColegioUno?: SortOrderInput | SortOrder
+    ctoEmailColegioDos?: SortOrderInput | SortOrder
+    ctoRelacionColegioDos?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     _count?: ColegioCountOrderByAggregateInput
@@ -13922,8 +13958,10 @@ export namespace Prisma {
     id?: StringWithAggregatesFilter<"Colegio"> | string
     nombre?: StringWithAggregatesFilter<"Colegio"> | string
     direccionColegio?: StringWithAggregatesFilter<"Colegio"> | string
-    emailTutor?: StringNullableWithAggregatesFilter<"Colegio"> | string | null
-    emailOrientador?: StringNullableWithAggregatesFilter<"Colegio"> | string | null
+    ctoEmailColegioUno?: StringNullableWithAggregatesFilter<"Colegio"> | string | null
+    ctoRelacionColegioUno?: StringNullableWithAggregatesFilter<"Colegio"> | string | null
+    ctoEmailColegioDos?: StringNullableWithAggregatesFilter<"Colegio"> | string | null
+    ctoRelacionColegioDos?: StringNullableWithAggregatesFilter<"Colegio"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"Colegio"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Colegio"> | Date | string
   }
@@ -14724,8 +14762,10 @@ export namespace Prisma {
     id?: string
     nombre: string
     direccionColegio: string
-    emailTutor?: string | null
-    emailOrientador?: string | null
+    ctoEmailColegioUno?: string | null
+    ctoRelacionColegioUno?: string | null
+    ctoEmailColegioDos?: string | null
+    ctoRelacionColegioDos?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     clientes?: ClienteCreateNestedManyWithoutColegioInput
@@ -14735,8 +14775,10 @@ export namespace Prisma {
     id?: string
     nombre: string
     direccionColegio: string
-    emailTutor?: string | null
-    emailOrientador?: string | null
+    ctoEmailColegioUno?: string | null
+    ctoRelacionColegioUno?: string | null
+    ctoEmailColegioDos?: string | null
+    ctoRelacionColegioDos?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     clientes?: ClienteUncheckedCreateNestedManyWithoutColegioInput
@@ -14746,8 +14788,10 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     nombre?: StringFieldUpdateOperationsInput | string
     direccionColegio?: StringFieldUpdateOperationsInput | string
-    emailTutor?: NullableStringFieldUpdateOperationsInput | string | null
-    emailOrientador?: NullableStringFieldUpdateOperationsInput | string | null
+    ctoEmailColegioUno?: NullableStringFieldUpdateOperationsInput | string | null
+    ctoRelacionColegioUno?: NullableStringFieldUpdateOperationsInput | string | null
+    ctoEmailColegioDos?: NullableStringFieldUpdateOperationsInput | string | null
+    ctoRelacionColegioDos?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     clientes?: ClienteUpdateManyWithoutColegioNestedInput
@@ -14757,8 +14801,10 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     nombre?: StringFieldUpdateOperationsInput | string
     direccionColegio?: StringFieldUpdateOperationsInput | string
-    emailTutor?: NullableStringFieldUpdateOperationsInput | string | null
-    emailOrientador?: NullableStringFieldUpdateOperationsInput | string | null
+    ctoEmailColegioUno?: NullableStringFieldUpdateOperationsInput | string | null
+    ctoRelacionColegioUno?: NullableStringFieldUpdateOperationsInput | string | null
+    ctoEmailColegioDos?: NullableStringFieldUpdateOperationsInput | string | null
+    ctoRelacionColegioDos?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     clientes?: ClienteUncheckedUpdateManyWithoutColegioNestedInput
@@ -14768,8 +14814,10 @@ export namespace Prisma {
     id?: string
     nombre: string
     direccionColegio: string
-    emailTutor?: string | null
-    emailOrientador?: string | null
+    ctoEmailColegioUno?: string | null
+    ctoRelacionColegioUno?: string | null
+    ctoEmailColegioDos?: string | null
+    ctoRelacionColegioDos?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -14778,8 +14826,10 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     nombre?: StringFieldUpdateOperationsInput | string
     direccionColegio?: StringFieldUpdateOperationsInput | string
-    emailTutor?: NullableStringFieldUpdateOperationsInput | string | null
-    emailOrientador?: NullableStringFieldUpdateOperationsInput | string | null
+    ctoEmailColegioUno?: NullableStringFieldUpdateOperationsInput | string | null
+    ctoRelacionColegioUno?: NullableStringFieldUpdateOperationsInput | string | null
+    ctoEmailColegioDos?: NullableStringFieldUpdateOperationsInput | string | null
+    ctoRelacionColegioDos?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -14788,8 +14838,10 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     nombre?: StringFieldUpdateOperationsInput | string
     direccionColegio?: StringFieldUpdateOperationsInput | string
-    emailTutor?: NullableStringFieldUpdateOperationsInput | string | null
-    emailOrientador?: NullableStringFieldUpdateOperationsInput | string | null
+    ctoEmailColegioUno?: NullableStringFieldUpdateOperationsInput | string | null
+    ctoRelacionColegioUno?: NullableStringFieldUpdateOperationsInput | string | null
+    ctoEmailColegioDos?: NullableStringFieldUpdateOperationsInput | string | null
+    ctoRelacionColegioDos?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -15731,8 +15783,10 @@ export namespace Prisma {
     id?: SortOrder
     nombre?: SortOrder
     direccionColegio?: SortOrder
-    emailTutor?: SortOrder
-    emailOrientador?: SortOrder
+    ctoEmailColegioUno?: SortOrder
+    ctoRelacionColegioUno?: SortOrder
+    ctoEmailColegioDos?: SortOrder
+    ctoRelacionColegioDos?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -15741,8 +15795,10 @@ export namespace Prisma {
     id?: SortOrder
     nombre?: SortOrder
     direccionColegio?: SortOrder
-    emailTutor?: SortOrder
-    emailOrientador?: SortOrder
+    ctoEmailColegioUno?: SortOrder
+    ctoRelacionColegioUno?: SortOrder
+    ctoEmailColegioDos?: SortOrder
+    ctoRelacionColegioDos?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -15751,8 +15807,10 @@ export namespace Prisma {
     id?: SortOrder
     nombre?: SortOrder
     direccionColegio?: SortOrder
-    emailTutor?: SortOrder
-    emailOrientador?: SortOrder
+    ctoEmailColegioUno?: SortOrder
+    ctoRelacionColegioUno?: SortOrder
+    ctoEmailColegioDos?: SortOrder
+    ctoRelacionColegioDos?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -17525,8 +17583,10 @@ export namespace Prisma {
     id?: string
     nombre: string
     direccionColegio: string
-    emailTutor?: string | null
-    emailOrientador?: string | null
+    ctoEmailColegioUno?: string | null
+    ctoRelacionColegioUno?: string | null
+    ctoEmailColegioDos?: string | null
+    ctoRelacionColegioDos?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -17535,8 +17595,10 @@ export namespace Prisma {
     id?: string
     nombre: string
     direccionColegio: string
-    emailTutor?: string | null
-    emailOrientador?: string | null
+    ctoEmailColegioUno?: string | null
+    ctoRelacionColegioUno?: string | null
+    ctoEmailColegioDos?: string | null
+    ctoRelacionColegioDos?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -17745,8 +17807,10 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     nombre?: StringFieldUpdateOperationsInput | string
     direccionColegio?: StringFieldUpdateOperationsInput | string
-    emailTutor?: NullableStringFieldUpdateOperationsInput | string | null
-    emailOrientador?: NullableStringFieldUpdateOperationsInput | string | null
+    ctoEmailColegioUno?: NullableStringFieldUpdateOperationsInput | string | null
+    ctoRelacionColegioUno?: NullableStringFieldUpdateOperationsInput | string | null
+    ctoEmailColegioDos?: NullableStringFieldUpdateOperationsInput | string | null
+    ctoRelacionColegioDos?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -17755,8 +17819,10 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     nombre?: StringFieldUpdateOperationsInput | string
     direccionColegio?: StringFieldUpdateOperationsInput | string
-    emailTutor?: NullableStringFieldUpdateOperationsInput | string | null
-    emailOrientador?: NullableStringFieldUpdateOperationsInput | string | null
+    ctoEmailColegioUno?: NullableStringFieldUpdateOperationsInput | string | null
+    ctoRelacionColegioUno?: NullableStringFieldUpdateOperationsInput | string | null
+    ctoEmailColegioDos?: NullableStringFieldUpdateOperationsInput | string | null
+    ctoRelacionColegioDos?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }

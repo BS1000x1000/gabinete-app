@@ -26,14 +26,18 @@ export class ClientesService {
           where: { nombre: data.nombreDelCentro },
           update: {
             direccionColegio: data.direccionColegio, 
-            ctoColegioUno: data.ctoEmailColegioUno,
-            relacionCtoColegioUno: data.ctoEmailColegioUno,
+            ctoEmailColegioUno: data.ctoEmailColegioUno,
+            ctoRelacionColegioUno: data.ctoEmailColegioUno,
             ctoEmailColegioDos: data.ctoEmailColegioUno,
-            relacionCtoColegioDos: data.ctoEmailColegioUno,
+            ctoRelacionColegioDos: data.ctoEmailColegioUno,
           },
           create: {
             nombre: data.nombreDelCentro,
-            direccionColegio: data.direccionColegio, 
+            direccionColegio: data.direccionColegio,
+            ctoEmailColegioUno: data.ctoEmailColegioUno,
+            ctoRelacionColegioUno: data.ctoEmailColegioUno,
+            ctoEmailColegioDos: data.ctoEmailColegioUno,
+            ctoRelacionColegioDos: data.ctoEmailColegioUno,
           },
         });
       }
@@ -118,10 +122,10 @@ export class ClientesService {
         "Numero de sesiones": data.numeroDeSesiones, 
 
         "Contacto Colegio 1": data.ctoColegioUno, 
-        "Relacion contacto colegio 1": data.relacionCtoColegioUno,
+        "Relacion contacto colegio 1": data.ctoRelacionColegioUno,
         "Email contacto colegio 1": data.ctoEmailColegioUno,
         "Contacto Colegio 2": data.ctoColegioDos,
-        "Relacion contacto 2": data.relacionCtoColegioDos,
+        "Relacion contacto 2": data.ctoRelacionColegioDos,
         "Email contacto colegio 2": data.ctoEmailColegioDos,
       };
 

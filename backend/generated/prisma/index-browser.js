@@ -149,8 +149,10 @@ exports.Prisma.ColegioScalarFieldEnum = {
   id: 'id',
   nombre: 'nombre',
   direccionColegio: 'direccionColegio',
-  emailTutor: 'emailTutor',
-  emailOrientador: 'emailOrientador',
+  ctoEmailColegioUno: 'ctoEmailColegioUno',
+  ctoRelacionColegioUno: 'ctoRelacionColegioUno',
+  ctoEmailColegioDos: 'ctoEmailColegioDos',
+  ctoRelacionColegioDos: 'ctoRelacionColegioDos',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
