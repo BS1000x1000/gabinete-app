@@ -19,6 +19,14 @@ export class CreateClienteDto {
     otroContactoNombre?: string;
     otroContactoEmail?: string;
     otroContactoTelefono?: number;
+
+    ctoColegioUno?: string; // Contacto Colegio Uno
+    ctoEmailColegioUno?: string; // Contacto Email Colegio Uno
+    relacionCtoColegioUno?: string; // Relacion Contacto Email Colegio Uno
+    ctoColegioDos?: string;
+    relacionCtoColegioDos: string;
+    ctoEmailColegioDos?: string;
+
     
     domicilio: string;
     diagnostico?: string;
@@ -28,6 +36,7 @@ export class CreateClienteDto {
     adaptaciones?: string[]; 
     tipoAdaptaciones?: string; 
     numeroDeSesiones?: string[]; 
+
 }
 
 export interface ContactoColegioDto {

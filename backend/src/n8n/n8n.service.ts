@@ -7,7 +7,7 @@ import { N8nClienteOnboardingPayload } from './interface/n8n-cliente.interface.j
 export class N8nService {
   constructor(private readonly httpService: HttpService) {}
 
-  private readonly N8N_WEBHOOK_URL = 'http://localhost:5678/webhook/nuevo_cliente'; 
+  private readonly N8N_WEBHOOK_URL = 'http://localhost:5678/webhook/676c7f2c-fb04-49f6-85e6-39d0ea98346b'; 
   
   async iniciarOnboarding(clienteData: N8nClienteOnboardingPayload): Promise<string> {
     try {

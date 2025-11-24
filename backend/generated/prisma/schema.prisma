@@ -1,8 +1,8 @@
 // schema.prisma
 
 generator client {
-  provider = "prisma-client-js"
-  output   = "../generated/prisma"
+  provider     = "prisma-client-js"
+  output       = "../generated/prisma"
   moduleFormat = "cjs"
 }
 
@@ -47,22 +47,20 @@ model Trabajador {
 }
 
 model Colegio {
-  id          String   @id @default(uuid())
-  nombre      String   @unique
-  direccionColegio String @map("direccion_colegio")
-  ctoEmailColegioUno  String?  @map("email_primero")
-  relacionCtoColegioUno  String?  @map("txt_primero")
-  ctoEmailColegioDos String?  @map("email_segundo")
-  relacionCtoColegioDos  String?  @map("txt_segundo")
-  createdAt   DateTime @default(now()) @map("fecha_creacion")
-  updatedAt   DateTime @updatedAt @map("ultima_actualizacion")
+  id               String   @id @default(uuid())
+  nombre           String   @unique
+  direccionColegio String   @map("direccion_colegio")
+  emailTutor       String?  @map("email_tutor")
+  emailOrientador  String?  @map("email_orientador")
+  createdAt        DateTime @default(now()) @map("fecha_creacion")
+  updatedAt        DateTime @updatedAt @map("ultima_actualizacion")
 
   clientes Cliente[]
 }
 
 model Cliente {
   id              String    @id @default(uuid())
-  idCarpetaDrive    String?   @map("id_carpeta_drive")
+  idCarpetaDrive  String?   @map("id_carpeta_drive")
   nombre          String
   apellidos       String
   fechaNacimiento DateTime? @map("fecha_nacimiento")
@@ -121,15 +119,15 @@ model Horario {
 }
 
 model Informe {
-  id               String    @id @default(uuid())
-  titulo           String
-  contenido        String    @db.Text
-  fechaCreacion    DateTime  @default(now()) @map("fecha_creacion")
-  fechaVencimiento DateTime? @map("fecha_vencimiento")
-  estado           String    @default("borrador")
-  urlDocumentoFinal String? @map("url_documento_final")
-  createdAt        DateTime  @default(now()) @map("fecha_creacion_registro")
-  updatedAt        DateTime  @updatedAt @map("ultima_actualizacion")
+  id                String    @id @default(uuid())
+  titulo            String
+  contenido         String    @db.Text
+  fechaCreacion     DateTime  @default(now()) @map("fecha_creacion")
+  fechaVencimiento  DateTime? @map("fecha_vencimiento")
+  estado            String    @default("borrador")
+  urlDocumentoFinal String?   @map("url_documento_final")
+  createdAt         DateTime  @default(now()) @map("fecha_creacion_registro")
+  updatedAt         DateTime  @updatedAt @map("ultima_actualizacion")
 
   clienteId String  @map("id_cliente")
   cliente   Cliente @relation(fields: [clienteId], references: [id])

@@ -1,9 +1,12 @@
 import { Module } from '@nestjs/common';
 import { ClientesService } from './clientes.service';
-// import { ClientesController } from './clientes.controller';
+import { N8nModule } from 'src/n8n/n8n.module';
+import { HttpModule } from '@nestjs/axios';
+import { ClientesController } from './clientes.controller';
 
 @Module({
+  imports: [N8nModule, HttpModule],
   providers: [ClientesService],
-  // controllers: [ClientesController]
+  controllers: [ClientesController]
 })
 export class ClientesModule {}

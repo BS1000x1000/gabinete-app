@@ -26,6 +26,10 @@ export class ClientesService {
           where: { nombre: data.nombreDelCentro },
           update: {
             direccionColegio: data.direccionColegio, 
+            ctoColegioUno: data.ctoEmailColegioUno,
+            relacionCtoColegioUno: data.ctoEmailColegioUno,
+            ctoEmailColegioDos: data.ctoEmailColegioUno,
+            relacionCtoColegioDos: data.ctoEmailColegioUno,
           },
           create: {
             nombre: data.nombreDelCentro,
@@ -68,7 +72,7 @@ export class ClientesService {
               emailMadre: data.emailMadre,
               telefonoMadre: data.telefonoMadre ? String(data.telefonoMadre) : undefined,
               
-              telefonoWhatsapp: data.otroContactoTelefono ? String(data.otroContactoTelefono) : undefined,
+              telefonoWhatsapp: String(data.telefonoMadre) || String(data.telefonoPadre) || String(data.otroContactoTelefono),
             }
           },
         },
@@ -91,7 +95,7 @@ export class ClientesService {
         "Fecha de nacimiento": nuevoCliente.fechaNacimiento!.toISOString().split('T')[0], 
         Domicilio: nuevoCliente.domicilio, 
 
-        "Nombre del padre": contacto.nombreContacto, 
+        "Nombre del padre": data.nombrePadre, 
         "Email padre": contacto.emailPadre ?? "",
         "Telefono padre": contacto.telefonoPadre ? Number(contacto.telefonoPadre) : undefined, 
         "Nombre madre": data.nombreMadre, 
@@ -113,12 +117,12 @@ export class ClientesService {
         Alergias: nuevoCliente.alergias ?? "No", 
         "Numero de sesiones": data.numeroDeSesiones, 
 
-        "Contacto Colegio 1": undefined, 
-        "Relacion contacto colegio 1": undefined,
-        "Email contacto colegio 1": undefined,
-        "Contacto Colegio 2": undefined,
-        "Relacion contacto 2": undefined,
-        "Email contacto colegio 2": undefined,
+        "Contacto Colegio 1": data.ctoColegioUno, 
+        "Relacion contacto colegio 1": data.relacionCtoColegioUno,
+        "Email contacto colegio 1": data.ctoEmailColegioUno,
+        "Contacto Colegio 2": data.ctoColegioDos,
+        "Relacion contacto 2": data.relacionCtoColegioDos,
+        "Email contacto colegio 2": data.ctoEmailColegioDos,
       };
 
       // 4. Llamada al servicio de n8n
