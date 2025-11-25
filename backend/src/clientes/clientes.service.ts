@@ -27,17 +27,17 @@ export class ClientesService {
           update: {
             direccionColegio: data.direccionColegio, 
             ctoEmailColegioUno: data.ctoEmailColegioUno,
-            ctoRelacionColegioUno: data.ctoEmailColegioUno,
-            ctoEmailColegioDos: data.ctoEmailColegioUno,
-            ctoRelacionColegioDos: data.ctoEmailColegioUno,
+            ctoRelacionColegioUno: data.ctoRelacionColegioUno,
+            ctoEmailColegioDos: data.ctoEmailColegioDos,
+            ctoRelacionColegioDos: data.ctoRelacionColegioDos,
           },
           create: {
             nombre: data.nombreDelCentro,
             direccionColegio: data.direccionColegio,
             ctoEmailColegioUno: data.ctoEmailColegioUno,
-            ctoRelacionColegioUno: data.ctoEmailColegioUno,
-            ctoEmailColegioDos: data.ctoEmailColegioUno,
-            ctoRelacionColegioDos: data.ctoEmailColegioUno,
+            ctoRelacionColegioUno: data.ctoRelacionColegioUno,
+            ctoEmailColegioDos: data.ctoEmailColegioDos,
+            ctoRelacionColegioDos: data.ctoRelacionColegioDos,
           },
         });
       }
