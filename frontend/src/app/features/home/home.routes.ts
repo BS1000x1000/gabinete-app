@@ -1,5 +1,7 @@
 import { Route } from '@angular/router';
 import { HomeComponent } from './home.component';
+import { AgendaComponent } from './agenda/agenda.component';
+import { ListadoComponent } from './listado/listado.component';
 
 export default [
   {
@@ -7,13 +9,8 @@ export default [
     path: '',
     component: HomeComponent, // HomeComponent es el contenedor con el <router-outlet>
     children: [
-      { path: '', redirectTo: 'agenda', pathMatch: 'full' },
-      
-      // La ruta final es: /home/agenda
-      { path: 'agenda', loadComponent: () => import('./agenda/agenda.component') },
-      
       // La ruta final es: /home/listado/:id
-      { path: 'listado/:id', loadComponent: () => import('./listado/listado.component') }
+      { path: 'listado/:id', component: ListadoComponent }
     ]
   }
 ] as Route[];

@@ -5,8 +5,8 @@
       <li class="nav-item">
         <button
           class="nav-link"
-          [class.active]="activePill() === 'agenda'"
-          (click)="activePill.set('agenda')"
+          [class.active]="modoFijo() === 'agenda'"
+          (click)="modoFijo.set('agenda')"
         >
           Agenda
         </button>
@@ -14,8 +14,8 @@
       <li class="nav-item">
         <button
           class="nav-link"
-          [class.active]="activePill() === 'cuadrante'"
-          (click)="activePill.set('cuadrante')"
+          [class.active]="modoFijo() === 'cuadrante'"
+          (click)="modoFijo.set('cuadrante')"
         >
           Cuadrante
         </button>
@@ -23,7 +23,7 @@
     </ul>
   </div>
 
-  @if (activePill() === 'agenda') {
+  @if (modoFijo() === 'agenda') {
   <div class="table-responsive">
     <table class="table table-sm align-middle table-agenda">
       <thead class="table-light">
@@ -75,7 +75,7 @@
       </tbody>
     </table>
   </div>
-  } @if (activePill() === 'cuadrante') {
+  } @if (modoFijo() === 'cuadrante') {
   <app-schedule type="teacherId" [id]="currentTeacherId()!"></app-schedule>
   }
 </div>

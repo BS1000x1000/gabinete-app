@@ -25,7 +25,7 @@ export class AgendaComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private auth = inject(AuthService);
   turnos = signal<TurnoAgenda[]>([]);
-  activePill = signal<'agenda' | 'cuadrante'>('agenda');
+  modoFijo = signal<'agenda' | 'cuadrante'>('agenda');
 
   /* signal<number | null>  →  la usás en el template */
   currentTeacherId = this.auth.currentTeacherId;
@@ -39,7 +39,7 @@ export class AgendaComponent implements OnInit {
   }
 
   verDetalle(turnoId: number) {
-    this.router.navigate(['../listado', turnoId], { relativeTo: this.route });
+    this.router.navigate(['/home/listado', turnoId], { relativeTo: this.route });
   }
 
   marcarAsistencia(id: number, valor: boolean) {
