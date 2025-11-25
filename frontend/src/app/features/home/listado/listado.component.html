@@ -1,0 +1,104 @@
+<!-- listado.component.html -->
+<div class="listado-wrapper bg-light p-3">
+  <!-- HEADER con nombre y botones -->
+  <div class="header-box bg-white rounded p-3 mb-3 shadow-sm">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <h5 class="mb-1">Martínez Osuna, Hugo</h5>
+        <small class="text-muted">DNI 09866306L</small>
+      </div>
+      <div class="btn-group btn-group-sm">
+        <button class="btn btn-outline-primary">Editar</button>
+        <button class="btn btn-success">Guardar</button>
+        <button class="btn btn-outline-danger">Borrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PESTAÑAS -->
+  <ul class="nav nav-tabs mb-3">
+    <li class="nav-item" *ngFor="let p of tabs">
+      <a class="nav-link"
+         [class.active]="pestania() === p"
+         (click)="pestania.set(p)"
+         style="cursor:pointer">
+        {{ p | titlecase }}
+      </a>
+    </li>
+  </ul>
+
+  <!-- CONTENIDO DE LA PESTAÑA -->
+  <div class="tab-content bg-white rounded p-3 shadow-sm">
+    <!-- CLIENTE (por defecto) -->
+    <div *ngIf="pestania() === 'cliente'">
+      <form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+        <div class="row g-3">
+          <div class="col-md-6"><label class="form-label">Nombre</label>
+            <input formControlName="nombre" class="form-control"></div>
+          <div class="col-md-6"><label class="form-label">Apellidos</label>
+            <input formControlName="apellidos" class="form-control"></div>
+
+          <div class="col-md-4"><label class="form-label">DNI</label>
+            <input formControlName="dni" class="form-control"></div>
+          <div class="col-md-4"><label class="form-label">Fecha nac.</label>
+            <input type="date" formControlName="fechaNac" class="form-control"></div>
+          <div class="col-md-4"><label class="form-label">Provincia</label>
+            <input formControlName="provincia" class="form-control"></div>
+
+          <div class="col-md-4"><label class="form-label">Ciudad</label>
+            <input formControlName="ciudad" class="form-control"></div>
+          <div class="col-md-8"><label class="form-label">Domicilio</label>
+            <input formControlName="domicilio" class="form-control"></div>
+
+          <div class="col-md-4"><label class="form-label">Móvil</label>
+            <input formControlName="movil" class="form-control"></div>
+          <div class="col-md-4"><label class="form-label">Teléfono</label>
+            <input formControlName="telefono" class="form-control"></div>
+          <div class="col-md-4"><label class="form-label">Email</label>
+            <input formControlName="email" class="form-control"></div>
+
+          <div class="col-md-6"><label class="form-label">Tutor legal</label>
+            <input formControlName="tutorLegal" class="form-control"></div>
+          <div class="col-md-3"><label class="form-label">Fecha alta</label>
+            <input type="date" formControlName="fechaAlta" class="form-control"></div>
+          <div class="col-md-3"><label class="form-label">Fecha inicio</label>
+            <input type="date" formControlName="fechaInicio" class="form-control"></div>
+
+          <!-- Checks -->
+          <div class="col-12">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" formControlName="firmado">
+              <label class="form-check-label">Firmado</label>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" formControlName="recibirInfo">
+              <label class="form-check-label">Recibir información</label>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" formControlName="autorizaImagen">
+              <label class="form-check-label">Autoriza uso de imagen</label>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" formControlName="autorizaInclusion">
+              <label class="form-check-label">Autoriza inclusión de datos</label>
+            </div>
+          </div>
+
+          <div class="col-12">
+            <label class="form-label">Medicación</label>
+            <textarea formControlName="medicacion" class="form-control" rows="2"></textarea>
+          </div>
+        </div>
+
+        <div class="text-end mt-3">
+          <button type="submit" class="btn btn-primary">Guardar cliente</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- RESTO DE PESTAÑAS (vacías por ahora) -->
+    <div *ngIf="pestania() !== 'cliente'">
+      <p class="mb-0">Pestaña <strong>{{ pestania() | titlecase }}</strong> en construcción.</p>
+    </div>
+  </div>
+</div>

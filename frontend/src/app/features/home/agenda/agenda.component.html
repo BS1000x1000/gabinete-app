@@ -6,7 +6,8 @@
         <button
           class="nav-link"
           [class.active]="activePill() === 'agenda'"
-          (click)="activePill.set('agenda')">
+          (click)="activePill.set('agenda')"
+        >
           Agenda
         </button>
       </li>
@@ -14,7 +15,8 @@
         <button
           class="nav-link"
           [class.active]="activePill() === 'cuadrante'"
-          (click)="activePill.set('cuadrante')">
+          (click)="activePill.set('cuadrante')"
+        >
           Cuadrante
         </button>
       </li>
@@ -35,13 +37,17 @@
       </thead>
       <tbody>
         @for (turno of turnos(); track turno.id) {
-        <tr>
+        <tr style="cursor: pointer" (click)="verDetalle(turno.id)">
           <td class="fw-semibold">{{ turno.hora }}</td>
           <td>
             <span class="badge bg-secondary">{{ turno.estado }}</span>
           </td>
           <td><small>{{ turno.tratamiento }}</small></td>
-          <td><span class="badge bg-secondary">{{ turno.cliente.nombre }} {{ turno.cliente.apellido }}</span></td>
+          <td>
+            <span class="badge bg-secondary"
+              >{{ turno.cliente.nombre }} {{ turno.cliente.apellido }}</span
+            >
+          </td>
           <td>
             <div class="btn-group btn-group-sm" role="group">
               <button
@@ -49,7 +55,8 @@
                 class="btn"
                 [class.btn-success]="turno.asistio === true"
                 [class.btn-outline-success]="turno.asistio !== true"
-                (click)="marcarAsistencia(turno.id, true)">
+                (click)="marcarAsistencia(turno.id, true)"
+              >
                 Sí
               </button>
               <button
@@ -57,7 +64,8 @@
                 class="btn"
                 [class.btn-danger]="turno.asistio === false"
                 [class.btn-outline-danger]="turno.asistio !== false"
-                (click)="marcarAsistencia(turno.id, false)">
+                (click)="marcarAsistencia(turno.id, false)"
+              >
                 No
               </button>
             </div>
@@ -67,8 +75,7 @@
       </tbody>
     </table>
   </div>
-  }
-  @if (activePill() === 'cuadrante') {
+  } @if (activePill() === 'cuadrante') {
   <app-schedule type="teacherId" [id]="currentTeacherId()!"></app-schedule>
   }
 </div>

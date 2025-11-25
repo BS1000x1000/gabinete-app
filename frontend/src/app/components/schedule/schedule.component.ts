@@ -18,8 +18,8 @@ import { WEEK_START_HOUR, WEEK_END_HOUR } from '../../utils/date';
   selector: 'app-schedule',
   standalone: true,
   imports: [CommonModule, CalendarModule],
-  templateUrl: './schedule.html',
-  styleUrls: ['./schedule.scss'],
+  templateUrl: './schedule.component.html',
+  styleUrls: ['./schedule.component.scss'],
 })
 export class ScheduleComponent implements OnInit {
   private service = inject(ScheduleService);
@@ -48,6 +48,7 @@ export class ScheduleComponent implements OnInit {
   readonly CalendarView = CalendarView; // template
 
   ngOnInit() {
+    console.log('cuadrante');
     this.load();
   }
 

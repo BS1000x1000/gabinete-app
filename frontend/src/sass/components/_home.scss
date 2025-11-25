@@ -1,16 +1,1 @@
 /* home.component.scss */
-.table-agenda {
-  --bs-table-cell-padding-x: .4rem;   /* lateral  */
-  --bs-table-cell-padding-y: 0.2rem;   /* vertical */
-
-  th, td {
-    padding: var(--bs-table-cell-padding-y) var(--bs-table-cell-padding-x);
-  }
-}
-.table-sm td {
-  vertical-align: middle;
-  font-size: 0.9rem;
-}
-.badge {
-  font-size: 0.75em;
-}
