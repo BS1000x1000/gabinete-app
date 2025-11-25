@@ -1,26 +1,23 @@
 <!-- app.component.html -->
-<div class="app-layout d-flex h-100">
-  <!-- Sidebar: siempre renderizado, oculta en < lg cuando está colapsada -->
-  <aside class="d-flex bg-light border-end"
-         [class.d-none]="sidebar.collapsed() && !sidebar.isLarge">
+<div class="layout">
+  <!-- Sidebar: solo visible en desktop -->
+  <aside class="left-sidebar d-none d-lg-flex">
     <app-sidebar class="w-100"></app-sidebar>
   </aside>
 
-  <!-- Contenido principal -->
-  <main class="d-flex flex-column flex-grow-1">
-    <!-- Header sticky -->
-    <header class="flex-shrink-0 shadow-sm bg-white">
+  <!-- Área derecha -->
+  <div class="content">
+    <!-- Header sin margen que rompe la barra -->
+    <header class="header w-100">
       <app-header userName="Belen"
                   userSurname="Palacios"
                   role="Pedagoga">
       </app-header>
     </header>
 
-    <!-- Área scrollable -->
-    <section class="flex-grow-1 overflow-auto">
-      <div class="container-fluid">
-        <router-outlet></router-outlet>
-      </div>
-    </section>
-  </main>
+    <!-- Contenido scrolleable -->
+    <main class="content-scrollable">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
 </div>
