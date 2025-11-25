@@ -1,0 +1,67 @@
+<!-- login.component.html -->
+<div class="d-flex align-items-center justify-content-center bg-light">
+  <form class="login-form bg-white p-4 rounded shadow"
+        [formGroup]="form"
+        (ngSubmit)="onSubmit()"
+        novalidate>
+    <h2 class="h4 mb-3 text-center">Iniciar Sesión</h2>
+
+    <!-- Usuario -->
+    <div class="mb-3">
+      <label for="usuario" class="form-label">Usuario</label>
+      <input id="usuario"
+             type="text"
+             class="form-control"
+             formControlName="usuario"
+             [class.is-invalid]="form.get('usuario')?.touched && form.get('usuario')?.invalid"
+             aria-describedby="usuario-error">
+      <div id="usuario-error"
+           class="invalid-feedback"
+           *ngIf="form.get('usuario')?.touched && form.get('usuario')?.hasError('required')">
+        Usuario requerido
+      </div>
+    </div>
+
+    <!-- Contraseña -->
+    <div class="mb-3">
+      <label for="contrasena" class="form-label">Contraseña</label>
+      <div class="input-group">
+        <input id="contrasena"
+               [type]="hidePwd() ? 'password' : 'text'"
+               class="form-control"
+               formControlName="contrasena"
+               [class.is-invalid]="form.get('contrasena')?.touched && form.get('contrasena')?.invalid"
+               aria-describedby="pwd-error">
+        <button type="button"
+                class="btn btn-outline-secondary"
+                (click)="hidePwd.set(!hidePwd())">
+          <i class="bi"
+             [class.bi-eye]="hidePwd()"
+             [class.bi-eye-slash]="!hidePwd()"></i>
+        </button>
+        <div id="pwd-error"
+             class="invalid-feedback"
+             *ngIf="form.get('contrasena')?.touched && form.get('contrasena')?.hasError('required')">
+          Contraseña requerida
+        </div>
+      </div>
+    </div>
+
+    <!-- Error general -->
+    <div class="alert alert-danger py-2"
+         *ngIf="serverError()">
+      {{ serverError() }}
+    </div>
+
+    <!-- Submit -->
+    <button type="submit"
+            class="btn btn-primary w-100"
+            [disabled]="loading()">
+      <span *ngIf="!loading()">Iniciar Sesión</span>
+      <span *ngIf="loading()">
+        <span class="spinner-border spinner-border-sm me-2"></span>
+        Entrando...
+      </span>
+    </button>
+  </form>
+</div>

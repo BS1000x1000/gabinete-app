@@ -1,79 +1,50 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+/* sidebar.component.ts */
+import { Component, computed, inject, signal } from '@angular/core';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { FormsModule } from '@angular/forms';
+import { NavItem } from '../../../../models/nav-item';
+import { SidebarService } from '../../../../services/sidebar.service';
 
-// Asume que este es un servicio de autenticación
-import { HeaderComponent } from '../header/header.component';
-import { NgScrollbar } from 'ngx-scrollbar';
-import { AuthService } from '../../../services/auth.service';
-
-interface MenuItem {
-  icon: string;
-  label: string;
-  href: string;
-  visible: string[];
-}
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [CommonModule, RouterLink, HeaderComponent, NgScrollbar],
+  imports: [CommonModule, RouterLink, RouterLinkActive, FormsModule],
   templateUrl: './sidebar.component.html',
-  styleUrl: './sidebar.component.scss',
+  styleUrls: ['./sidebar.component.scss']
 })
-export class SidebarComponent implements OnInit {
-  private authService = inject(AuthService);
+export class SidebarComponent {
+  private router = inject(Router);
+  public sidebar = inject(SidebarService);
 
-  private currentUser = toSignal(this.authService.getCurrentUser());
+  collapsed = this.sidebar.collapsed;
+  search = this.sidebar.search;
 
-  // Define la lista de todos los items
-  private allMenuItems: MenuItem[] = [
-    {
-      icon: 'house',
-      label: 'Inicio',
-      href: '/',
-      visible: ['admin', 'teacher', 'student', 'parent'],
-    },
-    {
-      icon: 'person-fill',
-      label: 'Ficha',
-      href: '/list/teachers',
-      visible: ['admin', 'teacher'],
-    },
-    {
-      icon: 'people',
-      label: 'Clientes',
-      href: '/list/students',
-      visible: ['admin', 'teacher'],
-    },
-    {
-      icon: 'journals',
-      label: 'Documentacion',
-      href: '/list/lessons',
-      visible: ['admin', 'teacher'],
-    },
-        {
-      icon: 'book',
-      label: 'Alta Drive',
-      href: '/list/lessons',
-      visible: ['admin',],
-    }
+  navItems: NavItem[] = [
+    { label: 'Inicio',      icon: 'house',           route: '/home' },
+    // { label: 'Agenda',      icon: 'calendar3',       route: '/agenda' },
+    // { label: 'Cuadrante',   icon: 'calendar-week',   route: '/cuadrante' },
+    { label: 'Ficha',       icon: 'file-earmark-text', route: '/ficha' },
+    { label: 'Documentación', icon: 'folder2',       route: '/docs' },
+    { label: 'Alta Drive',  icon: 'cloud-upload',    route: '/drive' }
   ];
 
-  public visibleMenuItems = computed(() => {
-    const user = this.currentUser();
-    if (!user || !user.role) {
-      return [];
-    }
-    return this.allMenuItems.filter((item) =>
-      item.visible.includes(user.role as string)
-    );
-  });
+  filteredItems = computed(() =>
+    this.search()
+      ? this.navItems.filter(i =>
+          i.label.toLowerCase().includes(this.search().toLowerCase())
+        )
+      : this.navItems
+  );
 
-  onSelect(_t31: any) {
-    console.log('Item seleccionado:', _t31);
+  onSearchInput(e: Event) {
+    const val = (e.target as HTMLInputElement).value;
+    this.search.set(val);
   }
 
-  ngOnInit(): void {}
+  logout() {
+    localStorage.removeItem('token');
+    this.router.navigate(['/login']);
+  }
 }

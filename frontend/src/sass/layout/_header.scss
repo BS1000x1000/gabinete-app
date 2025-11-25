@@ -1,4 +1,22 @@
+/* header.component.scss */
+.top-bar {
+  position: sticky;
+  top: 0;
+  z-index: 1030;
+}
 
-header {
-  flex: 0 0 auto;
+.search-open input {
+  width: 240px;
+  transition: width .2s;
+}
+
+.avatar-sm {
+  width: 2rem;
+  height: 2rem;
+  font-size: .9rem;
+}
+
+.btn-icon {
+  padding: .25rem .4rem;
+  line-height: 1;
 }

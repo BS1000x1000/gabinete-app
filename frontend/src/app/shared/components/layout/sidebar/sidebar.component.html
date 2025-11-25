@@ -1,33 +1,53 @@
-<div class=" d-flex wrapper container flex-column">
-  <div class="header pt-3">
-    <h3>Hola User</h3>
-    <hr class="light-gray" />
-  </div>
-
-  <div class="content-scrollable sidebar-content">
-    <ng-scrollbar
-      autoheightDisabled="false"
-      class="my-scrollbar"
-      trackClass="scrollbar"
-      thumbClass="scrollbar-thumb"
-      visibility="hover"
+<!-- sidebar.component.html -->
+<nav
+  class="sidebar d-flex flex-column flex-shrink-0 p-3 bg-light border-end"
+  [class.collapsed]="collapsed()"
+>
+  <!-- Brand + toggle -->
+  <div class="d-flex align-items-center mb-3">
+    <a class="navbar-brand fw-bold text-primary" routerLink="/home">
+      <i class="bi bi-speedometer2 fs-4"></i>
+      <span class="ms-2 brand-text" *ngIf="!collapsed()">Gabinete</span>
+    </a>
+    <button
+      class="btn btn-sm btn-outline-secondary ms-auto d-lg-none"
+      (click)="sidebar.toggle()"
     >
-      <div class="row">
-        <div class="col-12">
-          <ul>
-            <li *ngFor="let item of visibleMenuItems()" (click)="onSelect(item)">
-              <i class="bi bi-{{item.icon}} ped-icon me-2"></i>
-              <span class="ml-1">{{ item.label }}</span>
-            </li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="row mb-2">
-        <a href="#">
-          <span class="dark-orange-100">Log out</span>
-        </a>
-      </div>
-    </ng-scrollbar>
+      <i class="bi bi-list"></i>
+    </button>
   </div>
-</div>
+
+  <!-- Quick search -->
+  <div class="mb-3" *ngIf="!collapsed()">
+    <input
+      class="form-control form-control-sm"
+      type="search"
+      placeholder="Buscar..."
+      [value]="search()"
+      (input)="onSearchInput($event)"
+    />
+  </div>
+
+  <!-- Navigation -->
+  <ul class="nav nav-pills flex-column mb-auto">
+    <li *ngFor="let item of filteredItems()">
+      <a
+        class="nav-link link-dark d-flex align-items-center"
+        [routerLink]="item.route"
+        routerLinkActive="active"
+      >
+        <i class="bi bi-{{ item.icon }} fs-5"></i>
+        <span class="ms-2" *ngIf="!collapsed()">{{ item.label }}</span>
+      </a>
+    </li>
+  </ul>
+
+  <!-- Footer -->
+  <div class="mt-auto">
+    <hr *ngIf="!collapsed()" />
+    <button class="btn btn-sm btn-outline-danger w-100" (click)="logout()">
+      <i class="bi bi-box-arrow-right"></i>
+      <span class="ms-2" *ngIf="!collapsed()">Log out</span>
+    </button>
+  </div>
+</nav>

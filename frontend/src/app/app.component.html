@@ -1,25 +1,26 @@
-<div class="layout">
-  <div class="d-none d-lg-flex left-sidebar">
-    <app-sidebar class="w-100" />
-  </div>
-  <div class="content">
+<!-- app.component.html -->
+<div class="app-layout d-flex h-100">
+  <!-- Sidebar: siempre renderizado, oculta en < lg cuando está colapsada -->
+  <aside class="d-flex bg-light border-end"
+         [class.d-none]="sidebar.collapsed() && !sidebar.isLarge">
+    <app-sidebar class="w-100"></app-sidebar>
+  </aside>
 
-    <div class="header mt-2">
-      <app-header />
-    </div>
+  <!-- Contenido principal -->
+  <main class="d-flex flex-column flex-grow-1">
+    <!-- Header sticky -->
+    <header class="flex-shrink-0 shadow-sm bg-white">
+      <app-header userName="Belen"
+                  userSurname="Palacios"
+                  role="Pedagoga">
+      </app-header>
+    </header>
 
-    <div class="content-scrollable">
-      <ng-scrollbar visibility="hover">
-        <div class="row">
-          <div class="col-12">
-            <div class="container container-footer">
-              <router-outlet></router-outlet>
-            </div>
-            <app-footer />
-          </div>
-        </div>
-      </ng-scrollbar>
-    </div>
-  </div>
+    <!-- Área scrollable -->
+    <section class="flex-grow-1 overflow-auto">
+      <div class="container-fluid">
+        <router-outlet></router-outlet>
+      </div>
+    </section>
+  </main>
 </div>
-

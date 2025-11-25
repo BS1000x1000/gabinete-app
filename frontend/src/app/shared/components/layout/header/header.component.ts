@@ -1,35 +1,28 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+/* header.component.ts */
+import { Component, inject, Input } from '@angular/core';
+import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
-import { FormsModule } from '@angular/forms';
-import { Observable } from 'rxjs';
-
-// Asume que este es un servicio de autenticación que proporciona datos del usuario
-import { ClicableComponent } from '../../clicable-image/clicable-image.component';
-import { AuthService, User } from '../../../services/auth.service';
+import { HeaderService } from '../../../../services/header.service';
 
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, ClicableComponent],
+  imports: [CommonModule],
   templateUrl: './header.component.html',
-  styleUrl: './header.component.scss'
+  styleUrls: ['./header.component.scss']
 })
-export class HeaderComponent implements OnInit {
-  private authService = inject(AuthService);
-  user$: Observable<User | null> | undefined;
+export class HeaderComponent {
+  private router = inject(Router);
+  header = inject(HeaderService);
 
-  // Puedes usar una señal para el término de búsqueda
-  searchQuery = signal<string>('');
+  @Input() userName = 'Nombre';
+  @Input() userSurname = 'Apellido';
+  @Input() role = 'admin';
 
-  ngOnInit(): void {
-    // Suscribirse al Observable del usuario para obtener sus datos
-    this.user$ = this.authService.getCurrentUser();
+  logout() {
+    localStorage.removeItem('token');
+    this.router.navigate(['/login']);
   }
 
-  // Ejemplo de método para la funcionalidad de búsqueda
-  onSearch() {
-    console.log('Buscando:', this.searchQuery());
-    // Aquí podrías implementar la lógica de búsqueda, como llamar a un servicio
-  }
+  openNotifications(){}
 }

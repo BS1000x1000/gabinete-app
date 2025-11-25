@@ -1,0 +1,74 @@
+<!-- src/app/features/home/home.component.html -->
+<div class="container-fluid mt-2">
+  <div class="d-flex mb-3">
+    <ul class="nav nav-pills">
+      <li class="nav-item">
+        <button
+          class="nav-link"
+          [class.active]="activePill() === 'agenda'"
+          (click)="activePill.set('agenda')">
+          Agenda
+        </button>
+      </li>
+      <li class="nav-item">
+        <button
+          class="nav-link"
+          [class.active]="activePill() === 'cuadrante'"
+          (click)="activePill.set('cuadrante')">
+          Cuadrante
+        </button>
+      </li>
+    </ul>
+  </div>
+
+  @if (activePill() === 'agenda') {
+  <div class="table-responsive">
+    <table class="table table-sm align-middle table-agenda">
+      <thead class="table-light">
+        <tr>
+          <th>Hora</th>
+          <th>Estados</th>
+          <th>Tratamiento</th>
+          <th>Cliente</th>
+          <th>Asistencia</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (turno of turnos(); track turno.id) {
+        <tr>
+          <td class="fw-semibold">{{ turno.hora }}</td>
+          <td>
+            <span class="badge bg-secondary">{{ turno.estado }}</span>
+          </td>
+          <td><small>{{ turno.tratamiento }}</small></td>
+          <td><span class="badge bg-secondary">{{ turno.cliente.nombre }} {{ turno.cliente.apellido }}</span></td>
+          <td>
+            <div class="btn-group btn-group-sm" role="group">
+              <button
+                type="button"
+                class="btn"
+                [class.btn-success]="turno.asistio === true"
+                [class.btn-outline-success]="turno.asistio !== true"
+                (click)="marcarAsistencia(turno.id, true)">
+                Sí
+              </button>
+              <button
+                type="button"
+                class="btn"
+                [class.btn-danger]="turno.asistio === false"
+                [class.btn-outline-danger]="turno.asistio !== false"
+                (click)="marcarAsistencia(turno.id, false)">
+                No
+              </button>
+            </div>
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  }
+  @if (activePill() === 'cuadrante') {
+  <app-schedule type="teacherId" [id]="currentTeacherId()!"></app-schedule>
+  }
+</div>
