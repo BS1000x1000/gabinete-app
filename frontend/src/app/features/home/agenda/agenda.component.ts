@@ -29,7 +29,7 @@ export class AgendaComponent implements OnInit {
 
   /* signal<number | null>  →  la usás en el template */
   currentTeacherId = this.auth.currentTeacherId;
-
+  selectedRowId = signal<number | null>(null);
   constructor(private turnosSvc: TurnosService) {}
 
   ngOnInit() {
@@ -39,7 +39,9 @@ export class AgendaComponent implements OnInit {
   }
 
   verDetalle(turnoId: number) {
-    this.router.navigate(['/home/listado', turnoId], { relativeTo: this.route });
+    this.router.navigate(['/home/listado', turnoId], {
+      relativeTo: this.route,
+    });
   }
 
   marcarAsistencia(id: number, valor: boolean) {
@@ -48,5 +50,10 @@ export class AgendaComponent implements OnInit {
         lista.map((t) => (t.id === id ? { ...t, asistio: valor } : t))
       );
     });
+  }
+
+  onFilaClick(turno: TurnoAgenda) {
+    console.log(turno);
+    this.selectedRowId.update((id) => (id === turno.id ? null : turno.id));
   }
 }

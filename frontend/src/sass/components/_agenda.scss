@@ -13,3 +13,8 @@
 .badge {
   font-size: 0.75em;
 }
+
+.table-active {
+  --bs-table-bg: var(--bs-info-bg-subtle); /* azul suave de Bootstrap */
+  /* o tu color: #e3f2fd */
+}

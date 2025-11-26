@@ -77,11 +77,11 @@
   <!-- COLUMNA DERECHA – tabs + contenido -->
   <section class="right-panel flex-grow-1 rounded p-1">
     <!-- Pestañas -->
-    <ul class="nav nav-tabs nav-fill mb-2">
+    <ul class="nav nav-tabs nav-fill">
       <li class="nav-item" *ngFor="let t of tabs">
         <a
           class="nav-link text-black"
-          [routerLink]="[t]"
+          [routerLink]="['./', t]"
           routerLinkActive="active"
           (click)="pestania.set(t)"
           style="cursor: pointer;"
