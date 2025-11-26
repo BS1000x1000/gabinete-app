@@ -1,6 +1,6 @@
 <div class="d-flex listado-wrapper d-flex flex-column flex-lg-row gap-3 p-3">
   <!-- COLUMNA IZQUIERDA – datos + botones -->
-  <div class="left-panel bg-white rounded shadow-sm p-3 justify-content-center">
+  <aside class="left-panel bg-white rounded shadow-sm p-3 justify-content-center">
     <!-- Logo / avatar -->
     <!-- <div class="text-center mb-3">
       <img
@@ -72,7 +72,7 @@
         <i class="bi bi-geo-alt"></i>
       </button>
     </div>
-  </div>
+  </aside>
 
   <!-- COLUMNA DERECHA – tabs + contenido -->
   <section class="right-panel flex-grow-1 rounded p-1">
@@ -81,7 +81,8 @@
       <li class="nav-item" *ngFor="let t of tabs">
         <a
           class="nav-link text-black"
-          [class.active]="pestania() === t"
+          [routerLink]="[t]"
+          routerLinkActive="active"
           (click)="pestania.set(t)"
           style="cursor: pointer;"
         >
@@ -91,197 +92,6 @@
     </ul>
 
     <!-- Contenido de la pestaña activa -->
-    <div class="tab-content bg-white">
-      <!-- CLIENTE (por defecto) -->
-      <div *ngIf="pestania() === 'cliente'">
-        <!-- Listado de datos (solo lectura) -->
-        <div class="data-view">
-          <div class="row g-2 mb-3 px-4 py-2">
-            <!-- Columna izquierda -->
-            <div class="col-6">
-              <ul class="list-unstyled mb-0">
-                <li
-                  class="mb-2 d-flex justify-content-between align-items-center"
-                >
-                  <small class="flex-shrink-0 me-2 w-50"
-                    >Nombre</small
-                  >
-                  <span class="text-muted flex-grow-1 me-2 bg-light">
-                    Hugo
-                  </span>
-                </li>
-                <li
-                  class="mb-2 d-flex justify-content-between align-items-center"
-                >
-                  <small class="flex-shrink-0 me-2 w-50"
-                    >Apellidos</small
-                  >
-                  <span class="text-muted flex-grow-1 me-2 bg-light"
-                    >Martínez Osuna</span
-                  >
-                </li>
-                <li
-                  class="mb-2 d-flex justify-content-between align-items-center"
-                >
-                  <small class="flex-shrink-0 me-2 w-50"
-                    >DNI/NIA</small
-                  >
-                  <span class="text-muted flex-grow-1 me-2 bg-light"
-                    >09866306L</span
-                  >
-                </li>
-                <li
-                  class="mb-2 d-flex justify-content-between align-items-center"
-                >
-                  <small class="flex-shrink-0 me-2 w-50"
-                    >Fecha de nacimiento</small
-                  >
-                  <span class="text-muted flex-grow-1 me-2 bg-light"
-                    >2012-05-16</span
-                  >
-                </li>
-                <li
-                  class="mb-2 d-flex justify-content-between align-items-center"
-                >
-                  <small class="flex-shrink-0 me-2 w-50"
-                    >Domicilio</small
-                  >
-                  <span class="text-muted flex-grow-1 me-2 bg-light"
-                    >Chago Blanco 2, portal 1, 5ºC</span
-                  >
-                </li>
-                <li
-                  class="mb-2 d-flex justify-content-between align-items-center"
-                >
-                  <small class="flex-shrink-0 me-2 w-50"
-                    >Provincia</small
-                  >
-                  <span class="text-muted flex-grow-1 me-2 bg-light"
-                    >Madrid</span
-                  >
-                </li>
-                <li
-                  class="mb-2 d-flex justify-content-between align-items-center"
-                >
-                  <small class="flex-shrink-0 me-2 w-50"
-                    >Autoriza la inclusión de los datos personales</small
-                  >
-                  <span class="text-muted flex-grow-1 me-2 bg-light"><span class="badge bg-success">SI</span></span>
-                </li>
-                <li
-                  class="mb-2 d-flex justify-content-between align-items-center"
-                >
-                  <small class="flex-shrink-0 me-2 w-50"
-                    >Fecha de inicio</small
-                  >
-                  <span class="text-muted flex-grow-1 me-2 bg-light"
-                    >2019-03-11</span
-                  >
-                </li>
-                <li
-                  class="mb-2 d-flex justify-content-between align-items-center"
-                >
-                  <small class="flex-shrink-0 me-2 w-50"
-                    >Tutor legal</small
-                  >
-                  <span class="text-muted flex-grow-1 me-2 bg-light"
-                    >Nuria Osuna Carriet</span
-                  >
-                </li>
-              </ul>
-            </div>
-
-            <!-- Columna derecha -->
-            <div class="col-6">
-              <ul class="list-unstyled mb-0">
-                <li class="mb-2 d-flex justify-content-between">
-                  <small class="flex-shrink-0 me-2 w-50"
-                    >Ciudad</small
-                  >
-                  <span class="text-muted flex-grow-1 me-2 bg-light"
-                    >Parla</span
-                  >
-                </li>
-                <li
-                  class="mb-2 d-flex justify-content-between align-items-center"
-                >
-                  <small class="flex-shrink-0 me-2 w-50"
-                    >Móvil</small
-                  >
-                  <span class="text-muted flex-grow-1 me-2 bg-light"
-                    >686 763 036</span
-                  >
-                </li>
-                <li
-                  class="mb-2 d-flex justify-content-between align-items-center"
-                >
-                  <small class="flex-shrink-0 me-2 w-50"
-                    >Teléfono</small
-                  >
-                  <span class="text-muted flex-grow-1 me-2 bg-light"
-                    >686 263 124</span
-                  >
-                </li>
-                <li
-                  class="mb-2 d-flex justify-content-between align-items-center"
-                >
-                  <small class="flex-shrink-0 me-2 w-50"
-                    >Email</small
-                  >
-                  <span class="text-muted flex-grow-1 me-2 bg-light"
-                    >clientetr.es</span
-                  >
-                </li>
-                <li
-                  class="mb-2 d-flex justify-content-between align-items-center"
-                >
-                  <small class="flex-shrink-0 me-2 w-50"
-                    >Fecha de alta</small
-                  >
-                  <span class="text-muted flex-grow-1 me-2 bg-light"
-                    >2025-09-18</span
-                  >
-                </li>
-                <li
-                  class="mb-2 d-flex justify-content-between align-items-center"
-                >
-                  <small class="flex-shrink-0 me-2 w-50"
-                    >Fecha de inicio</small
-                  >
-                  <span class="text-muted flex-grow-1 me-2 bg-light"
-                    >2019-03-11</span
-                  >
-                </li>
-                <li
-                  class="mb-2 d-flex justify-content-between align-items-center"
-                >
-                  <small class="flex-shrink-0 me-2 w-50"
-                    >Autoriza el uso de la imagen</small
-                  >
-                  <span class="text-muted flex-grow-1 me-2 bg-light"><span class="badge bg-success">SI</span></span>
-                </li>
-                <li
-                  class="mb-2 d-flex justify-content-between align-items-center"
-                >
-                  <small class="flex-shrink-0 me-2 w-50"
-                    >Fecha de alta</small
-                  >
-                  <span class="text-muted flex-grow-1 me-2 bg-light"
-                    >2025-09-18</span
-                  >
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- RESTO DE PESTAÑAS (vacías por ahora) -->
-      <div *ngIf="pestania() !== 'cliente'">
-        <p class="mb-0">
-          Pestaña <strong>{{ pestania() | titlecase }}</strong> en construcción.
-        </p>
-      </div>
-    </div>
+    <router-outlet></router-outlet>
   </section>
 </div>
