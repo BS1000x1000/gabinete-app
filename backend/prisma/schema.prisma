@@ -150,7 +150,7 @@ model Familiar {
   createdAt        DateTime @default(now()) @map("fecha_creacion")
   updatedAt        DateTime @updatedAt @map("ultima_actualizacion")
 
-  clienteId String  @map("id_cliente")
+  clienteId String  @unique @map("id_cliente")
   cliente   Cliente @relation("ClienteContactos", fields: [clienteId], references: [id])
 }
 

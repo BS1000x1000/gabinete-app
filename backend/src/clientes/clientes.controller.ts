@@ -8,12 +8,10 @@ import {
   Get,
   Param,
   Delete,
-  ParseIntPipe,
-  Put, 
+  Patch,
 } from '@nestjs/common';
 import { ClientesService } from './clientes.service';
 import { CreateClienteDto } from './dto/clientedto-interface';
-import { UpdateClienteDto } from './dto/update-cliente.dto';
 
 @Controller('clientes')
 export class ClientesController {
@@ -38,17 +36,17 @@ export class ClientesController {
   }
 
   @Get(':id')
-  async findOne(@Param('id', ParseIntPipe) id: number) {
+  async findOne(@Param('id') id: string) {
     return this.clientesService.findOne(id);
   }
 
-  @Put(':id')
-  async update(@Param('id', ParseIntPipe) id: string, @Body() dto: UpdateClienteDto) {
+  @Patch(':id')
+  async update(@Param('id') id: string, @Body() dto: CreateClienteDto) {
     return this.clientesService.update(id, dto);
   }
 
   @Delete(':id')
-  async remove(@Param('id', ParseIntPipe) id: string) {
+  async remove(@Param('id') id: string) {
     await this.clientesService.remove(id);
     return { message: 'Cliente eliminado correctamente' };
   }

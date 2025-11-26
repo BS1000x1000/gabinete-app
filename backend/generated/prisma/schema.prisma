@@ -139,7 +139,7 @@ model Informe {
 }
 
 model Familiar {
-  id               String   @default(uuid())
+  id               String   @id @default(uuid())
   nombreContacto   String   @map("nombre_contacto")
   parentesco       String?
   telefonoMadre    String?  @map("telefono_madre")
@@ -150,9 +150,8 @@ model Familiar {
   createdAt        DateTime @default(now()) @map("fecha_creacion")
   updatedAt        DateTime @updatedAt @map("ultima_actualizacion")
 
-  clienteId String  @map("id_cliente")
+  clienteId String  @unique @map("id_cliente")
   cliente   Cliente @relation("ClienteContactos", fields: [clienteId], references: [id])
-  @@id([id, clienteId])
 }
 
 model RegistroDiario {

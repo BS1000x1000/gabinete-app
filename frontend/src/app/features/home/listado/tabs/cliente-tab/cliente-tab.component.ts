@@ -1,5 +1,7 @@
 import { Component, inject, signal, type OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { TurnosService } from '../../../../../services/turnos.service';
+import { TurnoAgenda } from '../../../../../models/turno.model';
 
 @Component({
   selector: 'app-cliente-tab',
@@ -9,14 +11,17 @@ import { ActivatedRoute } from '@angular/router';
   styleUrl: './cliente-tab.component.scss',
 })
 export class ClienteTabComponent implements OnInit {
-
   private route = inject(ActivatedRoute);
-  public alumno = signal<any|null>(null); // falta la interface de Cliente
+  private turnosSvc = inject(TurnosService);
+  public cliente = signal<any | null>(null); // falta la interface de Cliente
 
   ngOnInit(): void {
-    const id = Number(this.route.parent?.snapshot.paramMap.get('id'));
+    const id = Number(
+      inject(ActivatedRoute).parent?.snapshot.paramMap.get('id')
+    );
+    const turno = this.turnosSvc.turnos().find((t: TurnoAgenda) => t.id === id);
+    if (turno) this.cliente.set(turno);
   }
-
 }
 
 export default ClienteTabComponent;

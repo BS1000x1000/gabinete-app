@@ -24,6 +24,7 @@ export class AgendaComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private auth = inject(AuthService);
+  private agendaSvc = inject(TurnosService);
   turnos = signal<TurnoAgenda[]>([]);
   modoFijo = signal<'agenda' | 'cuadrante'>('agenda');
 
@@ -35,7 +36,13 @@ export class AgendaComponent implements OnInit {
   ngOnInit() {
     // this.turnosSvc.getAgendaHoy().subscribe((data: any) => this.turnos.set(data));
     this.turnos.set(MOCK_TURNOS);
-    console.log(this.turnos());
+  }
+
+  loadTurnos() {
+    this.agendaSvc.loadTurnos().subscribe({
+      next: (data) => this.agendaSvc.turnos.set(data),
+      error: (err) => console.error(err),
+    });
   }
 
   verDetalle(turnoId: number) {
@@ -44,16 +51,15 @@ export class AgendaComponent implements OnInit {
     });
   }
 
-  marcarAsistencia(id: number, valor: boolean) {
-    this.turnosSvc.marcarAsistencia(id, valor).subscribe(() => {
-      this.turnos.update((lista) =>
-        lista.map((t) => (t.id === id ? { ...t, asistio: valor } : t))
-      );
-    });
-  }
+  // marcarAsistencia(id: number, valor: boolean) {
+  //   this.turnosSvc.marcarAsistencia(id, valor).subscribe(() => {
+  //     this.turnos.update((lista) =>
+  //       lista.map((t) => (t.id === id ? { ...t, asistio: valor } : t))
+  //     );
+  //   });
+  // }
 
   onFilaClick(turno: TurnoAgenda) {
-    console.log(turno);
     this.selectedRowId.update((id) => (id === turno.id ? null : turno.id));
   }
 }

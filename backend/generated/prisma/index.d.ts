@@ -14359,6 +14359,7 @@ export namespace Prisma {
 
   export type FamiliarWhereUniqueInput = Prisma.AtLeast<{
     id?: string
+    clienteId?: string
     AND?: FamiliarWhereInput | FamiliarWhereInput[]
     OR?: FamiliarWhereInput[]
     NOT?: FamiliarWhereInput | FamiliarWhereInput[]
@@ -14371,9 +14372,8 @@ export namespace Prisma {
     telefonoWhatsapp?: StringNullableFilter<"Familiar"> | string | null
     createdAt?: DateTimeFilter<"Familiar"> | Date | string
     updatedAt?: DateTimeFilter<"Familiar"> | Date | string
-    clienteId?: StringFilter<"Familiar"> | string
     cliente?: XOR<ClienteScalarRelationFilter, ClienteWhereInput>
-  }, "id">
+  }, "id" | "clienteId">
 
   export type FamiliarOrderByWithAggregationInput = {
     id?: SortOrder

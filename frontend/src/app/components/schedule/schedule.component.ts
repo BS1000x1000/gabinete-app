@@ -48,7 +48,6 @@ export class ScheduleComponent implements OnInit {
   readonly CalendarView = CalendarView; // template
 
   ngOnInit() {
-    console.log('cuadrante');
     this.load();
   }
 

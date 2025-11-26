@@ -1,19 +1,33 @@
-import { HttpClient } from "@angular/common/http";
-import { Injectable } from "@angular/core";
-import { TurnoAgenda } from "../models/turno.model";
+import { HttpClient } from '@angular/common/http';
+import { Injectable, signal } from '@angular/core';
+import { TurnoAgenda } from '../models/turno.model';
+import { Observable } from 'rxjs';
+import { HorarioData } from '../../interface/horario.interface';
 
 // src/app/services/turnos.service.ts
 @Injectable({ providedIn: 'root' })
 export class TurnosService {
-  private api = '/api/turnos';
+  private api = 'http://localhost:3000/agenda';
+  turnos = signal<TurnoAgenda[]>([]);
+  selectedId = signal<number | null>(null);
+  horarios = signal<HorarioData[]>([]);
 
   constructor(private http: HttpClient) {}
 
-  getAgendaHoy() {
-    return this.http.get<TurnoAgenda[]>(`${this.api}/agenda/hoy`);
+  loadTurnos(): Observable<TurnoAgenda[]> {
+    return this.http.get<TurnoAgenda[]>(this.api);
   }
 
-  marcarAsistencia(id: number, valor: boolean) {
-    return this.http.patch(`${this.api}/${id}/asistencia`, { asistio: valor });
+  setSelectedId(id: number | null) {
+    this.selectedId.set(id);
+  }
+
+  crearHorarios(list: HorarioData[]): Observable<HorarioData[]> {
+    return this.http.post<HorarioData[]>(this.api, list);
+  }
+
+  // opcional: si quieres traerlos después
+  getByClienteId(id: string): Observable<HorarioData[]> {
+    return this.http.get<HorarioData[]>(`${this.api}/cliente/${id}`);
   }
 }
