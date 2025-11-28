@@ -25,7 +25,7 @@ export class ScheduleComponent implements OnInit {
   private service = inject(ScheduleService);
 
   /* ---------- entradas ---------- */
-  @Input() type: 'teacherId' | 'classId' = 'teacherId';
+  @Input() type: 'trabajadorId' | 'classId' = 'trabajadorId';
   @Input() id: string | number = '';
   @Input() startHour = WEEK_START_HOUR;
   @Input() endHour = WEEK_END_HOUR;

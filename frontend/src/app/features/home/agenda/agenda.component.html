@@ -36,23 +36,27 @@
         </tr>
       </thead>
       <tbody>
-        @for (turno of turnos(); track turno.id) {
+        @for (horario of turnos(); track horario.id) {
         <tr
           style="cursor: pointer"
-          [class.table-active]="selectedRowId() === turno.id"
-          (click)="verDetalle(turno.id)"
-          (click)="onFilaClick(turno)"
+          [class.table-active]="selectedRowId() === horario.id"
+          (click)="onFilaClick(horario)"
+          (click)="verDetalle(horario)"
         >
-          <td class="fw-semibold">{{ turno.hora }}</td>
-          <td>
-            <span class="badge bg-secondary">{{ turno.estado }}</span>
+          <td class="fw-semibold">
+            {{ horario.fechaHoraInicio | date : "HH:mm" }} -
+            {{ horario.fechaHoraFin | date : "HH:mm" }}
           </td>
           <td>
-            <small>{{ turno.tratamiento }}</small>
+            <span class="badge bg-secondary">{{ horario.estado }}</span>
+          </td>
+          <td>
+            <small>{{ horario.tipoSesion }}</small>
           </td>
           <td>
             <span class="badge bg-secondary"
-              >{{ turno.cliente.nombre }} {{ turno.cliente.apellido }}</span
+              >{{ horario.cliente.nombre }}
+              {{ horario.cliente.apellidos }}</span
             >
           </td>
           <td>
@@ -60,18 +64,18 @@
               <button
                 type="button"
                 class="btn"
-                [class.btn-success]="turno.asistio === true"
-                [class.btn-outline-success]="turno.asistio !== true"
-                (click)="marcarAsistencia(turno.id, true)"
+                [class.btn-success]="horario.asistio === true"
+                [class.btn-outline-success]="horario.asistio !== true"
+                (click)="marcarAsistencia(horario.id!, true)"
               >
                 Sí
               </button>
               <button
                 type="button"
                 class="btn"
-                [class.btn-danger]="turno.asistio === false"
-                [class.btn-outline-danger]="turno.asistio !== false"
-                (click)="marcarAsistencia(turno.id, false)"
+                [class.btn-danger]="horario.asistio === false"
+                [class.btn-outline-danger]="horario.asistio !== false"
+                (click)="marcarAsistencia(horario.id!, false)"
               >
                 No
               </button>
@@ -83,6 +87,6 @@
     </table>
   </div>
   } @if (modoFijo() === 'cuadrante') {
-  <app-schedule type="teacherId" [id]="currentTeacherId()!"></app-schedule>
+  <app-schedule type="trabajadorId" [id]="currentTrabajadorId()!"></app-schedule>
   }
 </div>

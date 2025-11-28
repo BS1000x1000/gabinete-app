@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   inject,
   signal,
   type OnInit,
@@ -12,6 +13,7 @@ import { CommonModule } from '@angular/common';
 import { MOCK_TURNOS } from '../mock-turnos';
 import { AuthService } from '../../../services/auth.service';
 import { ScheduleComponent } from '../../../components/schedule/schedule.component';
+import { HorarioData } from '../../../../interface/horario.interface';
 
 @Component({
   selector: 'app-agenda',
@@ -25,41 +27,52 @@ export class AgendaComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private auth = inject(AuthService);
   private agendaSvc = inject(TurnosService);
-  turnos = signal<TurnoAgenda[]>([]);
+  turnos = this.agendaSvc.turnos;
   modoFijo = signal<'agenda' | 'cuadrante'>('agenda');
 
   /* signal<number | null>  →  la usás en el template */
-  currentTeacherId = this.auth.currentTeacherId;
-  selectedRowId = signal<number | null>(null);
+  currentTrabajadorId = this.auth.currentTrabajadorId;
+  selectedRowId = signal<string | null>(null);
   constructor(private turnosSvc: TurnosService) {}
 
+  clienteIdTurno = computed(() => {
+    const turnosArray = this.turnos();
+    if(turnosArray.length > 0) return turnosArray[0].clienteId;
+    return null;
+  })
+
   ngOnInit() {
+    this.loadHorarios();
     // this.turnosSvc.getAgendaHoy().subscribe((data: any) => this.turnos.set(data));
-    this.turnos.set(MOCK_TURNOS);
+    // this.turnos.set(MOCK_TURNOS);
   }
 
-  loadTurnos() {
-    this.agendaSvc.loadTurnos().subscribe({
-      next: (data) => this.agendaSvc.turnos.set(data),
-      error: (err) => console.error(err),
+  loadHorarios() {
+    //TODO: Hacer el login para que al logarse pille el id
+    //const trabajadorId = this.auth.currentTrabajadorId();
+    const trabajadorId = 'afecd635-635b-436d-a8d2-2219941605b5';
+    this.turnosSvc.getHorariosMapped(trabajadorId!).subscribe({
+      next: (data) => this.turnos.set(data),
+      error: (err) => console.error('Error al cargar horarios:', err),
     });
   }
 
-  verDetalle(turnoId: number) {
-    this.router.navigate(['/home/listado', turnoId], {
+  verDetalle(horario: HorarioData) {
+    this.agendaSvc.setSelectedId(horario.id);
+    this.router.navigate(['/home/listado', horario.clienteId], {
       relativeTo: this.route,
     });
   }
 
-  // marcarAsistencia(id: number, valor: boolean) {
-  //   this.turnosSvc.marcarAsistencia(id, valor).subscribe(() => {
-  //     this.turnos.update((lista) =>
-  //       lista.map((t) => (t.id === id ? { ...t, asistio: valor } : t))
-  //     );
-  //   });
-  // }
+  marcarAsistencia(id: string, valor: boolean) {
+    // this.turnosSvc.marcarAsistencia(id, valor).subscribe(() => {
+    //   this.turnos.update((lista) =>
+    //     lista.map((t) => (t.id === id ? { ...t, asistio: valor } : t))
+    //   );
+    // });
+  }
 
-  onFilaClick(turno: TurnoAgenda) {
-    this.selectedRowId.update((id) => (id === turno.id ? null : turno.id));
+  onFilaClick(turno: HorarioData) {
+    this.selectedRowId.update((id) => (id === turno.id! ? null : turno.id!));
   }
 }

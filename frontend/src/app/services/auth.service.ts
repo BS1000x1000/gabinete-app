@@ -1,6 +1,6 @@
 import { HttpClient } from "@angular/common/http";
 import { Injectable, signal, computed, inject } from "@angular/core";
-import { tap } from "rxjs";
+import { Observable, tap } from "rxjs";
 
 /* services/auth.service.ts */
 @Injectable({ providedIn: 'root' })
@@ -9,15 +9,12 @@ export class AuthService {
   private _token = signal<string | null>(null);
   private http = inject(HttpClient);
 
-  readonly currentTeacherId = computed(() => {
-    const t = this._token();
-    if (!t) return null;
-    return this.decodeJwt(t).sub;   // number
-  });
+currentTrabajadorId = signal<string | null>(null);
 
-  login(email: string, pwd: string) {
-    return this.http.post<{accessToken:string}>('/api/auth/login', {email, pwd})
-      .pipe(tap(r => this._token.set(r.accessToken)));
+  login(credentials: { username: string; password: string }): Observable<any> {
+    return this.http.post<any>('/api/auth/login', credentials).pipe(
+      tap((res) => this.currentTrabajadorId.set(res.trabajadorId))
+    );
   }
 
   logout() { this._token.set(null); }

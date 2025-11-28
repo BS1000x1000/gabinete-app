@@ -1,5 +1,5 @@
 export interface HorarioData {
-  id?: string;
+  id: string;
   fechaHoraInicio: string; // ISO
   fechaHoraFin: string;
   tipoSesion: string;
@@ -7,4 +7,10 @@ export interface HorarioData {
   notas?: string;
   clienteId: string;
   trabajadorId: string;
+  cliente: {
+    id: string;
+    nombre: string;
+    apellidos: string;
+  };
+  asistio?: boolean | null;
 }

@@ -49,6 +49,19 @@ export class HorariosService {
     }
   }
 
+  /* ---------- LEER TODOS LOS HORARIOS DE UN CLIENTE ---------- */
+  async findByTrabajadorId(trabajadorId: string): Promise<any[]> {
+    try {
+      return await prisma.horario.findMany({
+        where: { trabajadorId },
+        include: { cliente: true, trabajador: true },
+        orderBy: { fechaHoraInicio: 'asc' },
+      });
+    } catch (err) {
+      throw new InternalServerErrorException(`Error al obtener horarios: ${err.message}`);
+    }
+  }
+
   /* ---------- LEER UN HORARIO POR ID ---------- */
   async findOne(id: string): Promise<any> {
     try {

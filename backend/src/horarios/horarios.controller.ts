@@ -27,6 +27,16 @@ export class HorariosController {
     }
   }
 
+   /* ---------- LEER TODOS LOS HORARIOS DE UN TRABAJADOR ---------- */
+  @Get('trabajador/:id')
+  async findByTrabajador(@Param('id') clienteId: string) {
+    try {
+      return await this.horariosService.findByTrabajadorId(clienteId);
+    } catch (err) {
+      throw new InternalServerErrorException(err.message);
+    }
+  }
+
   /* ---------- LEER UN HORARIO POR ID ---------- */
   @Get(':id')
   async findOne(@Param('id') id: string) {

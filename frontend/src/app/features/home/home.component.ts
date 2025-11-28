@@ -3,10 +3,9 @@ import { Component, inject, OnInit } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AgendaComponent } from './agenda/agenda.component';
-import {
-  ClientesService,
-} from '../../services/cliente.service';
+import { ClientesService } from '../../services/cliente.service';
 import { ClienteData } from '../../../interface/cliente.interface';
+import { TurnosService } from '../../services/turnos.service';
 
 // src/app/features/home/home.component.ts
 @Component({
@@ -24,6 +23,7 @@ import { ClienteData } from '../../../interface/cliente.interface';
 })
 export class HomeComponent implements OnInit {
   private clientesSvc = inject(ClientesService);
+  private agendaSvc = inject(TurnosService);
   clientes: ClienteData[] = [];
   constructor() {}
 
@@ -33,8 +33,14 @@ export class HomeComponent implements OnInit {
 
   getClientes() {
     this.clientesSvc.getAll().subscribe({
-      next: (data) => {this.clientes = data; console.log(this.clientes)},
-      error: (error) => {console.error('Error al cargar', error)}
-    })
+      next: (data) => {
+        this.clientes = data;
+        console.log(this.clientes);
+      },
+      error: (error) => {
+        console.error('Error al cargar', error);
+      },
+    });
   }
+
 }

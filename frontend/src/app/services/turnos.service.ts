@@ -1,33 +1,47 @@
+// services/turnos.service.ts
+import { inject, Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Injectable, signal } from '@angular/core';
-import { TurnoAgenda } from '../models/turno.model';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { HorarioData } from '../../interface/horario.interface';
 
-// src/app/services/turnos.service.ts
 @Injectable({ providedIn: 'root' })
 export class TurnosService {
-  private api = 'http://localhost:3000/agenda';
-  turnos = signal<TurnoAgenda[]>([]);
-  selectedId = signal<number | null>(null);
-  horarios = signal<HorarioData[]>([]);
+  private api = 'http://localhost:3000/horarios';
+  turnos = signal<HorarioData[]>([]);
+  selectedId = signal<string>('');
+  private http = inject(HttpClient);
 
-  constructor(private http: HttpClient) {}
-
-  loadTurnos(): Observable<TurnoAgenda[]> {
-    return this.http.get<TurnoAgenda[]>(this.api);
+  getHorarioByClienteId(id: string): Observable<HorarioData[]> {
+    return this.http.get<HorarioData[]>(`${this.api}/cliente/${id}`);
   }
 
-  setSelectedId(id: number | null) {
+  getHorarioByTrabajadorId(id: string): Observable<HorarioData[]> {
+    return this.http.get<HorarioData[]>(`${this.api}/trabajador/${id}`);
+  }
+
+  setSelectedId(id: string) {
     this.selectedId.set(id);
   }
 
-  crearHorarios(list: HorarioData[]): Observable<HorarioData[]> {
-    return this.http.post<HorarioData[]>(this.api, list);
-  }
-
-  // opcional: si quieres traerlos después
-  getByClienteId(id: string): Observable<HorarioData[]> {
-    return this.http.get<HorarioData[]>(`${this.api}/cliente/${id}`);
+  getHorariosMapped(trabajadorId: string): Observable<HorarioData[]> {
+    return this.getHorarioByTrabajadorId(trabajadorId).pipe(
+      map((list) =>
+        list.map((h) => ({
+          id: h.id,
+          fechaHoraInicio: h.fechaHoraInicio,
+          fechaHoraFin: h.fechaHoraFin,
+          estado: h.estado,
+          tipoSesion: h.tipoSesion,
+          clienteId: h.clienteId,
+          trabajadorId: h.trabajadorId,
+          cliente: {
+            id: h.clienteId,
+            nombre: h.cliente.nombre,
+            apellidos: h.cliente.apellidos,
+          },
+          asistio: null,
+        }))
+      )
+    );
   }
 }
