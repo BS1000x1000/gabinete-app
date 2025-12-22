@@ -22,13 +22,13 @@ export class TrabajadorService {
       if (existe) throw new ConflictException('Usuario o email ya registrado');
 
       // 3. Hash de contraseña
-      const passwordHash = await bcrypt.hash(dto.password, this.SALT_ROUNDS);
+      const password = await bcrypt.hash(dto.password, this.SALT_ROUNDS);
 
       // 4. Crea el trabajador
       const trabajador = await prisma.trabajador.create({
         data: {
           username: dto.username,
-          passwordHash,
+          passwordHash: password,
           nombre: dto.nombre,
           apellidos: dto.apellidos,
           email: dto.email,
@@ -38,7 +38,7 @@ export class TrabajadorService {
         },
         include: { rol: true },
       });
-      // const { passwordHash, ...trabajadorSinPassword } = trabajador;
+      const { passwordHash, ...trabajadorSinPassword } = trabajador;
       return trabajador;
     } catch (err) {
       if (err instanceof NotFoundException || err instanceof ConflictException) throw err;
@@ -62,12 +62,14 @@ export class TrabajadorService {
   /* ---------- READ (por ID) ---------- */
   async findOne(id: string): Promise<any> {
     try {
+      console.log(id);
       const trabajador = await prisma.trabajador.findUnique({
         where: { id },
         include: { rol: true },
       });
       if (!trabajador) throw new NotFoundException('Trabajador no encontrado');
-      return trabajador;
+      const { passwordHash, ...result } = trabajador;
+      return result;
     } catch (err) {
       if (err instanceof NotFoundException) throw err;
       throw new InternalServerErrorException(`Error al obtener trabajador: ${err.message}`);
@@ -101,9 +103,9 @@ export class TrabajadorService {
       }
 
       // 3. Si cambia contraseña, hashea
-      let passwordHash: string | undefined;
+      let password: string | undefined;
       if (dto.password) {
-        passwordHash = await bcrypt.hash(dto.password, this.SALT_ROUNDS);
+        password = await bcrypt.hash(dto.password, this.SALT_ROUNDS);
       }
 
       // 4. Actualiza
@@ -111,7 +113,7 @@ export class TrabajadorService {
         where: { id },
         data: {
           username: dto.username,
-          passwordHash,
+          passwordHash: password,
           nombre: dto.nombre,
           apellidos: dto.apellidos,
           email: dto.email,
@@ -121,7 +123,7 @@ export class TrabajadorService {
         },
         include: { rol: true },
       });
-      // const { passwordHash, ...trabajadorSinPassword} = updated;
+      const { passwordHash, ...trabajadorSinPassword} = updated;
       return updated;
     } catch (err) {
       if (err instanceof NotFoundException) throw err;
