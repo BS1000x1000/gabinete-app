@@ -54,6 +54,11 @@ export type Informe = $Result.DefaultSelection<Prisma.$InformePayload>
  */
 export type Familiar = $Result.DefaultSelection<Prisma.$FamiliarPayload>
 /**
+ * Model Sanitario
+ * 
+ */
+export type Sanitario = $Result.DefaultSelection<Prisma.$SanitarioPayload>
+/**
  * Model RegistroDiario
  * 
  */
@@ -260,6 +265,16 @@ export class PrismaClient<
     * ```
     */
   get familiar(): Prisma.FamiliarDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.sanitario`: Exposes CRUD operations for the **Sanitario** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Sanitarios
+    * const sanitarios = await prisma.sanitario.findMany()
+    * ```
+    */
+  get sanitario(): Prisma.SanitarioDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.registroDiario`: Exposes CRUD operations for the **RegistroDiario** model.
@@ -722,6 +737,7 @@ export namespace Prisma {
     Horario: 'Horario',
     Informe: 'Informe',
     Familiar: 'Familiar',
+    Sanitario: 'Sanitario',
     RegistroDiario: 'RegistroDiario',
     Objetivo: 'Objetivo'
   };
@@ -739,7 +755,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "rol" | "trabajador" | "colegio" | "cliente" | "clienteTrabajador" | "horario" | "informe" | "familiar" | "registroDiario" | "objetivo"
+      modelProps: "rol" | "trabajador" | "colegio" | "cliente" | "clienteTrabajador" | "horario" | "informe" | "familiar" | "sanitario" | "registroDiario" | "objetivo"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1335,6 +1351,80 @@ export namespace Prisma {
           }
         }
       }
+      Sanitario: {
+        payload: Prisma.$SanitarioPayload<ExtArgs>
+        fields: Prisma.SanitarioFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.SanitarioFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SanitarioPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.SanitarioFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SanitarioPayload>
+          }
+          findFirst: {
+            args: Prisma.SanitarioFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SanitarioPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.SanitarioFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SanitarioPayload>
+          }
+          findMany: {
+            args: Prisma.SanitarioFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SanitarioPayload>[]
+          }
+          create: {
+            args: Prisma.SanitarioCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SanitarioPayload>
+          }
+          createMany: {
+            args: Prisma.SanitarioCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.SanitarioCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SanitarioPayload>[]
+          }
+          delete: {
+            args: Prisma.SanitarioDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SanitarioPayload>
+          }
+          update: {
+            args: Prisma.SanitarioUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SanitarioPayload>
+          }
+          deleteMany: {
+            args: Prisma.SanitarioDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.SanitarioUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.SanitarioUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SanitarioPayload>[]
+          }
+          upsert: {
+            args: Prisma.SanitarioUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SanitarioPayload>
+          }
+          aggregate: {
+            args: Prisma.SanitarioAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateSanitario>
+          }
+          groupBy: {
+            args: Prisma.SanitarioGroupByArgs<ExtArgs>
+            result: $Utils.Optional<SanitarioGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.SanitarioCountArgs<ExtArgs>
+            result: $Utils.Optional<SanitarioCountAggregateOutputType> | number
+          }
+        }
+      }
       RegistroDiario: {
         payload: Prisma.$RegistroDiarioPayload<ExtArgs>
         fields: Prisma.RegistroDiarioFieldRefs
@@ -1583,6 +1673,7 @@ export namespace Prisma {
     horario?: HorarioOmit
     informe?: InformeOmit
     familiar?: FamiliarOmit
+    sanitario?: SanitarioOmit
     registroDiario?: RegistroDiarioOmit
     objetivo?: ObjetivoOmit
   }
@@ -1798,6 +1889,7 @@ export namespace Prisma {
     horarios: number
     informes: number
     contactosFamiliares: number
+    sanitario: number
     registrosDiarios: number
     objetivos: number
   }
@@ -1807,6 +1899,7 @@ export namespace Prisma {
     horarios?: boolean | ClienteCountOutputTypeCountHorariosArgs
     informes?: boolean | ClienteCountOutputTypeCountInformesArgs
     contactosFamiliares?: boolean | ClienteCountOutputTypeCountContactosFamiliaresArgs
+    sanitario?: boolean | ClienteCountOutputTypeCountSanitarioArgs
     registrosDiarios?: boolean | ClienteCountOutputTypeCountRegistrosDiariosArgs
     objetivos?: boolean | ClienteCountOutputTypeCountObjetivosArgs
   }
@@ -1848,6 +1941,13 @@ export namespace Prisma {
    */
   export type ClienteCountOutputTypeCountContactosFamiliaresArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: FamiliarWhereInput
+  }
+
+  /**
+   * ClienteCountOutputType without action
+   */
+  export type ClienteCountOutputTypeCountSanitarioArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: SanitarioWhereInput
   }
 
   /**
@@ -4270,8 +4370,12 @@ export namespace Prisma {
     id: string | null
     nombre: string | null
     direccionColegio: string | null
+    ctoColegioUno: string | null
+    ctoTelefonoUno: string | null
     ctoEmailColegioUno: string | null
     ctoRelacionColegioUno: string | null
+    ctoColegioDos: string | null
+    ctoTelefonoDos: string | null
     ctoEmailColegioDos: string | null
     ctoRelacionColegioDos: string | null
     createdAt: Date | null
@@ -4282,8 +4386,12 @@ export namespace Prisma {
     id: string | null
     nombre: string | null
     direccionColegio: string | null
+    ctoColegioUno: string | null
+    ctoTelefonoUno: string | null
     ctoEmailColegioUno: string | null
     ctoRelacionColegioUno: string | null
+    ctoColegioDos: string | null
+    ctoTelefonoDos: string | null
     ctoEmailColegioDos: string | null
     ctoRelacionColegioDos: string | null
     createdAt: Date | null
@@ -4294,8 +4402,12 @@ export namespace Prisma {
     id: number
     nombre: number
     direccionColegio: number
+    ctoColegioUno: number
+    ctoTelefonoUno: number
     ctoEmailColegioUno: number
     ctoRelacionColegioUno: number
+    ctoColegioDos: number
+    ctoTelefonoDos: number
     ctoEmailColegioDos: number
     ctoRelacionColegioDos: number
     createdAt: number
@@ -4308,8 +4420,12 @@ export namespace Prisma {
     id?: true
     nombre?: true
     direccionColegio?: true
+    ctoColegioUno?: true
+    ctoTelefonoUno?: true
     ctoEmailColegioUno?: true
     ctoRelacionColegioUno?: true
+    ctoColegioDos?: true
+    ctoTelefonoDos?: true
     ctoEmailColegioDos?: true
     ctoRelacionColegioDos?: true
     createdAt?: true
@@ -4320,8 +4436,12 @@ export namespace Prisma {
     id?: true
     nombre?: true
     direccionColegio?: true
+    ctoColegioUno?: true
+    ctoTelefonoUno?: true
     ctoEmailColegioUno?: true
     ctoRelacionColegioUno?: true
+    ctoColegioDos?: true
+    ctoTelefonoDos?: true
     ctoEmailColegioDos?: true
     ctoRelacionColegioDos?: true
     createdAt?: true
@@ -4332,8 +4452,12 @@ export namespace Prisma {
     id?: true
     nombre?: true
     direccionColegio?: true
+    ctoColegioUno?: true
+    ctoTelefonoUno?: true
     ctoEmailColegioUno?: true
     ctoRelacionColegioUno?: true
+    ctoColegioDos?: true
+    ctoTelefonoDos?: true
     ctoEmailColegioDos?: true
     ctoRelacionColegioDos?: true
     createdAt?: true
@@ -4417,8 +4541,12 @@ export namespace Prisma {
     id: string
     nombre: string
     direccionColegio: string
-    ctoEmailColegioUno: string | null
-    ctoRelacionColegioUno: string | null
+    ctoColegioUno: string
+    ctoTelefonoUno: string
+    ctoEmailColegioUno: string
+    ctoRelacionColegioUno: string
+    ctoColegioDos: string | null
+    ctoTelefonoDos: string | null
     ctoEmailColegioDos: string | null
     ctoRelacionColegioDos: string | null
     createdAt: Date
@@ -4446,8 +4574,12 @@ export namespace Prisma {
     id?: boolean
     nombre?: boolean
     direccionColegio?: boolean
+    ctoColegioUno?: boolean
+    ctoTelefonoUno?: boolean
     ctoEmailColegioUno?: boolean
     ctoRelacionColegioUno?: boolean
+    ctoColegioDos?: boolean
+    ctoTelefonoDos?: boolean
     ctoEmailColegioDos?: boolean
     ctoRelacionColegioDos?: boolean
     createdAt?: boolean
@@ -4460,8 +4592,12 @@ export namespace Prisma {
     id?: boolean
     nombre?: boolean
     direccionColegio?: boolean
+    ctoColegioUno?: boolean
+    ctoTelefonoUno?: boolean
     ctoEmailColegioUno?: boolean
     ctoRelacionColegioUno?: boolean
+    ctoColegioDos?: boolean
+    ctoTelefonoDos?: boolean
     ctoEmailColegioDos?: boolean
     ctoRelacionColegioDos?: boolean
     createdAt?: boolean
@@ -4472,8 +4608,12 @@ export namespace Prisma {
     id?: boolean
     nombre?: boolean
     direccionColegio?: boolean
+    ctoColegioUno?: boolean
+    ctoTelefonoUno?: boolean
     ctoEmailColegioUno?: boolean
     ctoRelacionColegioUno?: boolean
+    ctoColegioDos?: boolean
+    ctoTelefonoDos?: boolean
     ctoEmailColegioDos?: boolean
     ctoRelacionColegioDos?: boolean
     createdAt?: boolean
@@ -4484,15 +4624,19 @@ export namespace Prisma {
     id?: boolean
     nombre?: boolean
     direccionColegio?: boolean
+    ctoColegioUno?: boolean
+    ctoTelefonoUno?: boolean
     ctoEmailColegioUno?: boolean
     ctoRelacionColegioUno?: boolean
+    ctoColegioDos?: boolean
+    ctoTelefonoDos?: boolean
     ctoEmailColegioDos?: boolean
     ctoRelacionColegioDos?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type ColegioOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nombre" | "direccionColegio" | "ctoEmailColegioUno" | "ctoRelacionColegioUno" | "ctoEmailColegioDos" | "ctoRelacionColegioDos" | "createdAt" | "updatedAt", ExtArgs["result"]["colegio"]>
+  export type ColegioOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nombre" | "direccionColegio" | "ctoColegioUno" | "ctoTelefonoUno" | "ctoEmailColegioUno" | "ctoRelacionColegioUno" | "ctoColegioDos" | "ctoTelefonoDos" | "ctoEmailColegioDos" | "ctoRelacionColegioDos" | "createdAt" | "updatedAt", ExtArgs["result"]["colegio"]>
   export type ColegioInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     clientes?: boolean | Colegio$clientesArgs<ExtArgs>
     _count?: boolean | ColegioCountOutputTypeDefaultArgs<ExtArgs>
@@ -4509,8 +4653,12 @@ export namespace Prisma {
       id: string
       nombre: string
       direccionColegio: string
-      ctoEmailColegioUno: string | null
-      ctoRelacionColegioUno: string | null
+      ctoColegioUno: string
+      ctoTelefonoUno: string
+      ctoEmailColegioUno: string
+      ctoRelacionColegioUno: string
+      ctoColegioDos: string | null
+      ctoTelefonoDos: string | null
       ctoEmailColegioDos: string | null
       ctoRelacionColegioDos: string | null
       createdAt: Date
@@ -4942,8 +5090,12 @@ export namespace Prisma {
     readonly id: FieldRef<"Colegio", 'String'>
     readonly nombre: FieldRef<"Colegio", 'String'>
     readonly direccionColegio: FieldRef<"Colegio", 'String'>
+    readonly ctoColegioUno: FieldRef<"Colegio", 'String'>
+    readonly ctoTelefonoUno: FieldRef<"Colegio", 'String'>
     readonly ctoEmailColegioUno: FieldRef<"Colegio", 'String'>
     readonly ctoRelacionColegioUno: FieldRef<"Colegio", 'String'>
+    readonly ctoColegioDos: FieldRef<"Colegio", 'String'>
+    readonly ctoTelefonoDos: FieldRef<"Colegio", 'String'>
     readonly ctoEmailColegioDos: FieldRef<"Colegio", 'String'>
     readonly ctoRelacionColegioDos: FieldRef<"Colegio", 'String'>
     readonly createdAt: FieldRef<"Colegio", 'DateTime'>
@@ -5394,15 +5546,14 @@ export namespace Prisma {
     nombre: string | null
     apellidos: string | null
     fechaNacimiento: Date | null
+    dni: string | null
     domicilio: string | null
+    provincia: string | null
+    ciudad: string | null
     curso: string | null
-    diagnostico: string | null
-    tratamientos: string | null
-    medicacion: string | null
-    alergias: string | null
+    fechaInicio: Date | null
+    fechaAlta: Date | null
     activo: boolean | null
-    adaptaciones: boolean | null
-    apoyos: boolean | null
     createdAt: Date | null
     updatedAt: Date | null
     colegioId: string | null
@@ -5414,15 +5565,14 @@ export namespace Prisma {
     nombre: string | null
     apellidos: string | null
     fechaNacimiento: Date | null
+    dni: string | null
     domicilio: string | null
+    provincia: string | null
+    ciudad: string | null
     curso: string | null
-    diagnostico: string | null
-    tratamientos: string | null
-    medicacion: string | null
-    alergias: string | null
+    fechaInicio: Date | null
+    fechaAlta: Date | null
     activo: boolean | null
-    adaptaciones: boolean | null
-    apoyos: boolean | null
     createdAt: Date | null
     updatedAt: Date | null
     colegioId: string | null
@@ -5434,15 +5584,14 @@ export namespace Prisma {
     nombre: number
     apellidos: number
     fechaNacimiento: number
+    dni: number
     domicilio: number
+    provincia: number
+    ciudad: number
     curso: number
-    diagnostico: number
-    tratamientos: number
-    medicacion: number
-    alergias: number
+    fechaInicio: number
+    fechaAlta: number
     activo: number
-    adaptaciones: number
-    apoyos: number
     createdAt: number
     updatedAt: number
     colegioId: number
@@ -5456,15 +5605,14 @@ export namespace Prisma {
     nombre?: true
     apellidos?: true
     fechaNacimiento?: true
+    dni?: true
     domicilio?: true
+    provincia?: true
+    ciudad?: true
     curso?: true
-    diagnostico?: true
-    tratamientos?: true
-    medicacion?: true
-    alergias?: true
+    fechaInicio?: true
+    fechaAlta?: true
     activo?: true
-    adaptaciones?: true
-    apoyos?: true
     createdAt?: true
     updatedAt?: true
     colegioId?: true
@@ -5476,15 +5624,14 @@ export namespace Prisma {
     nombre?: true
     apellidos?: true
     fechaNacimiento?: true
+    dni?: true
     domicilio?: true
+    provincia?: true
+    ciudad?: true
     curso?: true
-    diagnostico?: true
-    tratamientos?: true
-    medicacion?: true
-    alergias?: true
+    fechaInicio?: true
+    fechaAlta?: true
     activo?: true
-    adaptaciones?: true
-    apoyos?: true
     createdAt?: true
     updatedAt?: true
     colegioId?: true
@@ -5496,15 +5643,14 @@ export namespace Prisma {
     nombre?: true
     apellidos?: true
     fechaNacimiento?: true
+    dni?: true
     domicilio?: true
+    provincia?: true
+    ciudad?: true
     curso?: true
-    diagnostico?: true
-    tratamientos?: true
-    medicacion?: true
-    alergias?: true
+    fechaInicio?: true
+    fechaAlta?: true
     activo?: true
-    adaptaciones?: true
-    apoyos?: true
     createdAt?: true
     updatedAt?: true
     colegioId?: true
@@ -5589,15 +5735,14 @@ export namespace Prisma {
     nombre: string
     apellidos: string
     fechaNacimiento: Date | null
+    dni: string
     domicilio: string
+    provincia: string
+    ciudad: string
     curso: string
-    diagnostico: string
-    tratamientos: string
-    medicacion: string
-    alergias: string | null
+    fechaInicio: Date | null
+    fechaAlta: Date | null
     activo: boolean
-    adaptaciones: boolean
-    apoyos: boolean
     createdAt: Date
     updatedAt: Date
     colegioId: string | null
@@ -5626,15 +5771,14 @@ export namespace Prisma {
     nombre?: boolean
     apellidos?: boolean
     fechaNacimiento?: boolean
+    dni?: boolean
     domicilio?: boolean
+    provincia?: boolean
+    ciudad?: boolean
     curso?: boolean
-    diagnostico?: boolean
-    tratamientos?: boolean
-    medicacion?: boolean
-    alergias?: boolean
+    fechaInicio?: boolean
+    fechaAlta?: boolean
     activo?: boolean
-    adaptaciones?: boolean
-    apoyos?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     colegioId?: boolean
@@ -5643,6 +5787,7 @@ export namespace Prisma {
     horarios?: boolean | Cliente$horariosArgs<ExtArgs>
     informes?: boolean | Cliente$informesArgs<ExtArgs>
     contactosFamiliares?: boolean | Cliente$contactosFamiliaresArgs<ExtArgs>
+    sanitario?: boolean | Cliente$sanitarioArgs<ExtArgs>
     registrosDiarios?: boolean | Cliente$registrosDiariosArgs<ExtArgs>
     objetivos?: boolean | Cliente$objetivosArgs<ExtArgs>
     _count?: boolean | ClienteCountOutputTypeDefaultArgs<ExtArgs>
@@ -5654,15 +5799,14 @@ export namespace Prisma {
     nombre?: boolean
     apellidos?: boolean
     fechaNacimiento?: boolean
+    dni?: boolean
     domicilio?: boolean
+    provincia?: boolean
+    ciudad?: boolean
     curso?: boolean
-    diagnostico?: boolean
-    tratamientos?: boolean
-    medicacion?: boolean
-    alergias?: boolean
+    fechaInicio?: boolean
+    fechaAlta?: boolean
     activo?: boolean
-    adaptaciones?: boolean
-    apoyos?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     colegioId?: boolean
@@ -5675,15 +5819,14 @@ export namespace Prisma {
     nombre?: boolean
     apellidos?: boolean
     fechaNacimiento?: boolean
+    dni?: boolean
     domicilio?: boolean
+    provincia?: boolean
+    ciudad?: boolean
     curso?: boolean
-    diagnostico?: boolean
-    tratamientos?: boolean
-    medicacion?: boolean
-    alergias?: boolean
+    fechaInicio?: boolean
+    fechaAlta?: boolean
     activo?: boolean
-    adaptaciones?: boolean
-    apoyos?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     colegioId?: boolean
@@ -5696,27 +5839,27 @@ export namespace Prisma {
     nombre?: boolean
     apellidos?: boolean
     fechaNacimiento?: boolean
+    dni?: boolean
     domicilio?: boolean
+    provincia?: boolean
+    ciudad?: boolean
     curso?: boolean
-    diagnostico?: boolean
-    tratamientos?: boolean
-    medicacion?: boolean
-    alergias?: boolean
+    fechaInicio?: boolean
+    fechaAlta?: boolean
     activo?: boolean
-    adaptaciones?: boolean
-    apoyos?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     colegioId?: boolean
   }
 
-  export type ClienteOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "idCarpetaDrive" | "nombre" | "apellidos" | "fechaNacimiento" | "domicilio" | "curso" | "diagnostico" | "tratamientos" | "medicacion" | "alergias" | "activo" | "adaptaciones" | "apoyos" | "createdAt" | "updatedAt" | "colegioId", ExtArgs["result"]["cliente"]>
+  export type ClienteOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "idCarpetaDrive" | "nombre" | "apellidos" | "fechaNacimiento" | "dni" | "domicilio" | "provincia" | "ciudad" | "curso" | "fechaInicio" | "fechaAlta" | "activo" | "createdAt" | "updatedAt" | "colegioId", ExtArgs["result"]["cliente"]>
   export type ClienteInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     trabajadoresAsignados?: boolean | Cliente$trabajadoresAsignadosArgs<ExtArgs>
     colegio?: boolean | Cliente$colegioArgs<ExtArgs>
     horarios?: boolean | Cliente$horariosArgs<ExtArgs>
     informes?: boolean | Cliente$informesArgs<ExtArgs>
     contactosFamiliares?: boolean | Cliente$contactosFamiliaresArgs<ExtArgs>
+    sanitario?: boolean | Cliente$sanitarioArgs<ExtArgs>
     registrosDiarios?: boolean | Cliente$registrosDiariosArgs<ExtArgs>
     objetivos?: boolean | Cliente$objetivosArgs<ExtArgs>
     _count?: boolean | ClienteCountOutputTypeDefaultArgs<ExtArgs>
@@ -5736,6 +5879,7 @@ export namespace Prisma {
       horarios: Prisma.$HorarioPayload<ExtArgs>[]
       informes: Prisma.$InformePayload<ExtArgs>[]
       contactosFamiliares: Prisma.$FamiliarPayload<ExtArgs>[]
+      sanitario: Prisma.$SanitarioPayload<ExtArgs>[]
       registrosDiarios: Prisma.$RegistroDiarioPayload<ExtArgs>[]
       objetivos: Prisma.$ObjetivoPayload<ExtArgs>[]
     }
@@ -5745,15 +5889,14 @@ export namespace Prisma {
       nombre: string
       apellidos: string
       fechaNacimiento: Date | null
+      dni: string
       domicilio: string
+      provincia: string
+      ciudad: string
       curso: string
-      diagnostico: string
-      tratamientos: string
-      medicacion: string
-      alergias: string | null
+      fechaInicio: Date | null
+      fechaAlta: Date | null
       activo: boolean
-      adaptaciones: boolean
-      apoyos: boolean
       createdAt: Date
       updatedAt: Date
       colegioId: string | null
@@ -6156,6 +6299,7 @@ export namespace Prisma {
     horarios<T extends Cliente$horariosArgs<ExtArgs> = {}>(args?: Subset<T, Cliente$horariosArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$HorarioPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     informes<T extends Cliente$informesArgs<ExtArgs> = {}>(args?: Subset<T, Cliente$informesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$InformePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     contactosFamiliares<T extends Cliente$contactosFamiliaresArgs<ExtArgs> = {}>(args?: Subset<T, Cliente$contactosFamiliaresArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FamiliarPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    sanitario<T extends Cliente$sanitarioArgs<ExtArgs> = {}>(args?: Subset<T, Cliente$sanitarioArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SanitarioPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     registrosDiarios<T extends Cliente$registrosDiariosArgs<ExtArgs> = {}>(args?: Subset<T, Cliente$registrosDiariosArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RegistroDiarioPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     objetivos<T extends Cliente$objetivosArgs<ExtArgs> = {}>(args?: Subset<T, Cliente$objetivosArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ObjetivoPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
@@ -6192,15 +6336,14 @@ export namespace Prisma {
     readonly nombre: FieldRef<"Cliente", 'String'>
     readonly apellidos: FieldRef<"Cliente", 'String'>
     readonly fechaNacimiento: FieldRef<"Cliente", 'DateTime'>
+    readonly dni: FieldRef<"Cliente", 'String'>
     readonly domicilio: FieldRef<"Cliente", 'String'>
+    readonly provincia: FieldRef<"Cliente", 'String'>
+    readonly ciudad: FieldRef<"Cliente", 'String'>
     readonly curso: FieldRef<"Cliente", 'String'>
-    readonly diagnostico: FieldRef<"Cliente", 'String'>
-    readonly tratamientos: FieldRef<"Cliente", 'String'>
-    readonly medicacion: FieldRef<"Cliente", 'String'>
-    readonly alergias: FieldRef<"Cliente", 'String'>
+    readonly fechaInicio: FieldRef<"Cliente", 'DateTime'>
+    readonly fechaAlta: FieldRef<"Cliente", 'DateTime'>
     readonly activo: FieldRef<"Cliente", 'Boolean'>
-    readonly adaptaciones: FieldRef<"Cliente", 'Boolean'>
-    readonly apoyos: FieldRef<"Cliente", 'Boolean'>
     readonly createdAt: FieldRef<"Cliente", 'DateTime'>
     readonly updatedAt: FieldRef<"Cliente", 'DateTime'>
     readonly colegioId: FieldRef<"Cliente", 'String'>
@@ -6712,6 +6855,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: FamiliarScalarFieldEnum | FamiliarScalarFieldEnum[]
+  }
+
+  /**
+   * Cliente.sanitario
+   */
+  export type Cliente$sanitarioArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Sanitario
+     */
+    select?: SanitarioSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Sanitario
+     */
+    omit?: SanitarioOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SanitarioInclude<ExtArgs> | null
+    where?: SanitarioWhereInput
+    orderBy?: SanitarioOrderByWithRelationInput | SanitarioOrderByWithRelationInput[]
+    cursor?: SanitarioWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: SanitarioScalarFieldEnum | SanitarioScalarFieldEnum[]
   }
 
   /**
@@ -10123,8 +10290,12 @@ export namespace Prisma {
     id: string | null
     nombreContacto: string | null
     parentesco: string | null
+    nombreMadre: string | null
     telefonoMadre: string | null
     emailMadre: string | null
+    dniMadre: string | null
+    dniPadre: string | null
+    nombrePadre: string | null
     telefonoPadre: string | null
     emailPadre: string | null
     telefonoWhatsapp: string | null
@@ -10137,8 +10308,12 @@ export namespace Prisma {
     id: string | null
     nombreContacto: string | null
     parentesco: string | null
+    nombreMadre: string | null
     telefonoMadre: string | null
     emailMadre: string | null
+    dniMadre: string | null
+    dniPadre: string | null
+    nombrePadre: string | null
     telefonoPadre: string | null
     emailPadre: string | null
     telefonoWhatsapp: string | null
@@ -10151,8 +10326,12 @@ export namespace Prisma {
     id: number
     nombreContacto: number
     parentesco: number
+    nombreMadre: number
     telefonoMadre: number
     emailMadre: number
+    dniMadre: number
+    dniPadre: number
+    nombrePadre: number
     telefonoPadre: number
     emailPadre: number
     telefonoWhatsapp: number
@@ -10167,8 +10346,12 @@ export namespace Prisma {
     id?: true
     nombreContacto?: true
     parentesco?: true
+    nombreMadre?: true
     telefonoMadre?: true
     emailMadre?: true
+    dniMadre?: true
+    dniPadre?: true
+    nombrePadre?: true
     telefonoPadre?: true
     emailPadre?: true
     telefonoWhatsapp?: true
@@ -10181,8 +10364,12 @@ export namespace Prisma {
     id?: true
     nombreContacto?: true
     parentesco?: true
+    nombreMadre?: true
     telefonoMadre?: true
     emailMadre?: true
+    dniMadre?: true
+    dniPadre?: true
+    nombrePadre?: true
     telefonoPadre?: true
     emailPadre?: true
     telefonoWhatsapp?: true
@@ -10195,8 +10382,12 @@ export namespace Prisma {
     id?: true
     nombreContacto?: true
     parentesco?: true
+    nombreMadre?: true
     telefonoMadre?: true
     emailMadre?: true
+    dniMadre?: true
+    dniPadre?: true
+    nombrePadre?: true
     telefonoPadre?: true
     emailPadre?: true
     telefonoWhatsapp?: true
@@ -10282,8 +10473,12 @@ export namespace Prisma {
     id: string
     nombreContacto: string
     parentesco: string | null
+    nombreMadre: string
     telefonoMadre: string | null
     emailMadre: string | null
+    dniMadre: string
+    dniPadre: string
+    nombrePadre: string
     telefonoPadre: string | null
     emailPadre: string | null
     telefonoWhatsapp: string | null
@@ -10313,8 +10508,12 @@ export namespace Prisma {
     id?: boolean
     nombreContacto?: boolean
     parentesco?: boolean
+    nombreMadre?: boolean
     telefonoMadre?: boolean
     emailMadre?: boolean
+    dniMadre?: boolean
+    dniPadre?: boolean
+    nombrePadre?: boolean
     telefonoPadre?: boolean
     emailPadre?: boolean
     telefonoWhatsapp?: boolean
@@ -10328,8 +10527,12 @@ export namespace Prisma {
     id?: boolean
     nombreContacto?: boolean
     parentesco?: boolean
+    nombreMadre?: boolean
     telefonoMadre?: boolean
     emailMadre?: boolean
+    dniMadre?: boolean
+    dniPadre?: boolean
+    nombrePadre?: boolean
     telefonoPadre?: boolean
     emailPadre?: boolean
     telefonoWhatsapp?: boolean
@@ -10343,8 +10546,12 @@ export namespace Prisma {
     id?: boolean
     nombreContacto?: boolean
     parentesco?: boolean
+    nombreMadre?: boolean
     telefonoMadre?: boolean
     emailMadre?: boolean
+    dniMadre?: boolean
+    dniPadre?: boolean
+    nombrePadre?: boolean
     telefonoPadre?: boolean
     emailPadre?: boolean
     telefonoWhatsapp?: boolean
@@ -10358,8 +10565,12 @@ export namespace Prisma {
     id?: boolean
     nombreContacto?: boolean
     parentesco?: boolean
+    nombreMadre?: boolean
     telefonoMadre?: boolean
     emailMadre?: boolean
+    dniMadre?: boolean
+    dniPadre?: boolean
+    nombrePadre?: boolean
     telefonoPadre?: boolean
     emailPadre?: boolean
     telefonoWhatsapp?: boolean
@@ -10368,7 +10579,7 @@ export namespace Prisma {
     clienteId?: boolean
   }
 
-  export type FamiliarOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nombreContacto" | "parentesco" | "telefonoMadre" | "emailMadre" | "telefonoPadre" | "emailPadre" | "telefonoWhatsapp" | "createdAt" | "updatedAt" | "clienteId", ExtArgs["result"]["familiar"]>
+  export type FamiliarOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nombreContacto" | "parentesco" | "nombreMadre" | "telefonoMadre" | "emailMadre" | "dniMadre" | "dniPadre" | "nombrePadre" | "telefonoPadre" | "emailPadre" | "telefonoWhatsapp" | "createdAt" | "updatedAt" | "clienteId", ExtArgs["result"]["familiar"]>
   export type FamiliarInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     cliente?: boolean | ClienteDefaultArgs<ExtArgs>
   }
@@ -10388,8 +10599,12 @@ export namespace Prisma {
       id: string
       nombreContacto: string
       parentesco: string | null
+      nombreMadre: string
       telefonoMadre: string | null
       emailMadre: string | null
+      dniMadre: string
+      dniPadre: string
+      nombrePadre: string
       telefonoPadre: string | null
       emailPadre: string | null
       telefonoWhatsapp: string | null
@@ -10823,8 +11038,12 @@ export namespace Prisma {
     readonly id: FieldRef<"Familiar", 'String'>
     readonly nombreContacto: FieldRef<"Familiar", 'String'>
     readonly parentesco: FieldRef<"Familiar", 'String'>
+    readonly nombreMadre: FieldRef<"Familiar", 'String'>
     readonly telefonoMadre: FieldRef<"Familiar", 'String'>
     readonly emailMadre: FieldRef<"Familiar", 'String'>
+    readonly dniMadre: FieldRef<"Familiar", 'String'>
+    readonly dniPadre: FieldRef<"Familiar", 'String'>
+    readonly nombrePadre: FieldRef<"Familiar", 'String'>
     readonly telefonoPadre: FieldRef<"Familiar", 'String'>
     readonly emailPadre: FieldRef<"Familiar", 'String'>
     readonly telefonoWhatsapp: FieldRef<"Familiar", 'String'>
@@ -11242,6 +11461,1164 @@ export namespace Prisma {
      * Choose, which related nodes to fetch as well
      */
     include?: FamiliarInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model Sanitario
+   */
+
+  export type AggregateSanitario = {
+    _count: SanitarioCountAggregateOutputType | null
+    _min: SanitarioMinAggregateOutputType | null
+    _max: SanitarioMaxAggregateOutputType | null
+  }
+
+  export type SanitarioMinAggregateOutputType = {
+    id: string | null
+    diagnostico: string | null
+    centroSalud: string | null
+    tratamientos: string | null
+    medicacion: string | null
+    alergias: string | null
+    adaptaciones: boolean | null
+    tipoAdaptaciones: string | null
+    apoyos: boolean | null
+    createdAt: Date | null
+    updatedAt: Date | null
+    clienteId: string | null
+  }
+
+  export type SanitarioMaxAggregateOutputType = {
+    id: string | null
+    diagnostico: string | null
+    centroSalud: string | null
+    tratamientos: string | null
+    medicacion: string | null
+    alergias: string | null
+    adaptaciones: boolean | null
+    tipoAdaptaciones: string | null
+    apoyos: boolean | null
+    createdAt: Date | null
+    updatedAt: Date | null
+    clienteId: string | null
+  }
+
+  export type SanitarioCountAggregateOutputType = {
+    id: number
+    diagnostico: number
+    centroSalud: number
+    tratamientos: number
+    medicacion: number
+    alergias: number
+    adaptaciones: number
+    tipoAdaptaciones: number
+    especialistas: number
+    apoyos: number
+    createdAt: number
+    updatedAt: number
+    clienteId: number
+    _all: number
+  }
+
+
+  export type SanitarioMinAggregateInputType = {
+    id?: true
+    diagnostico?: true
+    centroSalud?: true
+    tratamientos?: true
+    medicacion?: true
+    alergias?: true
+    adaptaciones?: true
+    tipoAdaptaciones?: true
+    apoyos?: true
+    createdAt?: true
+    updatedAt?: true
+    clienteId?: true
+  }
+
+  export type SanitarioMaxAggregateInputType = {
+    id?: true
+    diagnostico?: true
+    centroSalud?: true
+    tratamientos?: true
+    medicacion?: true
+    alergias?: true
+    adaptaciones?: true
+    tipoAdaptaciones?: true
+    apoyos?: true
+    createdAt?: true
+    updatedAt?: true
+    clienteId?: true
+  }
+
+  export type SanitarioCountAggregateInputType = {
+    id?: true
+    diagnostico?: true
+    centroSalud?: true
+    tratamientos?: true
+    medicacion?: true
+    alergias?: true
+    adaptaciones?: true
+    tipoAdaptaciones?: true
+    especialistas?: true
+    apoyos?: true
+    createdAt?: true
+    updatedAt?: true
+    clienteId?: true
+    _all?: true
+  }
+
+  export type SanitarioAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Sanitario to aggregate.
+     */
+    where?: SanitarioWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Sanitarios to fetch.
+     */
+    orderBy?: SanitarioOrderByWithRelationInput | SanitarioOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: SanitarioWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Sanitarios from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Sanitarios.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned Sanitarios
+    **/
+    _count?: true | SanitarioCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: SanitarioMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: SanitarioMaxAggregateInputType
+  }
+
+  export type GetSanitarioAggregateType<T extends SanitarioAggregateArgs> = {
+        [P in keyof T & keyof AggregateSanitario]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateSanitario[P]>
+      : GetScalarType<T[P], AggregateSanitario[P]>
+  }
+
+
+
+
+  export type SanitarioGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: SanitarioWhereInput
+    orderBy?: SanitarioOrderByWithAggregationInput | SanitarioOrderByWithAggregationInput[]
+    by: SanitarioScalarFieldEnum[] | SanitarioScalarFieldEnum
+    having?: SanitarioScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: SanitarioCountAggregateInputType | true
+    _min?: SanitarioMinAggregateInputType
+    _max?: SanitarioMaxAggregateInputType
+  }
+
+  export type SanitarioGroupByOutputType = {
+    id: string
+    diagnostico: string
+    centroSalud: string
+    tratamientos: string
+    medicacion: string
+    alergias: string | null
+    adaptaciones: boolean
+    tipoAdaptaciones: string
+    especialistas: string[]
+    apoyos: boolean
+    createdAt: Date
+    updatedAt: Date
+    clienteId: string
+    _count: SanitarioCountAggregateOutputType | null
+    _min: SanitarioMinAggregateOutputType | null
+    _max: SanitarioMaxAggregateOutputType | null
+  }
+
+  type GetSanitarioGroupByPayload<T extends SanitarioGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<SanitarioGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof SanitarioGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], SanitarioGroupByOutputType[P]>
+            : GetScalarType<T[P], SanitarioGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type SanitarioSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    diagnostico?: boolean
+    centroSalud?: boolean
+    tratamientos?: boolean
+    medicacion?: boolean
+    alergias?: boolean
+    adaptaciones?: boolean
+    tipoAdaptaciones?: boolean
+    especialistas?: boolean
+    apoyos?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    clienteId?: boolean
+    cliente?: boolean | ClienteDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["sanitario"]>
+
+  export type SanitarioSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    diagnostico?: boolean
+    centroSalud?: boolean
+    tratamientos?: boolean
+    medicacion?: boolean
+    alergias?: boolean
+    adaptaciones?: boolean
+    tipoAdaptaciones?: boolean
+    especialistas?: boolean
+    apoyos?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    clienteId?: boolean
+    cliente?: boolean | ClienteDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["sanitario"]>
+
+  export type SanitarioSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    diagnostico?: boolean
+    centroSalud?: boolean
+    tratamientos?: boolean
+    medicacion?: boolean
+    alergias?: boolean
+    adaptaciones?: boolean
+    tipoAdaptaciones?: boolean
+    especialistas?: boolean
+    apoyos?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    clienteId?: boolean
+    cliente?: boolean | ClienteDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["sanitario"]>
+
+  export type SanitarioSelectScalar = {
+    id?: boolean
+    diagnostico?: boolean
+    centroSalud?: boolean
+    tratamientos?: boolean
+    medicacion?: boolean
+    alergias?: boolean
+    adaptaciones?: boolean
+    tipoAdaptaciones?: boolean
+    especialistas?: boolean
+    apoyos?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    clienteId?: boolean
+  }
+
+  export type SanitarioOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "diagnostico" | "centroSalud" | "tratamientos" | "medicacion" | "alergias" | "adaptaciones" | "tipoAdaptaciones" | "especialistas" | "apoyos" | "createdAt" | "updatedAt" | "clienteId", ExtArgs["result"]["sanitario"]>
+  export type SanitarioInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    cliente?: boolean | ClienteDefaultArgs<ExtArgs>
+  }
+  export type SanitarioIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    cliente?: boolean | ClienteDefaultArgs<ExtArgs>
+  }
+  export type SanitarioIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    cliente?: boolean | ClienteDefaultArgs<ExtArgs>
+  }
+
+  export type $SanitarioPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "Sanitario"
+    objects: {
+      cliente: Prisma.$ClientePayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      diagnostico: string
+      centroSalud: string
+      tratamientos: string
+      medicacion: string
+      alergias: string | null
+      adaptaciones: boolean
+      tipoAdaptaciones: string
+      especialistas: string[]
+      apoyos: boolean
+      createdAt: Date
+      updatedAt: Date
+      clienteId: string
+    }, ExtArgs["result"]["sanitario"]>
+    composites: {}
+  }
+
+  type SanitarioGetPayload<S extends boolean | null | undefined | SanitarioDefaultArgs> = $Result.GetResult<Prisma.$SanitarioPayload, S>
+
+  type SanitarioCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<SanitarioFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: SanitarioCountAggregateInputType | true
+    }
+
+  export interface SanitarioDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['Sanitario'], meta: { name: 'Sanitario' } }
+    /**
+     * Find zero or one Sanitario that matches the filter.
+     * @param {SanitarioFindUniqueArgs} args - Arguments to find a Sanitario
+     * @example
+     * // Get one Sanitario
+     * const sanitario = await prisma.sanitario.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends SanitarioFindUniqueArgs>(args: SelectSubset<T, SanitarioFindUniqueArgs<ExtArgs>>): Prisma__SanitarioClient<$Result.GetResult<Prisma.$SanitarioPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one Sanitario that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {SanitarioFindUniqueOrThrowArgs} args - Arguments to find a Sanitario
+     * @example
+     * // Get one Sanitario
+     * const sanitario = await prisma.sanitario.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends SanitarioFindUniqueOrThrowArgs>(args: SelectSubset<T, SanitarioFindUniqueOrThrowArgs<ExtArgs>>): Prisma__SanitarioClient<$Result.GetResult<Prisma.$SanitarioPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Sanitario that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SanitarioFindFirstArgs} args - Arguments to find a Sanitario
+     * @example
+     * // Get one Sanitario
+     * const sanitario = await prisma.sanitario.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends SanitarioFindFirstArgs>(args?: SelectSubset<T, SanitarioFindFirstArgs<ExtArgs>>): Prisma__SanitarioClient<$Result.GetResult<Prisma.$SanitarioPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Sanitario that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SanitarioFindFirstOrThrowArgs} args - Arguments to find a Sanitario
+     * @example
+     * // Get one Sanitario
+     * const sanitario = await prisma.sanitario.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends SanitarioFindFirstOrThrowArgs>(args?: SelectSubset<T, SanitarioFindFirstOrThrowArgs<ExtArgs>>): Prisma__SanitarioClient<$Result.GetResult<Prisma.$SanitarioPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more Sanitarios that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SanitarioFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Sanitarios
+     * const sanitarios = await prisma.sanitario.findMany()
+     * 
+     * // Get first 10 Sanitarios
+     * const sanitarios = await prisma.sanitario.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const sanitarioWithIdOnly = await prisma.sanitario.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends SanitarioFindManyArgs>(args?: SelectSubset<T, SanitarioFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SanitarioPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a Sanitario.
+     * @param {SanitarioCreateArgs} args - Arguments to create a Sanitario.
+     * @example
+     * // Create one Sanitario
+     * const Sanitario = await prisma.sanitario.create({
+     *   data: {
+     *     // ... data to create a Sanitario
+     *   }
+     * })
+     * 
+     */
+    create<T extends SanitarioCreateArgs>(args: SelectSubset<T, SanitarioCreateArgs<ExtArgs>>): Prisma__SanitarioClient<$Result.GetResult<Prisma.$SanitarioPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many Sanitarios.
+     * @param {SanitarioCreateManyArgs} args - Arguments to create many Sanitarios.
+     * @example
+     * // Create many Sanitarios
+     * const sanitario = await prisma.sanitario.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends SanitarioCreateManyArgs>(args?: SelectSubset<T, SanitarioCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many Sanitarios and returns the data saved in the database.
+     * @param {SanitarioCreateManyAndReturnArgs} args - Arguments to create many Sanitarios.
+     * @example
+     * // Create many Sanitarios
+     * const sanitario = await prisma.sanitario.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many Sanitarios and only return the `id`
+     * const sanitarioWithIdOnly = await prisma.sanitario.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends SanitarioCreateManyAndReturnArgs>(args?: SelectSubset<T, SanitarioCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SanitarioPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a Sanitario.
+     * @param {SanitarioDeleteArgs} args - Arguments to delete one Sanitario.
+     * @example
+     * // Delete one Sanitario
+     * const Sanitario = await prisma.sanitario.delete({
+     *   where: {
+     *     // ... filter to delete one Sanitario
+     *   }
+     * })
+     * 
+     */
+    delete<T extends SanitarioDeleteArgs>(args: SelectSubset<T, SanitarioDeleteArgs<ExtArgs>>): Prisma__SanitarioClient<$Result.GetResult<Prisma.$SanitarioPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one Sanitario.
+     * @param {SanitarioUpdateArgs} args - Arguments to update one Sanitario.
+     * @example
+     * // Update one Sanitario
+     * const sanitario = await prisma.sanitario.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends SanitarioUpdateArgs>(args: SelectSubset<T, SanitarioUpdateArgs<ExtArgs>>): Prisma__SanitarioClient<$Result.GetResult<Prisma.$SanitarioPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more Sanitarios.
+     * @param {SanitarioDeleteManyArgs} args - Arguments to filter Sanitarios to delete.
+     * @example
+     * // Delete a few Sanitarios
+     * const { count } = await prisma.sanitario.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends SanitarioDeleteManyArgs>(args?: SelectSubset<T, SanitarioDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Sanitarios.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SanitarioUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Sanitarios
+     * const sanitario = await prisma.sanitario.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends SanitarioUpdateManyArgs>(args: SelectSubset<T, SanitarioUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Sanitarios and returns the data updated in the database.
+     * @param {SanitarioUpdateManyAndReturnArgs} args - Arguments to update many Sanitarios.
+     * @example
+     * // Update many Sanitarios
+     * const sanitario = await prisma.sanitario.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more Sanitarios and only return the `id`
+     * const sanitarioWithIdOnly = await prisma.sanitario.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends SanitarioUpdateManyAndReturnArgs>(args: SelectSubset<T, SanitarioUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SanitarioPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one Sanitario.
+     * @param {SanitarioUpsertArgs} args - Arguments to update or create a Sanitario.
+     * @example
+     * // Update or create a Sanitario
+     * const sanitario = await prisma.sanitario.upsert({
+     *   create: {
+     *     // ... data to create a Sanitario
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Sanitario we want to update
+     *   }
+     * })
+     */
+    upsert<T extends SanitarioUpsertArgs>(args: SelectSubset<T, SanitarioUpsertArgs<ExtArgs>>): Prisma__SanitarioClient<$Result.GetResult<Prisma.$SanitarioPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of Sanitarios.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SanitarioCountArgs} args - Arguments to filter Sanitarios to count.
+     * @example
+     * // Count the number of Sanitarios
+     * const count = await prisma.sanitario.count({
+     *   where: {
+     *     // ... the filter for the Sanitarios we want to count
+     *   }
+     * })
+    **/
+    count<T extends SanitarioCountArgs>(
+      args?: Subset<T, SanitarioCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], SanitarioCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Sanitario.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SanitarioAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends SanitarioAggregateArgs>(args: Subset<T, SanitarioAggregateArgs>): Prisma.PrismaPromise<GetSanitarioAggregateType<T>>
+
+    /**
+     * Group by Sanitario.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SanitarioGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends SanitarioGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: SanitarioGroupByArgs['orderBy'] }
+        : { orderBy?: SanitarioGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, SanitarioGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetSanitarioGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the Sanitario model
+   */
+  readonly fields: SanitarioFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for Sanitario.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__SanitarioClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    cliente<T extends ClienteDefaultArgs<ExtArgs> = {}>(args?: Subset<T, ClienteDefaultArgs<ExtArgs>>): Prisma__ClienteClient<$Result.GetResult<Prisma.$ClientePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the Sanitario model
+   */
+  interface SanitarioFieldRefs {
+    readonly id: FieldRef<"Sanitario", 'String'>
+    readonly diagnostico: FieldRef<"Sanitario", 'String'>
+    readonly centroSalud: FieldRef<"Sanitario", 'String'>
+    readonly tratamientos: FieldRef<"Sanitario", 'String'>
+    readonly medicacion: FieldRef<"Sanitario", 'String'>
+    readonly alergias: FieldRef<"Sanitario", 'String'>
+    readonly adaptaciones: FieldRef<"Sanitario", 'Boolean'>
+    readonly tipoAdaptaciones: FieldRef<"Sanitario", 'String'>
+    readonly especialistas: FieldRef<"Sanitario", 'String[]'>
+    readonly apoyos: FieldRef<"Sanitario", 'Boolean'>
+    readonly createdAt: FieldRef<"Sanitario", 'DateTime'>
+    readonly updatedAt: FieldRef<"Sanitario", 'DateTime'>
+    readonly clienteId: FieldRef<"Sanitario", 'String'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * Sanitario findUnique
+   */
+  export type SanitarioFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Sanitario
+     */
+    select?: SanitarioSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Sanitario
+     */
+    omit?: SanitarioOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SanitarioInclude<ExtArgs> | null
+    /**
+     * Filter, which Sanitario to fetch.
+     */
+    where: SanitarioWhereUniqueInput
+  }
+
+  /**
+   * Sanitario findUniqueOrThrow
+   */
+  export type SanitarioFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Sanitario
+     */
+    select?: SanitarioSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Sanitario
+     */
+    omit?: SanitarioOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SanitarioInclude<ExtArgs> | null
+    /**
+     * Filter, which Sanitario to fetch.
+     */
+    where: SanitarioWhereUniqueInput
+  }
+
+  /**
+   * Sanitario findFirst
+   */
+  export type SanitarioFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Sanitario
+     */
+    select?: SanitarioSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Sanitario
+     */
+    omit?: SanitarioOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SanitarioInclude<ExtArgs> | null
+    /**
+     * Filter, which Sanitario to fetch.
+     */
+    where?: SanitarioWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Sanitarios to fetch.
+     */
+    orderBy?: SanitarioOrderByWithRelationInput | SanitarioOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Sanitarios.
+     */
+    cursor?: SanitarioWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Sanitarios from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Sanitarios.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Sanitarios.
+     */
+    distinct?: SanitarioScalarFieldEnum | SanitarioScalarFieldEnum[]
+  }
+
+  /**
+   * Sanitario findFirstOrThrow
+   */
+  export type SanitarioFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Sanitario
+     */
+    select?: SanitarioSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Sanitario
+     */
+    omit?: SanitarioOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SanitarioInclude<ExtArgs> | null
+    /**
+     * Filter, which Sanitario to fetch.
+     */
+    where?: SanitarioWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Sanitarios to fetch.
+     */
+    orderBy?: SanitarioOrderByWithRelationInput | SanitarioOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Sanitarios.
+     */
+    cursor?: SanitarioWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Sanitarios from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Sanitarios.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Sanitarios.
+     */
+    distinct?: SanitarioScalarFieldEnum | SanitarioScalarFieldEnum[]
+  }
+
+  /**
+   * Sanitario findMany
+   */
+  export type SanitarioFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Sanitario
+     */
+    select?: SanitarioSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Sanitario
+     */
+    omit?: SanitarioOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SanitarioInclude<ExtArgs> | null
+    /**
+     * Filter, which Sanitarios to fetch.
+     */
+    where?: SanitarioWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Sanitarios to fetch.
+     */
+    orderBy?: SanitarioOrderByWithRelationInput | SanitarioOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing Sanitarios.
+     */
+    cursor?: SanitarioWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Sanitarios from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Sanitarios.
+     */
+    skip?: number
+    distinct?: SanitarioScalarFieldEnum | SanitarioScalarFieldEnum[]
+  }
+
+  /**
+   * Sanitario create
+   */
+  export type SanitarioCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Sanitario
+     */
+    select?: SanitarioSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Sanitario
+     */
+    omit?: SanitarioOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SanitarioInclude<ExtArgs> | null
+    /**
+     * The data needed to create a Sanitario.
+     */
+    data: XOR<SanitarioCreateInput, SanitarioUncheckedCreateInput>
+  }
+
+  /**
+   * Sanitario createMany
+   */
+  export type SanitarioCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many Sanitarios.
+     */
+    data: SanitarioCreateManyInput | SanitarioCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * Sanitario createManyAndReturn
+   */
+  export type SanitarioCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Sanitario
+     */
+    select?: SanitarioSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the Sanitario
+     */
+    omit?: SanitarioOmit<ExtArgs> | null
+    /**
+     * The data used to create many Sanitarios.
+     */
+    data: SanitarioCreateManyInput | SanitarioCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SanitarioIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * Sanitario update
+   */
+  export type SanitarioUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Sanitario
+     */
+    select?: SanitarioSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Sanitario
+     */
+    omit?: SanitarioOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SanitarioInclude<ExtArgs> | null
+    /**
+     * The data needed to update a Sanitario.
+     */
+    data: XOR<SanitarioUpdateInput, SanitarioUncheckedUpdateInput>
+    /**
+     * Choose, which Sanitario to update.
+     */
+    where: SanitarioWhereUniqueInput
+  }
+
+  /**
+   * Sanitario updateMany
+   */
+  export type SanitarioUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update Sanitarios.
+     */
+    data: XOR<SanitarioUpdateManyMutationInput, SanitarioUncheckedUpdateManyInput>
+    /**
+     * Filter which Sanitarios to update
+     */
+    where?: SanitarioWhereInput
+    /**
+     * Limit how many Sanitarios to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * Sanitario updateManyAndReturn
+   */
+  export type SanitarioUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Sanitario
+     */
+    select?: SanitarioSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the Sanitario
+     */
+    omit?: SanitarioOmit<ExtArgs> | null
+    /**
+     * The data used to update Sanitarios.
+     */
+    data: XOR<SanitarioUpdateManyMutationInput, SanitarioUncheckedUpdateManyInput>
+    /**
+     * Filter which Sanitarios to update
+     */
+    where?: SanitarioWhereInput
+    /**
+     * Limit how many Sanitarios to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SanitarioIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * Sanitario upsert
+   */
+  export type SanitarioUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Sanitario
+     */
+    select?: SanitarioSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Sanitario
+     */
+    omit?: SanitarioOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SanitarioInclude<ExtArgs> | null
+    /**
+     * The filter to search for the Sanitario to update in case it exists.
+     */
+    where: SanitarioWhereUniqueInput
+    /**
+     * In case the Sanitario found by the `where` argument doesn't exist, create a new Sanitario with this data.
+     */
+    create: XOR<SanitarioCreateInput, SanitarioUncheckedCreateInput>
+    /**
+     * In case the Sanitario was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<SanitarioUpdateInput, SanitarioUncheckedUpdateInput>
+  }
+
+  /**
+   * Sanitario delete
+   */
+  export type SanitarioDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Sanitario
+     */
+    select?: SanitarioSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Sanitario
+     */
+    omit?: SanitarioOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SanitarioInclude<ExtArgs> | null
+    /**
+     * Filter which Sanitario to delete.
+     */
+    where: SanitarioWhereUniqueInput
+  }
+
+  /**
+   * Sanitario deleteMany
+   */
+  export type SanitarioDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Sanitarios to delete
+     */
+    where?: SanitarioWhereInput
+    /**
+     * Limit how many Sanitarios to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * Sanitario without action
+   */
+  export type SanitarioDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Sanitario
+     */
+    select?: SanitarioSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Sanitario
+     */
+    omit?: SanitarioOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SanitarioInclude<ExtArgs> | null
   }
 
 
@@ -13517,8 +14894,12 @@ export namespace Prisma {
     id: 'id',
     nombre: 'nombre',
     direccionColegio: 'direccionColegio',
+    ctoColegioUno: 'ctoColegioUno',
+    ctoTelefonoUno: 'ctoTelefonoUno',
     ctoEmailColegioUno: 'ctoEmailColegioUno',
     ctoRelacionColegioUno: 'ctoRelacionColegioUno',
+    ctoColegioDos: 'ctoColegioDos',
+    ctoTelefonoDos: 'ctoTelefonoDos',
     ctoEmailColegioDos: 'ctoEmailColegioDos',
     ctoRelacionColegioDos: 'ctoRelacionColegioDos',
     createdAt: 'createdAt',
@@ -13534,15 +14915,14 @@ export namespace Prisma {
     nombre: 'nombre',
     apellidos: 'apellidos',
     fechaNacimiento: 'fechaNacimiento',
+    dni: 'dni',
     domicilio: 'domicilio',
+    provincia: 'provincia',
+    ciudad: 'ciudad',
     curso: 'curso',
-    diagnostico: 'diagnostico',
-    tratamientos: 'tratamientos',
-    medicacion: 'medicacion',
-    alergias: 'alergias',
+    fechaInicio: 'fechaInicio',
+    fechaAlta: 'fechaAlta',
     activo: 'activo',
-    adaptaciones: 'adaptaciones',
-    apoyos: 'apoyos',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt',
     colegioId: 'colegioId'
@@ -13598,8 +14978,12 @@ export namespace Prisma {
     id: 'id',
     nombreContacto: 'nombreContacto',
     parentesco: 'parentesco',
+    nombreMadre: 'nombreMadre',
     telefonoMadre: 'telefonoMadre',
     emailMadre: 'emailMadre',
+    dniMadre: 'dniMadre',
+    dniPadre: 'dniPadre',
+    nombrePadre: 'nombrePadre',
     telefonoPadre: 'telefonoPadre',
     emailPadre: 'emailPadre',
     telefonoWhatsapp: 'telefonoWhatsapp',
@@ -13609,6 +14993,25 @@ export namespace Prisma {
   };
 
   export type FamiliarScalarFieldEnum = (typeof FamiliarScalarFieldEnum)[keyof typeof FamiliarScalarFieldEnum]
+
+
+  export const SanitarioScalarFieldEnum: {
+    id: 'id',
+    diagnostico: 'diagnostico',
+    centroSalud: 'centroSalud',
+    tratamientos: 'tratamientos',
+    medicacion: 'medicacion',
+    alergias: 'alergias',
+    adaptaciones: 'adaptaciones',
+    tipoAdaptaciones: 'tipoAdaptaciones',
+    especialistas: 'especialistas',
+    apoyos: 'apoyos',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt',
+    clienteId: 'clienteId'
+  };
+
+  export type SanitarioScalarFieldEnum = (typeof SanitarioScalarFieldEnum)[keyof typeof SanitarioScalarFieldEnum]
 
 
   export const RegistroDiarioScalarFieldEnum: {
@@ -13898,8 +15301,12 @@ export namespace Prisma {
     id?: StringFilter<"Colegio"> | string
     nombre?: StringFilter<"Colegio"> | string
     direccionColegio?: StringFilter<"Colegio"> | string
-    ctoEmailColegioUno?: StringNullableFilter<"Colegio"> | string | null
-    ctoRelacionColegioUno?: StringNullableFilter<"Colegio"> | string | null
+    ctoColegioUno?: StringFilter<"Colegio"> | string
+    ctoTelefonoUno?: StringFilter<"Colegio"> | string
+    ctoEmailColegioUno?: StringFilter<"Colegio"> | string
+    ctoRelacionColegioUno?: StringFilter<"Colegio"> | string
+    ctoColegioDos?: StringNullableFilter<"Colegio"> | string | null
+    ctoTelefonoDos?: StringNullableFilter<"Colegio"> | string | null
     ctoEmailColegioDos?: StringNullableFilter<"Colegio"> | string | null
     ctoRelacionColegioDos?: StringNullableFilter<"Colegio"> | string | null
     createdAt?: DateTimeFilter<"Colegio"> | Date | string
@@ -13911,8 +15318,12 @@ export namespace Prisma {
     id?: SortOrder
     nombre?: SortOrder
     direccionColegio?: SortOrder
-    ctoEmailColegioUno?: SortOrderInput | SortOrder
-    ctoRelacionColegioUno?: SortOrderInput | SortOrder
+    ctoColegioUno?: SortOrder
+    ctoTelefonoUno?: SortOrder
+    ctoEmailColegioUno?: SortOrder
+    ctoRelacionColegioUno?: SortOrder
+    ctoColegioDos?: SortOrderInput | SortOrder
+    ctoTelefonoDos?: SortOrderInput | SortOrder
     ctoEmailColegioDos?: SortOrderInput | SortOrder
     ctoRelacionColegioDos?: SortOrderInput | SortOrder
     createdAt?: SortOrder
@@ -13927,8 +15338,12 @@ export namespace Prisma {
     OR?: ColegioWhereInput[]
     NOT?: ColegioWhereInput | ColegioWhereInput[]
     direccionColegio?: StringFilter<"Colegio"> | string
-    ctoEmailColegioUno?: StringNullableFilter<"Colegio"> | string | null
-    ctoRelacionColegioUno?: StringNullableFilter<"Colegio"> | string | null
+    ctoColegioUno?: StringFilter<"Colegio"> | string
+    ctoTelefonoUno?: StringFilter<"Colegio"> | string
+    ctoEmailColegioUno?: StringFilter<"Colegio"> | string
+    ctoRelacionColegioUno?: StringFilter<"Colegio"> | string
+    ctoColegioDos?: StringNullableFilter<"Colegio"> | string | null
+    ctoTelefonoDos?: StringNullableFilter<"Colegio"> | string | null
     ctoEmailColegioDos?: StringNullableFilter<"Colegio"> | string | null
     ctoRelacionColegioDos?: StringNullableFilter<"Colegio"> | string | null
     createdAt?: DateTimeFilter<"Colegio"> | Date | string
@@ -13940,8 +15355,12 @@ export namespace Prisma {
     id?: SortOrder
     nombre?: SortOrder
     direccionColegio?: SortOrder
-    ctoEmailColegioUno?: SortOrderInput | SortOrder
-    ctoRelacionColegioUno?: SortOrderInput | SortOrder
+    ctoColegioUno?: SortOrder
+    ctoTelefonoUno?: SortOrder
+    ctoEmailColegioUno?: SortOrder
+    ctoRelacionColegioUno?: SortOrder
+    ctoColegioDos?: SortOrderInput | SortOrder
+    ctoTelefonoDos?: SortOrderInput | SortOrder
     ctoEmailColegioDos?: SortOrderInput | SortOrder
     ctoRelacionColegioDos?: SortOrderInput | SortOrder
     createdAt?: SortOrder
@@ -13958,8 +15377,12 @@ export namespace Prisma {
     id?: StringWithAggregatesFilter<"Colegio"> | string
     nombre?: StringWithAggregatesFilter<"Colegio"> | string
     direccionColegio?: StringWithAggregatesFilter<"Colegio"> | string
-    ctoEmailColegioUno?: StringNullableWithAggregatesFilter<"Colegio"> | string | null
-    ctoRelacionColegioUno?: StringNullableWithAggregatesFilter<"Colegio"> | string | null
+    ctoColegioUno?: StringWithAggregatesFilter<"Colegio"> | string
+    ctoTelefonoUno?: StringWithAggregatesFilter<"Colegio"> | string
+    ctoEmailColegioUno?: StringWithAggregatesFilter<"Colegio"> | string
+    ctoRelacionColegioUno?: StringWithAggregatesFilter<"Colegio"> | string
+    ctoColegioDos?: StringNullableWithAggregatesFilter<"Colegio"> | string | null
+    ctoTelefonoDos?: StringNullableWithAggregatesFilter<"Colegio"> | string | null
     ctoEmailColegioDos?: StringNullableWithAggregatesFilter<"Colegio"> | string | null
     ctoRelacionColegioDos?: StringNullableWithAggregatesFilter<"Colegio"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"Colegio"> | Date | string
@@ -13975,15 +15398,14 @@ export namespace Prisma {
     nombre?: StringFilter<"Cliente"> | string
     apellidos?: StringFilter<"Cliente"> | string
     fechaNacimiento?: DateTimeNullableFilter<"Cliente"> | Date | string | null
+    dni?: StringFilter<"Cliente"> | string
     domicilio?: StringFilter<"Cliente"> | string
+    provincia?: StringFilter<"Cliente"> | string
+    ciudad?: StringFilter<"Cliente"> | string
     curso?: StringFilter<"Cliente"> | string
-    diagnostico?: StringFilter<"Cliente"> | string
-    tratamientos?: StringFilter<"Cliente"> | string
-    medicacion?: StringFilter<"Cliente"> | string
-    alergias?: StringNullableFilter<"Cliente"> | string | null
+    fechaInicio?: DateTimeNullableFilter<"Cliente"> | Date | string | null
+    fechaAlta?: DateTimeNullableFilter<"Cliente"> | Date | string | null
     activo?: BoolFilter<"Cliente"> | boolean
-    adaptaciones?: BoolFilter<"Cliente"> | boolean
-    apoyos?: BoolFilter<"Cliente"> | boolean
     createdAt?: DateTimeFilter<"Cliente"> | Date | string
     updatedAt?: DateTimeFilter<"Cliente"> | Date | string
     colegioId?: StringNullableFilter<"Cliente"> | string | null
@@ -13992,6 +15414,7 @@ export namespace Prisma {
     horarios?: HorarioListRelationFilter
     informes?: InformeListRelationFilter
     contactosFamiliares?: FamiliarListRelationFilter
+    sanitario?: SanitarioListRelationFilter
     registrosDiarios?: RegistroDiarioListRelationFilter
     objetivos?: ObjetivoListRelationFilter
   }
@@ -14002,15 +15425,14 @@ export namespace Prisma {
     nombre?: SortOrder
     apellidos?: SortOrder
     fechaNacimiento?: SortOrderInput | SortOrder
+    dni?: SortOrder
     domicilio?: SortOrder
+    provincia?: SortOrder
+    ciudad?: SortOrder
     curso?: SortOrder
-    diagnostico?: SortOrder
-    tratamientos?: SortOrder
-    medicacion?: SortOrder
-    alergias?: SortOrderInput | SortOrder
+    fechaInicio?: SortOrderInput | SortOrder
+    fechaAlta?: SortOrderInput | SortOrder
     activo?: SortOrder
-    adaptaciones?: SortOrder
-    apoyos?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     colegioId?: SortOrderInput | SortOrder
@@ -14019,6 +15441,7 @@ export namespace Prisma {
     horarios?: HorarioOrderByRelationAggregateInput
     informes?: InformeOrderByRelationAggregateInput
     contactosFamiliares?: FamiliarOrderByRelationAggregateInput
+    sanitario?: SanitarioOrderByRelationAggregateInput
     registrosDiarios?: RegistroDiarioOrderByRelationAggregateInput
     objetivos?: ObjetivoOrderByRelationAggregateInput
   }
@@ -14032,15 +15455,14 @@ export namespace Prisma {
     nombre?: StringFilter<"Cliente"> | string
     apellidos?: StringFilter<"Cliente"> | string
     fechaNacimiento?: DateTimeNullableFilter<"Cliente"> | Date | string | null
+    dni?: StringFilter<"Cliente"> | string
     domicilio?: StringFilter<"Cliente"> | string
+    provincia?: StringFilter<"Cliente"> | string
+    ciudad?: StringFilter<"Cliente"> | string
     curso?: StringFilter<"Cliente"> | string
-    diagnostico?: StringFilter<"Cliente"> | string
-    tratamientos?: StringFilter<"Cliente"> | string
-    medicacion?: StringFilter<"Cliente"> | string
-    alergias?: StringNullableFilter<"Cliente"> | string | null
+    fechaInicio?: DateTimeNullableFilter<"Cliente"> | Date | string | null
+    fechaAlta?: DateTimeNullableFilter<"Cliente"> | Date | string | null
     activo?: BoolFilter<"Cliente"> | boolean
-    adaptaciones?: BoolFilter<"Cliente"> | boolean
-    apoyos?: BoolFilter<"Cliente"> | boolean
     createdAt?: DateTimeFilter<"Cliente"> | Date | string
     updatedAt?: DateTimeFilter<"Cliente"> | Date | string
     colegioId?: StringNullableFilter<"Cliente"> | string | null
@@ -14049,6 +15471,7 @@ export namespace Prisma {
     horarios?: HorarioListRelationFilter
     informes?: InformeListRelationFilter
     contactosFamiliares?: FamiliarListRelationFilter
+    sanitario?: SanitarioListRelationFilter
     registrosDiarios?: RegistroDiarioListRelationFilter
     objetivos?: ObjetivoListRelationFilter
   }, "id">
@@ -14059,15 +15482,14 @@ export namespace Prisma {
     nombre?: SortOrder
     apellidos?: SortOrder
     fechaNacimiento?: SortOrderInput | SortOrder
+    dni?: SortOrder
     domicilio?: SortOrder
+    provincia?: SortOrder
+    ciudad?: SortOrder
     curso?: SortOrder
-    diagnostico?: SortOrder
-    tratamientos?: SortOrder
-    medicacion?: SortOrder
-    alergias?: SortOrderInput | SortOrder
+    fechaInicio?: SortOrderInput | SortOrder
+    fechaAlta?: SortOrderInput | SortOrder
     activo?: SortOrder
-    adaptaciones?: SortOrder
-    apoyos?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     colegioId?: SortOrderInput | SortOrder
@@ -14085,15 +15507,14 @@ export namespace Prisma {
     nombre?: StringWithAggregatesFilter<"Cliente"> | string
     apellidos?: StringWithAggregatesFilter<"Cliente"> | string
     fechaNacimiento?: DateTimeNullableWithAggregatesFilter<"Cliente"> | Date | string | null
+    dni?: StringWithAggregatesFilter<"Cliente"> | string
     domicilio?: StringWithAggregatesFilter<"Cliente"> | string
+    provincia?: StringWithAggregatesFilter<"Cliente"> | string
+    ciudad?: StringWithAggregatesFilter<"Cliente"> | string
     curso?: StringWithAggregatesFilter<"Cliente"> | string
-    diagnostico?: StringWithAggregatesFilter<"Cliente"> | string
-    tratamientos?: StringWithAggregatesFilter<"Cliente"> | string
-    medicacion?: StringWithAggregatesFilter<"Cliente"> | string
-    alergias?: StringNullableWithAggregatesFilter<"Cliente"> | string | null
+    fechaInicio?: DateTimeNullableWithAggregatesFilter<"Cliente"> | Date | string | null
+    fechaAlta?: DateTimeNullableWithAggregatesFilter<"Cliente"> | Date | string | null
     activo?: BoolWithAggregatesFilter<"Cliente"> | boolean
-    adaptaciones?: BoolWithAggregatesFilter<"Cliente"> | boolean
-    apoyos?: BoolWithAggregatesFilter<"Cliente"> | boolean
     createdAt?: DateTimeWithAggregatesFilter<"Cliente"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Cliente"> | Date | string
     colegioId?: StringNullableWithAggregatesFilter<"Cliente"> | string | null
@@ -14331,8 +15752,12 @@ export namespace Prisma {
     id?: StringFilter<"Familiar"> | string
     nombreContacto?: StringFilter<"Familiar"> | string
     parentesco?: StringNullableFilter<"Familiar"> | string | null
+    nombreMadre?: StringFilter<"Familiar"> | string
     telefonoMadre?: StringNullableFilter<"Familiar"> | string | null
     emailMadre?: StringNullableFilter<"Familiar"> | string | null
+    dniMadre?: StringFilter<"Familiar"> | string
+    dniPadre?: StringFilter<"Familiar"> | string
+    nombrePadre?: StringFilter<"Familiar"> | string
     telefonoPadre?: StringNullableFilter<"Familiar"> | string | null
     emailPadre?: StringNullableFilter<"Familiar"> | string | null
     telefonoWhatsapp?: StringNullableFilter<"Familiar"> | string | null
@@ -14346,8 +15771,12 @@ export namespace Prisma {
     id?: SortOrder
     nombreContacto?: SortOrder
     parentesco?: SortOrderInput | SortOrder
+    nombreMadre?: SortOrder
     telefonoMadre?: SortOrderInput | SortOrder
     emailMadre?: SortOrderInput | SortOrder
+    dniMadre?: SortOrder
+    dniPadre?: SortOrder
+    nombrePadre?: SortOrder
     telefonoPadre?: SortOrderInput | SortOrder
     emailPadre?: SortOrderInput | SortOrder
     telefonoWhatsapp?: SortOrderInput | SortOrder
@@ -14365,8 +15794,12 @@ export namespace Prisma {
     NOT?: FamiliarWhereInput | FamiliarWhereInput[]
     nombreContacto?: StringFilter<"Familiar"> | string
     parentesco?: StringNullableFilter<"Familiar"> | string | null
+    nombreMadre?: StringFilter<"Familiar"> | string
     telefonoMadre?: StringNullableFilter<"Familiar"> | string | null
     emailMadre?: StringNullableFilter<"Familiar"> | string | null
+    dniMadre?: StringFilter<"Familiar"> | string
+    dniPadre?: StringFilter<"Familiar"> | string
+    nombrePadre?: StringFilter<"Familiar"> | string
     telefonoPadre?: StringNullableFilter<"Familiar"> | string | null
     emailPadre?: StringNullableFilter<"Familiar"> | string | null
     telefonoWhatsapp?: StringNullableFilter<"Familiar"> | string | null
@@ -14379,8 +15812,12 @@ export namespace Prisma {
     id?: SortOrder
     nombreContacto?: SortOrder
     parentesco?: SortOrderInput | SortOrder
+    nombreMadre?: SortOrder
     telefonoMadre?: SortOrderInput | SortOrder
     emailMadre?: SortOrderInput | SortOrder
+    dniMadre?: SortOrder
+    dniPadre?: SortOrder
+    nombrePadre?: SortOrder
     telefonoPadre?: SortOrderInput | SortOrder
     emailPadre?: SortOrderInput | SortOrder
     telefonoWhatsapp?: SortOrderInput | SortOrder
@@ -14399,14 +15836,113 @@ export namespace Prisma {
     id?: StringWithAggregatesFilter<"Familiar"> | string
     nombreContacto?: StringWithAggregatesFilter<"Familiar"> | string
     parentesco?: StringNullableWithAggregatesFilter<"Familiar"> | string | null
+    nombreMadre?: StringWithAggregatesFilter<"Familiar"> | string
     telefonoMadre?: StringNullableWithAggregatesFilter<"Familiar"> | string | null
     emailMadre?: StringNullableWithAggregatesFilter<"Familiar"> | string | null
+    dniMadre?: StringWithAggregatesFilter<"Familiar"> | string
+    dniPadre?: StringWithAggregatesFilter<"Familiar"> | string
+    nombrePadre?: StringWithAggregatesFilter<"Familiar"> | string
     telefonoPadre?: StringNullableWithAggregatesFilter<"Familiar"> | string | null
     emailPadre?: StringNullableWithAggregatesFilter<"Familiar"> | string | null
     telefonoWhatsapp?: StringNullableWithAggregatesFilter<"Familiar"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"Familiar"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Familiar"> | Date | string
     clienteId?: StringWithAggregatesFilter<"Familiar"> | string
+  }
+
+  export type SanitarioWhereInput = {
+    AND?: SanitarioWhereInput | SanitarioWhereInput[]
+    OR?: SanitarioWhereInput[]
+    NOT?: SanitarioWhereInput | SanitarioWhereInput[]
+    id?: StringFilter<"Sanitario"> | string
+    diagnostico?: StringFilter<"Sanitario"> | string
+    centroSalud?: StringFilter<"Sanitario"> | string
+    tratamientos?: StringFilter<"Sanitario"> | string
+    medicacion?: StringFilter<"Sanitario"> | string
+    alergias?: StringNullableFilter<"Sanitario"> | string | null
+    adaptaciones?: BoolFilter<"Sanitario"> | boolean
+    tipoAdaptaciones?: StringFilter<"Sanitario"> | string
+    especialistas?: StringNullableListFilter<"Sanitario">
+    apoyos?: BoolFilter<"Sanitario"> | boolean
+    createdAt?: DateTimeFilter<"Sanitario"> | Date | string
+    updatedAt?: DateTimeFilter<"Sanitario"> | Date | string
+    clienteId?: StringFilter<"Sanitario"> | string
+    cliente?: XOR<ClienteScalarRelationFilter, ClienteWhereInput>
+  }
+
+  export type SanitarioOrderByWithRelationInput = {
+    id?: SortOrder
+    diagnostico?: SortOrder
+    centroSalud?: SortOrder
+    tratamientos?: SortOrder
+    medicacion?: SortOrder
+    alergias?: SortOrderInput | SortOrder
+    adaptaciones?: SortOrder
+    tipoAdaptaciones?: SortOrder
+    especialistas?: SortOrder
+    apoyos?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    clienteId?: SortOrder
+    cliente?: ClienteOrderByWithRelationInput
+  }
+
+  export type SanitarioWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    clienteId?: string
+    AND?: SanitarioWhereInput | SanitarioWhereInput[]
+    OR?: SanitarioWhereInput[]
+    NOT?: SanitarioWhereInput | SanitarioWhereInput[]
+    diagnostico?: StringFilter<"Sanitario"> | string
+    centroSalud?: StringFilter<"Sanitario"> | string
+    tratamientos?: StringFilter<"Sanitario"> | string
+    medicacion?: StringFilter<"Sanitario"> | string
+    alergias?: StringNullableFilter<"Sanitario"> | string | null
+    adaptaciones?: BoolFilter<"Sanitario"> | boolean
+    tipoAdaptaciones?: StringFilter<"Sanitario"> | string
+    especialistas?: StringNullableListFilter<"Sanitario">
+    apoyos?: BoolFilter<"Sanitario"> | boolean
+    createdAt?: DateTimeFilter<"Sanitario"> | Date | string
+    updatedAt?: DateTimeFilter<"Sanitario"> | Date | string
+    cliente?: XOR<ClienteScalarRelationFilter, ClienteWhereInput>
+  }, "id" | "clienteId">
+
+  export type SanitarioOrderByWithAggregationInput = {
+    id?: SortOrder
+    diagnostico?: SortOrder
+    centroSalud?: SortOrder
+    tratamientos?: SortOrder
+    medicacion?: SortOrder
+    alergias?: SortOrderInput | SortOrder
+    adaptaciones?: SortOrder
+    tipoAdaptaciones?: SortOrder
+    especialistas?: SortOrder
+    apoyos?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    clienteId?: SortOrder
+    _count?: SanitarioCountOrderByAggregateInput
+    _max?: SanitarioMaxOrderByAggregateInput
+    _min?: SanitarioMinOrderByAggregateInput
+  }
+
+  export type SanitarioScalarWhereWithAggregatesInput = {
+    AND?: SanitarioScalarWhereWithAggregatesInput | SanitarioScalarWhereWithAggregatesInput[]
+    OR?: SanitarioScalarWhereWithAggregatesInput[]
+    NOT?: SanitarioScalarWhereWithAggregatesInput | SanitarioScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"Sanitario"> | string
+    diagnostico?: StringWithAggregatesFilter<"Sanitario"> | string
+    centroSalud?: StringWithAggregatesFilter<"Sanitario"> | string
+    tratamientos?: StringWithAggregatesFilter<"Sanitario"> | string
+    medicacion?: StringWithAggregatesFilter<"Sanitario"> | string
+    alergias?: StringNullableWithAggregatesFilter<"Sanitario"> | string | null
+    adaptaciones?: BoolWithAggregatesFilter<"Sanitario"> | boolean
+    tipoAdaptaciones?: StringWithAggregatesFilter<"Sanitario"> | string
+    especialistas?: StringNullableListFilter<"Sanitario">
+    apoyos?: BoolWithAggregatesFilter<"Sanitario"> | boolean
+    createdAt?: DateTimeWithAggregatesFilter<"Sanitario"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"Sanitario"> | Date | string
+    clienteId?: StringWithAggregatesFilter<"Sanitario"> | string
   }
 
   export type RegistroDiarioWhereInput = {
@@ -14762,8 +16298,12 @@ export namespace Prisma {
     id?: string
     nombre: string
     direccionColegio: string
-    ctoEmailColegioUno?: string | null
-    ctoRelacionColegioUno?: string | null
+    ctoColegioUno: string
+    ctoTelefonoUno: string
+    ctoEmailColegioUno: string
+    ctoRelacionColegioUno: string
+    ctoColegioDos?: string | null
+    ctoTelefonoDos?: string | null
     ctoEmailColegioDos?: string | null
     ctoRelacionColegioDos?: string | null
     createdAt?: Date | string
@@ -14775,8 +16315,12 @@ export namespace Prisma {
     id?: string
     nombre: string
     direccionColegio: string
-    ctoEmailColegioUno?: string | null
-    ctoRelacionColegioUno?: string | null
+    ctoColegioUno: string
+    ctoTelefonoUno: string
+    ctoEmailColegioUno: string
+    ctoRelacionColegioUno: string
+    ctoColegioDos?: string | null
+    ctoTelefonoDos?: string | null
     ctoEmailColegioDos?: string | null
     ctoRelacionColegioDos?: string | null
     createdAt?: Date | string
@@ -14788,8 +16332,12 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     nombre?: StringFieldUpdateOperationsInput | string
     direccionColegio?: StringFieldUpdateOperationsInput | string
-    ctoEmailColegioUno?: NullableStringFieldUpdateOperationsInput | string | null
-    ctoRelacionColegioUno?: NullableStringFieldUpdateOperationsInput | string | null
+    ctoColegioUno?: StringFieldUpdateOperationsInput | string
+    ctoTelefonoUno?: StringFieldUpdateOperationsInput | string
+    ctoEmailColegioUno?: StringFieldUpdateOperationsInput | string
+    ctoRelacionColegioUno?: StringFieldUpdateOperationsInput | string
+    ctoColegioDos?: NullableStringFieldUpdateOperationsInput | string | null
+    ctoTelefonoDos?: NullableStringFieldUpdateOperationsInput | string | null
     ctoEmailColegioDos?: NullableStringFieldUpdateOperationsInput | string | null
     ctoRelacionColegioDos?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -14801,8 +16349,12 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     nombre?: StringFieldUpdateOperationsInput | string
     direccionColegio?: StringFieldUpdateOperationsInput | string
-    ctoEmailColegioUno?: NullableStringFieldUpdateOperationsInput | string | null
-    ctoRelacionColegioUno?: NullableStringFieldUpdateOperationsInput | string | null
+    ctoColegioUno?: StringFieldUpdateOperationsInput | string
+    ctoTelefonoUno?: StringFieldUpdateOperationsInput | string
+    ctoEmailColegioUno?: StringFieldUpdateOperationsInput | string
+    ctoRelacionColegioUno?: StringFieldUpdateOperationsInput | string
+    ctoColegioDos?: NullableStringFieldUpdateOperationsInput | string | null
+    ctoTelefonoDos?: NullableStringFieldUpdateOperationsInput | string | null
     ctoEmailColegioDos?: NullableStringFieldUpdateOperationsInput | string | null
     ctoRelacionColegioDos?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -14814,8 +16366,12 @@ export namespace Prisma {
     id?: string
     nombre: string
     direccionColegio: string
-    ctoEmailColegioUno?: string | null
-    ctoRelacionColegioUno?: string | null
+    ctoColegioUno: string
+    ctoTelefonoUno: string
+    ctoEmailColegioUno: string
+    ctoRelacionColegioUno: string
+    ctoColegioDos?: string | null
+    ctoTelefonoDos?: string | null
     ctoEmailColegioDos?: string | null
     ctoRelacionColegioDos?: string | null
     createdAt?: Date | string
@@ -14826,8 +16382,12 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     nombre?: StringFieldUpdateOperationsInput | string
     direccionColegio?: StringFieldUpdateOperationsInput | string
-    ctoEmailColegioUno?: NullableStringFieldUpdateOperationsInput | string | null
-    ctoRelacionColegioUno?: NullableStringFieldUpdateOperationsInput | string | null
+    ctoColegioUno?: StringFieldUpdateOperationsInput | string
+    ctoTelefonoUno?: StringFieldUpdateOperationsInput | string
+    ctoEmailColegioUno?: StringFieldUpdateOperationsInput | string
+    ctoRelacionColegioUno?: StringFieldUpdateOperationsInput | string
+    ctoColegioDos?: NullableStringFieldUpdateOperationsInput | string | null
+    ctoTelefonoDos?: NullableStringFieldUpdateOperationsInput | string | null
     ctoEmailColegioDos?: NullableStringFieldUpdateOperationsInput | string | null
     ctoRelacionColegioDos?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -14838,8 +16398,12 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     nombre?: StringFieldUpdateOperationsInput | string
     direccionColegio?: StringFieldUpdateOperationsInput | string
-    ctoEmailColegioUno?: NullableStringFieldUpdateOperationsInput | string | null
-    ctoRelacionColegioUno?: NullableStringFieldUpdateOperationsInput | string | null
+    ctoColegioUno?: StringFieldUpdateOperationsInput | string
+    ctoTelefonoUno?: StringFieldUpdateOperationsInput | string
+    ctoEmailColegioUno?: StringFieldUpdateOperationsInput | string
+    ctoRelacionColegioUno?: StringFieldUpdateOperationsInput | string
+    ctoColegioDos?: NullableStringFieldUpdateOperationsInput | string | null
+    ctoTelefonoDos?: NullableStringFieldUpdateOperationsInput | string | null
     ctoEmailColegioDos?: NullableStringFieldUpdateOperationsInput | string | null
     ctoRelacionColegioDos?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -14852,15 +16416,14 @@ export namespace Prisma {
     nombre: string
     apellidos: string
     fechaNacimiento?: Date | string | null
+    dni: string
     domicilio: string
+    provincia: string
+    ciudad: string
     curso: string
-    diagnostico: string
-    tratamientos: string
-    medicacion: string
-    alergias?: string | null
+    fechaInicio?: Date | string | null
+    fechaAlta?: Date | string | null
     activo?: boolean
-    adaptaciones?: boolean
-    apoyos?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     trabajadoresAsignados?: ClienteTrabajadorCreateNestedManyWithoutClienteInput
@@ -14868,6 +16431,7 @@ export namespace Prisma {
     horarios?: HorarioCreateNestedManyWithoutClienteInput
     informes?: InformeCreateNestedManyWithoutClienteInput
     contactosFamiliares?: FamiliarCreateNestedManyWithoutClienteInput
+    sanitario?: SanitarioCreateNestedManyWithoutClienteInput
     registrosDiarios?: RegistroDiarioCreateNestedManyWithoutClienteInput
     objetivos?: ObjetivoCreateNestedManyWithoutClienteInput
   }
@@ -14878,15 +16442,14 @@ export namespace Prisma {
     nombre: string
     apellidos: string
     fechaNacimiento?: Date | string | null
+    dni: string
     domicilio: string
+    provincia: string
+    ciudad: string
     curso: string
-    diagnostico: string
-    tratamientos: string
-    medicacion: string
-    alergias?: string | null
+    fechaInicio?: Date | string | null
+    fechaAlta?: Date | string | null
     activo?: boolean
-    adaptaciones?: boolean
-    apoyos?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     colegioId?: string | null
@@ -14894,6 +16457,7 @@ export namespace Prisma {
     horarios?: HorarioUncheckedCreateNestedManyWithoutClienteInput
     informes?: InformeUncheckedCreateNestedManyWithoutClienteInput
     contactosFamiliares?: FamiliarUncheckedCreateNestedManyWithoutClienteInput
+    sanitario?: SanitarioUncheckedCreateNestedManyWithoutClienteInput
     registrosDiarios?: RegistroDiarioUncheckedCreateNestedManyWithoutClienteInput
     objetivos?: ObjetivoUncheckedCreateNestedManyWithoutClienteInput
   }
@@ -14904,15 +16468,14 @@ export namespace Prisma {
     nombre?: StringFieldUpdateOperationsInput | string
     apellidos?: StringFieldUpdateOperationsInput | string
     fechaNacimiento?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dni?: StringFieldUpdateOperationsInput | string
     domicilio?: StringFieldUpdateOperationsInput | string
+    provincia?: StringFieldUpdateOperationsInput | string
+    ciudad?: StringFieldUpdateOperationsInput | string
     curso?: StringFieldUpdateOperationsInput | string
-    diagnostico?: StringFieldUpdateOperationsInput | string
-    tratamientos?: StringFieldUpdateOperationsInput | string
-    medicacion?: StringFieldUpdateOperationsInput | string
-    alergias?: NullableStringFieldUpdateOperationsInput | string | null
+    fechaInicio?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    fechaAlta?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     activo?: BoolFieldUpdateOperationsInput | boolean
-    adaptaciones?: BoolFieldUpdateOperationsInput | boolean
-    apoyos?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     trabajadoresAsignados?: ClienteTrabajadorUpdateManyWithoutClienteNestedInput
@@ -14920,6 +16483,7 @@ export namespace Prisma {
     horarios?: HorarioUpdateManyWithoutClienteNestedInput
     informes?: InformeUpdateManyWithoutClienteNestedInput
     contactosFamiliares?: FamiliarUpdateManyWithoutClienteNestedInput
+    sanitario?: SanitarioUpdateManyWithoutClienteNestedInput
     registrosDiarios?: RegistroDiarioUpdateManyWithoutClienteNestedInput
     objetivos?: ObjetivoUpdateManyWithoutClienteNestedInput
   }
@@ -14930,15 +16494,14 @@ export namespace Prisma {
     nombre?: StringFieldUpdateOperationsInput | string
     apellidos?: StringFieldUpdateOperationsInput | string
     fechaNacimiento?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dni?: StringFieldUpdateOperationsInput | string
     domicilio?: StringFieldUpdateOperationsInput | string
+    provincia?: StringFieldUpdateOperationsInput | string
+    ciudad?: StringFieldUpdateOperationsInput | string
     curso?: StringFieldUpdateOperationsInput | string
-    diagnostico?: StringFieldUpdateOperationsInput | string
-    tratamientos?: StringFieldUpdateOperationsInput | string
-    medicacion?: StringFieldUpdateOperationsInput | string
-    alergias?: NullableStringFieldUpdateOperationsInput | string | null
+    fechaInicio?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    fechaAlta?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     activo?: BoolFieldUpdateOperationsInput | boolean
-    adaptaciones?: BoolFieldUpdateOperationsInput | boolean
-    apoyos?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     colegioId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -14946,6 +16509,7 @@ export namespace Prisma {
     horarios?: HorarioUncheckedUpdateManyWithoutClienteNestedInput
     informes?: InformeUncheckedUpdateManyWithoutClienteNestedInput
     contactosFamiliares?: FamiliarUncheckedUpdateManyWithoutClienteNestedInput
+    sanitario?: SanitarioUncheckedUpdateManyWithoutClienteNestedInput
     registrosDiarios?: RegistroDiarioUncheckedUpdateManyWithoutClienteNestedInput
     objetivos?: ObjetivoUncheckedUpdateManyWithoutClienteNestedInput
   }
@@ -14956,15 +16520,14 @@ export namespace Prisma {
     nombre: string
     apellidos: string
     fechaNacimiento?: Date | string | null
+    dni: string
     domicilio: string
+    provincia: string
+    ciudad: string
     curso: string
-    diagnostico: string
-    tratamientos: string
-    medicacion: string
-    alergias?: string | null
+    fechaInicio?: Date | string | null
+    fechaAlta?: Date | string | null
     activo?: boolean
-    adaptaciones?: boolean
-    apoyos?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     colegioId?: string | null
@@ -14976,15 +16539,14 @@ export namespace Prisma {
     nombre?: StringFieldUpdateOperationsInput | string
     apellidos?: StringFieldUpdateOperationsInput | string
     fechaNacimiento?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dni?: StringFieldUpdateOperationsInput | string
     domicilio?: StringFieldUpdateOperationsInput | string
+    provincia?: StringFieldUpdateOperationsInput | string
+    ciudad?: StringFieldUpdateOperationsInput | string
     curso?: StringFieldUpdateOperationsInput | string
-    diagnostico?: StringFieldUpdateOperationsInput | string
-    tratamientos?: StringFieldUpdateOperationsInput | string
-    medicacion?: StringFieldUpdateOperationsInput | string
-    alergias?: NullableStringFieldUpdateOperationsInput | string | null
+    fechaInicio?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    fechaAlta?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     activo?: BoolFieldUpdateOperationsInput | boolean
-    adaptaciones?: BoolFieldUpdateOperationsInput | boolean
-    apoyos?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -14995,15 +16557,14 @@ export namespace Prisma {
     nombre?: StringFieldUpdateOperationsInput | string
     apellidos?: StringFieldUpdateOperationsInput | string
     fechaNacimiento?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dni?: StringFieldUpdateOperationsInput | string
     domicilio?: StringFieldUpdateOperationsInput | string
+    provincia?: StringFieldUpdateOperationsInput | string
+    ciudad?: StringFieldUpdateOperationsInput | string
     curso?: StringFieldUpdateOperationsInput | string
-    diagnostico?: StringFieldUpdateOperationsInput | string
-    tratamientos?: StringFieldUpdateOperationsInput | string
-    medicacion?: StringFieldUpdateOperationsInput | string
-    alergias?: NullableStringFieldUpdateOperationsInput | string | null
+    fechaInicio?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    fechaAlta?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     activo?: BoolFieldUpdateOperationsInput | boolean
-    adaptaciones?: BoolFieldUpdateOperationsInput | boolean
-    apoyos?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     colegioId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -15245,8 +16806,12 @@ export namespace Prisma {
     id?: string
     nombreContacto: string
     parentesco?: string | null
+    nombreMadre: string
     telefonoMadre?: string | null
     emailMadre?: string | null
+    dniMadre: string
+    dniPadre: string
+    nombrePadre: string
     telefonoPadre?: string | null
     emailPadre?: string | null
     telefonoWhatsapp?: string | null
@@ -15259,8 +16824,12 @@ export namespace Prisma {
     id?: string
     nombreContacto: string
     parentesco?: string | null
+    nombreMadre: string
     telefonoMadre?: string | null
     emailMadre?: string | null
+    dniMadre: string
+    dniPadre: string
+    nombrePadre: string
     telefonoPadre?: string | null
     emailPadre?: string | null
     telefonoWhatsapp?: string | null
@@ -15273,8 +16842,12 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     nombreContacto?: StringFieldUpdateOperationsInput | string
     parentesco?: NullableStringFieldUpdateOperationsInput | string | null
+    nombreMadre?: StringFieldUpdateOperationsInput | string
     telefonoMadre?: NullableStringFieldUpdateOperationsInput | string | null
     emailMadre?: NullableStringFieldUpdateOperationsInput | string | null
+    dniMadre?: StringFieldUpdateOperationsInput | string
+    dniPadre?: StringFieldUpdateOperationsInput | string
+    nombrePadre?: StringFieldUpdateOperationsInput | string
     telefonoPadre?: NullableStringFieldUpdateOperationsInput | string | null
     emailPadre?: NullableStringFieldUpdateOperationsInput | string | null
     telefonoWhatsapp?: NullableStringFieldUpdateOperationsInput | string | null
@@ -15287,8 +16860,12 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     nombreContacto?: StringFieldUpdateOperationsInput | string
     parentesco?: NullableStringFieldUpdateOperationsInput | string | null
+    nombreMadre?: StringFieldUpdateOperationsInput | string
     telefonoMadre?: NullableStringFieldUpdateOperationsInput | string | null
     emailMadre?: NullableStringFieldUpdateOperationsInput | string | null
+    dniMadre?: StringFieldUpdateOperationsInput | string
+    dniPadre?: StringFieldUpdateOperationsInput | string
+    nombrePadre?: StringFieldUpdateOperationsInput | string
     telefonoPadre?: NullableStringFieldUpdateOperationsInput | string | null
     emailPadre?: NullableStringFieldUpdateOperationsInput | string | null
     telefonoWhatsapp?: NullableStringFieldUpdateOperationsInput | string | null
@@ -15301,8 +16878,12 @@ export namespace Prisma {
     id?: string
     nombreContacto: string
     parentesco?: string | null
+    nombreMadre: string
     telefonoMadre?: string | null
     emailMadre?: string | null
+    dniMadre: string
+    dniPadre: string
+    nombrePadre: string
     telefonoPadre?: string | null
     emailPadre?: string | null
     telefonoWhatsapp?: string | null
@@ -15315,8 +16896,12 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     nombreContacto?: StringFieldUpdateOperationsInput | string
     parentesco?: NullableStringFieldUpdateOperationsInput | string | null
+    nombreMadre?: StringFieldUpdateOperationsInput | string
     telefonoMadre?: NullableStringFieldUpdateOperationsInput | string | null
     emailMadre?: NullableStringFieldUpdateOperationsInput | string | null
+    dniMadre?: StringFieldUpdateOperationsInput | string
+    dniPadre?: StringFieldUpdateOperationsInput | string
+    nombrePadre?: StringFieldUpdateOperationsInput | string
     telefonoPadre?: NullableStringFieldUpdateOperationsInput | string | null
     emailPadre?: NullableStringFieldUpdateOperationsInput | string | null
     telefonoWhatsapp?: NullableStringFieldUpdateOperationsInput | string | null
@@ -15328,11 +16913,126 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     nombreContacto?: StringFieldUpdateOperationsInput | string
     parentesco?: NullableStringFieldUpdateOperationsInput | string | null
+    nombreMadre?: StringFieldUpdateOperationsInput | string
     telefonoMadre?: NullableStringFieldUpdateOperationsInput | string | null
     emailMadre?: NullableStringFieldUpdateOperationsInput | string | null
+    dniMadre?: StringFieldUpdateOperationsInput | string
+    dniPadre?: StringFieldUpdateOperationsInput | string
+    nombrePadre?: StringFieldUpdateOperationsInput | string
     telefonoPadre?: NullableStringFieldUpdateOperationsInput | string | null
     emailPadre?: NullableStringFieldUpdateOperationsInput | string | null
     telefonoWhatsapp?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    clienteId?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type SanitarioCreateInput = {
+    id?: string
+    diagnostico: string
+    centroSalud: string
+    tratamientos: string
+    medicacion: string
+    alergias?: string | null
+    adaptaciones?: boolean
+    tipoAdaptaciones: string
+    especialistas?: SanitarioCreateespecialistasInput | string[]
+    apoyos?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    cliente: ClienteCreateNestedOneWithoutSanitarioInput
+  }
+
+  export type SanitarioUncheckedCreateInput = {
+    id?: string
+    diagnostico: string
+    centroSalud: string
+    tratamientos: string
+    medicacion: string
+    alergias?: string | null
+    adaptaciones?: boolean
+    tipoAdaptaciones: string
+    especialistas?: SanitarioCreateespecialistasInput | string[]
+    apoyos?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    clienteId: string
+  }
+
+  export type SanitarioUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    diagnostico?: StringFieldUpdateOperationsInput | string
+    centroSalud?: StringFieldUpdateOperationsInput | string
+    tratamientos?: StringFieldUpdateOperationsInput | string
+    medicacion?: StringFieldUpdateOperationsInput | string
+    alergias?: NullableStringFieldUpdateOperationsInput | string | null
+    adaptaciones?: BoolFieldUpdateOperationsInput | boolean
+    tipoAdaptaciones?: StringFieldUpdateOperationsInput | string
+    especialistas?: SanitarioUpdateespecialistasInput | string[]
+    apoyos?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    cliente?: ClienteUpdateOneRequiredWithoutSanitarioNestedInput
+  }
+
+  export type SanitarioUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    diagnostico?: StringFieldUpdateOperationsInput | string
+    centroSalud?: StringFieldUpdateOperationsInput | string
+    tratamientos?: StringFieldUpdateOperationsInput | string
+    medicacion?: StringFieldUpdateOperationsInput | string
+    alergias?: NullableStringFieldUpdateOperationsInput | string | null
+    adaptaciones?: BoolFieldUpdateOperationsInput | boolean
+    tipoAdaptaciones?: StringFieldUpdateOperationsInput | string
+    especialistas?: SanitarioUpdateespecialistasInput | string[]
+    apoyos?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    clienteId?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type SanitarioCreateManyInput = {
+    id?: string
+    diagnostico: string
+    centroSalud: string
+    tratamientos: string
+    medicacion: string
+    alergias?: string | null
+    adaptaciones?: boolean
+    tipoAdaptaciones: string
+    especialistas?: SanitarioCreateespecialistasInput | string[]
+    apoyos?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    clienteId: string
+  }
+
+  export type SanitarioUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    diagnostico?: StringFieldUpdateOperationsInput | string
+    centroSalud?: StringFieldUpdateOperationsInput | string
+    tratamientos?: StringFieldUpdateOperationsInput | string
+    medicacion?: StringFieldUpdateOperationsInput | string
+    alergias?: NullableStringFieldUpdateOperationsInput | string | null
+    adaptaciones?: BoolFieldUpdateOperationsInput | boolean
+    tipoAdaptaciones?: StringFieldUpdateOperationsInput | string
+    especialistas?: SanitarioUpdateespecialistasInput | string[]
+    apoyos?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SanitarioUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    diagnostico?: StringFieldUpdateOperationsInput | string
+    centroSalud?: StringFieldUpdateOperationsInput | string
+    tratamientos?: StringFieldUpdateOperationsInput | string
+    medicacion?: StringFieldUpdateOperationsInput | string
+    alergias?: NullableStringFieldUpdateOperationsInput | string | null
+    adaptaciones?: BoolFieldUpdateOperationsInput | boolean
+    tipoAdaptaciones?: StringFieldUpdateOperationsInput | string
+    especialistas?: SanitarioUpdateespecialistasInput | string[]
+    apoyos?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     clienteId?: StringFieldUpdateOperationsInput | string
@@ -15783,8 +17483,12 @@ export namespace Prisma {
     id?: SortOrder
     nombre?: SortOrder
     direccionColegio?: SortOrder
+    ctoColegioUno?: SortOrder
+    ctoTelefonoUno?: SortOrder
     ctoEmailColegioUno?: SortOrder
     ctoRelacionColegioUno?: SortOrder
+    ctoColegioDos?: SortOrder
+    ctoTelefonoDos?: SortOrder
     ctoEmailColegioDos?: SortOrder
     ctoRelacionColegioDos?: SortOrder
     createdAt?: SortOrder
@@ -15795,8 +17499,12 @@ export namespace Prisma {
     id?: SortOrder
     nombre?: SortOrder
     direccionColegio?: SortOrder
+    ctoColegioUno?: SortOrder
+    ctoTelefonoUno?: SortOrder
     ctoEmailColegioUno?: SortOrder
     ctoRelacionColegioUno?: SortOrder
+    ctoColegioDos?: SortOrder
+    ctoTelefonoDos?: SortOrder
     ctoEmailColegioDos?: SortOrder
     ctoRelacionColegioDos?: SortOrder
     createdAt?: SortOrder
@@ -15807,8 +17515,12 @@ export namespace Prisma {
     id?: SortOrder
     nombre?: SortOrder
     direccionColegio?: SortOrder
+    ctoColegioUno?: SortOrder
+    ctoTelefonoUno?: SortOrder
     ctoEmailColegioUno?: SortOrder
     ctoRelacionColegioUno?: SortOrder
+    ctoColegioDos?: SortOrder
+    ctoTelefonoDos?: SortOrder
     ctoEmailColegioDos?: SortOrder
     ctoRelacionColegioDos?: SortOrder
     createdAt?: SortOrder
@@ -15826,7 +17538,17 @@ export namespace Prisma {
     none?: FamiliarWhereInput
   }
 
+  export type SanitarioListRelationFilter = {
+    every?: SanitarioWhereInput
+    some?: SanitarioWhereInput
+    none?: SanitarioWhereInput
+  }
+
   export type FamiliarOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type SanitarioOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -15836,15 +17558,14 @@ export namespace Prisma {
     nombre?: SortOrder
     apellidos?: SortOrder
     fechaNacimiento?: SortOrder
+    dni?: SortOrder
     domicilio?: SortOrder
+    provincia?: SortOrder
+    ciudad?: SortOrder
     curso?: SortOrder
-    diagnostico?: SortOrder
-    tratamientos?: SortOrder
-    medicacion?: SortOrder
-    alergias?: SortOrder
+    fechaInicio?: SortOrder
+    fechaAlta?: SortOrder
     activo?: SortOrder
-    adaptaciones?: SortOrder
-    apoyos?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     colegioId?: SortOrder
@@ -15856,15 +17577,14 @@ export namespace Prisma {
     nombre?: SortOrder
     apellidos?: SortOrder
     fechaNacimiento?: SortOrder
+    dni?: SortOrder
     domicilio?: SortOrder
+    provincia?: SortOrder
+    ciudad?: SortOrder
     curso?: SortOrder
-    diagnostico?: SortOrder
-    tratamientos?: SortOrder
-    medicacion?: SortOrder
-    alergias?: SortOrder
+    fechaInicio?: SortOrder
+    fechaAlta?: SortOrder
     activo?: SortOrder
-    adaptaciones?: SortOrder
-    apoyos?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     colegioId?: SortOrder
@@ -15876,15 +17596,14 @@ export namespace Prisma {
     nombre?: SortOrder
     apellidos?: SortOrder
     fechaNacimiento?: SortOrder
+    dni?: SortOrder
     domicilio?: SortOrder
+    provincia?: SortOrder
+    ciudad?: SortOrder
     curso?: SortOrder
-    diagnostico?: SortOrder
-    tratamientos?: SortOrder
-    medicacion?: SortOrder
-    alergias?: SortOrder
+    fechaInicio?: SortOrder
+    fechaAlta?: SortOrder
     activo?: SortOrder
-    adaptaciones?: SortOrder
-    apoyos?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     colegioId?: SortOrder
@@ -16011,8 +17730,12 @@ export namespace Prisma {
     id?: SortOrder
     nombreContacto?: SortOrder
     parentesco?: SortOrder
+    nombreMadre?: SortOrder
     telefonoMadre?: SortOrder
     emailMadre?: SortOrder
+    dniMadre?: SortOrder
+    dniPadre?: SortOrder
+    nombrePadre?: SortOrder
     telefonoPadre?: SortOrder
     emailPadre?: SortOrder
     telefonoWhatsapp?: SortOrder
@@ -16025,8 +17748,12 @@ export namespace Prisma {
     id?: SortOrder
     nombreContacto?: SortOrder
     parentesco?: SortOrder
+    nombreMadre?: SortOrder
     telefonoMadre?: SortOrder
     emailMadre?: SortOrder
+    dniMadre?: SortOrder
+    dniPadre?: SortOrder
+    nombrePadre?: SortOrder
     telefonoPadre?: SortOrder
     emailPadre?: SortOrder
     telefonoWhatsapp?: SortOrder
@@ -16039,11 +17766,69 @@ export namespace Prisma {
     id?: SortOrder
     nombreContacto?: SortOrder
     parentesco?: SortOrder
+    nombreMadre?: SortOrder
     telefonoMadre?: SortOrder
     emailMadre?: SortOrder
+    dniMadre?: SortOrder
+    dniPadre?: SortOrder
+    nombrePadre?: SortOrder
     telefonoPadre?: SortOrder
     emailPadre?: SortOrder
     telefonoWhatsapp?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    clienteId?: SortOrder
+  }
+
+  export type StringNullableListFilter<$PrismaModel = never> = {
+    equals?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    has?: string | StringFieldRefInput<$PrismaModel> | null
+    hasEvery?: string[] | ListStringFieldRefInput<$PrismaModel>
+    hasSome?: string[] | ListStringFieldRefInput<$PrismaModel>
+    isEmpty?: boolean
+  }
+
+  export type SanitarioCountOrderByAggregateInput = {
+    id?: SortOrder
+    diagnostico?: SortOrder
+    centroSalud?: SortOrder
+    tratamientos?: SortOrder
+    medicacion?: SortOrder
+    alergias?: SortOrder
+    adaptaciones?: SortOrder
+    tipoAdaptaciones?: SortOrder
+    especialistas?: SortOrder
+    apoyos?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    clienteId?: SortOrder
+  }
+
+  export type SanitarioMaxOrderByAggregateInput = {
+    id?: SortOrder
+    diagnostico?: SortOrder
+    centroSalud?: SortOrder
+    tratamientos?: SortOrder
+    medicacion?: SortOrder
+    alergias?: SortOrder
+    adaptaciones?: SortOrder
+    tipoAdaptaciones?: SortOrder
+    apoyos?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    clienteId?: SortOrder
+  }
+
+  export type SanitarioMinOrderByAggregateInput = {
+    id?: SortOrder
+    diagnostico?: SortOrder
+    centroSalud?: SortOrder
+    tratamientos?: SortOrder
+    medicacion?: SortOrder
+    alergias?: SortOrder
+    adaptaciones?: SortOrder
+    tipoAdaptaciones?: SortOrder
+    apoyos?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     clienteId?: SortOrder
@@ -16480,6 +18265,13 @@ export namespace Prisma {
     connect?: FamiliarWhereUniqueInput | FamiliarWhereUniqueInput[]
   }
 
+  export type SanitarioCreateNestedManyWithoutClienteInput = {
+    create?: XOR<SanitarioCreateWithoutClienteInput, SanitarioUncheckedCreateWithoutClienteInput> | SanitarioCreateWithoutClienteInput[] | SanitarioUncheckedCreateWithoutClienteInput[]
+    connectOrCreate?: SanitarioCreateOrConnectWithoutClienteInput | SanitarioCreateOrConnectWithoutClienteInput[]
+    createMany?: SanitarioCreateManyClienteInputEnvelope
+    connect?: SanitarioWhereUniqueInput | SanitarioWhereUniqueInput[]
+  }
+
   export type RegistroDiarioCreateNestedManyWithoutClienteInput = {
     create?: XOR<RegistroDiarioCreateWithoutClienteInput, RegistroDiarioUncheckedCreateWithoutClienteInput> | RegistroDiarioCreateWithoutClienteInput[] | RegistroDiarioUncheckedCreateWithoutClienteInput[]
     connectOrCreate?: RegistroDiarioCreateOrConnectWithoutClienteInput | RegistroDiarioCreateOrConnectWithoutClienteInput[]
@@ -16520,6 +18312,13 @@ export namespace Prisma {
     connectOrCreate?: FamiliarCreateOrConnectWithoutClienteInput | FamiliarCreateOrConnectWithoutClienteInput[]
     createMany?: FamiliarCreateManyClienteInputEnvelope
     connect?: FamiliarWhereUniqueInput | FamiliarWhereUniqueInput[]
+  }
+
+  export type SanitarioUncheckedCreateNestedManyWithoutClienteInput = {
+    create?: XOR<SanitarioCreateWithoutClienteInput, SanitarioUncheckedCreateWithoutClienteInput> | SanitarioCreateWithoutClienteInput[] | SanitarioUncheckedCreateWithoutClienteInput[]
+    connectOrCreate?: SanitarioCreateOrConnectWithoutClienteInput | SanitarioCreateOrConnectWithoutClienteInput[]
+    createMany?: SanitarioCreateManyClienteInputEnvelope
+    connect?: SanitarioWhereUniqueInput | SanitarioWhereUniqueInput[]
   }
 
   export type RegistroDiarioUncheckedCreateNestedManyWithoutClienteInput = {
@@ -16600,6 +18399,20 @@ export namespace Prisma {
     update?: FamiliarUpdateWithWhereUniqueWithoutClienteInput | FamiliarUpdateWithWhereUniqueWithoutClienteInput[]
     updateMany?: FamiliarUpdateManyWithWhereWithoutClienteInput | FamiliarUpdateManyWithWhereWithoutClienteInput[]
     deleteMany?: FamiliarScalarWhereInput | FamiliarScalarWhereInput[]
+  }
+
+  export type SanitarioUpdateManyWithoutClienteNestedInput = {
+    create?: XOR<SanitarioCreateWithoutClienteInput, SanitarioUncheckedCreateWithoutClienteInput> | SanitarioCreateWithoutClienteInput[] | SanitarioUncheckedCreateWithoutClienteInput[]
+    connectOrCreate?: SanitarioCreateOrConnectWithoutClienteInput | SanitarioCreateOrConnectWithoutClienteInput[]
+    upsert?: SanitarioUpsertWithWhereUniqueWithoutClienteInput | SanitarioUpsertWithWhereUniqueWithoutClienteInput[]
+    createMany?: SanitarioCreateManyClienteInputEnvelope
+    set?: SanitarioWhereUniqueInput | SanitarioWhereUniqueInput[]
+    disconnect?: SanitarioWhereUniqueInput | SanitarioWhereUniqueInput[]
+    delete?: SanitarioWhereUniqueInput | SanitarioWhereUniqueInput[]
+    connect?: SanitarioWhereUniqueInput | SanitarioWhereUniqueInput[]
+    update?: SanitarioUpdateWithWhereUniqueWithoutClienteInput | SanitarioUpdateWithWhereUniqueWithoutClienteInput[]
+    updateMany?: SanitarioUpdateManyWithWhereWithoutClienteInput | SanitarioUpdateManyWithWhereWithoutClienteInput[]
+    deleteMany?: SanitarioScalarWhereInput | SanitarioScalarWhereInput[]
   }
 
   export type RegistroDiarioUpdateManyWithoutClienteNestedInput = {
@@ -16684,6 +18497,20 @@ export namespace Prisma {
     update?: FamiliarUpdateWithWhereUniqueWithoutClienteInput | FamiliarUpdateWithWhereUniqueWithoutClienteInput[]
     updateMany?: FamiliarUpdateManyWithWhereWithoutClienteInput | FamiliarUpdateManyWithWhereWithoutClienteInput[]
     deleteMany?: FamiliarScalarWhereInput | FamiliarScalarWhereInput[]
+  }
+
+  export type SanitarioUncheckedUpdateManyWithoutClienteNestedInput = {
+    create?: XOR<SanitarioCreateWithoutClienteInput, SanitarioUncheckedCreateWithoutClienteInput> | SanitarioCreateWithoutClienteInput[] | SanitarioUncheckedCreateWithoutClienteInput[]
+    connectOrCreate?: SanitarioCreateOrConnectWithoutClienteInput | SanitarioCreateOrConnectWithoutClienteInput[]
+    upsert?: SanitarioUpsertWithWhereUniqueWithoutClienteInput | SanitarioUpsertWithWhereUniqueWithoutClienteInput[]
+    createMany?: SanitarioCreateManyClienteInputEnvelope
+    set?: SanitarioWhereUniqueInput | SanitarioWhereUniqueInput[]
+    disconnect?: SanitarioWhereUniqueInput | SanitarioWhereUniqueInput[]
+    delete?: SanitarioWhereUniqueInput | SanitarioWhereUniqueInput[]
+    connect?: SanitarioWhereUniqueInput | SanitarioWhereUniqueInput[]
+    update?: SanitarioUpdateWithWhereUniqueWithoutClienteInput | SanitarioUpdateWithWhereUniqueWithoutClienteInput[]
+    updateMany?: SanitarioUpdateManyWithWhereWithoutClienteInput | SanitarioUpdateManyWithWhereWithoutClienteInput[]
+    deleteMany?: SanitarioScalarWhereInput | SanitarioScalarWhereInput[]
   }
 
   export type RegistroDiarioUncheckedUpdateManyWithoutClienteNestedInput = {
@@ -16810,6 +18637,29 @@ export namespace Prisma {
     upsert?: ClienteUpsertWithoutContactosFamiliaresInput
     connect?: ClienteWhereUniqueInput
     update?: XOR<XOR<ClienteUpdateToOneWithWhereWithoutContactosFamiliaresInput, ClienteUpdateWithoutContactosFamiliaresInput>, ClienteUncheckedUpdateWithoutContactosFamiliaresInput>
+  }
+
+  export type SanitarioCreateespecialistasInput = {
+    set: string[]
+  }
+
+  export type ClienteCreateNestedOneWithoutSanitarioInput = {
+    create?: XOR<ClienteCreateWithoutSanitarioInput, ClienteUncheckedCreateWithoutSanitarioInput>
+    connectOrCreate?: ClienteCreateOrConnectWithoutSanitarioInput
+    connect?: ClienteWhereUniqueInput
+  }
+
+  export type SanitarioUpdateespecialistasInput = {
+    set?: string[]
+    push?: string | string[]
+  }
+
+  export type ClienteUpdateOneRequiredWithoutSanitarioNestedInput = {
+    create?: XOR<ClienteCreateWithoutSanitarioInput, ClienteUncheckedCreateWithoutSanitarioInput>
+    connectOrCreate?: ClienteCreateOrConnectWithoutSanitarioInput
+    upsert?: ClienteUpsertWithoutSanitarioInput
+    connect?: ClienteWhereUniqueInput
+    update?: XOR<XOR<ClienteUpdateToOneWithWhereWithoutSanitarioInput, ClienteUpdateWithoutSanitarioInput>, ClienteUncheckedUpdateWithoutSanitarioInput>
   }
 
   export type ClienteCreateNestedOneWithoutRegistrosDiariosInput = {
@@ -17464,21 +19314,21 @@ export namespace Prisma {
     nombre: string
     apellidos: string
     fechaNacimiento?: Date | string | null
+    dni: string
     domicilio: string
+    provincia: string
+    ciudad: string
     curso: string
-    diagnostico: string
-    tratamientos: string
-    medicacion: string
-    alergias?: string | null
+    fechaInicio?: Date | string | null
+    fechaAlta?: Date | string | null
     activo?: boolean
-    adaptaciones?: boolean
-    apoyos?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     trabajadoresAsignados?: ClienteTrabajadorCreateNestedManyWithoutClienteInput
     horarios?: HorarioCreateNestedManyWithoutClienteInput
     informes?: InformeCreateNestedManyWithoutClienteInput
     contactosFamiliares?: FamiliarCreateNestedManyWithoutClienteInput
+    sanitario?: SanitarioCreateNestedManyWithoutClienteInput
     registrosDiarios?: RegistroDiarioCreateNestedManyWithoutClienteInput
     objetivos?: ObjetivoCreateNestedManyWithoutClienteInput
   }
@@ -17489,21 +19339,21 @@ export namespace Prisma {
     nombre: string
     apellidos: string
     fechaNacimiento?: Date | string | null
+    dni: string
     domicilio: string
+    provincia: string
+    ciudad: string
     curso: string
-    diagnostico: string
-    tratamientos: string
-    medicacion: string
-    alergias?: string | null
+    fechaInicio?: Date | string | null
+    fechaAlta?: Date | string | null
     activo?: boolean
-    adaptaciones?: boolean
-    apoyos?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     trabajadoresAsignados?: ClienteTrabajadorUncheckedCreateNestedManyWithoutClienteInput
     horarios?: HorarioUncheckedCreateNestedManyWithoutClienteInput
     informes?: InformeUncheckedCreateNestedManyWithoutClienteInput
     contactosFamiliares?: FamiliarUncheckedCreateNestedManyWithoutClienteInput
+    sanitario?: SanitarioUncheckedCreateNestedManyWithoutClienteInput
     registrosDiarios?: RegistroDiarioUncheckedCreateNestedManyWithoutClienteInput
     objetivos?: ObjetivoUncheckedCreateNestedManyWithoutClienteInput
   }
@@ -17543,15 +19393,14 @@ export namespace Prisma {
     nombre?: StringFilter<"Cliente"> | string
     apellidos?: StringFilter<"Cliente"> | string
     fechaNacimiento?: DateTimeNullableFilter<"Cliente"> | Date | string | null
+    dni?: StringFilter<"Cliente"> | string
     domicilio?: StringFilter<"Cliente"> | string
+    provincia?: StringFilter<"Cliente"> | string
+    ciudad?: StringFilter<"Cliente"> | string
     curso?: StringFilter<"Cliente"> | string
-    diagnostico?: StringFilter<"Cliente"> | string
-    tratamientos?: StringFilter<"Cliente"> | string
-    medicacion?: StringFilter<"Cliente"> | string
-    alergias?: StringNullableFilter<"Cliente"> | string | null
+    fechaInicio?: DateTimeNullableFilter<"Cliente"> | Date | string | null
+    fechaAlta?: DateTimeNullableFilter<"Cliente"> | Date | string | null
     activo?: BoolFilter<"Cliente"> | boolean
-    adaptaciones?: BoolFilter<"Cliente"> | boolean
-    apoyos?: BoolFilter<"Cliente"> | boolean
     createdAt?: DateTimeFilter<"Cliente"> | Date | string
     updatedAt?: DateTimeFilter<"Cliente"> | Date | string
     colegioId?: StringNullableFilter<"Cliente"> | string | null
@@ -17583,8 +19432,12 @@ export namespace Prisma {
     id?: string
     nombre: string
     direccionColegio: string
-    ctoEmailColegioUno?: string | null
-    ctoRelacionColegioUno?: string | null
+    ctoColegioUno: string
+    ctoTelefonoUno: string
+    ctoEmailColegioUno: string
+    ctoRelacionColegioUno: string
+    ctoColegioDos?: string | null
+    ctoTelefonoDos?: string | null
     ctoEmailColegioDos?: string | null
     ctoRelacionColegioDos?: string | null
     createdAt?: Date | string
@@ -17595,8 +19448,12 @@ export namespace Prisma {
     id?: string
     nombre: string
     direccionColegio: string
-    ctoEmailColegioUno?: string | null
-    ctoRelacionColegioUno?: string | null
+    ctoColegioUno: string
+    ctoTelefonoUno: string
+    ctoEmailColegioUno: string
+    ctoRelacionColegioUno: string
+    ctoColegioDos?: string | null
+    ctoTelefonoDos?: string | null
     ctoEmailColegioDos?: string | null
     ctoRelacionColegioDos?: string | null
     createdAt?: Date | string
@@ -17682,8 +19539,12 @@ export namespace Prisma {
     id?: string
     nombreContacto: string
     parentesco?: string | null
+    nombreMadre: string
     telefonoMadre?: string | null
     emailMadre?: string | null
+    dniMadre: string
+    dniPadre: string
+    nombrePadre: string
     telefonoPadre?: string | null
     emailPadre?: string | null
     telefonoWhatsapp?: string | null
@@ -17695,8 +19556,12 @@ export namespace Prisma {
     id?: string
     nombreContacto: string
     parentesco?: string | null
+    nombreMadre: string
     telefonoMadre?: string | null
     emailMadre?: string | null
+    dniMadre: string
+    dniPadre: string
+    nombrePadre: string
     telefonoPadre?: string | null
     emailPadre?: string | null
     telefonoWhatsapp?: string | null
@@ -17711,6 +19576,46 @@ export namespace Prisma {
 
   export type FamiliarCreateManyClienteInputEnvelope = {
     data: FamiliarCreateManyClienteInput | FamiliarCreateManyClienteInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type SanitarioCreateWithoutClienteInput = {
+    id?: string
+    diagnostico: string
+    centroSalud: string
+    tratamientos: string
+    medicacion: string
+    alergias?: string | null
+    adaptaciones?: boolean
+    tipoAdaptaciones: string
+    especialistas?: SanitarioCreateespecialistasInput | string[]
+    apoyos?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type SanitarioUncheckedCreateWithoutClienteInput = {
+    id?: string
+    diagnostico: string
+    centroSalud: string
+    tratamientos: string
+    medicacion: string
+    alergias?: string | null
+    adaptaciones?: boolean
+    tipoAdaptaciones: string
+    especialistas?: SanitarioCreateespecialistasInput | string[]
+    apoyos?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type SanitarioCreateOrConnectWithoutClienteInput = {
+    where: SanitarioWhereUniqueInput
+    create: XOR<SanitarioCreateWithoutClienteInput, SanitarioUncheckedCreateWithoutClienteInput>
+  }
+
+  export type SanitarioCreateManyClienteInputEnvelope = {
+    data: SanitarioCreateManyClienteInput | SanitarioCreateManyClienteInput[]
     skipDuplicates?: boolean
   }
 
@@ -17807,8 +19712,12 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     nombre?: StringFieldUpdateOperationsInput | string
     direccionColegio?: StringFieldUpdateOperationsInput | string
-    ctoEmailColegioUno?: NullableStringFieldUpdateOperationsInput | string | null
-    ctoRelacionColegioUno?: NullableStringFieldUpdateOperationsInput | string | null
+    ctoColegioUno?: StringFieldUpdateOperationsInput | string
+    ctoTelefonoUno?: StringFieldUpdateOperationsInput | string
+    ctoEmailColegioUno?: StringFieldUpdateOperationsInput | string
+    ctoRelacionColegioUno?: StringFieldUpdateOperationsInput | string
+    ctoColegioDos?: NullableStringFieldUpdateOperationsInput | string | null
+    ctoTelefonoDos?: NullableStringFieldUpdateOperationsInput | string | null
     ctoEmailColegioDos?: NullableStringFieldUpdateOperationsInput | string | null
     ctoRelacionColegioDos?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -17819,8 +19728,12 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     nombre?: StringFieldUpdateOperationsInput | string
     direccionColegio?: StringFieldUpdateOperationsInput | string
-    ctoEmailColegioUno?: NullableStringFieldUpdateOperationsInput | string | null
-    ctoRelacionColegioUno?: NullableStringFieldUpdateOperationsInput | string | null
+    ctoColegioUno?: StringFieldUpdateOperationsInput | string
+    ctoTelefonoUno?: StringFieldUpdateOperationsInput | string
+    ctoEmailColegioUno?: StringFieldUpdateOperationsInput | string
+    ctoRelacionColegioUno?: StringFieldUpdateOperationsInput | string
+    ctoColegioDos?: NullableStringFieldUpdateOperationsInput | string | null
+    ctoTelefonoDos?: NullableStringFieldUpdateOperationsInput | string | null
     ctoEmailColegioDos?: NullableStringFieldUpdateOperationsInput | string | null
     ctoRelacionColegioDos?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -17882,14 +19795,53 @@ export namespace Prisma {
     id?: StringFilter<"Familiar"> | string
     nombreContacto?: StringFilter<"Familiar"> | string
     parentesco?: StringNullableFilter<"Familiar"> | string | null
+    nombreMadre?: StringFilter<"Familiar"> | string
     telefonoMadre?: StringNullableFilter<"Familiar"> | string | null
     emailMadre?: StringNullableFilter<"Familiar"> | string | null
+    dniMadre?: StringFilter<"Familiar"> | string
+    dniPadre?: StringFilter<"Familiar"> | string
+    nombrePadre?: StringFilter<"Familiar"> | string
     telefonoPadre?: StringNullableFilter<"Familiar"> | string | null
     emailPadre?: StringNullableFilter<"Familiar"> | string | null
     telefonoWhatsapp?: StringNullableFilter<"Familiar"> | string | null
     createdAt?: DateTimeFilter<"Familiar"> | Date | string
     updatedAt?: DateTimeFilter<"Familiar"> | Date | string
     clienteId?: StringFilter<"Familiar"> | string
+  }
+
+  export type SanitarioUpsertWithWhereUniqueWithoutClienteInput = {
+    where: SanitarioWhereUniqueInput
+    update: XOR<SanitarioUpdateWithoutClienteInput, SanitarioUncheckedUpdateWithoutClienteInput>
+    create: XOR<SanitarioCreateWithoutClienteInput, SanitarioUncheckedCreateWithoutClienteInput>
+  }
+
+  export type SanitarioUpdateWithWhereUniqueWithoutClienteInput = {
+    where: SanitarioWhereUniqueInput
+    data: XOR<SanitarioUpdateWithoutClienteInput, SanitarioUncheckedUpdateWithoutClienteInput>
+  }
+
+  export type SanitarioUpdateManyWithWhereWithoutClienteInput = {
+    where: SanitarioScalarWhereInput
+    data: XOR<SanitarioUpdateManyMutationInput, SanitarioUncheckedUpdateManyWithoutClienteInput>
+  }
+
+  export type SanitarioScalarWhereInput = {
+    AND?: SanitarioScalarWhereInput | SanitarioScalarWhereInput[]
+    OR?: SanitarioScalarWhereInput[]
+    NOT?: SanitarioScalarWhereInput | SanitarioScalarWhereInput[]
+    id?: StringFilter<"Sanitario"> | string
+    diagnostico?: StringFilter<"Sanitario"> | string
+    centroSalud?: StringFilter<"Sanitario"> | string
+    tratamientos?: StringFilter<"Sanitario"> | string
+    medicacion?: StringFilter<"Sanitario"> | string
+    alergias?: StringNullableFilter<"Sanitario"> | string | null
+    adaptaciones?: BoolFilter<"Sanitario"> | boolean
+    tipoAdaptaciones?: StringFilter<"Sanitario"> | string
+    especialistas?: StringNullableListFilter<"Sanitario">
+    apoyos?: BoolFilter<"Sanitario"> | boolean
+    createdAt?: DateTimeFilter<"Sanitario"> | Date | string
+    updatedAt?: DateTimeFilter<"Sanitario"> | Date | string
+    clienteId?: StringFilter<"Sanitario"> | string
   }
 
   export type RegistroDiarioUpsertWithWhereUniqueWithoutClienteInput = {
@@ -17930,21 +19882,21 @@ export namespace Prisma {
     nombre: string
     apellidos: string
     fechaNacimiento?: Date | string | null
+    dni: string
     domicilio: string
+    provincia: string
+    ciudad: string
     curso: string
-    diagnostico: string
-    tratamientos: string
-    medicacion: string
-    alergias?: string | null
+    fechaInicio?: Date | string | null
+    fechaAlta?: Date | string | null
     activo?: boolean
-    adaptaciones?: boolean
-    apoyos?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     colegio?: ColegioCreateNestedOneWithoutClientesInput
     horarios?: HorarioCreateNestedManyWithoutClienteInput
     informes?: InformeCreateNestedManyWithoutClienteInput
     contactosFamiliares?: FamiliarCreateNestedManyWithoutClienteInput
+    sanitario?: SanitarioCreateNestedManyWithoutClienteInput
     registrosDiarios?: RegistroDiarioCreateNestedManyWithoutClienteInput
     objetivos?: ObjetivoCreateNestedManyWithoutClienteInput
   }
@@ -17955,21 +19907,21 @@ export namespace Prisma {
     nombre: string
     apellidos: string
     fechaNacimiento?: Date | string | null
+    dni: string
     domicilio: string
+    provincia: string
+    ciudad: string
     curso: string
-    diagnostico: string
-    tratamientos: string
-    medicacion: string
-    alergias?: string | null
+    fechaInicio?: Date | string | null
+    fechaAlta?: Date | string | null
     activo?: boolean
-    adaptaciones?: boolean
-    apoyos?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     colegioId?: string | null
     horarios?: HorarioUncheckedCreateNestedManyWithoutClienteInput
     informes?: InformeUncheckedCreateNestedManyWithoutClienteInput
     contactosFamiliares?: FamiliarUncheckedCreateNestedManyWithoutClienteInput
+    sanitario?: SanitarioUncheckedCreateNestedManyWithoutClienteInput
     registrosDiarios?: RegistroDiarioUncheckedCreateNestedManyWithoutClienteInput
     objetivos?: ObjetivoUncheckedCreateNestedManyWithoutClienteInput
   }
@@ -18041,21 +19993,21 @@ export namespace Prisma {
     nombre?: StringFieldUpdateOperationsInput | string
     apellidos?: StringFieldUpdateOperationsInput | string
     fechaNacimiento?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dni?: StringFieldUpdateOperationsInput | string
     domicilio?: StringFieldUpdateOperationsInput | string
+    provincia?: StringFieldUpdateOperationsInput | string
+    ciudad?: StringFieldUpdateOperationsInput | string
     curso?: StringFieldUpdateOperationsInput | string
-    diagnostico?: StringFieldUpdateOperationsInput | string
-    tratamientos?: StringFieldUpdateOperationsInput | string
-    medicacion?: StringFieldUpdateOperationsInput | string
-    alergias?: NullableStringFieldUpdateOperationsInput | string | null
+    fechaInicio?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    fechaAlta?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     activo?: BoolFieldUpdateOperationsInput | boolean
-    adaptaciones?: BoolFieldUpdateOperationsInput | boolean
-    apoyos?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     colegio?: ColegioUpdateOneWithoutClientesNestedInput
     horarios?: HorarioUpdateManyWithoutClienteNestedInput
     informes?: InformeUpdateManyWithoutClienteNestedInput
     contactosFamiliares?: FamiliarUpdateManyWithoutClienteNestedInput
+    sanitario?: SanitarioUpdateManyWithoutClienteNestedInput
     registrosDiarios?: RegistroDiarioUpdateManyWithoutClienteNestedInput
     objetivos?: ObjetivoUpdateManyWithoutClienteNestedInput
   }
@@ -18066,21 +20018,21 @@ export namespace Prisma {
     nombre?: StringFieldUpdateOperationsInput | string
     apellidos?: StringFieldUpdateOperationsInput | string
     fechaNacimiento?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dni?: StringFieldUpdateOperationsInput | string
     domicilio?: StringFieldUpdateOperationsInput | string
+    provincia?: StringFieldUpdateOperationsInput | string
+    ciudad?: StringFieldUpdateOperationsInput | string
     curso?: StringFieldUpdateOperationsInput | string
-    diagnostico?: StringFieldUpdateOperationsInput | string
-    tratamientos?: StringFieldUpdateOperationsInput | string
-    medicacion?: StringFieldUpdateOperationsInput | string
-    alergias?: NullableStringFieldUpdateOperationsInput | string | null
+    fechaInicio?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    fechaAlta?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     activo?: BoolFieldUpdateOperationsInput | boolean
-    adaptaciones?: BoolFieldUpdateOperationsInput | boolean
-    apoyos?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     colegioId?: NullableStringFieldUpdateOperationsInput | string | null
     horarios?: HorarioUncheckedUpdateManyWithoutClienteNestedInput
     informes?: InformeUncheckedUpdateManyWithoutClienteNestedInput
     contactosFamiliares?: FamiliarUncheckedUpdateManyWithoutClienteNestedInput
+    sanitario?: SanitarioUncheckedUpdateManyWithoutClienteNestedInput
     registrosDiarios?: RegistroDiarioUncheckedUpdateManyWithoutClienteNestedInput
     objetivos?: ObjetivoUncheckedUpdateManyWithoutClienteNestedInput
   }
@@ -18142,21 +20094,21 @@ export namespace Prisma {
     nombre: string
     apellidos: string
     fechaNacimiento?: Date | string | null
+    dni: string
     domicilio: string
+    provincia: string
+    ciudad: string
     curso: string
-    diagnostico: string
-    tratamientos: string
-    medicacion: string
-    alergias?: string | null
+    fechaInicio?: Date | string | null
+    fechaAlta?: Date | string | null
     activo?: boolean
-    adaptaciones?: boolean
-    apoyos?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     trabajadoresAsignados?: ClienteTrabajadorCreateNestedManyWithoutClienteInput
     colegio?: ColegioCreateNestedOneWithoutClientesInput
     informes?: InformeCreateNestedManyWithoutClienteInput
     contactosFamiliares?: FamiliarCreateNestedManyWithoutClienteInput
+    sanitario?: SanitarioCreateNestedManyWithoutClienteInput
     registrosDiarios?: RegistroDiarioCreateNestedManyWithoutClienteInput
     objetivos?: ObjetivoCreateNestedManyWithoutClienteInput
   }
@@ -18167,21 +20119,21 @@ export namespace Prisma {
     nombre: string
     apellidos: string
     fechaNacimiento?: Date | string | null
+    dni: string
     domicilio: string
+    provincia: string
+    ciudad: string
     curso: string
-    diagnostico: string
-    tratamientos: string
-    medicacion: string
-    alergias?: string | null
+    fechaInicio?: Date | string | null
+    fechaAlta?: Date | string | null
     activo?: boolean
-    adaptaciones?: boolean
-    apoyos?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     colegioId?: string | null
     trabajadoresAsignados?: ClienteTrabajadorUncheckedCreateNestedManyWithoutClienteInput
     informes?: InformeUncheckedCreateNestedManyWithoutClienteInput
     contactosFamiliares?: FamiliarUncheckedCreateNestedManyWithoutClienteInput
+    sanitario?: SanitarioUncheckedCreateNestedManyWithoutClienteInput
     registrosDiarios?: RegistroDiarioUncheckedCreateNestedManyWithoutClienteInput
     objetivos?: ObjetivoUncheckedCreateNestedManyWithoutClienteInput
   }
@@ -18253,21 +20205,21 @@ export namespace Prisma {
     nombre?: StringFieldUpdateOperationsInput | string
     apellidos?: StringFieldUpdateOperationsInput | string
     fechaNacimiento?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dni?: StringFieldUpdateOperationsInput | string
     domicilio?: StringFieldUpdateOperationsInput | string
+    provincia?: StringFieldUpdateOperationsInput | string
+    ciudad?: StringFieldUpdateOperationsInput | string
     curso?: StringFieldUpdateOperationsInput | string
-    diagnostico?: StringFieldUpdateOperationsInput | string
-    tratamientos?: StringFieldUpdateOperationsInput | string
-    medicacion?: StringFieldUpdateOperationsInput | string
-    alergias?: NullableStringFieldUpdateOperationsInput | string | null
+    fechaInicio?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    fechaAlta?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     activo?: BoolFieldUpdateOperationsInput | boolean
-    adaptaciones?: BoolFieldUpdateOperationsInput | boolean
-    apoyos?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     trabajadoresAsignados?: ClienteTrabajadorUpdateManyWithoutClienteNestedInput
     colegio?: ColegioUpdateOneWithoutClientesNestedInput
     informes?: InformeUpdateManyWithoutClienteNestedInput
     contactosFamiliares?: FamiliarUpdateManyWithoutClienteNestedInput
+    sanitario?: SanitarioUpdateManyWithoutClienteNestedInput
     registrosDiarios?: RegistroDiarioUpdateManyWithoutClienteNestedInput
     objetivos?: ObjetivoUpdateManyWithoutClienteNestedInput
   }
@@ -18278,21 +20230,21 @@ export namespace Prisma {
     nombre?: StringFieldUpdateOperationsInput | string
     apellidos?: StringFieldUpdateOperationsInput | string
     fechaNacimiento?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dni?: StringFieldUpdateOperationsInput | string
     domicilio?: StringFieldUpdateOperationsInput | string
+    provincia?: StringFieldUpdateOperationsInput | string
+    ciudad?: StringFieldUpdateOperationsInput | string
     curso?: StringFieldUpdateOperationsInput | string
-    diagnostico?: StringFieldUpdateOperationsInput | string
-    tratamientos?: StringFieldUpdateOperationsInput | string
-    medicacion?: StringFieldUpdateOperationsInput | string
-    alergias?: NullableStringFieldUpdateOperationsInput | string | null
+    fechaInicio?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    fechaAlta?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     activo?: BoolFieldUpdateOperationsInput | boolean
-    adaptaciones?: BoolFieldUpdateOperationsInput | boolean
-    apoyos?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     colegioId?: NullableStringFieldUpdateOperationsInput | string | null
     trabajadoresAsignados?: ClienteTrabajadorUncheckedUpdateManyWithoutClienteNestedInput
     informes?: InformeUncheckedUpdateManyWithoutClienteNestedInput
     contactosFamiliares?: FamiliarUncheckedUpdateManyWithoutClienteNestedInput
+    sanitario?: SanitarioUncheckedUpdateManyWithoutClienteNestedInput
     registrosDiarios?: RegistroDiarioUncheckedUpdateManyWithoutClienteNestedInput
     objetivos?: ObjetivoUncheckedUpdateManyWithoutClienteNestedInput
   }
@@ -18354,21 +20306,21 @@ export namespace Prisma {
     nombre: string
     apellidos: string
     fechaNacimiento?: Date | string | null
+    dni: string
     domicilio: string
+    provincia: string
+    ciudad: string
     curso: string
-    diagnostico: string
-    tratamientos: string
-    medicacion: string
-    alergias?: string | null
+    fechaInicio?: Date | string | null
+    fechaAlta?: Date | string | null
     activo?: boolean
-    adaptaciones?: boolean
-    apoyos?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     trabajadoresAsignados?: ClienteTrabajadorCreateNestedManyWithoutClienteInput
     colegio?: ColegioCreateNestedOneWithoutClientesInput
     horarios?: HorarioCreateNestedManyWithoutClienteInput
     contactosFamiliares?: FamiliarCreateNestedManyWithoutClienteInput
+    sanitario?: SanitarioCreateNestedManyWithoutClienteInput
     registrosDiarios?: RegistroDiarioCreateNestedManyWithoutClienteInput
     objetivos?: ObjetivoCreateNestedManyWithoutClienteInput
   }
@@ -18379,21 +20331,21 @@ export namespace Prisma {
     nombre: string
     apellidos: string
     fechaNacimiento?: Date | string | null
+    dni: string
     domicilio: string
+    provincia: string
+    ciudad: string
     curso: string
-    diagnostico: string
-    tratamientos: string
-    medicacion: string
-    alergias?: string | null
+    fechaInicio?: Date | string | null
+    fechaAlta?: Date | string | null
     activo?: boolean
-    adaptaciones?: boolean
-    apoyos?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     colegioId?: string | null
     trabajadoresAsignados?: ClienteTrabajadorUncheckedCreateNestedManyWithoutClienteInput
     horarios?: HorarioUncheckedCreateNestedManyWithoutClienteInput
     contactosFamiliares?: FamiliarUncheckedCreateNestedManyWithoutClienteInput
+    sanitario?: SanitarioUncheckedCreateNestedManyWithoutClienteInput
     registrosDiarios?: RegistroDiarioUncheckedCreateNestedManyWithoutClienteInput
     objetivos?: ObjetivoUncheckedCreateNestedManyWithoutClienteInput
   }
@@ -18465,21 +20417,21 @@ export namespace Prisma {
     nombre?: StringFieldUpdateOperationsInput | string
     apellidos?: StringFieldUpdateOperationsInput | string
     fechaNacimiento?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dni?: StringFieldUpdateOperationsInput | string
     domicilio?: StringFieldUpdateOperationsInput | string
+    provincia?: StringFieldUpdateOperationsInput | string
+    ciudad?: StringFieldUpdateOperationsInput | string
     curso?: StringFieldUpdateOperationsInput | string
-    diagnostico?: StringFieldUpdateOperationsInput | string
-    tratamientos?: StringFieldUpdateOperationsInput | string
-    medicacion?: StringFieldUpdateOperationsInput | string
-    alergias?: NullableStringFieldUpdateOperationsInput | string | null
+    fechaInicio?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    fechaAlta?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     activo?: BoolFieldUpdateOperationsInput | boolean
-    adaptaciones?: BoolFieldUpdateOperationsInput | boolean
-    apoyos?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     trabajadoresAsignados?: ClienteTrabajadorUpdateManyWithoutClienteNestedInput
     colegio?: ColegioUpdateOneWithoutClientesNestedInput
     horarios?: HorarioUpdateManyWithoutClienteNestedInput
     contactosFamiliares?: FamiliarUpdateManyWithoutClienteNestedInput
+    sanitario?: SanitarioUpdateManyWithoutClienteNestedInput
     registrosDiarios?: RegistroDiarioUpdateManyWithoutClienteNestedInput
     objetivos?: ObjetivoUpdateManyWithoutClienteNestedInput
   }
@@ -18490,21 +20442,21 @@ export namespace Prisma {
     nombre?: StringFieldUpdateOperationsInput | string
     apellidos?: StringFieldUpdateOperationsInput | string
     fechaNacimiento?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dni?: StringFieldUpdateOperationsInput | string
     domicilio?: StringFieldUpdateOperationsInput | string
+    provincia?: StringFieldUpdateOperationsInput | string
+    ciudad?: StringFieldUpdateOperationsInput | string
     curso?: StringFieldUpdateOperationsInput | string
-    diagnostico?: StringFieldUpdateOperationsInput | string
-    tratamientos?: StringFieldUpdateOperationsInput | string
-    medicacion?: StringFieldUpdateOperationsInput | string
-    alergias?: NullableStringFieldUpdateOperationsInput | string | null
+    fechaInicio?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    fechaAlta?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     activo?: BoolFieldUpdateOperationsInput | boolean
-    adaptaciones?: BoolFieldUpdateOperationsInput | boolean
-    apoyos?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     colegioId?: NullableStringFieldUpdateOperationsInput | string | null
     trabajadoresAsignados?: ClienteTrabajadorUncheckedUpdateManyWithoutClienteNestedInput
     horarios?: HorarioUncheckedUpdateManyWithoutClienteNestedInput
     contactosFamiliares?: FamiliarUncheckedUpdateManyWithoutClienteNestedInput
+    sanitario?: SanitarioUncheckedUpdateManyWithoutClienteNestedInput
     registrosDiarios?: RegistroDiarioUncheckedUpdateManyWithoutClienteNestedInput
     objetivos?: ObjetivoUncheckedUpdateManyWithoutClienteNestedInput
   }
@@ -18566,21 +20518,21 @@ export namespace Prisma {
     nombre: string
     apellidos: string
     fechaNacimiento?: Date | string | null
+    dni: string
     domicilio: string
+    provincia: string
+    ciudad: string
     curso: string
-    diagnostico: string
-    tratamientos: string
-    medicacion: string
-    alergias?: string | null
+    fechaInicio?: Date | string | null
+    fechaAlta?: Date | string | null
     activo?: boolean
-    adaptaciones?: boolean
-    apoyos?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     trabajadoresAsignados?: ClienteTrabajadorCreateNestedManyWithoutClienteInput
     colegio?: ColegioCreateNestedOneWithoutClientesInput
     horarios?: HorarioCreateNestedManyWithoutClienteInput
     informes?: InformeCreateNestedManyWithoutClienteInput
+    sanitario?: SanitarioCreateNestedManyWithoutClienteInput
     registrosDiarios?: RegistroDiarioCreateNestedManyWithoutClienteInput
     objetivos?: ObjetivoCreateNestedManyWithoutClienteInput
   }
@@ -18591,21 +20543,21 @@ export namespace Prisma {
     nombre: string
     apellidos: string
     fechaNacimiento?: Date | string | null
+    dni: string
     domicilio: string
+    provincia: string
+    ciudad: string
     curso: string
-    diagnostico: string
-    tratamientos: string
-    medicacion: string
-    alergias?: string | null
+    fechaInicio?: Date | string | null
+    fechaAlta?: Date | string | null
     activo?: boolean
-    adaptaciones?: boolean
-    apoyos?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     colegioId?: string | null
     trabajadoresAsignados?: ClienteTrabajadorUncheckedCreateNestedManyWithoutClienteInput
     horarios?: HorarioUncheckedCreateNestedManyWithoutClienteInput
     informes?: InformeUncheckedCreateNestedManyWithoutClienteInput
+    sanitario?: SanitarioUncheckedCreateNestedManyWithoutClienteInput
     registrosDiarios?: RegistroDiarioUncheckedCreateNestedManyWithoutClienteInput
     objetivos?: ObjetivoUncheckedCreateNestedManyWithoutClienteInput
   }
@@ -18632,21 +20584,21 @@ export namespace Prisma {
     nombre?: StringFieldUpdateOperationsInput | string
     apellidos?: StringFieldUpdateOperationsInput | string
     fechaNacimiento?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dni?: StringFieldUpdateOperationsInput | string
     domicilio?: StringFieldUpdateOperationsInput | string
+    provincia?: StringFieldUpdateOperationsInput | string
+    ciudad?: StringFieldUpdateOperationsInput | string
     curso?: StringFieldUpdateOperationsInput | string
-    diagnostico?: StringFieldUpdateOperationsInput | string
-    tratamientos?: StringFieldUpdateOperationsInput | string
-    medicacion?: StringFieldUpdateOperationsInput | string
-    alergias?: NullableStringFieldUpdateOperationsInput | string | null
+    fechaInicio?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    fechaAlta?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     activo?: BoolFieldUpdateOperationsInput | boolean
-    adaptaciones?: BoolFieldUpdateOperationsInput | boolean
-    apoyos?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     trabajadoresAsignados?: ClienteTrabajadorUpdateManyWithoutClienteNestedInput
     colegio?: ColegioUpdateOneWithoutClientesNestedInput
     horarios?: HorarioUpdateManyWithoutClienteNestedInput
     informes?: InformeUpdateManyWithoutClienteNestedInput
+    sanitario?: SanitarioUpdateManyWithoutClienteNestedInput
     registrosDiarios?: RegistroDiarioUpdateManyWithoutClienteNestedInput
     objetivos?: ObjetivoUpdateManyWithoutClienteNestedInput
   }
@@ -18657,21 +20609,137 @@ export namespace Prisma {
     nombre?: StringFieldUpdateOperationsInput | string
     apellidos?: StringFieldUpdateOperationsInput | string
     fechaNacimiento?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dni?: StringFieldUpdateOperationsInput | string
     domicilio?: StringFieldUpdateOperationsInput | string
+    provincia?: StringFieldUpdateOperationsInput | string
+    ciudad?: StringFieldUpdateOperationsInput | string
     curso?: StringFieldUpdateOperationsInput | string
-    diagnostico?: StringFieldUpdateOperationsInput | string
-    tratamientos?: StringFieldUpdateOperationsInput | string
-    medicacion?: StringFieldUpdateOperationsInput | string
-    alergias?: NullableStringFieldUpdateOperationsInput | string | null
+    fechaInicio?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    fechaAlta?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     activo?: BoolFieldUpdateOperationsInput | boolean
-    adaptaciones?: BoolFieldUpdateOperationsInput | boolean
-    apoyos?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     colegioId?: NullableStringFieldUpdateOperationsInput | string | null
     trabajadoresAsignados?: ClienteTrabajadorUncheckedUpdateManyWithoutClienteNestedInput
     horarios?: HorarioUncheckedUpdateManyWithoutClienteNestedInput
     informes?: InformeUncheckedUpdateManyWithoutClienteNestedInput
+    sanitario?: SanitarioUncheckedUpdateManyWithoutClienteNestedInput
+    registrosDiarios?: RegistroDiarioUncheckedUpdateManyWithoutClienteNestedInput
+    objetivos?: ObjetivoUncheckedUpdateManyWithoutClienteNestedInput
+  }
+
+  export type ClienteCreateWithoutSanitarioInput = {
+    id?: string
+    idCarpetaDrive?: string | null
+    nombre: string
+    apellidos: string
+    fechaNacimiento?: Date | string | null
+    dni: string
+    domicilio: string
+    provincia: string
+    ciudad: string
+    curso: string
+    fechaInicio?: Date | string | null
+    fechaAlta?: Date | string | null
+    activo?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    trabajadoresAsignados?: ClienteTrabajadorCreateNestedManyWithoutClienteInput
+    colegio?: ColegioCreateNestedOneWithoutClientesInput
+    horarios?: HorarioCreateNestedManyWithoutClienteInput
+    informes?: InformeCreateNestedManyWithoutClienteInput
+    contactosFamiliares?: FamiliarCreateNestedManyWithoutClienteInput
+    registrosDiarios?: RegistroDiarioCreateNestedManyWithoutClienteInput
+    objetivos?: ObjetivoCreateNestedManyWithoutClienteInput
+  }
+
+  export type ClienteUncheckedCreateWithoutSanitarioInput = {
+    id?: string
+    idCarpetaDrive?: string | null
+    nombre: string
+    apellidos: string
+    fechaNacimiento?: Date | string | null
+    dni: string
+    domicilio: string
+    provincia: string
+    ciudad: string
+    curso: string
+    fechaInicio?: Date | string | null
+    fechaAlta?: Date | string | null
+    activo?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    colegioId?: string | null
+    trabajadoresAsignados?: ClienteTrabajadorUncheckedCreateNestedManyWithoutClienteInput
+    horarios?: HorarioUncheckedCreateNestedManyWithoutClienteInput
+    informes?: InformeUncheckedCreateNestedManyWithoutClienteInput
+    contactosFamiliares?: FamiliarUncheckedCreateNestedManyWithoutClienteInput
+    registrosDiarios?: RegistroDiarioUncheckedCreateNestedManyWithoutClienteInput
+    objetivos?: ObjetivoUncheckedCreateNestedManyWithoutClienteInput
+  }
+
+  export type ClienteCreateOrConnectWithoutSanitarioInput = {
+    where: ClienteWhereUniqueInput
+    create: XOR<ClienteCreateWithoutSanitarioInput, ClienteUncheckedCreateWithoutSanitarioInput>
+  }
+
+  export type ClienteUpsertWithoutSanitarioInput = {
+    update: XOR<ClienteUpdateWithoutSanitarioInput, ClienteUncheckedUpdateWithoutSanitarioInput>
+    create: XOR<ClienteCreateWithoutSanitarioInput, ClienteUncheckedCreateWithoutSanitarioInput>
+    where?: ClienteWhereInput
+  }
+
+  export type ClienteUpdateToOneWithWhereWithoutSanitarioInput = {
+    where?: ClienteWhereInput
+    data: XOR<ClienteUpdateWithoutSanitarioInput, ClienteUncheckedUpdateWithoutSanitarioInput>
+  }
+
+  export type ClienteUpdateWithoutSanitarioInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    idCarpetaDrive?: NullableStringFieldUpdateOperationsInput | string | null
+    nombre?: StringFieldUpdateOperationsInput | string
+    apellidos?: StringFieldUpdateOperationsInput | string
+    fechaNacimiento?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dni?: StringFieldUpdateOperationsInput | string
+    domicilio?: StringFieldUpdateOperationsInput | string
+    provincia?: StringFieldUpdateOperationsInput | string
+    ciudad?: StringFieldUpdateOperationsInput | string
+    curso?: StringFieldUpdateOperationsInput | string
+    fechaInicio?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    fechaAlta?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    activo?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    trabajadoresAsignados?: ClienteTrabajadorUpdateManyWithoutClienteNestedInput
+    colegio?: ColegioUpdateOneWithoutClientesNestedInput
+    horarios?: HorarioUpdateManyWithoutClienteNestedInput
+    informes?: InformeUpdateManyWithoutClienteNestedInput
+    contactosFamiliares?: FamiliarUpdateManyWithoutClienteNestedInput
+    registrosDiarios?: RegistroDiarioUpdateManyWithoutClienteNestedInput
+    objetivos?: ObjetivoUpdateManyWithoutClienteNestedInput
+  }
+
+  export type ClienteUncheckedUpdateWithoutSanitarioInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    idCarpetaDrive?: NullableStringFieldUpdateOperationsInput | string | null
+    nombre?: StringFieldUpdateOperationsInput | string
+    apellidos?: StringFieldUpdateOperationsInput | string
+    fechaNacimiento?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dni?: StringFieldUpdateOperationsInput | string
+    domicilio?: StringFieldUpdateOperationsInput | string
+    provincia?: StringFieldUpdateOperationsInput | string
+    ciudad?: StringFieldUpdateOperationsInput | string
+    curso?: StringFieldUpdateOperationsInput | string
+    fechaInicio?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    fechaAlta?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    activo?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    colegioId?: NullableStringFieldUpdateOperationsInput | string | null
+    trabajadoresAsignados?: ClienteTrabajadorUncheckedUpdateManyWithoutClienteNestedInput
+    horarios?: HorarioUncheckedUpdateManyWithoutClienteNestedInput
+    informes?: InformeUncheckedUpdateManyWithoutClienteNestedInput
+    contactosFamiliares?: FamiliarUncheckedUpdateManyWithoutClienteNestedInput
     registrosDiarios?: RegistroDiarioUncheckedUpdateManyWithoutClienteNestedInput
     objetivos?: ObjetivoUncheckedUpdateManyWithoutClienteNestedInput
   }
@@ -18682,15 +20750,14 @@ export namespace Prisma {
     nombre: string
     apellidos: string
     fechaNacimiento?: Date | string | null
+    dni: string
     domicilio: string
+    provincia: string
+    ciudad: string
     curso: string
-    diagnostico: string
-    tratamientos: string
-    medicacion: string
-    alergias?: string | null
+    fechaInicio?: Date | string | null
+    fechaAlta?: Date | string | null
     activo?: boolean
-    adaptaciones?: boolean
-    apoyos?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     trabajadoresAsignados?: ClienteTrabajadorCreateNestedManyWithoutClienteInput
@@ -18698,6 +20765,7 @@ export namespace Prisma {
     horarios?: HorarioCreateNestedManyWithoutClienteInput
     informes?: InformeCreateNestedManyWithoutClienteInput
     contactosFamiliares?: FamiliarCreateNestedManyWithoutClienteInput
+    sanitario?: SanitarioCreateNestedManyWithoutClienteInput
     objetivos?: ObjetivoCreateNestedManyWithoutClienteInput
   }
 
@@ -18707,15 +20775,14 @@ export namespace Prisma {
     nombre: string
     apellidos: string
     fechaNacimiento?: Date | string | null
+    dni: string
     domicilio: string
+    provincia: string
+    ciudad: string
     curso: string
-    diagnostico: string
-    tratamientos: string
-    medicacion: string
-    alergias?: string | null
+    fechaInicio?: Date | string | null
+    fechaAlta?: Date | string | null
     activo?: boolean
-    adaptaciones?: boolean
-    apoyos?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     colegioId?: string | null
@@ -18723,6 +20790,7 @@ export namespace Prisma {
     horarios?: HorarioUncheckedCreateNestedManyWithoutClienteInput
     informes?: InformeUncheckedCreateNestedManyWithoutClienteInput
     contactosFamiliares?: FamiliarUncheckedCreateNestedManyWithoutClienteInput
+    sanitario?: SanitarioUncheckedCreateNestedManyWithoutClienteInput
     objetivos?: ObjetivoUncheckedCreateNestedManyWithoutClienteInput
   }
 
@@ -18793,15 +20861,14 @@ export namespace Prisma {
     nombre?: StringFieldUpdateOperationsInput | string
     apellidos?: StringFieldUpdateOperationsInput | string
     fechaNacimiento?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dni?: StringFieldUpdateOperationsInput | string
     domicilio?: StringFieldUpdateOperationsInput | string
+    provincia?: StringFieldUpdateOperationsInput | string
+    ciudad?: StringFieldUpdateOperationsInput | string
     curso?: StringFieldUpdateOperationsInput | string
-    diagnostico?: StringFieldUpdateOperationsInput | string
-    tratamientos?: StringFieldUpdateOperationsInput | string
-    medicacion?: StringFieldUpdateOperationsInput | string
-    alergias?: NullableStringFieldUpdateOperationsInput | string | null
+    fechaInicio?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    fechaAlta?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     activo?: BoolFieldUpdateOperationsInput | boolean
-    adaptaciones?: BoolFieldUpdateOperationsInput | boolean
-    apoyos?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     trabajadoresAsignados?: ClienteTrabajadorUpdateManyWithoutClienteNestedInput
@@ -18809,6 +20876,7 @@ export namespace Prisma {
     horarios?: HorarioUpdateManyWithoutClienteNestedInput
     informes?: InformeUpdateManyWithoutClienteNestedInput
     contactosFamiliares?: FamiliarUpdateManyWithoutClienteNestedInput
+    sanitario?: SanitarioUpdateManyWithoutClienteNestedInput
     objetivos?: ObjetivoUpdateManyWithoutClienteNestedInput
   }
 
@@ -18818,15 +20886,14 @@ export namespace Prisma {
     nombre?: StringFieldUpdateOperationsInput | string
     apellidos?: StringFieldUpdateOperationsInput | string
     fechaNacimiento?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dni?: StringFieldUpdateOperationsInput | string
     domicilio?: StringFieldUpdateOperationsInput | string
+    provincia?: StringFieldUpdateOperationsInput | string
+    ciudad?: StringFieldUpdateOperationsInput | string
     curso?: StringFieldUpdateOperationsInput | string
-    diagnostico?: StringFieldUpdateOperationsInput | string
-    tratamientos?: StringFieldUpdateOperationsInput | string
-    medicacion?: StringFieldUpdateOperationsInput | string
-    alergias?: NullableStringFieldUpdateOperationsInput | string | null
+    fechaInicio?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    fechaAlta?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     activo?: BoolFieldUpdateOperationsInput | boolean
-    adaptaciones?: BoolFieldUpdateOperationsInput | boolean
-    apoyos?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     colegioId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -18834,6 +20901,7 @@ export namespace Prisma {
     horarios?: HorarioUncheckedUpdateManyWithoutClienteNestedInput
     informes?: InformeUncheckedUpdateManyWithoutClienteNestedInput
     contactosFamiliares?: FamiliarUncheckedUpdateManyWithoutClienteNestedInput
+    sanitario?: SanitarioUncheckedUpdateManyWithoutClienteNestedInput
     objetivos?: ObjetivoUncheckedUpdateManyWithoutClienteNestedInput
   }
 
@@ -18894,15 +20962,14 @@ export namespace Prisma {
     nombre: string
     apellidos: string
     fechaNacimiento?: Date | string | null
+    dni: string
     domicilio: string
+    provincia: string
+    ciudad: string
     curso: string
-    diagnostico: string
-    tratamientos: string
-    medicacion: string
-    alergias?: string | null
+    fechaInicio?: Date | string | null
+    fechaAlta?: Date | string | null
     activo?: boolean
-    adaptaciones?: boolean
-    apoyos?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     trabajadoresAsignados?: ClienteTrabajadorCreateNestedManyWithoutClienteInput
@@ -18910,6 +20977,7 @@ export namespace Prisma {
     horarios?: HorarioCreateNestedManyWithoutClienteInput
     informes?: InformeCreateNestedManyWithoutClienteInput
     contactosFamiliares?: FamiliarCreateNestedManyWithoutClienteInput
+    sanitario?: SanitarioCreateNestedManyWithoutClienteInput
     registrosDiarios?: RegistroDiarioCreateNestedManyWithoutClienteInput
   }
 
@@ -18919,15 +20987,14 @@ export namespace Prisma {
     nombre: string
     apellidos: string
     fechaNacimiento?: Date | string | null
+    dni: string
     domicilio: string
+    provincia: string
+    ciudad: string
     curso: string
-    diagnostico: string
-    tratamientos: string
-    medicacion: string
-    alergias?: string | null
+    fechaInicio?: Date | string | null
+    fechaAlta?: Date | string | null
     activo?: boolean
-    adaptaciones?: boolean
-    apoyos?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     colegioId?: string | null
@@ -18935,6 +21002,7 @@ export namespace Prisma {
     horarios?: HorarioUncheckedCreateNestedManyWithoutClienteInput
     informes?: InformeUncheckedCreateNestedManyWithoutClienteInput
     contactosFamiliares?: FamiliarUncheckedCreateNestedManyWithoutClienteInput
+    sanitario?: SanitarioUncheckedCreateNestedManyWithoutClienteInput
     registrosDiarios?: RegistroDiarioUncheckedCreateNestedManyWithoutClienteInput
   }
 
@@ -19005,15 +21073,14 @@ export namespace Prisma {
     nombre?: StringFieldUpdateOperationsInput | string
     apellidos?: StringFieldUpdateOperationsInput | string
     fechaNacimiento?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dni?: StringFieldUpdateOperationsInput | string
     domicilio?: StringFieldUpdateOperationsInput | string
+    provincia?: StringFieldUpdateOperationsInput | string
+    ciudad?: StringFieldUpdateOperationsInput | string
     curso?: StringFieldUpdateOperationsInput | string
-    diagnostico?: StringFieldUpdateOperationsInput | string
-    tratamientos?: StringFieldUpdateOperationsInput | string
-    medicacion?: StringFieldUpdateOperationsInput | string
-    alergias?: NullableStringFieldUpdateOperationsInput | string | null
+    fechaInicio?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    fechaAlta?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     activo?: BoolFieldUpdateOperationsInput | boolean
-    adaptaciones?: BoolFieldUpdateOperationsInput | boolean
-    apoyos?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     trabajadoresAsignados?: ClienteTrabajadorUpdateManyWithoutClienteNestedInput
@@ -19021,6 +21088,7 @@ export namespace Prisma {
     horarios?: HorarioUpdateManyWithoutClienteNestedInput
     informes?: InformeUpdateManyWithoutClienteNestedInput
     contactosFamiliares?: FamiliarUpdateManyWithoutClienteNestedInput
+    sanitario?: SanitarioUpdateManyWithoutClienteNestedInput
     registrosDiarios?: RegistroDiarioUpdateManyWithoutClienteNestedInput
   }
 
@@ -19030,15 +21098,14 @@ export namespace Prisma {
     nombre?: StringFieldUpdateOperationsInput | string
     apellidos?: StringFieldUpdateOperationsInput | string
     fechaNacimiento?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dni?: StringFieldUpdateOperationsInput | string
     domicilio?: StringFieldUpdateOperationsInput | string
+    provincia?: StringFieldUpdateOperationsInput | string
+    ciudad?: StringFieldUpdateOperationsInput | string
     curso?: StringFieldUpdateOperationsInput | string
-    diagnostico?: StringFieldUpdateOperationsInput | string
-    tratamientos?: StringFieldUpdateOperationsInput | string
-    medicacion?: StringFieldUpdateOperationsInput | string
-    alergias?: NullableStringFieldUpdateOperationsInput | string | null
+    fechaInicio?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    fechaAlta?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     activo?: BoolFieldUpdateOperationsInput | boolean
-    adaptaciones?: BoolFieldUpdateOperationsInput | boolean
-    apoyos?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     colegioId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -19046,6 +21113,7 @@ export namespace Prisma {
     horarios?: HorarioUncheckedUpdateManyWithoutClienteNestedInput
     informes?: InformeUncheckedUpdateManyWithoutClienteNestedInput
     contactosFamiliares?: FamiliarUncheckedUpdateManyWithoutClienteNestedInput
+    sanitario?: SanitarioUncheckedUpdateManyWithoutClienteNestedInput
     registrosDiarios?: RegistroDiarioUncheckedUpdateManyWithoutClienteNestedInput
   }
 
@@ -19384,15 +21452,14 @@ export namespace Prisma {
     nombre: string
     apellidos: string
     fechaNacimiento?: Date | string | null
+    dni: string
     domicilio: string
+    provincia: string
+    ciudad: string
     curso: string
-    diagnostico: string
-    tratamientos: string
-    medicacion: string
-    alergias?: string | null
+    fechaInicio?: Date | string | null
+    fechaAlta?: Date | string | null
     activo?: boolean
-    adaptaciones?: boolean
-    apoyos?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -19403,21 +21470,21 @@ export namespace Prisma {
     nombre?: StringFieldUpdateOperationsInput | string
     apellidos?: StringFieldUpdateOperationsInput | string
     fechaNacimiento?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dni?: StringFieldUpdateOperationsInput | string
     domicilio?: StringFieldUpdateOperationsInput | string
+    provincia?: StringFieldUpdateOperationsInput | string
+    ciudad?: StringFieldUpdateOperationsInput | string
     curso?: StringFieldUpdateOperationsInput | string
-    diagnostico?: StringFieldUpdateOperationsInput | string
-    tratamientos?: StringFieldUpdateOperationsInput | string
-    medicacion?: StringFieldUpdateOperationsInput | string
-    alergias?: NullableStringFieldUpdateOperationsInput | string | null
+    fechaInicio?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    fechaAlta?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     activo?: BoolFieldUpdateOperationsInput | boolean
-    adaptaciones?: BoolFieldUpdateOperationsInput | boolean
-    apoyos?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     trabajadoresAsignados?: ClienteTrabajadorUpdateManyWithoutClienteNestedInput
     horarios?: HorarioUpdateManyWithoutClienteNestedInput
     informes?: InformeUpdateManyWithoutClienteNestedInput
     contactosFamiliares?: FamiliarUpdateManyWithoutClienteNestedInput
+    sanitario?: SanitarioUpdateManyWithoutClienteNestedInput
     registrosDiarios?: RegistroDiarioUpdateManyWithoutClienteNestedInput
     objetivos?: ObjetivoUpdateManyWithoutClienteNestedInput
   }
@@ -19428,21 +21495,21 @@ export namespace Prisma {
     nombre?: StringFieldUpdateOperationsInput | string
     apellidos?: StringFieldUpdateOperationsInput | string
     fechaNacimiento?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dni?: StringFieldUpdateOperationsInput | string
     domicilio?: StringFieldUpdateOperationsInput | string
+    provincia?: StringFieldUpdateOperationsInput | string
+    ciudad?: StringFieldUpdateOperationsInput | string
     curso?: StringFieldUpdateOperationsInput | string
-    diagnostico?: StringFieldUpdateOperationsInput | string
-    tratamientos?: StringFieldUpdateOperationsInput | string
-    medicacion?: StringFieldUpdateOperationsInput | string
-    alergias?: NullableStringFieldUpdateOperationsInput | string | null
+    fechaInicio?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    fechaAlta?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     activo?: BoolFieldUpdateOperationsInput | boolean
-    adaptaciones?: BoolFieldUpdateOperationsInput | boolean
-    apoyos?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     trabajadoresAsignados?: ClienteTrabajadorUncheckedUpdateManyWithoutClienteNestedInput
     horarios?: HorarioUncheckedUpdateManyWithoutClienteNestedInput
     informes?: InformeUncheckedUpdateManyWithoutClienteNestedInput
     contactosFamiliares?: FamiliarUncheckedUpdateManyWithoutClienteNestedInput
+    sanitario?: SanitarioUncheckedUpdateManyWithoutClienteNestedInput
     registrosDiarios?: RegistroDiarioUncheckedUpdateManyWithoutClienteNestedInput
     objetivos?: ObjetivoUncheckedUpdateManyWithoutClienteNestedInput
   }
@@ -19453,15 +21520,14 @@ export namespace Prisma {
     nombre?: StringFieldUpdateOperationsInput | string
     apellidos?: StringFieldUpdateOperationsInput | string
     fechaNacimiento?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dni?: StringFieldUpdateOperationsInput | string
     domicilio?: StringFieldUpdateOperationsInput | string
+    provincia?: StringFieldUpdateOperationsInput | string
+    ciudad?: StringFieldUpdateOperationsInput | string
     curso?: StringFieldUpdateOperationsInput | string
-    diagnostico?: StringFieldUpdateOperationsInput | string
-    tratamientos?: StringFieldUpdateOperationsInput | string
-    medicacion?: StringFieldUpdateOperationsInput | string
-    alergias?: NullableStringFieldUpdateOperationsInput | string | null
+    fechaInicio?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    fechaAlta?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     activo?: BoolFieldUpdateOperationsInput | boolean
-    adaptaciones?: BoolFieldUpdateOperationsInput | boolean
-    apoyos?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -19501,11 +21567,30 @@ export namespace Prisma {
     id?: string
     nombreContacto: string
     parentesco?: string | null
+    nombreMadre: string
     telefonoMadre?: string | null
     emailMadre?: string | null
+    dniMadre: string
+    dniPadre: string
+    nombrePadre: string
     telefonoPadre?: string | null
     emailPadre?: string | null
     telefonoWhatsapp?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type SanitarioCreateManyClienteInput = {
+    id?: string
+    diagnostico: string
+    centroSalud: string
+    tratamientos: string
+    medicacion: string
+    alergias?: string | null
+    adaptaciones?: boolean
+    tipoAdaptaciones: string
+    especialistas?: SanitarioCreateespecialistasInput | string[]
+    apoyos?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -19628,8 +21713,12 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     nombreContacto?: StringFieldUpdateOperationsInput | string
     parentesco?: NullableStringFieldUpdateOperationsInput | string | null
+    nombreMadre?: StringFieldUpdateOperationsInput | string
     telefonoMadre?: NullableStringFieldUpdateOperationsInput | string | null
     emailMadre?: NullableStringFieldUpdateOperationsInput | string | null
+    dniMadre?: StringFieldUpdateOperationsInput | string
+    dniPadre?: StringFieldUpdateOperationsInput | string
+    nombrePadre?: StringFieldUpdateOperationsInput | string
     telefonoPadre?: NullableStringFieldUpdateOperationsInput | string | null
     emailPadre?: NullableStringFieldUpdateOperationsInput | string | null
     telefonoWhatsapp?: NullableStringFieldUpdateOperationsInput | string | null
@@ -19641,8 +21730,12 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     nombreContacto?: StringFieldUpdateOperationsInput | string
     parentesco?: NullableStringFieldUpdateOperationsInput | string | null
+    nombreMadre?: StringFieldUpdateOperationsInput | string
     telefonoMadre?: NullableStringFieldUpdateOperationsInput | string | null
     emailMadre?: NullableStringFieldUpdateOperationsInput | string | null
+    dniMadre?: StringFieldUpdateOperationsInput | string
+    dniPadre?: StringFieldUpdateOperationsInput | string
+    nombrePadre?: StringFieldUpdateOperationsInput | string
     telefonoPadre?: NullableStringFieldUpdateOperationsInput | string | null
     emailPadre?: NullableStringFieldUpdateOperationsInput | string | null
     telefonoWhatsapp?: NullableStringFieldUpdateOperationsInput | string | null
@@ -19654,11 +21747,60 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     nombreContacto?: StringFieldUpdateOperationsInput | string
     parentesco?: NullableStringFieldUpdateOperationsInput | string | null
+    nombreMadre?: StringFieldUpdateOperationsInput | string
     telefonoMadre?: NullableStringFieldUpdateOperationsInput | string | null
     emailMadre?: NullableStringFieldUpdateOperationsInput | string | null
+    dniMadre?: StringFieldUpdateOperationsInput | string
+    dniPadre?: StringFieldUpdateOperationsInput | string
+    nombrePadre?: StringFieldUpdateOperationsInput | string
     telefonoPadre?: NullableStringFieldUpdateOperationsInput | string | null
     emailPadre?: NullableStringFieldUpdateOperationsInput | string | null
     telefonoWhatsapp?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SanitarioUpdateWithoutClienteInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    diagnostico?: StringFieldUpdateOperationsInput | string
+    centroSalud?: StringFieldUpdateOperationsInput | string
+    tratamientos?: StringFieldUpdateOperationsInput | string
+    medicacion?: StringFieldUpdateOperationsInput | string
+    alergias?: NullableStringFieldUpdateOperationsInput | string | null
+    adaptaciones?: BoolFieldUpdateOperationsInput | boolean
+    tipoAdaptaciones?: StringFieldUpdateOperationsInput | string
+    especialistas?: SanitarioUpdateespecialistasInput | string[]
+    apoyos?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SanitarioUncheckedUpdateWithoutClienteInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    diagnostico?: StringFieldUpdateOperationsInput | string
+    centroSalud?: StringFieldUpdateOperationsInput | string
+    tratamientos?: StringFieldUpdateOperationsInput | string
+    medicacion?: StringFieldUpdateOperationsInput | string
+    alergias?: NullableStringFieldUpdateOperationsInput | string | null
+    adaptaciones?: BoolFieldUpdateOperationsInput | boolean
+    tipoAdaptaciones?: StringFieldUpdateOperationsInput | string
+    especialistas?: SanitarioUpdateespecialistasInput | string[]
+    apoyos?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SanitarioUncheckedUpdateManyWithoutClienteInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    diagnostico?: StringFieldUpdateOperationsInput | string
+    centroSalud?: StringFieldUpdateOperationsInput | string
+    tratamientos?: StringFieldUpdateOperationsInput | string
+    medicacion?: StringFieldUpdateOperationsInput | string
+    alergias?: NullableStringFieldUpdateOperationsInput | string | null
+    adaptaciones?: BoolFieldUpdateOperationsInput | boolean
+    tipoAdaptaciones?: StringFieldUpdateOperationsInput | string
+    especialistas?: SanitarioUpdateespecialistasInput | string[]
+    apoyos?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }

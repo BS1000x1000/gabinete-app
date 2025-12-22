@@ -3,16 +3,23 @@ export class CreateClienteDto {
     apellidos: string;
     fechaNacimiento: Date; 
     alergias?: string;
+    dni: string;
+    provincia: string;
+    ciudad: string;
+    fechaInicio: Date;
+    fechaAlta: Date;
     
     nombreDelCentro: string;
     cursoEscolar: string;
     direccionColegio: string;
     
     nombrePadre?: string;
+    dniPadre?: string;
     emailPadre?: string;
     telefonoPadre?: number; 
     
     nombreMadre?: string;
+    dniMadre?: string;
     emailMadre?: string;
     telefonoMadre?: number;
     
@@ -20,20 +27,24 @@ export class CreateClienteDto {
     otroContactoEmail?: string;
     otroContactoTelefono?: number;
 
-    ctoColegioUno?: string; // Contacto Colegio Uno
-    ctoEmailColegioUno?: string; // Contacto Email Colegio Uno
-    ctoRelacionColegioUno?: string; // Relacion Contacto Email Colegio Uno
+    ctoColegioUno: string;
+    ctoTelefonoUno: number; // Contacto Colegio Uno
+    ctoEmailColegioUno: string; // Contacto Email Colegio Uno
+    ctoRelacionColegioUno: string; // Relacion Contacto Email Colegio Uno
     ctoColegioDos?: string;
+    ctoTelefonoDos: number;
     ctoRelacionColegioDos: string;
     ctoEmailColegioDos?: string;
 
     
     domicilio: string;
     diagnostico?: string;
-    otrosTratamientos?: string;
+    centroSalud?: string;
+    tratamientos?: string;
     medicacion?: string;
+    especialistas?: string[]
     
-    adaptaciones?: string[]; 
+    adaptaciones?: boolean; 
     tipoAdaptaciones?: string; 
     numeroDeSesiones?: string[]; 
 

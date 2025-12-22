@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { ClientesService } from '../../../../../services/cliente.service';
 
 @Component({
   selector: 'app-sanitario-tab',
@@ -8,6 +9,8 @@ import { Component } from '@angular/core';
   styleUrl: './sanitario-tab.component.scss'
 })
 export class SanitarioTabComponent {
+  private clientesvc = inject(ClientesService);
+  sanitario = this.clientesvc.sanitario;
 
 }
 

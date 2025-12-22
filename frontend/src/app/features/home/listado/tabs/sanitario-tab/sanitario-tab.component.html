@@ -4,14 +4,14 @@
       <div class="row g-2 mb-2">
         <div class="col-12 d-flex flex-column mb-3">
           <small class="flex-shrink-0 me-2 w-50">Centro de salud</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light">San Blas</span>
+          <span class="text-muted flex-grow-1 me-2 bg-light">{{sanitario()?.centroSalud}}</span>
         </div>
         <div class="col-12 d-flex flex-column mb-3">
           <small class="flex-shrink-0 me-2 w-50"
             >Especialistas que atienden al cliente</small
           >
           <span class="text-muted flex-grow-1 me-2 bg-light"
-            >Neurologo, nefrologo, psicologo</span
+            >{{sanitario()?.especialistas}}</span
           >
         </div>
         <div class="col-12 d-flex flex-column mb-3">
@@ -19,8 +19,7 @@
             >Diagnóstico o patologias relevantes</small
           >
           <span class="text-muted flex-grow-1 me-2 bg-light"
-            >TDAH, vegija hiperactiva, por lo que tiene que ir bastante al
-            servicio a hacer pis, sin poderse aguantar las ganas</span
+            >{{sanitario()?.diagnostico}}</span
           >
         </div>
         <!-- Columna Izquierda -->
@@ -28,7 +27,7 @@
           class="col-4 d-flex justify-content-between align-items-center mb-3"
         >
           <small class="flex-shrink-0 me-2 w-50">Medicacion</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light">SI</span>
+          <span class="text-muted flex-grow-1 me-2 bg-light">{{sanitario()?.medicacion ? 'SI' : 'NO'}}</span>
         </div>
         <!-- Columna Derecha -->
         <div
@@ -36,7 +35,7 @@
         >
           <small class="flex-shrink-0 me-3">Tipo</small>
           <span class="text-muted flex-grow-1 me-2 bg-light text-break"
-            >Medicacion para tratar exceso de miccion</span
+            >{{sanitario()?.medicacion}}</span
           >
         </div>
       </div>
@@ -45,13 +44,13 @@
         <!-- Columna Izquierda -->
         <div class="col-4 d-flex justify-content-between align-items-center">
           <small class="flex-shrink-0 me-2 w-50">Alergias</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light">NO</span>
+          <span class="text-muted flex-grow-1 me-2 bg-light">{{sanitario()?.alergias ? 'SI' : 'NO'}}</span>
         </div>
         <!-- Columna Derecha -->
         <div class="col-8 d-flex justify-content-between align-items-center">
           <small class="me-3">Tipo</small>
           <!-- text-break para correos largos -->
-          <span class="text-muted flex-grow-1 me-2 bg-light text-break"></span>
+          <span class="text-muted flex-grow-1 me-2 bg-light text-break">{{sanitario()?.alergias}}</span>
         </div>
       </div>
 

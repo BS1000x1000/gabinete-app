@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Cliente" ADD COLUMN     "fecha_alta" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP;

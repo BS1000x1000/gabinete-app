@@ -50,8 +50,12 @@ model Colegio {
   id                    String   @id @default(uuid())
   nombre                String   @unique
   direccionColegio      String   @map("direccion_colegio")
-  ctoEmailColegioUno    String?  @map("email_primero")
-  ctoRelacionColegioUno String?  @map("txt_primero")
+  ctoColegioUno         String   @map("nombre_primero")
+  ctoTelefonoUno        String   @map("telefono_primero")
+  ctoEmailColegioUno    String   @map("email_primero")
+  ctoRelacionColegioUno String   @map("txt_primero")
+  ctoColegioDos         String?  @map("nombre_segundo")
+  ctoTelefonoDos        String?  @map("telefono_segundo")
   ctoEmailColegioDos    String?  @map("email_segundo")
   ctoRelacionColegioDos String?  @map("txt_segundo")
   createdAt             DateTime @default(now()) @map("fecha_creacion")
@@ -66,15 +70,14 @@ model Cliente {
   nombre          String
   apellidos       String
   fechaNacimiento DateTime? @map("fecha_nacimiento")
+  dni             String
   domicilio       String
+  provincia       String
+  ciudad          String
   curso           String
-  diagnostico     String
-  tratamientos    String
-  medicacion      String
-  alergias        String?   @db.Text
+  fechaInicio     DateTime? @map("fecha_inicio")
+  fechaAlta       DateTime? @default(now()) @map("fecha_alta")
   activo          Boolean   @default(true)
-  adaptaciones    Boolean   @default(false)
-  apoyos          Boolean   @default(false)
   createdAt       DateTime  @default(now()) @map("fecha_creacion")
   updatedAt       DateTime  @updatedAt @map("ultima_actualizacion")
 
@@ -86,6 +89,7 @@ model Cliente {
   horarios            Horario[]
   informes            Informe[]
   contactosFamiliares Familiar[]       @relation("ClienteContactos")
+  sanitario           Sanitario[]      @relation("ClienteSanitario")
   registrosDiarios    RegistroDiario[]
   objetivos           Objetivo[] // Nuevo: Objetivos asociados a este cliente
 }
@@ -142,8 +146,12 @@ model Familiar {
   id               String   @id @default(uuid())
   nombreContacto   String   @map("nombre_contacto")
   parentesco       String?
+  nombreMadre      String   @map("nombre_madre")
   telefonoMadre    String?  @map("telefono_madre")
   emailMadre       String?  @map("email_madre")
+  dniMadre         String   @map("dni_madre")
+  dniPadre         String   @map("dni_padre")
+  nombrePadre      String   @map("nombre_padre")
   telefonoPadre    String?  @map("telefono_padre")
   emailPadre       String?  @map("email_padre")
   telefonoWhatsapp String?  @map("telefono_whatsapp")
@@ -152,6 +160,24 @@ model Familiar {
 
   clienteId String  @unique @map("id_cliente")
   cliente   Cliente @relation("ClienteContactos", fields: [clienteId], references: [id])
+}
+
+model Sanitario {
+  id               String   @id @default(uuid())
+  diagnostico      String
+  centroSalud      String   @map("centro_salud")
+  tratamientos     String
+  medicacion       String
+  alergias         String?  @db.Text
+  adaptaciones     Boolean  @default(false)
+  tipoAdaptaciones String   @map("tipo_adaptaciones")
+  especialistas    String[]
+  apoyos           Boolean  @default(false)
+  createdAt        DateTime @default(now()) @map("fecha_creacion")
+  updatedAt        DateTime @updatedAt @map("ultima_actualizacion")
+
+  clienteId String  @unique @map("id_cliente")
+  cliente   Cliente @relation("ClienteSanitario", fields: [clienteId], references: [id])
 }
 
 model RegistroDiario {

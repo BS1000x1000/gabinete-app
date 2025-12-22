@@ -14,6 +14,7 @@ type ClienteWithRelations = Prisma.ClienteGetPayload<{
   include: {
     colegio: true;
     contactosFamiliares: true;
+    sanitario: true;
   };
 }>;
 
@@ -41,17 +42,26 @@ export class ClientesService {
           colegioExistente = await tx.colegio.upsert({
             where: { nombre: data.nombreDelCentro },
             update: {
+              nombre: data.nombreDelCentro,
+              ctoColegioUno: data.ctoColegioUno,
               direccionColegio: data.direccionColegio,
               ctoEmailColegioUno: data.ctoEmailColegioUno,
+              ctoTelefonoUno: String(data.ctoTelefonoUno),
               ctoRelacionColegioUno: data.ctoRelacionColegioUno,
+              ctoColegioDos: data.ctoColegioDos,
+              ctoTelefonoDos: String(data.ctoTelefonoDos),
               ctoEmailColegioDos: data.ctoEmailColegioDos,
               ctoRelacionColegioDos: data.ctoRelacionColegioDos,
             },
             create: {
               nombre: data.nombreDelCentro,
+              ctoColegioUno: data.ctoColegioUno,
+              ctoTelefonoUno: String(data.ctoTelefonoUno),
               direccionColegio: data.direccionColegio,
-              ctoEmailColegioUno: data.ctoEmailColegioUno,
-              ctoRelacionColegioUno: data.ctoRelacionColegioUno,
+              ctoEmailColegioUno: data.ctoEmailColegioUno!,
+              ctoRelacionColegioUno: data.ctoRelacionColegioUno!,
+              ctoColegioDos: data.ctoColegioDos,
+              ctoTelefonoDos: String(data.ctoTelefonoDos),
               ctoEmailColegioDos: data.ctoEmailColegioDos,
               ctoRelacionColegioDos: data.ctoRelacionColegioDos,
             },
@@ -64,18 +74,14 @@ export class ClientesService {
             nombre: data.nombre,
             apellidos: data.apellidos,
             fechaNacimiento: data.fechaNacimiento,
-            alergias: data.alergias,
             activo: true,
-
+            dni: data.dni,
+            provincia: data.provincia,
+            ciudad: data.ciudad,
             domicilio: data.domicilio,
             curso: data.cursoEscolar,
-            diagnostico: data.diagnostico ?? '',
-            tratamientos: data.otrosTratamientos ?? '',
-            medicacion: data.medicacion ?? '',
-
-            // Campos booleanos basados en la presencia de datos
-            adaptaciones: !!data.tipoAdaptaciones,
-            apoyos: !!(data.numeroDeSesiones && data.numeroDeSesiones.length > 0),
+            fechaInicio: data.fechaInicio ?? null,
+            fechaAlta: data.fechaAlta,
 
             // Conecta el colegio si se creó o encontró
             colegio: colegioExistente
@@ -91,13 +97,15 @@ export class ClientesService {
                   data.otroContactoNombre ||
                   'Contacto Principal',
                 parentesco: 'Contacto Principal',
-
-                emailPadre: data.emailPadre,
+                nombrePadre: data.nombrePadre?? '',
+                dniPadre: data.dniPadre?? '',
+                emailPadre: data.emailPadre?? '',
                 telefonoPadre: data.telefonoPadre
-                  ? String(data.telefonoPadre)
-                  : undefined,
-
-                emailMadre: data.emailMadre,
+                ? String(data.telefonoPadre)
+                : undefined,
+                nombreMadre: data.nombreMadre ?? '',
+                dniMadre: data.dniMadre?? '',
+                emailMadre: data.emailMadre?? '',
                 telefonoMadre: data.telefonoMadre
                   ? String(data.telefonoMadre)
                   : undefined,
@@ -108,11 +116,27 @@ export class ClientesService {
                   String(data.otroContactoTelefono),
               },
             },
+
+            // Creacion anidada de informacion sanitaria
+            sanitario: {
+              create: {
+                  centroSalud: data.centroSalud ?? '',
+                  diagnostico: data.diagnostico ?? '',
+                  tratamientos: data.tratamientos ?? '',
+                  medicacion: data.medicacion ?? '',
+                  alergias: data.alergias,
+                  adaptaciones: !!data.tipoAdaptaciones,
+                  tipoAdaptaciones: data.tipoAdaptaciones ?? '',
+                  especialistas: data.especialistas ?? [],
+                  apoyos: !!(data.numeroDeSesiones && data.numeroDeSesiones.length > 0)
+              }
+            }
           },
           // Incluir la información de relaciones en el retorno
           include: {
             colegio: true,
             contactosFamiliares: true,
+            sanitario: true
           },
         });
       });
@@ -142,6 +166,7 @@ export class ClientesService {
         include: {
           colegio: true,
           contactosFamiliares: true,
+          sanitario: true
         },
         orderBy: { id: 'desc' },
       });
@@ -166,6 +191,7 @@ export class ClientesService {
         include: {
           colegio: true,
           contactosFamiliares: true,
+          sanitario: true
         },
       });
 
@@ -198,6 +224,11 @@ export class ClientesService {
         const colegio = await prisma.colegio.upsert({
           where: { nombre: data.nombreDelCentro },
           update: {
+            nombre: data.nombreDelCentro,
+            ctoColegioUno: data.ctoColegioUno,
+            ctoTelefonoUno: String(data.ctoTelefonoUno),
+            ctoColegioDos: data.ctoColegioDos,
+            ctoTelefonoDos: String(data.ctoTelefonoDos),
             direccionColegio: data.direccionColegio,
             ctoEmailColegioUno: data.ctoEmailColegioUno,
             ctoRelacionColegioUno: data.ctoRelacionColegioUno,
@@ -206,9 +237,13 @@ export class ClientesService {
           },
           create: {
             nombre: data.nombreDelCentro,
+            ctoColegioUno: data.ctoColegioUno,
+            ctoTelefonoUno: String(data.ctoTelefonoUno),
+            ctoColegioDos: data.ctoColegioDos,
+            ctoTelefonoDos: String(data.ctoTelefonoDos),
             direccionColegio: data.direccionColegio,
-            ctoEmailColegioUno: data.ctoEmailColegioUno,
-            ctoRelacionColegioUno: data.ctoRelacionColegioUno,
+            ctoEmailColegioUno: data.ctoEmailColegioUno!,
+            ctoRelacionColegioUno: data.ctoRelacionColegioUno!,
             ctoEmailColegioDos: data.ctoEmailColegioDos,
             ctoRelacionColegioDos: data.ctoRelacionColegioDos,
           },
@@ -225,17 +260,15 @@ export class ClientesService {
           fechaNacimiento: data.fechaNacimiento,
           domicilio: data.domicilio,
           curso: data.cursoEscolar,
-          diagnostico: data.diagnostico,
-          tratamientos: data.otrosTratamientos,
-          medicacion: data.medicacion,
-          alergias: data.alergias,
-          adaptaciones: !!data.tipoAdaptaciones,
-          apoyos: !!(data.numeroDeSesiones && data.numeroDeSesiones.length > 0),
+          provincia: data.provincia,
+          ciudad: data.ciudad,
+          dni: data.dni,
           colegio: colegioId ? { connect: { id: colegioId } } : undefined,
         },
         include: {
           colegio: true,
           contactosFamiliares: true,
+          sanitario: true
         },
       });
 
@@ -265,11 +298,15 @@ export class ClientesService {
             clienteId: id,
             nombreContacto:
               data.nombreMadre || data.nombrePadre || 'Contacto Principal',
+            nombreMadre: data.nombreMadre ?? '',
             emailMadre: data.emailMadre,
+            dniMadre: data.dniMadre ?? '',
             telefonoMadre: data.telefonoMadre
               ? String(data.telefonoMadre)
               : undefined,
             emailPadre: data.emailPadre,
+            nombrePadre: data.nombrePadre ?? '',
+            dniPadre: data.dniPadre ?? '',
             telefonoPadre: data.telefonoPadre
               ? String(data.telefonoPadre)
               : undefined,

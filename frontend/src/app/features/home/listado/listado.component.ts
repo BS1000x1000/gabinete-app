@@ -43,7 +43,11 @@ export class ListadoComponent implements OnInit, OnDestroy {
   // Destructor para limpiar Observables
   private destroy$ = new Subject<void>();
 
-  private clientesService = inject(ClientesService);
+  private clientesSvc = inject(ClientesService);
+  cliente = this.clientesSvc.cliente; // ← señal compartida
+  contactos = this.clientesSvc.contactos;
+  colegio = this.clientesSvc.colegio;
+  sanitario = this.clientesSvc.sanitario;
 
   // CORRECCIÓN CLAVE: Iniciar la suscripción del router aquí
   ngOnInit(): void {
@@ -54,19 +58,23 @@ export class ListadoComponent implements OnInit, OnDestroy {
   getDetalleCliente() {
     this.route.paramMap
       .pipe(
-        // switchMap se ejecuta CADA VEZ que el parámetro 'id' cambie
+        // 1. Ahora, 'params' se recibe correctamente del paramMap
+        // y lo usamos para obtener el ID de la URL.
         switchMap((params) => {
-          const id = params.get('id');
+          const id = params.get('id'); // <-- ¡CORREGIDO! Usamos el ID de la URL
+
           if (!id) {
             this.error.set('ID de cliente no proporcionado en la URL.');
             return EMPTY;
           }
           this.isLoading.set(true);
           this.error.set(null);
-          // Llamar al servicio API para obtener el cliente
-          return this.clientesService.getClienteById(id).pipe(
+
+          // 2. Usamos el método loadAll() del servicio (que es el encargado de
+          // hacer múltiples llamadas y setear los Signals).
+          return this.clientesSvc.loadAll(id).pipe(
             catchError((err) => {
-              this.error.set('Error al cargar los datos del cliente');
+              this.error.set('Error al cargar los datos completos del cliente');
               console.error('Error fetching client:', err);
               return EMPTY;
             })
@@ -75,12 +83,16 @@ export class ListadoComponent implements OnInit, OnDestroy {
         takeUntil(this.destroy$)
       )
       .subscribe({
-        next: (clienteData: any) => {
-          // 5. Guardar los datos en el servicio de estado compartido
-          this.clientesService.setCliente(clienteData);
+        // 3. El 'next' ahora espera 'void', ya que los datos ya fueron seteados
+        // en los Signals dentro del servicio (con los 'tap' de loadAll).
+        next: () => {
           this.isLoading.set(false);
-          console.log(clienteData);
+          console.log(
+            'Carga de datos de cliente completa y Signals actualizados.'
+          );
         },
+        // El error ya se maneja en el catchError, pero mantenemos el error handler
+        // en el subscribe para cualquier error que pudiera escapar.
         error: () => {
           this.isLoading.set(false);
         },
@@ -90,6 +102,6 @@ export class ListadoComponent implements OnInit, OnDestroy {
     this.destroy$.next();
     this.destroy$.complete();
     // Limpia el estado al salir de la vista (opcional, pero buena práctica)
-    this.clientesService.clearCliente();
+    this.clientesSvc.clearCliente();
   }
 }

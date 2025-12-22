@@ -1,7 +1,24 @@
 <!-- TODO: Añadir dinamicamente los datos de los clientes a las tablas -->
 <div class="d-flex listado-wrapper d-flex flex-column flex-lg-row gap-3 p-3">
+  <div
+    *ngIf="isLoading()"
+    class="d-flex align-items-center justify-content-center w-100 position-absolute vw-10 shadow"
+  >
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+  </div>
+
+  <div *ngIf="error()" class="alert alert-danger w-100" role="alert">
+    <span><strong>Error:</strong> {{ error() }}</span>
+  </div>
+
   <!-- COLUMNA IZQUIERDA – datos + botones -->
-  <aside class="left-panel bg-white rounded shadow-sm p-3 justify-content-center">
+  <aside
+    class="left-panel bg-white rounded shadow-sm p-3 justify-content-center"
+    [ngClass]="{ 'opacity-50': isLoading() }"
+    *ngIf="cliente()"
+  >
     <!-- Logo / avatar -->
     <!-- <div class="text-center mb-3">
       <img
@@ -16,13 +33,22 @@
       <div
         class="avatar-lg rounded-circle bg-secondary text-white mb-2 text-center"
       >
-        MO
+        {{ cliente()?.nombre ? cliente()?.nombre!.charAt(0) : ""
+        }}{{ cliente()?.apellidos ? cliente()?.apellidos!.charAt(0) : "" }}
       </div>
     </div>
 
     <!-- Nombre y edad -->
-    <h5 class="text-center mb-1">Martínez Osuna, Hugo</h5>
-    <p class="text-center text-muted mb-3">11 años</p>
+    <h5 class="text-center mb-1">
+      {{
+        cliente()?.apellidos
+          ? cliente()?.apellidos + ", " + cliente()?.nombre
+          : cliente()?.nombre
+      }}
+    </h5>
+    <p class="text-center text-muted mb-3">
+      {{ cliente()?.edad ? cliente()?.edad + " años" : "Edad no disponible" }}
+    </p>
 
     <!-- 3 botones grandes -->
     <div class="d-flex mb-3 justify-content-center btn-group">
@@ -35,7 +61,7 @@
     <div class="mb-3">
       <label class="form-label fw-semibold">Alergias</label>
       <span class="form-control form-control-sm" rows="2" readonly>
-        No registradas</span
+        {{ sanitario()?.alergias || "No registradas" }}</span
       >
     </div>
 
@@ -43,7 +69,7 @@
     <div class="mb-3">
       <label class="form-label fw-semibold">Medicación</label>
       <span class="form-control form-control-sm" rows="2" readonly>
-        Medicación para tratar el exceso de micción</span
+        {{ sanitario()?.medicacion || "No registrada" }}</span
       >
     </div>
 
@@ -85,7 +111,7 @@
           [routerLink]="['./', t]"
           routerLinkActive="active"
           (click)="pestania.set(t)"
-          style="cursor: pointer;"
+          style="cursor: pointer"
         >
           {{ t | titlecase }}
         </a>

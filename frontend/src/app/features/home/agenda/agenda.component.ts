@@ -50,7 +50,7 @@ export class AgendaComponent implements OnInit {
   loadHorarios() {
     //TODO: Hacer el login para que al logarse pille el id
     //const trabajadorId = this.auth.currentTrabajadorId();
-    const trabajadorId = 'afecd635-635b-436d-a8d2-2219941605b5';
+    const trabajadorId = 'ffa4217d-3b17-4333-b1e2-f82d4523b9a2';
     this.turnosSvc.getHorariosMapped(trabajadorId!).subscribe({
       next: (data) => this.turnos.set(data),
       error: (err) => console.error('Error al cargar horarios:', err),
@@ -58,10 +58,9 @@ export class AgendaComponent implements OnInit {
   }
 
   verDetalle(horario: HorarioData) {
+    const clienteId = horario.clienteId;
     this.agendaSvc.setSelectedId(horario.id);
-    this.router.navigate(['/home/listado', horario.clienteId], {
-      relativeTo: this.route,
-    });
+    this.router.navigate(['/home/listado', clienteId]);
   }
 
   marcarAsistencia(id: string, valor: boolean) {
@@ -72,7 +71,8 @@ export class AgendaComponent implements OnInit {
     // });
   }
 
-  onFilaClick(turno: HorarioData) {
-    this.selectedRowId.update((id) => (id === turno.id! ? null : turno.id!));
+  onFilaClick(horario: HorarioData) {
+    this.selectedRowId.update((id) => (id === horario.id! ? null : horario.id!));
+    this.router.navigate(['/home/listado', horario.clienteId, 'cliente']);
   }
 }

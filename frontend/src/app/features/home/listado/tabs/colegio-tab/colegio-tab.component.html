@@ -2,64 +2,80 @@
   <div>
     <!-- Listado de datos (solo lectura) -->
     <div class="data-view px-4 py-2">
-      
       <!-- SECCIÓN 1: DATOS GENERALES -->
       <!-- Fila 1: Centro vs. Dirección -->
       <div class="row g-2 mb-3">
         <!-- Centro -->
         <div class="col-6 d-flex justify-content-between align-items-start">
-          <small class="flex-shrink-0 me-2 w-50">Centro</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light">Juan Pablo II</span>
+          <small class="flex-shrink-0 me-2 w-25">Centro</small>
+          <span class="text-muted flex-grow-1 me-2 bg-light">{{
+            colegio()?.nombreDelCentro
+          }}</span>
         </div>
         <!-- Dirección (con text-break para texto largo) -->
-        <div class="col-6 d-flex justify-content-between align-items-start">
-          <small class="flex-shrink-0 me-2 w-50">Direccion</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light text-break">Avda. de las Estrellas</span>
+        <div class="col-6 d-flex justify-content-between align-items-center">
+          <small class="w-25">Direccion</small>
+          <span
+            *ngIf="sanitario()?.adaptaciones"
+            class="text-muted flex-grow-1 bg-light"
+            >{{ colegio()?.direccionColegio }}</span
+          >
         </div>
       </div>
-      
+
       <!-- Fila 2: Adaptacion curricular vs. Tipo -->
       <div class="row g-2 mb-4">
         <!-- Adaptacion curricular -->
         <div class="col-6 d-flex justify-content-between align-items-center">
-          <small class="flex-shrink-0 me-2 w-50">Adaptacion curricular</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light">SI</span>
+          <small class="flex-shrink-0 me-2 w-25">Adaptacion curricular</small>
+          <span class="text-muted flex-grow-1 me-2 bg-light"
+            ><span class="badge bg-success">{{
+              sanitario()?.adaptaciones ? "SI" : "NO"
+            }}</span></span
+          >
         </div>
         <!-- Tipo -->
         <div class="col-6 d-flex justify-content-between align-items-center">
-          <small class="flex-shrink-0 me-2 w-50">Tipo</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light"></span>
+          <small class="w-25">Tipo</small>
+          <span
+            *ngIf="sanitario()?.adaptaciones"
+            class="text-muted flex-grow-1 bg-light"
+            >{{ sanitario()?.tipoAdaptaciones }}</span
+          >
         </div>
       </div>
 
-      
-      <hr>
-      
+      <hr />
+
       <!-- Fila 3: Nombre vs. Relacion -->
       <div class="row g-2 mb-2">
         <!-- Nombre -->
         <div class="col-4 d-flex justify-content-between align-items-start">
           <small class="me-3">Contacto</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light">Juan Pedro</span>
+          <span class="text-muted flex-grow-1 me-2 bg-light">{{colegio()?.ctoColegioUno}}</span>
         </div>
         <!-- Relacion -->
         <div class="col-8 d-flex justify-content-between align-items-start">
           <small class="me-3">Relacion</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light">TUTOR 2024</span>
+          <span class="text-muted flex-grow-1 me-2 bg-light">{{colegio()?.ctoRelacionColegioUno}}</span>
         </div>
       </div>
-      
+
       <!-- Fila 4: Email vs. Telefono -->
       <div class="row g-2 mb-4">
         <!-- Email (con text-break para el correo largo) -->
         <div class="col-4 d-flex justify-content-between align-items-start">
           <small class="me-3">Telefono</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light text-break">622123123</span>
+          <span class="text-muted flex-grow-1 me-2 bg-light text-break"
+            >{{colegio()?.ctoTelefonoUno}}</span
+          >
         </div>
         <!-- Telefono -->
         <div class="col-8 d-flex justify-content-between align-items-start">
           <small class="me-3">Email</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light text-break">juanpedro.sanchezhorneros.juanpablosegundoparla.es</span>
+          <span class="text-muted flex-grow-1 me-2 bg-light text-break"
+            >{{colegio()?.ctoEmailColegioUno}}</span
+          >
         </div>
       </div>
 
@@ -68,29 +84,28 @@
         <!-- Nombre (usando 'Contacto 2' como etiqueta para mantener la estructura) -->
         <div class="col-4 d-flex justify-content-between align-items-start">
           <small class="me-3">Contacto</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light"></span>
+          <span class="text-muted flex-grow-1 me-2 bg-light">{{colegio()?.ctoColegioDos}}</span>
         </div>
         <!-- Relacion -->
         <div class="col-8 d-flex justify-content-between align-items-start">
           <small class="me-3">Relacion</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light"></span>
+          <span class="text-muted flex-grow-1 me-2 bg-light">{{colegio()?.ctoRelacionColegioDos}}</span>
         </div>
       </div>
-      
+
       <!-- Fila 6: Email vs. Telefono -->
       <div class="row g-2 mb-2">
         <!-- Email -->
         <div class="col-4 d-flex justify-content-between align-items-start">
           <small class="me-3">Telefono</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light text-break"></span>
+          <span class="text-muted flex-grow-1 me-2 bg-light text-break">{{colegio()?.ctoTelefonoDos}}</span>
         </div>
         <!-- Telefono -->
         <div class="col-8 d-flex justify-content-between align-items-start">
           <small class="me-3">Email</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light"></span>
+          <span class="text-muted flex-grow-1 me-2 bg-light">{{colegio()?.ctoEmailColegioDos}}</span>
         </div>
       </div>
-      
     </div>
   </div>
 </div>

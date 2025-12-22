@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { ClientesService } from '../../../../../services/cliente.service';
 
 @Component({
   selector: 'app-contactos-tab',
@@ -9,6 +10,8 @@ import { Component } from '@angular/core';
 })
 export class ContactosTabComponent {
 
+  private clienteSvc = inject(ClientesService);
+  contactos = this.clienteSvc.contactos;
 }
 
 export default ContactosTabComponent;
