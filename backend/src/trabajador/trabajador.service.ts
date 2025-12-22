@@ -22,13 +22,13 @@ export class TrabajadorService {
       if (existe) throw new ConflictException('Usuario o email ya registrado');
 
       // 3. Hash de contraseña
-      const password = await bcrypt.hash(dto.password, this.SALT_ROUNDS);
+      const passwordHash = await bcrypt.hash(dto.password, this.SALT_ROUNDS);
 
       // 4. Crea el trabajador
       const trabajador = await prisma.trabajador.create({
         data: {
           username: dto.username,
-          passwordHash: password,
+          passwordHash,
           nombre: dto.nombre,
           apellidos: dto.apellidos,
           email: dto.email,
@@ -38,8 +38,8 @@ export class TrabajadorService {
         },
         include: { rol: true },
       });
-      const { passwordHash, ...trabajadorSinPassword } = trabajador;
-      return trabajadorSinPassword;
+      // const { passwordHash, ...trabajadorSinPassword } = trabajador;
+      return trabajador;
     } catch (err) {
       if (err instanceof NotFoundException || err instanceof ConflictException) throw err;
       throw new InternalServerErrorException(`Error al crear trabajador: ${err.message}`);
@@ -74,17 +74,17 @@ export class TrabajadorService {
     }
   }
 
-  async findUser(username: string): Promise<any> {
-    try {
-      const usuario = await prisma.trabajador.findFirst({
-        where: { username }
-      });
-      if( usuario ) return usuario;
-      return null;
-    } catch (error) {
-      throw new InternalServerErrorException(`Error al obtener usuario: ${error.message}`);
-    }
-  }
+  // async findUser(username: string): Promise<any> {
+  //   try {
+  //     const usuario = await prisma.trabajador.findFirst({
+  //       where: { username }
+  //     });
+  //     if( usuario ) return usuario;
+  //     return null;
+  //   } catch (error) {
+  //     throw new InternalServerErrorException(`Error al obtener usuario: ${error.message}`);
+  //   }
+  // }
 
   /* ---------- UPDATE (parcial) ---------- */
   async update(id: string, dto: CreateTrabajadorDto): Promise<any> {
@@ -100,9 +100,9 @@ export class TrabajadorService {
       }
 
       // 3. Si cambia contraseña, hashea
-      let password: string | undefined;
+      let passwordHash: string | undefined;
       if (dto.password) {
-        password = await bcrypt.hash(dto.password, this.SALT_ROUNDS);
+        passwordHash = await bcrypt.hash(dto.password, this.SALT_ROUNDS);
       }
 
       // 4. Actualiza
@@ -110,7 +110,7 @@ export class TrabajadorService {
         where: { id },
         data: {
           username: dto.username,
-          passwordHash: password,
+          passwordHash,
           nombre: dto.nombre,
           apellidos: dto.apellidos,
           email: dto.email,
@@ -120,8 +120,8 @@ export class TrabajadorService {
         },
         include: { rol: true },
       });
-      const { passwordHash, ...trabajadorSinPassword} = updated;
-      return trabajadorSinPassword;
+      // const { passwordHash, ...trabajadorSinPassword} = updated;
+      return updated;
     } catch (err) {
       if (err instanceof NotFoundException) throw err;
       throw new InternalServerErrorException(`Error al actualizar trabajador: ${err.message}`);
