@@ -74,17 +74,18 @@ export class TrabajadorService {
     }
   }
 
-  // async findUser(username: string): Promise<any> {
-  //   try {
-  //     const usuario = await prisma.trabajador.findFirst({
-  //       where: { username }
-  //     });
-  //     if( usuario ) return usuario;
-  //     return null;
-  //   } catch (error) {
-  //     throw new InternalServerErrorException(`Error al obtener usuario: ${error.message}`);
-  //   }
-  // }
+  async findUser(username: string): Promise<any> {
+    try {
+      const usuario = await prisma.trabajador.findFirst({
+        where: { username },
+        include: { rol: true },
+      });
+      if( usuario ) return usuario;
+      return null;
+    } catch (error) {
+      throw new InternalServerErrorException(`Error al obtener usuario: ${error.message}`);
+    }
+  }
 
   /* ---------- UPDATE (parcial) ---------- */
   async update(id: string, dto: CreateTrabajadorDto): Promise<any> {

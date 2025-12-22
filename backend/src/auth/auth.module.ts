@@ -1,22 +1,24 @@
-// import { Module } from "@nestjs/common";
+import { Module } from "@nestjs/common";
 // import { AuthController } from "./auth.controller";
-// import { AuthService } from "./auth.service";
-// import { TrabajadorService } from "src/trabajador/trabajador.service";
-// import { LocalStrategy } from "./strategies/local.strategy";
-// import { PassportModule } from "@nestjs/passport";
-// import { JwtModule } from "@nestjs/jwt";
-// import { SECRET } from "constants/jwt-key";
-// import { JwtStrategy } from "./strategies/jwt.strategy";
+import { AuthService } from "./auth.service";
+import { TrabajadorService } from "src/trabajador/trabajador.service";
+import { LocalStrategy } from "./strategies/local.strategy";
+import { PassportModule } from "@nestjs/passport";
+import { JwtModule } from "@nestjs/jwt";
+import { JwtStrategy } from "./strategies/jwt.strategy";
+import { env } from "prisma/config";
+import { AuthController } from "./auth.controller";
 
-// @Module({
-//     imports: [
-//         PassportModule,
-//         JwtModule.register({
-//             secret: SECRET,
-//             signOptions: { expiresIn: '8hrs'}
-//         })
-//     ],
-//     controllers: [AuthController],
-//     providers: [AuthService, TrabajadorService, LocalStrategy, JwtStrategy]
-// })
-// export class AuthModule {}
+@Module({
+    imports: [
+        PassportModule,
+        JwtModule.register({
+            secret: env("SECRET"),
+            signOptions: { expiresIn: '8hrs'}
+        })
+    ],
+    // controllers: [AuthController],
+    providers: [AuthService, TrabajadorService, LocalStrategy, JwtStrategy], 
+    controllers: [AuthController]
+})
+export class AuthModule {}
