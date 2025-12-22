@@ -49,8 +49,9 @@ export class AgendaComponent implements OnInit {
 
   loadHorarios() {
     //TODO: Hacer el login para que al logarse pille el id
-    //const trabajadorId = this.auth.currentTrabajadorId();
-    const trabajadorId = 'ffa4217d-3b17-4333-b1e2-f82d4523b9a2';
+    const trabajadorId = this.auth.currentTrabajadorId();
+    console.log('Trabajador ID', trabajadorId);
+    // const trabajadorId = 'ffa4217d-3b17-4333-b1e2-f82d4523b9a2';
     this.turnosSvc.getHorariosMapped(trabajadorId!).subscribe({
       next: (data) => this.turnos.set(data),
       error: (err) => console.error('Error al cargar horarios:', err),

@@ -24,13 +24,13 @@
 
     <!-- Contraseña -->
     <div class="mb-3">
-      <label for="contrasena" class="form-label">Contraseña</label>
+      <label for="password" class="form-label">Contraseña</label>
       <div class="input-group">
-        <input id="contrasena"
+        <input id="password"
                [type]="hidePwd() ? 'password' : 'text'"
                class="form-control"
-               formControlName="contrasena"
-               [class.is-invalid]="form.get('contrasena')?.touched && form.get('contrasena')?.invalid"
+               formControlName="password"
+               [class.is-invalid]="form.get('password')?.touched && form.get('password')?.invalid"
                aria-describedby="pwd-error">
         <button type="button"
                 class="btn btn-outline-secondary"
@@ -41,7 +41,7 @@
         </button>
         <div id="pwd-error"
              class="invalid-feedback"
-             *ngIf="form.get('contrasena')?.touched && form.get('contrasena')?.hasError('required')">
+             *ngIf="form.get('password')?.touched && form.get('password')?.hasError('required')">
           Contraseña requerida
         </div>
       </div>

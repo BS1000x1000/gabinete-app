@@ -22,24 +22,25 @@ export class LoginComponent {
   serverError = signal('');
 
   form = this.fb.nonNullable.group({
-    usuario: ['', [Validators.required, Validators.minLength(4)]],
-    contrasena: ['', [Validators.required, Validators.minLength(4)]]
+    usuario: ['', [Validators.required, Validators.minLength(3)]],
+    password: ['', [Validators.required, Validators.minLength(3)]]
   });
 
   onSubmit() {
+    //TODO: El login da unauthorized
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
 
     this.loading.set(true);
     this.serverError.set('');
 
-    const { usuario, contrasena } = this.form.getRawValue();
-    // this.auth.login(usuario, contrasena).subscribe({
-    //   next: () => this.router.navigate(['/home']),
-    //   error: (err) => {
-    //     this.serverError.set(err?.error?.message || 'Credenciales inválidas');
-    //     this.loading.set(false);
-    //   }
-    // });
+    const { usuario, password } = this.form.getRawValue();
+    this.auth.login({usuario, password}).subscribe({
+      next: () => this.router.navigate(['/home']),
+      error: (err) => {
+        this.serverError.set(err?.error?.message || 'Credenciales inválidas');
+        this.loading.set(false);
+      }
+    });
     this.router.navigate(['/home'])
   }
 }
