@@ -1,44 +1,38 @@
-<!-- TODO: Añadir dinamicamente los datos de los clientes a las tablas -->
-<div class="d-flex listado-wrapper d-flex flex-column flex-lg-row gap-3 p-3">
+<div
+  class="d-flex listado-wrapper flex-column flex-lg-row gap-3 p-3 position-relative"
+>
+  <!-- Loader -->
   <div
     *ngIf="isLoading()"
-    class="d-flex align-items-center justify-content-center w-100 position-absolute vw-10 shadow"
+    class="loader-overlay d-flex align-items-center justify-content-center z-3"
   >
     <div class="spinner-border text-primary" role="status">
       <span class="visually-hidden">Cargando...</span>
     </div>
   </div>
 
+  <!-- Error -->
   <div *ngIf="error()" class="alert alert-danger w-100" role="alert">
-    <span><strong>Error:</strong> {{ error() }}</span>
+    <strong>Error:</strong> {{ error() }}
   </div>
 
-  <!-- COLUMNA IZQUIERDA – datos + botones -->
+  <!-- ASIDE IZQUIERDO -->
   <aside
-    class="left-panel bg-white rounded shadow-sm p-3 justify-content-center"
-    [ngClass]="{ 'opacity-50': isLoading() }"
+    class="left-panel bg-white rounded shadow-sm p-3"
+    [class.opacity-50]="isLoading()"
     *ngIf="cliente()"
   >
-    <!-- Logo / avatar -->
-    <!-- <div class="text-center mb-3">
-      <img
-        src="assets/img/avatar.png"
-        alt="Avatar"
-        class="rounded-circle mb-2"
-        width="80"
-        height="80"
-      />
-    </div> -->
-    <div class="d-flex justify-content-center">
+    <!-- Avatar con iniciales dinámicas -->
+    <div class="d-flex justify-content-center mb-3">
       <div
-        class="avatar-lg rounded-circle bg-secondary text-white mb-2 text-center"
+        class="avatar-lg rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center fw-bold fs-4"
+        style="width: 80px; height: 80px"
       >
-        {{ cliente()?.nombre ? cliente()?.nombre!.charAt(0) : ""
-        }}{{ cliente()?.apellidos ? cliente()?.apellidos!.charAt(0) : "" }}
+        {{ cliente()?.nombre?.charAt(0) || ""
+        }}{{ cliente()?.apellidos?.charAt(0) || "" }}
       </div>
     </div>
 
-    <!-- Nombre y edad -->
     <h5 class="text-center mb-1">
       {{
         cliente()?.apellidos
@@ -46,79 +40,68 @@
           : cliente()?.nombre
       }}
     </h5>
-    <p class="text-center text-muted mb-3">
+    <p class="text-center text-muted small mb-3">
       {{ cliente()?.edad ? cliente()?.edad + " años" : "Edad no disponible" }}
     </p>
 
-    <!-- 3 botones grandes -->
+    <!-- Botones Accionadores -->
     <div class="d-flex mb-3 justify-content-center btn-group">
       <button class="btn btn-primary btn-sm">Imagen</button>
       <button class="btn btn-danger btn-sm">Alergias</button>
       <button class="btn btn-info btn-sm text-white">Medicación</button>
     </div>
 
-    <!-- Alergias (solo lectura) -->
-    <div class="mb-3">
-      <label class="form-label fw-semibold">Alergias</label>
-      <span class="form-control form-control-sm" rows="2" readonly>
-        {{ sanitario()?.alergias || "No registradas" }}</span
-      >
+    <!-- Info Sanitaria resumida -->
+    <div class="mb-2">
+      <label class="form-label fw-bold small mb-0">Alergias</label>
+      <div class="p-2 border rounded bg-light small">
+        {{ sanitario()?.alergias || "No registradas" }}
+      </div>
     </div>
 
-    <!-- Medicación (solo lectura) -->
     <div class="mb-3">
-      <label class="form-label fw-semibold">Medicación</label>
-      <span class="form-control form-control-sm" rows="2" readonly>
-        {{ sanitario()?.medicacion || "No registrada" }}</span
-      >
+      <label class="form-label fw-bold small mb-0">Medicación</label>
+      <div class="p-2 border rounded bg-light small">
+        {{ sanitario()?.medicacion || "No registrada" }}
+      </div>
     </div>
 
     <hr />
 
-    <!-- 7 botones pequeños con iconos -->
+    <!-- SECCIÓN DE BOTONES PEQUEÑOS (Implementación solicitada) -->
     <div class="d-flex justify-content-center btn-group">
-      <button class="btn btn-sm btn-outline-secondary" title="1">
-        <i class="bi bi-person"></i>
-      </button>
-      <button class="btn btn-sm btn-outline-secondary" title="2">
-        <i class="bi bi-heart"></i>
-      </button>
-      <button class="btn btn-sm btn-outline-secondary" title="3">
-        <i class="bi bi-book"></i>
-      </button>
-      <button class="btn btn-sm btn-outline-secondary" title="4">
-        <i class="bi bi-telephone"></i>
-      </button>
-      <button class="btn btn-sm btn-outline-secondary" title="5">
-        <i class="bi bi-envelope"></i>
-      </button>
-      <button class="btn btn-sm btn-outline-secondary" title="6">
-        <i class="bi bi-calendar"></i>
-      </button>
-      <button class="btn btn-sm btn-outline-secondary" title="7">
-        <i class="bi bi-geo-alt"></i>
+      <button
+        *ngFor="let btn of quickNavButtons"
+        class="btn btn-sm"
+        [routerLink]="['./', btn.target]"
+        routerLinkActive
+        #rla="routerLinkActive"
+        [class.btn-primary]="rla.isActive"
+        [class.btn-outline-secondary]="!rla.isActive"
+        [title]="btn.label"
+      >
+        <i class="bi" [ngClass]="btn.icon"></i>
       </button>
     </div>
   </aside>
 
-  <!-- COLUMNA DERECHA – tabs + contenido -->
-  <section class="right-panel flex-grow-1 rounded p-1">
-    <!-- Pestañas -->
-    <ul class="nav nav-tabs nav-fill">
-      <li class="nav-item" *ngFor="let t of tabs">
+  <!-- SECCIÓN DERECHA -->
+  <section class="right-panel flex-grow-1 bg-white rounded shadow-sm p-3">
+    <ul class="nav nav-tabs nav-fill mb-3">
+      <li class="nav-item" *ngFor="let t of quickNavButtons">
         <a
-          class="nav-link text-black"
-          [routerLink]="['./', t]"
-          routerLinkActive="active"
-          (click)="pestania.set(t)"
+          class="nav-link fw-medium"
+          [routerLink]="['./', t.target]"
+          [routerLinkActive]="['active', 'text-primary']"
           style="cursor: pointer"
         >
-          {{ t | titlecase }}
+          {{ t.target| titlecase }}
         </a>
       </li>
     </ul>
 
-    <!-- Contenido de la pestaña activa -->
-    <router-outlet></router-outlet>
+    <div class="tab-content-wrapper">
+      <router-outlet></router-outlet>
+    </div>
   </section>
 </div>

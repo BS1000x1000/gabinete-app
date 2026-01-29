@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NavItem } from '../../../../models/nav-item';
 import { SidebarService } from '../../../../services/sidebar.service';
+import { AuthService } from '../../../../services/auth.service';
 
 
 @Component({
@@ -17,6 +18,7 @@ import { SidebarService } from '../../../../services/sidebar.service';
 export class SidebarComponent {
   private router = inject(Router);
   public sidebar = inject(SidebarService);
+  private auth = inject(AuthService);
 
   collapsed = this.sidebar.collapsed;
   search = this.sidebar.search;
@@ -44,7 +46,6 @@ export class SidebarComponent {
   }
 
   logout() {
-    localStorage.removeItem('token');
-    this.router.navigate(['/login']);
+    this.auth.logout();
   }
 }

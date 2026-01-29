@@ -13,6 +13,7 @@ import { CalendarModule, CalendarView, CalendarEvent } from 'angular-calendar';
 import { Lesson } from '../../models/lesson.model';
 import { ScheduleService } from '../../services/schedule.service';
 import { WEEK_START_HOUR, WEEK_END_HOUR } from '../../utils/date';
+import { TurnosService } from '../../services/turnos.service';
 
 @Component({
   selector: 'app-schedule',
@@ -34,12 +35,14 @@ export class ScheduleComponent implements OnInit {
   viewDate = signal(new Date());
   view = signal<CalendarView>(CalendarView.Week);
   lessons = signal<Lesson[]>([]);
+  private turnosSvc = inject(TurnosService);
+  turnos = this.turnosSvc.turnos;
 
   events = computed<CalendarEvent[]>(() =>
-    this.lessons().map((l) => ({
-      title: l.title,
-      start: l.start,
-      end: l.end,
+    this.turnos().map((l) => ({
+      title: l.tipoSesion,
+      start: new Date(l.fechaHoraInicio),
+      end: new Date(l.fechaHoraFin),
       color: { primary: '#0d6efd', secondary: '#cfe2ff' },
       meta: { id: l.id },
     }))
@@ -56,6 +59,7 @@ export class ScheduleComponent implements OnInit {
   }
 
   private load() {
+    console.log(this.turnos());
     this.service.getLessons().subscribe(
       (raw) => this.lessons.set(raw) // ← fechas ya están en la semana actual
     );

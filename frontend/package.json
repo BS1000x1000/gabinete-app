@@ -24,6 +24,7 @@
     "bootstrap-icons": "^1.13.1",
     "date-fns": "^4.1.0",
     "ngx-bootstrap": "^19.0.2",
+    "ngx-quill": "^27.1.2",
     "ngx-scrollbar": "^13.0.3",
     "prisma": "^6.12.0",
     "rxjs": "~7.8.0",

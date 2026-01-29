@@ -13,7 +13,7 @@ export const routes: Routes = [
   },
 
   // Ruta por defecto que redirige a la página de estudiantes
-  { path: '', redirectTo: '/home', pathMatch: 'full' },
+  { path: '', redirectTo: '/login', pathMatch: 'full' },
 
   // Ruta wildcard para cualquier otra URL (manejo de errores 404)
   //   { path: '**', component: PageNotFoundComponent, title: 'Page Not Found' },

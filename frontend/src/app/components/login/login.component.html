@@ -8,16 +8,16 @@
 
     <!-- Usuario -->
     <div class="mb-3">
-      <label for="usuario" class="form-label">Usuario</label>
-      <input id="usuario"
+      <label for="username" class="form-label">Usuario</label>
+      <input id="username"
              type="text"
              class="form-control"
-             formControlName="usuario"
-             [class.is-invalid]="form.get('usuario')?.touched && form.get('usuario')?.invalid"
-             aria-describedby="usuario-error">
-      <div id="usuario-error"
+             formControlName="username"
+             [class.is-invalid]="form.get('username')?.touched && form.get('username')?.invalid"
+             aria-describedby="username-error">
+      <div id="username-error"
            class="invalid-feedback"
-           *ngIf="form.get('usuario')?.touched && form.get('usuario')?.hasError('required')">
+           *ngIf="form.get('username')?.touched && form.get('username')?.hasError('required')">
         Usuario requerido
       </div>
     </div>
