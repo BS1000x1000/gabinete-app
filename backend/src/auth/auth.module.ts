@@ -6,14 +6,13 @@ import { LocalStrategy } from "./strategies/local.strategy";
 import { PassportModule } from "@nestjs/passport";
 import { JwtModule } from "@nestjs/jwt";
 import { JwtStrategy } from "./strategies/jwt.strategy";
-import { env } from "prisma/config";
 import { AuthController } from "./auth.controller";
 
 @Module({
     imports: [
         PassportModule,
         JwtModule.register({
-            secret: env("SECRET"),
+            secret: process.env.SECRET,
             signOptions: { expiresIn: '8hrs'}
         })
     ],

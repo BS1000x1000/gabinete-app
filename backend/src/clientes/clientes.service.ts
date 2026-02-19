@@ -1,364 +1,349 @@
-import {
-  Injectable,
-  InternalServerErrorException,
-  NotFoundException,
-} from '@nestjs/common';
-// Importamos el cliente de Prisma y el objeto 'Prisma' para manejar tipos de errores
-import { prisma } from 'src/lib/prisma';
-import { Cliente, Prisma } from 'generated/prisma'; // Asumo que 'Prisma' se exporta aquí o desde @prisma/client
-
-import { CreateClienteDto } from './dto/clientedto-interface';
-
-// Definición de un tipo auxiliar para el retorno que incluye las relaciones.
-type ClienteWithRelations = Prisma.ClienteGetPayload<{
-  include: {
-    colegio: true;
-    contactosFamiliares: true;
-    sanitario: true;
-  };
-}>;
-
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaClient } from '@prisma/client';
+import { ClienteWithRelations, clienteInclude } from './clientes.types';
+import { CreateClienteDto } from './dto/create-cliente.dto';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class ClientesService {
-  // Constructor simplificado, ya no inyecta N8nService
-  constructor() {} 
+  constructor(private readonly prisma: PrismaService) {}
 
-  /**
-   * Crea un nuevo cliente, realiza un upsert del colegio asociado,
-   * y crea un contacto familiar. Todo dentro de una transacción atómica.
-   * @param data DTO con los datos del nuevo cliente.
-   * @returns El objeto Cliente recién creado con relaciones.
-   */
-  async create(data: CreateClienteDto): Promise<ClienteWithRelations> {
-    let nuevoCliente: ClienteWithRelations;
+  async create(
+    createClienteDto: CreateClienteDto,
+  ): Promise<ClienteWithRelations> {
+    let colegioId = createClienteDto.colegio?.id;
 
-    try {
-      // Usar $transaction para garantizar la atomicidad de las operaciones de DB
-      nuevoCliente = await prisma.$transaction(async (tx) => {
-        // 1. Lógica de Upsert para el Colegio (crear o actualizar si ya existe)
-        let colegioExistente: any = null;
-        if (data.nombreDelCentro) {
-          colegioExistente = await tx.colegio.upsert({
-            where: { nombre: data.nombreDelCentro },
-            update: {
-              nombre: data.nombreDelCentro,
-              ctoColegioUno: data.ctoColegioUno,
-              direccionColegio: data.direccionColegio,
-              ctoEmailColegioUno: data.ctoEmailColegioUno,
-              ctoTelefonoUno: String(data.ctoTelefonoUno),
-              ctoRelacionColegioUno: data.ctoRelacionColegioUno,
-              ctoColegioDos: data.ctoColegioDos,
-              ctoTelefonoDos: String(data.ctoTelefonoDos),
-              ctoEmailColegioDos: data.ctoEmailColegioDos,
-              ctoRelacionColegioDos: data.ctoRelacionColegioDos,
-            },
-            create: {
-              nombre: data.nombreDelCentro,
-              ctoColegioUno: data.ctoColegioUno,
-              ctoTelefonoUno: String(data.ctoTelefonoUno),
-              direccionColegio: data.direccionColegio,
-              ctoEmailColegioUno: data.ctoEmailColegioUno!,
-              ctoRelacionColegioUno: data.ctoRelacionColegioUno!,
-              ctoColegioDos: data.ctoColegioDos,
-              ctoTelefonoDos: String(data.ctoTelefonoDos),
-              ctoEmailColegioDos: data.ctoEmailColegioDos,
-              ctoRelacionColegioDos: data.ctoRelacionColegioDos,
-            },
-          });
-        }
+    // Si viene un objeto colegio con datos, créalo primero
+    if (createClienteDto.colegio && !createClienteDto.colegio?.id) {
+      const nuevoColegio = await this.prisma.colegio.create({
+        data: {
+          nombre: createClienteDto.colegio.nombre,
+          direccionColegio: createClienteDto.colegio.direccionColegio,
+          ctoColegioUno: createClienteDto.colegio.ctoColegioUno,
+          ctoTelefonoUno: createClienteDto.colegio.ctoTelefonoUno,
+          ctoEmailColegioUno: createClienteDto.colegio.ctoEmailColegioUno,
+          ctoRelacionColegioUno: createClienteDto.colegio.ctoRelacionColegioUno,
+          ctoColegioDos: createClienteDto.colegio.ctoColegioDos,
+          ctoTelefonoDos: createClienteDto.colegio.ctoTelefonoDos,
+          ctoEmailColegioDos: createClienteDto.colegio.ctoEmailColegioDos,
+          ctoRelacionColegioDos: createClienteDto.colegio.ctoRelacionColegioDos,
+        },
+      });
+      colegioId = nuevoColegio.id;
+    }
 
-        // 2. Crear el Cliente y el Contacto Familiar en una sola transacción anidada
-        return await tx.cliente.create({
-          data: {
-            nombre: data.nombre,
-            apellidos: data.apellidos,
-            fechaNacimiento: data.fechaNacimiento,
-            activo: true,
-            dni: data.dni,
-            provincia: data.provincia,
-            ciudad: data.ciudad,
-            domicilio: data.domicilio,
-            curso: data.cursoEscolar,
-            fechaInicio: data.fechaInicio ?? null,
-            fechaAlta: data.fechaAlta,
+    return await this.prisma.cliente.create({
+      data: {
+        nombre: createClienteDto.nombre,
+        apellidos: createClienteDto.apellidos,
+        dni: createClienteDto.dni,
+        domicilio: createClienteDto.domicilio,
+        provincia: createClienteDto.provincia,
+        ciudad: createClienteDto.ciudad,
+        curso: createClienteDto.curso,
+        fechaNacimiento: createClienteDto.fechaNacimiento,
+        fechaInicio: createClienteDto.fechaInicio,
+        colegioId: colegioId, // Usa el ID (existente o recién creado)
+        idCarpetaDrive: createClienteDto.idCarpetaDrive,
 
-            // Conecta el colegio si se creó o encontró
-            colegio: colegioExistente
-              ? { connect: { id: colegioExistente.id } }
-              : undefined,
+        contactosFamiliares: createClienteDto.familiares
+          ? {
+              create: createClienteDto.familiares.map((f) => ({
+                nombre: f.nombre,
+                apellidos: f.apellidos,
+                dni: f.dni,
+                parentesco: f.parentesco,
+                telefono: f.telefono,
+                email: f.email,
+                esResponsablePago: f.esResponsablePago ?? false,
+                esContactoPrincipal: f.esContactoPrincipal ?? false,
+                whatsapp: f.whatsapp ?? false,
+              })),
+            }
+          : undefined,
 
-            // Creación anidada del contacto familiar
-            contactosFamiliares: {
+        sanitario: createClienteDto.datosSanitarios
+          ? {
               create: {
-                nombreContacto:
-                  data.nombreMadre ||
-                  data.nombrePadre ||
-                  data.otroContactoNombre ||
-                  'Contacto Principal',
-                parentesco: 'Contacto Principal',
-                nombrePadre: data.nombrePadre?? '',
-                dniPadre: data.dniPadre?? '',
-                emailPadre: data.emailPadre?? '',
-                telefonoPadre: data.telefonoPadre
-                ? String(data.telefonoPadre)
-                : undefined,
-                nombreMadre: data.nombreMadre ?? '',
-                dniMadre: data.dniMadre?? '',
-                emailMadre: data.emailMadre?? '',
-                telefonoMadre: data.telefonoMadre
-                  ? String(data.telefonoMadre)
-                  : undefined,
+                diagnostico: createClienteDto.datosSanitarios.diagnostico,
+                centroSalud: createClienteDto.datosSanitarios.centroSalud,
+                tratamientos: createClienteDto.datosSanitarios.tratamientos,
+                medicacion: createClienteDto.datosSanitarios.medicacion,
+                alergias: createClienteDto.datosSanitarios.alergias,
+                adaptaciones:
+                  createClienteDto.datosSanitarios.adaptaciones ?? false,
+                tipoAdaptaciones:
+                  createClienteDto.datosSanitarios.tipoAdaptaciones,
+                especialistas:
+                  createClienteDto.datosSanitarios.especialistas ?? [],
+                apoyos: createClienteDto.datosSanitarios.apoyos ?? false,
+              },
+            }
+          : undefined,
 
-                telefonoWhatsapp:
-                  String(data.telefonoMadre) ||
-                  String(data.telefonoPadre) ||
-                  String(data.otroContactoTelefono),
+        objetivosGeneralesAsignados: createClienteDto.objetivosGeneralesIds
+          ? {
+              create: createClienteDto.objetivosGeneralesIds.map((objId) => ({
+                objetivoGeneralId: objId,
+              })),
+            }
+          : undefined,
+      },
+      include: clienteInclude,
+    });
+  }
+
+  async findAll(): Promise<ClienteWithRelations[]> {
+    return await this.prisma.cliente.findMany({
+      include: clienteInclude,
+    });
+  }
+
+  async findOne(id: string): Promise<ClienteWithRelations | null> {
+    return await this.prisma.cliente.findUnique({
+      where: { id },
+      include: clienteInclude,
+    });
+  }
+
+  async getObjetivosGenerales(clienteId: string) {
+    const cliente = await this.prisma.cliente.findUnique({
+      where: { id: clienteId },
+      include: {
+        objetivosGeneralesAsignados: {
+          where: { activo: true },
+          include: {
+            objetivoGeneral: {
+              include: {
+                areaDesarrollo: true,
               },
             },
-
-            // Creacion anidada de informacion sanitaria
-            sanitario: {
-              create: {
-                  centroSalud: data.centroSalud ?? '',
-                  diagnostico: data.diagnostico ?? '',
-                  tratamientos: data.tratamientos ?? '',
-                  medicacion: data.medicacion ?? '',
-                  alergias: data.alergias,
-                  adaptaciones: !!data.tipoAdaptaciones,
-                  tipoAdaptaciones: data.tipoAdaptaciones ?? '',
-                  especialistas: data.especialistas ?? [],
-                  apoyos: !!(data.numeroDeSesiones && data.numeroDeSesiones.length > 0)
-              }
-            }
           },
-          // Incluir la información de relaciones en el retorno
+          orderBy: {
+            objetivoGeneral: {
+              areaDesarrollo: {
+                orden: 'asc',
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!cliente) {
+      throw new NotFoundException(`Cliente con ID ${clienteId} no encontrado`);
+    }
+
+    // Obtener estadísticas de uso
+    const objetivosConEstadisticas = await Promise.all(
+      cliente.objetivosGeneralesAsignados.map(async (asignacion) => {
+        const estadisticas = await this.prisma.registroDiarioObjetivo.findMany({
+          where: {
+            objetivoGeneralId: asignacion.objetivoGeneralId,
+            registroDiario: {
+              clienteId: clienteId,
+            },
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+          take: 1,
+        });
+
+        const vecesTrabajado = await this.prisma.registroDiarioObjetivo.count({
+          where: {
+            objetivoGeneralId: asignacion.objetivoGeneralId,
+            registroDiario: {
+              clienteId: clienteId,
+            },
+          },
+        });
+
+        return {
+          id: asignacion.id,
+          area: asignacion.objetivoGeneral.areaDesarrollo.nombre,
+          titulo: asignacion.objetivoGeneral.titulo,
+          descripcion: asignacion.objetivoGeneral.descripcion,
+          color: asignacion.objetivoGeneral.areaDesarrollo.color,
+          fechaAsignacion: asignacion.fechaAsignacion,
+          vecesTrabajado,
+          ultimaVez: estadisticas[0]?.createdAt || null,
+        };
+      }),
+    );
+
+    return {
+      cliente: `${cliente.nombre} ${cliente.apellidos}`,
+      objetivos: objetivosConEstadisticas,
+    };
+  }
+
+  /**
+   * Asignar objetivos generales a un cliente
+   */
+  async asignarObjetivosGenerales(clienteId: string, objetivosIds: string[]) {
+    const cliente = await this.prisma.cliente.findUnique({
+      where: { id: clienteId },
+    });
+
+    if (!cliente) {
+      throw new NotFoundException(`Cliente con ID ${clienteId} no encontrado`);
+    }
+
+    // Verificar que los objetivos existen
+    const objetivos = await this.prisma.objetivoGeneral.findMany({
+      where: {
+        id: { in: objetivosIds },
+      },
+    });
+
+    if (objetivos.length !== objetivosIds.length) {
+      throw new NotFoundException('Uno o más objetivos no encontrados');
+    }
+
+    // Crear las asignaciones (ignora duplicados con createMany + skipDuplicates)
+    const asignaciones = await this.prisma.clienteObjetivo.createMany({
+      data: objetivosIds.map((objId) => ({
+        clienteId,
+        objetivoGeneralId: objId,
+      })),
+      skipDuplicates: true,
+    });
+
+    return {
+      message: `Se asignaron ${asignaciones.count} objetivos al cliente`,
+      clienteId,
+      objetivosAsignados: asignaciones.count,
+    };
+  }
+
+  /**
+   * Desasignar un objetivo general de un cliente
+   */
+  async desasignarObjetivoGeneral(
+    clienteId: string,
+    objetivoGeneralId: string,
+  ) {
+    const asignacion = await this.prisma.clienteObjetivo.findFirst({
+      where: {
+        clienteId,
+        objetivoGeneralId,
+      },
+    });
+
+    if (!asignacion) {
+      throw new NotFoundException('Asignación no encontrada');
+    }
+
+    // Soft delete
+    await this.prisma.clienteObjetivo.update({
+      where: { id: asignacion.id },
+      data: { activo: false },
+    });
+
+    return {
+      message: 'Objetivo desasignado correctamente',
+      clienteId,
+      objetivoGeneralId,
+    };
+  }
+
+  /**
+   * Estadísticas de objetivos del cliente
+   */
+  async getEstadisticasObjetivos(clienteId: string) {
+    const cliente = await this.prisma.cliente.findUnique({
+      where: { id: clienteId },
+    });
+
+    if (!cliente) {
+      throw new NotFoundException(`Cliente con ID ${clienteId} no encontrado`);
+    }
+
+    const totalSesiones = await this.prisma.registroDiario.count({
+      where: { clienteId },
+    });
+
+    const objetivosMasTrabajados =
+      await this.prisma.registroDiarioObjetivo.groupBy({
+        by: ['objetivoGeneralId'],
+        where: {
+          registroDiario: {
+            clienteId,
+          },
+        },
+        _count: {
+          objetivoGeneralId: true,
+        },
+        orderBy: {
+          _count: {
+            objetivoGeneralId: 'desc',
+          },
+        },
+        take: 10,
+      });
+
+    const objetivosConDetalles = await Promise.all(
+      objetivosMasTrabajados.map(async (obj) => {
+        const objetivo = await this.prisma.objetivoGeneral.findUnique({
+          where: { id: obj.objetivoGeneralId },
           include: {
-            colegio: true,
-            contactosFamiliares: true,
-            sanitario: true
+            areaDesarrollo: true,
           },
         });
-      });
 
-      return nuevoCliente;
-    } catch (error: any) {
-      // Manejo de errores de Prisma (e.g., violación de unicidad P2002)
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        console.error('Prisma Error Code:', error.code, 'Message:', error.message);
-        throw new InternalServerErrorException(
-          `Error de base de datos (Prisma): Código ${error.code}. Intente de nuevo.`,
-        );
-      }
-      
-      console.error('General Error:', error.message);
-      throw new InternalServerErrorException(
-        `Fallo general en la creación del cliente: ${error.message}`,
-      );
-    }
+        return {
+          titulo: objetivo?.titulo,
+          area: objetivo?.areaDesarrollo.nombre,
+          veces: obj._count.objetivoGeneralId,
+        };
+      }),
+    );
+
+    const totalObjetivosAsignados = await this.prisma.clienteObjetivo.count({
+      where: {
+        clienteId,
+        activo: true,
+      },
+    });
+
+    return {
+      cliente: `${cliente.nombre} ${cliente.apellidos}`,
+      totalObjetivosAsignados,
+      totalSesiones,
+      objetivosMasTrabajados: objetivosConDetalles,
+    };
   }
 
-  // ---------- READ ALL ----------
-  async findAll(): Promise<Cliente[]> {
-    try {
-      return await prisma.cliente.findMany({
-        where: { activo: true },
-        include: {
-          colegio: true,
-          contactosFamiliares: true,
-          sanitario: true
-        },
-        orderBy: { id: 'desc' },
-      });
-    } catch (error: any) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        console.error('Prisma Error Code:', error.code);
-        throw new InternalServerErrorException(
-          `Error de base de datos al obtener clientes: Código ${error.code}.`,
-        );
-      }
-      throw new InternalServerErrorException(
-        `Error al obtener clientes: ${error.message}`,
-      );
-    }
+  async update(
+    id: string,
+    updateDto: Partial<CreateClienteDto>,
+  ): Promise<ClienteWithRelations> {
+    // Construye el objeto de actualización correctamente
+    const updateData: any = {};
+
+    if (updateDto.nombre) updateData.nombre = updateDto.nombre;
+    if (updateDto.apellidos) updateData.apellidos = updateDto.apellidos;
+    if (updateDto.dni) updateData.dni = updateDto.dni;
+    if (updateDto.domicilio) updateData.domicilio = updateDto.domicilio;
+    if (updateDto.provincia) updateData.provincia = updateDto.provincia;
+    if (updateDto.ciudad) updateData.ciudad = updateDto.ciudad;
+    if (updateDto.curso) updateData.curso = updateDto.curso;
+    if (updateDto.fechaNacimiento)
+      updateData.fechaNacimiento = updateDto.fechaNacimiento;
+    if (updateDto.fechaInicio) updateData.fechaInicio = updateDto.fechaInicio;
+    if (updateDto.colegio?.id) updateData.colegioId = updateDto.colegio.id;
+
+    return await this.prisma.cliente.update({
+      where: { id },
+      data: updateData,
+      include: clienteInclude,
+    });
   }
 
-  // ---------- READ (por ID) ----------
-  async findOne(id: string): Promise<ClienteWithRelations> {
-    try {
-      const cliente = await prisma.cliente.findUnique({
-        where: { id },
-        include: {
-          colegio: true,
-          contactosFamiliares: true,
-          sanitario: true
-        },
-      });
-
-      if (!cliente) {
-        throw new NotFoundException(`Cliente con ID ${id} no encontrado`);
-      }
-
-      return cliente as ClienteWithRelations;
-    } catch (error: any) {
-      if (error instanceof NotFoundException) throw error;
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        console.error('Prisma Error Code:', error.code);
-        throw new InternalServerErrorException(
-          `Error de base de datos al buscar cliente: Código ${error.code}.`,
-        );
-      }
-      throw new InternalServerErrorException(
-        `Error al obtener cliente: ${error.message}`,
-      );
-    }
-  }
-
-  // ---------- UPDATE ----------
-  async update(id: string, data: CreateClienteDto): Promise<ClienteWithRelations> {
-
-    try {
-      // 1. Upsert del colegio si viene en el payload
-      let colegioId: string | undefined;
-      if (data.nombreDelCentro) {
-        const colegio = await prisma.colegio.upsert({
-          where: { nombre: data.nombreDelCentro },
-          update: {
-            nombre: data.nombreDelCentro,
-            ctoColegioUno: data.ctoColegioUno,
-            ctoTelefonoUno: String(data.ctoTelefonoUno),
-            ctoColegioDos: data.ctoColegioDos,
-            ctoTelefonoDos: String(data.ctoTelefonoDos),
-            direccionColegio: data.direccionColegio,
-            ctoEmailColegioUno: data.ctoEmailColegioUno,
-            ctoRelacionColegioUno: data.ctoRelacionColegioUno,
-            ctoEmailColegioDos: data.ctoEmailColegioDos,
-            ctoRelacionColegioDos: data.ctoRelacionColegioDos,
-          },
-          create: {
-            nombre: data.nombreDelCentro,
-            ctoColegioUno: data.ctoColegioUno,
-            ctoTelefonoUno: String(data.ctoTelefonoUno),
-            ctoColegioDos: data.ctoColegioDos,
-            ctoTelefonoDos: String(data.ctoTelefonoDos),
-            direccionColegio: data.direccionColegio,
-            ctoEmailColegioUno: data.ctoEmailColegioUno!,
-            ctoRelacionColegioUno: data.ctoRelacionColegioUno!,
-            ctoEmailColegioDos: data.ctoEmailColegioDos,
-            ctoRelacionColegioDos: data.ctoRelacionColegioDos,
-          },
-        });
-        colegioId = colegio.id;
-      }
-
-      // 2. Actualización del cliente
-      const updated = await prisma.cliente.update({
-        where: { id },
-        data: {
-          nombre: data.nombre,
-          apellidos: data.apellidos,
-          fechaNacimiento: data.fechaNacimiento,
-          domicilio: data.domicilio,
-          curso: data.cursoEscolar,
-          provincia: data.provincia,
-          ciudad: data.ciudad,
-          dni: data.dni,
-          colegio: colegioId ? { connect: { id: colegioId } } : undefined,
-        },
-        include: {
-          colegio: true,
-          contactosFamiliares: true,
-          sanitario: true
-        },
-      });
-
-
-      // 3. Actualización/Creación del contacto familiar (upsert)
-      // ESTO REQUIERE QUE clienteId SEA @unique EN EL MODELO Familiar.
-      if (data.nombreMadre || data.nombrePadre) {
-        await prisma.familiar.upsert({
-          where: { clienteId: id }, 
-          update: {
-            nombreContacto:
-              data.nombreMadre || data.nombrePadre || 'Contacto Principal',
-            emailMadre: data.emailMadre,
-            telefonoMadre: data.telefonoMadre
-              ? String(data.telefonoMadre)
-              : undefined,
-            emailPadre: data.emailPadre,
-            telefonoPadre: data.telefonoPadre
-              ? String(data.telefonoPadre)
-              : undefined,
-            telefonoWhatsapp:
-              String(data.telefonoMadre) ||
-              String(data.telefonoPadre) ||
-              String(data.otroContactoTelefono),
-          },
-          create: {
-            clienteId: id,
-            nombreContacto:
-              data.nombreMadre || data.nombrePadre || 'Contacto Principal',
-            nombreMadre: data.nombreMadre ?? '',
-            emailMadre: data.emailMadre,
-            dniMadre: data.dniMadre ?? '',
-            telefonoMadre: data.telefonoMadre
-              ? String(data.telefonoMadre)
-              : undefined,
-            emailPadre: data.emailPadre,
-            nombrePadre: data.nombrePadre ?? '',
-            dniPadre: data.dniPadre ?? '',
-            telefonoPadre: data.telefonoPadre
-              ? String(data.telefonoPadre)
-              : undefined,
-            telefonoWhatsapp:
-              String(data.telefonoMadre) ||
-              String(data.telefonoPadre) ||
-              String(data.otroContactoTelefono),
-          },
-        });
-      }
-      
-      return updated as ClienteWithRelations;
-    } catch (error: any) {
-      if (error instanceof NotFoundException) throw error;
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        console.error('Prisma Error Code:', error.code);
-        throw new InternalServerErrorException(
-          `Error de base de datos al actualizar cliente: Código ${error.code}.`,
-        );
-      }
-      throw new InternalServerErrorException(
-        `Error al actualizar cliente: ${error.message}`,
-      );
-    }
-  }
-
-  // ---------- DELETE (soft delete) ----------
   async remove(id: string): Promise<void> {
-    try {
-      // 1. Comprobar existencia
-      const cliente = await prisma.cliente.findUnique({ where: { id } });
-      if (!cliente) {
-        throw new NotFoundException(`Cliente con ID ${id} no encontrado`);
-      }
-
-      // 2. Soft delete: marcamos como inactivo
-      await prisma.cliente.update({
-        where: { id },
-        data: { activo: false },
-      });
-      
-    } catch (error: any) {
-      if (error instanceof NotFoundException) throw error;
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        console.error('Prisma Error Code:', error.code);
-        throw new InternalServerErrorException(
-          `Error de base de datos al eliminar cliente: Código ${error.code}.`,
-        );
-      }
-      throw new InternalServerErrorException(
-        `Error al eliminar cliente: ${error.message}`,
-      );
-    }
+    await this.prisma.cliente.delete({
+      where: { id },
+    });
   }
 }

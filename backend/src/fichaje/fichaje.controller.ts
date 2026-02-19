@@ -1,57 +1,79 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Body, 
-  Patch, 
-  Param, 
-  Delete, 
-  UseGuards, 
-  Req 
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  HttpCode,
+  HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import { FichajeService } from './fichaje.service';
-import { CreateRegistroDiarioDto } from './dto/fichajedto.interface';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
- 
-@Controller('fichaje')
-export class FichajeController {
-  constructor(private readonly registroDiarioService: FichajeService) {}
+import { CreateRegistroDiarioDto } from './dto/create-registro.dto';
 
-  /* ---------- POST: Crear nuevo registro ---------- */
-  @UseGuards(JwtAuthGuard)
+@Controller('registros')
+export class FichajeController {
+  private readonly logger = new Logger(FichajeController.name);
+
+  constructor(private readonly fichajeService: FichajeService) {}
+
   @Post()
-  async create(@Body() createDto: CreateRegistroDiarioDto, @Req() req: any) {
-    // Extraemos el ID del trabajador del objeto user que JwtAuthGuard inyecta en la request
-    // Normalmente es 'req.user.id' o 'req.user.sub' dependiendo de tu estrategia de Passport
-    console.log(req);
-    const trabajadorId = req.user.userId; 
-    return await this.registroDiarioService.create(createDto, trabajadorId);
+  @HttpCode(HttpStatus.CREATED)
+  async create(@Body() createDto: CreateRegistroDiarioDto) {
+    // TODO: Obtener trabajadorId del token JWT
+    const trabajadorId = 'temp-trabajador-id'; // Temporal
+    
+    this.logger.log(`Creando registro diario para cliente: ${createDto.clienteId}`);
+    if (createDto.objetivosGeneralesTrabajados?.length) {
+      this.logger.log(`Con ${createDto.objetivosGeneralesTrabajados.length} objetivos trabajados`);
+    }
+    return this.fichajeService.create(createDto, trabajadorId);
   }
 
-  /* ---------- GET: Obtener todos los registros de un cliente ---------- */
   @Get('cliente/:clienteId')
   async findByCliente(@Param('clienteId') clienteId: string) {
-    return await this.registroDiarioService.findByCliente(clienteId);
+    this.logger.log(`Obteniendo registros del cliente: ${clienteId}`);
+    return this.fichajeService.findByCliente(clienteId);
   }
 
-  /* ---------- GET: Obtener un registro específico por ID ---------- */
+  @Get('trabajador/:trabajadorId')
+  async findByTrabajador(@Param('trabajadorId') trabajadorId: string) {
+    this.logger.log(`Obteniendo registros del trabajador: ${trabajadorId}`);
+    return this.fichajeService.findByTrabajador(trabajadorId);
+  }
+
   @Get(':id')
   async findOne(@Param('id') id: string) {
-    return await this.registroDiarioService.findOne(id);
+    this.logger.log(`Buscando registro con ID: ${id}`);
+    return this.fichajeService.findOne(id);
   }
 
-  /* ---------- PATCH: Actualizar contenido de un registro ---------- */
   @Patch(':id')
   async update(
-    @Param('id') id: string, 
-    @Body('contenido') contenido: string
+    @Param('id') id: string,
+    @Body() updateDto: { 
+      contenido: string;
+      objetivosGeneralesTrabajados?: string[];
+    },
   ) {
-    return await this.registroDiarioService.update(id, contenido);
+    this.logger.log(`Actualizando registro: ${id}`);
+    return this.fichajeService.update(
+      id, 
+      updateDto.contenido,
+      updateDto.objetivosGeneralesTrabajados
+    );
   }
 
-  /* ---------- DELETE: Eliminar un registro ---------- */
   @Delete(':id')
+  @HttpCode(HttpStatus.OK)
   async remove(@Param('id') id: string) {
-    return await this.registroDiarioService.remove(id);
+    this.logger.warn(`Eliminando registro: ${id}`);
+    await this.fichajeService.remove(id);
+    return {
+      message: 'Registro eliminado correctamente',
+      id,
+    };
   }
 }

@@ -1,28 +1,90 @@
-// dto/trabajador.dto.ts
-import { IsEmail, IsNotEmpty, IsIn, IsOptional, IsBoolean } from 'class-validator';
+import { 
+  IsString, 
+  IsEmail, 
+  IsOptional, 
+  IsBoolean, 
+  MinLength,
+  IsUUID 
+} from 'class-validator';
 
 export class CreateTrabajadorDto {
-  @IsNotEmpty()
-  username!: string;
+  @IsString()
+  @MinLength(3)
+  username: string;
 
-  @IsNotEmpty()
-  password!: string;
+  @IsString()
+  @MinLength(6)
+  password: string;
 
-  @IsNotEmpty()
-  nombre!: string;
+  @IsString()
+  nombre: string;
 
-  @IsOptional()
-  activo?: boolean;
-
-  @IsNotEmpty()
-  apellidos!: string;
+  @IsString()
+  apellidos: string;
 
   @IsEmail()
-  email!: string;
+  email: string;
 
   @IsOptional()
+  @IsString()
   telefono?: string;
 
-  @IsNotEmpty()
-  rolId!: string;
+  @IsOptional()
+  @IsString()
+  img?: string;
+
+  @IsOptional()
+  @IsString()
+  fechaContratacion?: string;
+
+  @IsUUID()
+  rolId: string;
+
+  @IsOptional()
+  @IsBoolean()
+  activo?: boolean;
+}
+
+export class UpdateTrabajadorDto {
+  @IsOptional()
+  @IsString()
+  @MinLength(3)
+  username?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(6)
+  password?: string;
+
+  @IsOptional()
+  @IsString()
+  nombre?: string;
+
+  @IsOptional()
+  @IsString()
+  apellidos?: string;
+
+  @IsOptional()
+  @IsEmail()
+  email?: string;
+
+  @IsOptional()
+  @IsString()
+  telefono?: string;
+
+  @IsOptional()
+  @IsString()
+  img?: string;
+
+  @IsOptional()
+  @IsString()
+  fechaContratacion?: string;
+
+  @IsOptional()
+  @IsUUID()
+  rolId?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  activo?: boolean;
 }

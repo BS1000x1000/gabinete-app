@@ -2,19 +2,28 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ClientesModule } from './clientes/clientes.module';
-import { N8nModule } from './n8n/n8n.module';
-import { HorariosModule } from './horarios/horarios.module';
 import { TrabajadorModule } from './trabajador/trabajador.module';
 import { AuthModule } from './auth/auth.module';
 import { FichajeModule } from './fichaje/fichaje.module';
+import { PrismaModule } from './prisma/prisma.module';
+import { SesionesModule } from './sesiones/sesiones.module';
+import { DisponibilidadModule } from './disponibilidad/disponibilidad.module';
+import { RolesModule } from './roles/roles.module';
+import { ObjetivosGeneralesModule } from './objetivos-generales/objetivos-generales.module';
+import { AreasDesarrolloModule } from './areas-desarrollo/areas-desarrollo.module';
 
 @Module({
   imports: [
+    PrismaModule, 
     ClientesModule,
-    HorariosModule,
-    TrabajadorModule,
-    AuthModule,
+    DisponibilidadModule,
+    SesionesModule,
     FichajeModule,
+    AuthModule,
+    TrabajadorModule,
+    RolesModule,
+    ObjetivosGeneralesModule,
+    AreasDesarrolloModule,
     // NO VA N8nModule
   ],
   controllers: [AppController],

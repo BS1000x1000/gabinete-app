@@ -2,12 +2,14 @@
 
 generator client {
   provider = "prisma-client-js"
-
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
+
+// --- SEGURIDAD Y ROLES ---
 
 model Rol {
   id          String   @id @default(uuid())
@@ -18,6 +20,8 @@ model Rol {
   updatedAt   DateTime @updatedAt @map("ultima_actualizacion")
 
   trabajadores Trabajador[]
+
+  @@map("roles")
 }
 
 model Trabajador {
@@ -37,30 +41,39 @@ model Trabajador {
   rolId String @map("id_rol")
   rol   Rol    @relation(fields: [rolId], references: [id])
 
-  clientesAsignados ClienteTrabajador[]
-
-  horarios           Horario[]
+  // Relaciones
+  clientesAsignados  ClienteTrabajador[]
+  sesiones           Sesion[]
   informes           Informe[]
   registrosCreados   RegistroDiario[]
-  objetivosAsignados Objetivo[]       @relation("ObjetivosAsignados") // Nuevo: Objetivos de los que es responsable
+  objetivosAsignados Objetivo[]          @relation("ObjetivosAsignados")
+
+  @@map("trabajadores")
 }
 
+// --- ENTIDADES EDUCATIVAS Y CLIENTES ---
+
 model Colegio {
-  id                      String   @id @default(uuid())
-  nombre                  String   @unique
-  direccionColegio        String   @map("direccion_colegio")
-  ctoColegioUno           String   @map("nombre_primero")
-  ctoTelefonoUno          String   @map("telefono_primero")
-  ctoEmailColegioUno      String   @map("email_primero")
-  ctoRelacionColegioUno   String   @map("txt_primero")
-  ctoColegioDos           String?  @map("nombre_segundo")
-  ctoTelefonoDos          String?  @map("telefono_segundo")
-  ctoEmailColegioDos      String?  @map("email_segundo")
-  ctoRelacionColegioDos   String?  @map("txt_segundo")
-  createdAt               DateTime @default(now()) @map("fecha_creacion")
-  updatedAt               DateTime @updatedAt @map("ultima_actualizacion")
+  id                    String  @id @default(uuid())
+  nombre                String  @unique
+  direccionColegio      String  @map("direccion_colegio")
+  // Contacto 1
+  ctoColegioUno         String  @map("nombre_primero")
+  ctoTelefonoUno        String  @map("telefono_primero")
+  ctoEmailColegioUno    String  @map("email_primero")
+  ctoRelacionColegioUno String  @map("txt_primero")
+  // Contacto 2
+  ctoColegioDos         String? @map("nombre_segundo")
+  ctoTelefonoDos        String? @map("telefono_segundo")
+  ctoEmailColegioDos    String? @map("email_segundo")
+  ctoRelacionColegioDos String? @map("txt_segundo")
+
+  createdAt DateTime @default(now()) @map("fecha_creacion")
+  updatedAt DateTime @updatedAt @map("ultima_actualizacion")
 
   clientes Cliente[]
+
+  @@map("colegios")
 }
 
 model Cliente {
@@ -69,7 +82,7 @@ model Cliente {
   nombre          String
   apellidos       String
   fechaNacimiento DateTime? @map("fecha_nacimiento")
-  dni             String
+  dni             String    @unique
   domicilio       String
   provincia       String
   ciudad          String
@@ -80,17 +93,22 @@ model Cliente {
   createdAt       DateTime  @default(now()) @map("fecha_creacion")
   updatedAt       DateTime  @updatedAt @map("ultima_actualizacion")
 
+  // Relaciones
   trabajadoresAsignados ClienteTrabajador[]
+  colegioId             String?             @map("id_colegio")
+  colegio               Colegio?            @relation(fields: [colegioId], references: [id])
 
-  colegioId String?  @map("id_colegio")
-  colegio   Colegio? @relation(fields: [colegioId], references: [id])
+  disponibilidad       DisponibilidadCliente[] // Horario teórico semanal
+  sesiones             Sesion[] // Sesiones reales en calendario
+  informes             Informe[]
+  contactosFamiliares  Familiar[]
+  sanitario            Sanitario?
+  registrosDiarios     RegistroDiario[]
+  // Relación con objetivos generales
+  objetivosGeneralesAsignados ClienteObjetivo[]
+  objetivosEspecificos Objetivo[]
 
-  horarios            Horario[]
-  informes            Informe[]
-  contactosFamiliares Familiar[]       @relation("ClienteContactos")
-  sanitario           Sanitario[]       @relation("ClienteSanitario")
-  registrosDiarios    RegistroDiario[]
-  objetivos           Objetivo[] // Nuevo: Objetivos asociados a este cliente
+  @@map("clientes")
 }
 
 model ClienteTrabajador {
@@ -106,108 +124,232 @@ model ClienteTrabajador {
   @@map("clientes_trabajadores")
 }
 
-model Horario {
-  id              String   @id @default(uuid())
-  fechaHoraInicio DateTime @map("fecha_hora_inicio")
-  fechaHoraFin    DateTime @map("fecha_hora_fin")
-  tipoSesion      String   @map("tipo_sesion")
-  estado          String   @default("programada")
-  notas           String?  @db.Text
-  createdAt       DateTime @default(now()) @map("fecha_creacion")
-  updatedAt       DateTime @updatedAt @map("ultima_actualizacion")
+// --- GESTIÓN DE TIEMPOS Y SESIONES ---
+
+model DisponibilidadCliente {
+  id         String @id @default(uuid())
+  diaSemana  Int // 0-6 (Domingo-Sábado)
+  horaInicio String // "17:00"
+  horaFin    String // "18:00"
 
   clienteId String  @map("id_cliente")
   cliente   Cliente @relation(fields: [clienteId], references: [id])
 
-  trabajadorId String     @map("id_trabajador")
-  trabajador   Trabajador @relation(fields: [trabajadorId], references: [id])
+  @@map("disponibilidad_clientes")
 }
 
-model Informe {
-  id               String    @id @default(uuid())
-  titulo           String
-  contenido        String    @db.Text
-  fechaCreacion    DateTime  @default(now()) @map("fecha_creacion")
-  fechaVencimiento DateTime? @map("fecha_vencimiento")
-  estado           String    @default("borrador")
-  urlDocumentoFinal String? @map("url_documento_final")
-  createdAt        DateTime  @default(now()) @map("fecha_creacion_registro")
-  updatedAt        DateTime  @updatedAt @map("ultima_actualizacion")
+model Sesion {
+  id                  String       @id @default(uuid())
+  fechaHoraInicio     DateTime     @map("fecha_hora_inicio")
+  fechaHoraFin        DateTime     @map("fecha_hora_fin")
+  estado              EstadoSesion @default(PROGRAMADA)
+  tipoSesion          TipoSesion   @default(PEDAGOGIA)
+  notas               String?      @db.Text
+  objetivosTrabajados String?      @db.Text
+  createdAt           DateTime     @default(now()) @map("fecha_creacion")
+  updatedAt           DateTime     @updatedAt @map("ultima_actualizacion")
 
-  clienteId String  @map("id_cliente")
-  cliente   Cliente @relation(fields: [clienteId], references: [id])
-
+  clienteId    String     @map("id_cliente")
+  cliente      Cliente    @relation(fields: [clienteId], references: [id])
   trabajadorId String     @map("id_trabajador")
   trabajador   Trabajador @relation(fields: [trabajadorId], references: [id])
+
+  @@map("sesiones")
 }
+
+// --- DOCUMENTACIÓN Y SEGUIMIENTO ---
 
 model Familiar {
-  id               String   @id @default(uuid())
-  nombreContacto   String   @map("nombre_contacto")
-  parentesco       String?
-  nombreMadre      String   @map("nombre_madre")
-  telefonoMadre    String?  @map("telefono_madre")
-  emailMadre       String?  @map("email_madre")
-  dniMadre         String   @map("dni_madre")
-  dniPadre         String   @map("dni_padre")
-  nombrePadre      String   @map("nombre_padre")
-  telefonoPadre    String?  @map("telefono_padre")
-  emailPadre       String?  @map("email_padre")
-  telefonoWhatsapp String?  @map("telefono_whatsapp")
-  createdAt        DateTime @default(now()) @map("fecha_creacion")
-  updatedAt        DateTime @updatedAt @map("ultima_actualizacion")
+  id                  String  @id @default(uuid())
+  nombre              String
+  apellidos           String
+  dni                 String?
+  parentesco          String // "Madre", "Padre", "Tutor", etc.
+  telefono            String
+  email               String?
+  esResponsablePago   Boolean @default(false) @map("es_responsable_pago")
+  esContactoPrincipal Boolean @default(true) @map("es_contacto_principal")
+  whatsapp            Boolean @default(true)
 
-  clienteId String  @unique @map("id_cliente")
-  cliente   Cliente @relation("ClienteContactos", fields: [clienteId], references: [id])
+  clienteId String  @map("id_cliente")
+  cliente   Cliente @relation(fields: [clienteId], references: [id])
+
+  createdAt DateTime @default(now()) @map("fecha_creacion")
+  updatedAt DateTime @updatedAt @map("ultima_actualizacion")
+
+  @@map("familiares")
 }
 
 model Sanitario {
-  id               String     @id @default(uuid())
-  diagnostico      String
-  centroSalud      String     @map("centro_salud")
-  tratamientos     String
-  medicacion       String
-  alergias         String?    @db.Text
-  adaptaciones     Boolean    @default(false)
-  tipoAdaptaciones String   @map("tipo_adaptaciones")
+  id               String   @id @default(uuid())
+  diagnostico      String   @db.Text
+  centroSalud      String   @map("centro_salud")
+  tratamientos     String   @db.Text
+  medicacion       String   @db.Text
+  alergias         String?  @db.Text
+  adaptaciones     Boolean  @default(false)
+  tipoAdaptaciones String?  @map("tipo_adaptaciones")
   especialistas    String[]
-  apoyos           Boolean    @default(false)
-  createdAt        DateTime   @default(now()) @map("fecha_creacion")
-  updatedAt        DateTime   @updatedAt @map("ultima_actualizacion")
+  apoyos           Boolean  @default(false)
 
   clienteId String  @unique @map("id_cliente")
-  cliente   Cliente @relation("ClienteSanitario", fields: [clienteId], references: [id])
+  cliente   Cliente @relation(fields: [clienteId], references: [id])
+
+  createdAt DateTime @default(now()) @map("fecha_creacion")
+  updatedAt DateTime @updatedAt @map("ultima_actualizacion")
+
+  @@map("datos_sanitarios")
+}
+
+model Informe {
+  id                String        @id @default(uuid())
+  titulo            String
+  contenido         String        @db.Text
+  fechaCreacion     DateTime      @default(now()) @map("fecha_creacion")
+  fechaVencimiento  DateTime?     @map("fecha_vencimiento")
+  estado            EstadoInforme @default(BORRADOR)
+  urlDocumentoFinal String?       @map("url_documento_final")
+
+  clienteId    String     @map("id_cliente")
+  cliente      Cliente    @relation(fields: [clienteId], references: [id])
+  trabajadorId String     @map("id_trabajador")
+  trabajador   Trabajador @relation(fields: [trabajadorId], references: [id])
+
+  createdAt DateTime @default(now()) @map("fecha_registro")
+  updatedAt DateTime @updatedAt @map("ultima_actualizacion")
+
+  @@map("informes")
 }
 
 model RegistroDiario {
   id            String   @id @default(uuid())
   fechaRegistro DateTime @default(now()) @map("fecha_registro")
   contenido     String   @db.Text
-  createdAt     DateTime @default(now()) @map("fecha_creacion_registro")
-  updatedAt     DateTime @updatedAt @map("ultima_actualizacion")
 
-  clienteId String  @map("id_cliente")
-  cliente   Cliente @relation(fields: [clienteId], references: [id])
-
+  clienteId    String     @map("id_cliente")
+  cliente      Cliente    @relation(fields: [clienteId], references: [id])
   trabajadorId String     @map("id_trabajador")
   trabajador   Trabajador @relation(fields: [trabajadorId], references: [id])
+
+  createdAt               DateTime                 @default(now()) @map("fecha_creacion")
+  updatedAt               DateTime                 @updatedAt @map("ultima_actualizacion")
+  objetivosGeneralesTrabajados  RegistroDiarioObjetivo[]
+
+  @@map("registros_diarios")
 }
 
 model Objetivo {
-  id               String    @id @default(uuid())
-  titulo           String // Título breve del objetivo (ej. "Mejorar lectoescritura")
-  descripcion      String?   @db.Text // Descripción más detallada del objetivo, cómo lograrlo, etc.
-  fechaInicio      DateTime  @default(now()) @map("fecha_inicio") // Cuándo se define el objetivo
-  fechaFinPrevista DateTime? @map("fecha_fin_prevista") // Fecha límite estimada
-  estado           String    @default("pendiente") // 'pendiente', 'en_progreso', 'completado', 'cancelado'
-  createdAt        DateTime  @default(now()) @map("fecha_creacion_registro")
-  updatedAt        DateTime  @updatedAt @map("ultima_actualizacion")
+  id               String         @id @default(uuid())
+  titulo           String
+  descripcion      String?        @db.Text
+  fechaInicio      DateTime       @default(now()) @map("fecha_inicio")
+  fechaFinPrevista DateTime?      @map("fecha_fin_prevista")
+  estado           EstadoObjetivo @default(PENDIENTE)
 
-  // Relación: Un objetivo se asocia a un Cliente
-  clienteId String  @map("id_cliente")
-  cliente   Cliente @relation(fields: [clienteId], references: [id])
-
-  // Relación: Un objetivo es responsabilidad de un Trabajador
+  clienteId               String     @map("id_cliente")
+  cliente                 Cliente    @relation(fields: [clienteId], references: [id])
   trabajadorResponsableId String     @map("id_trabajador_responsable")
   trabajadorResponsable   Trabajador @relation("ObjetivosAsignados", fields: [trabajadorResponsableId], references: [id])
+
+  createdAt DateTime @default(now()) @map("fecha_creacion")
+  updatedAt DateTime @updatedAt @map("ultima_actualizacion")
+
+  @@map("objetivos")
+}
+
+// Áreas de desarrollo (categorías)
+model AreaDesarrollo {
+  id          String   @id @default(uuid())
+  nombre      String   @unique // "Comprensión Lectora", "Atención", etc.
+  descripcion String?  @db.Text
+  color       String? // Para UI: "#3B82F6", "#10B981", etc.
+  orden       Int      @default(0)
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("fecha_creacion")
+  updatedAt   DateTime @updatedAt @map("ultima_actualizacion")
+
+  objetivosGenerales ObjetivoGeneral[]
+
+  @@map("areas_desarrollo")
+}
+
+// Objetivos generales (plantillas reutilizables)
+model ObjetivoGeneral {
+  id          String   @id @default(uuid())
+  titulo      String // "Comprensión Inferencial", "Atención Sostenida"
+  descripcion String?  @db.Text
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("fecha_creacion")
+  updatedAt   DateTime @updatedAt @map("ultima_actualizacion")
+
+  areaDesarrolloId String         @map("id_area_desarrollo")
+  areaDesarrollo   AreaDesarrollo @relation(fields: [areaDesarrolloId], references: [id])
+
+  // Relaciones
+  clientesQueLoTienen     ClienteObjetivo[]
+  registrosDondeSeTrabajo RegistroDiarioObjetivo[]
+
+  @@map("objetivos_generales")
+}
+
+// Tabla intermedia: qué objetivos generales tiene asignados cada cliente
+model ClienteObjetivo {
+  id              String   @id @default(uuid())
+  fechaAsignacion DateTime @default(now()) @map("fecha_asignacion")
+  activo          Boolean  @default(true)
+  createdAt       DateTime @default(now()) @map("fecha_creacion")
+
+  clienteId String  @map("id_cliente")
+  cliente   Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+
+  objetivoGeneralId String          @map("id_objetivo_general")
+  objetivoGeneral   ObjetivoGeneral @relation(fields: [objetivoGeneralId], references: [id], onDelete: Cascade)
+
+  @@unique([clienteId, objetivoGeneralId])
+  @@map("clientes_objetivos")
+}
+
+// Tabla intermedia: qué objetivos se trabajaron en cada registro
+model RegistroDiarioObjetivo {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("fecha_creacion")
+
+  registroDiarioId String         @map("id_registro_diario")
+  registroDiario   RegistroDiario @relation(fields: [registroDiarioId], references: [id], onDelete: Cascade)
+
+  objetivoGeneralId String          @map("id_objetivo_general")
+  objetivoGeneral   ObjetivoGeneral @relation(fields: [objetivoGeneralId], references: [id], onDelete: Cascade)
+
+  @@unique([registroDiarioId, objetivoGeneralId])
+  @@map("registros_diarios_objetivos")
+}
+
+// --- ENUMS PARA CONSISTENCIA ---
+
+enum EstadoSesion {
+  PROGRAMADA
+  COMPLETADA
+  CANCELADA_CON_AVISO
+  CANCELADA_SIN_AVISO
+  VACACIONES
+}
+
+enum TipoSesion {
+  PEDAGOGIA
+  NEUROPSICOLOGIA
+  EVALUACION
+  REUNION_COLEGIO
+}
+
+enum EstadoInforme {
+  BORRADOR
+  REVISION
+  FINALIZADO
+}
+
+enum EstadoObjetivo {
+  PENDIENTE
+  EN_PROGRESO
+  COMPLETADO
+  CANCELADO
 }

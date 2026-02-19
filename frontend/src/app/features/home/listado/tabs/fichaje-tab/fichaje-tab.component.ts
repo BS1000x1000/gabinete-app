@@ -52,7 +52,12 @@ export class FichajeTabComponent implements OnInit {
       }
 
       if (filtro === 'Mes') {
-        return fecha.getMonth() && fecha.getFullYear() === now.getFullYear();
+        // Esta condición es estricta: solo registros del mes actual Y año actual
+        const esMismoMes = fecha.getMonth() === now.getMonth();
+        const esMismoAnio = fecha.getFullYear() === now.getFullYear();
+
+        // Solo si ambas son true, el registro aparecerá en tu lista
+        return esMismoMes && esMismoAnio;
       }
       return true;
     });
@@ -72,7 +77,6 @@ export class FichajeTabComponent implements OnInit {
       console.error('No se pudo encontrar el ID del cliente en la URL');
       return;
     }
-
 
     this.fichajeSvc.getRegistros(this.clienteId!).subscribe();
   }

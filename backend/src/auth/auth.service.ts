@@ -13,7 +13,7 @@ export class AuthService {
 
   async validateUser(body: LoginDto) {
     try {
-      const user = await this.userService.findUser(body.username);
+      const user = await this.userService.findByUsername(body.username);
       const matchResult = await bcrypt.compare(
         body.password,
         user?.passwordHash ?? '',
