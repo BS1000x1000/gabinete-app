@@ -11,11 +11,14 @@ import {
   HttpStatus,
   Logger,
   NotFoundException,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import { SesionesService } from './sesiones.service';
 import { GenerarSesionesDto } from './dto/generar-sesiones.dto';
 import { CompletarSesionDto } from './dto/completar-sesion.dto';
 import { CancelarSesionDto } from './dto/cancelar-sesion.dto';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
 @Controller('sesiones')
 export class SesionesController {
@@ -37,7 +40,11 @@ export class SesionesController {
     @Query('fechaFin') fechaFin?: string,
   ) {
     this.logger.log(`Obteniendo sesiones del trabajador: ${trabajadorId}`);
-    return this.sesionesService.findByTrabajadorYFecha(trabajadorId, fechaInicio, fechaFin);
+    return this.sesionesService.findByTrabajadorYFecha(
+      trabajadorId,
+      fechaInicio,
+      fechaFin,
+    );
   }
 
   @Get('cliente/:clienteId')
@@ -50,11 +57,11 @@ export class SesionesController {
   async findOne(@Param('id') id: string) {
     this.logger.log(`Buscando sesión con ID: ${id}`);
     const sesion = await this.sesionesService.findOne(id);
-    
+
     if (!sesion) {
       throw new NotFoundException(`Sesión con ID ${id} no encontrada`);
     }
-    
+
     return sesion;
   }
 
@@ -79,11 +86,65 @@ export class SesionesController {
     );
   }
 
-  @Patch(':id')
-  async update(
-    @Param('id') id: string,
-    @Body() updateDto: any,
+  /**
+   * Calendario semanal del trabajador autenticado
+   */
+  @Get('mi-calendario/semanal')
+  @UseGuards(JwtAuthGuard)
+  async getMiCalendarioSemanal(
+    @Req() req: any,
+    @Query('fecha') fecha?: string,
   ) {
+    const trabajadorId = req.user.userId;
+    const fechaReferencia = fecha ? new Date(fecha) : undefined;
+
+    this.logger.log(
+      `Obteniendo calendario semanal del trabajador ${trabajadorId}${fecha ? ` para ${fecha}` : ''}`,
+    );
+
+    return this.sesionesService.getCalendarioSemanal(
+      trabajadorId,
+      fechaReferencia,
+    );
+  }
+
+  /**
+   * Calendario mensual del trabajador autenticado
+   */
+  @Get('mi-calendario/mensual')
+  @UseGuards(JwtAuthGuard)
+  async getMiCalendarioMensual(
+    @Req() req: any,
+    @Query('fecha') fecha?: string,
+  ) {
+    const trabajadorId = req.user.userId;
+    const fechaReferencia = fecha ? new Date(fecha) : undefined;
+
+    this.logger.log(
+      `Obteniendo calendario mensual del trabajador ${trabajadorId}${fecha ? ` para ${fecha}` : ''}`,
+    );
+
+    return this.sesionesService.getCalendarioMensual(
+      trabajadorId,
+      fechaReferencia,
+    );
+  }
+
+  /**
+   * Sesiones de hoy del trabajador autenticado
+   */
+  @Get('hoy')
+  @UseGuards(JwtAuthGuard)
+  async getSesionesHoy(@Req() req: any) {
+    const trabajadorId = req.user.userId;
+    this.logger.log(
+      `Obteniendo sesiones de hoy del trabajador ${trabajadorId}`,
+    );
+    return this.sesionesService.getSesionesHoy(trabajadorId);
+  }
+
+  @Patch(':id')
+  async update(@Param('id') id: string, @Body() updateDto: any) {
     this.logger.log(`Actualizando sesión: ${id}`);
     return this.sesionesService.update(id, updateDto);
   }

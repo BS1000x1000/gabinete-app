@@ -1,22 +1,25 @@
-import { 
-  Controller, 
-  Post, 
-  Body, 
-  HttpCode, 
-  HttpStatus, 
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
   Logger,
   Get,
   Param,
   Delete,
   Patch,
   NotFoundException,
+  Query,
 } from '@nestjs/common';
 import { ClientesService } from './clientes.service';
 import { CreateClienteDto } from './dto/create-cliente.dto';
-import { ClienteWithRelations } from './clientes.types';
+import { clienteInclude, ClienteWithRelations } from './clientes.types';
+import { PaginationDto } from './dto/pagination.dto';
 
 @Controller('clientes')
-export class ClientesController {  // ✅ Asegúrate de exportar la clase
+export class ClientesController {
+  // ✅ Asegúrate de exportar la clase
   private readonly logger = new Logger(ClientesController.name);
 
   constructor(private readonly clientesService: ClientesService) {}
@@ -25,26 +28,27 @@ export class ClientesController {  // ✅ Asegúrate de exportar la clase
   @HttpCode(HttpStatus.CREATED)
   async create(
     @Body() createClienteDto: CreateClienteDto,
-  ): Promise<ClienteWithRelations> { 
-    this.logger.log(`Petición para crear cliente: ${createClienteDto.nombre} ${createClienteDto.apellidos}`);
+  ): Promise<ClienteWithRelations> {
+    this.logger.log(
+      `Petición para crear cliente: ${createClienteDto.nombre} ${createClienteDto.apellidos}`,
+    );
     return this.clientesService.create(createClienteDto); // ✅ Delega al servicio
   }
 
   @Get()
-  async findAll(): Promise<ClienteWithRelations[]> {
-    this.logger.log('Obteniendo todos los clientes');
-    return this.clientesService.findAll();
+  async findAll(@Query() paginationDto: PaginationDto) {
+    return this.clientesService.findAllPaginated(paginationDto);
   }
 
   @Get(':id')
   async findOne(@Param('id') id: string): Promise<ClienteWithRelations> {
     this.logger.log(`Buscando cliente con ID: ${id}`);
     const cliente = await this.clientesService.findOne(id);
-    
+
     if (!cliente) {
       throw new NotFoundException(`Cliente con ID ${id} no encontrado`);
     }
-    
+
     return cliente;
   }
 
@@ -63,7 +67,10 @@ export class ClientesController {  // ✅ Asegúrate de exportar la clase
     @Body() body: { objetivosGeneralesIds: string[] },
   ) {
     this.logger.log(`Asignando objetivos generales al cliente: ${id}`);
-    return this.clientesService.asignarObjetivosGenerales(id, body.objetivosGeneralesIds);
+    return this.clientesService.asignarObjetivosGenerales(
+      id,
+      body.objetivosGeneralesIds,
+    );
   }
 
   // Desasignar un objetivo general
@@ -86,8 +93,8 @@ export class ClientesController {  // ✅ Asegúrate de exportar la clase
 
   @Patch(':id')
   async update(
-    @Param('id') id: string, 
-    @Body() updateClienteDto: Partial<CreateClienteDto>
+    @Param('id') id: string,
+    @Body() updateClienteDto: Partial<CreateClienteDto>,
   ): Promise<ClienteWithRelations> {
     this.logger.log(`Actualizando cliente con ID: ${id}`);
     return this.clientesService.update(id, updateClienteDto); // ✅ Delega al servicio
@@ -98,12 +105,17 @@ export class ClientesController {  // ✅ Asegúrate de exportar la clase
   async remove(@Param('id') id: string) {
     this.logger.warn(`Solicitud de eliminación para cliente con ID: ${id}`);
     await this.clientesService.remove(id);
-    
-    return { 
+
+    return {
       message: 'Cliente eliminado correctamente',
       id: id,
       status: 'success',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
+  }
+
+  @Get('search')
+  async search(@Query('q') query: string) {
+    return this.clientesService.search(query);
   }
 }

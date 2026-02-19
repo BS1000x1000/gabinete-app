@@ -9,11 +9,15 @@ import {
   HttpCode,
   HttpStatus,
   Logger,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
 import { FichajeService } from './fichaje.service';
 import { CreateRegistroDiarioDto } from './dto/create-registro.dto';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
 @Controller('registros')
+@UseGuards(JwtAuthGuard)
 export class FichajeController {
   private readonly logger = new Logger(FichajeController.name);
 
@@ -21,9 +25,9 @@ export class FichajeController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() createDto: CreateRegistroDiarioDto) {
-    // TODO: Obtener trabajadorId del token JWT
-    const trabajadorId = 'temp-trabajador-id'; // Temporal
+  async create(@Body() createDto: CreateRegistroDiarioDto, @Req() req: any) {
+
+    const trabajadorId = req.user.userId
     
     this.logger.log(`Creando registro diario para cliente: ${createDto.clienteId}`);
     if (createDto.objetivosGeneralesTrabajados?.length) {

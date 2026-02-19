@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { ClienteWithRelations, clienteInclude } from './clientes.types';
 import { CreateClienteDto } from './dto/create-cliente.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { PaginationDto } from './dto/pagination.dto';
 
 @Injectable()
 export class ClientesService {
@@ -97,6 +98,30 @@ export class ClientesService {
     return await this.prisma.cliente.findMany({
       include: clienteInclude,
     });
+  }
+
+  async findAllPaginated(paginationDto: PaginationDto) {
+    const { page = 1, limit = 10 } = paginationDto;
+    const skip = (page - 1) * limit;
+
+    const [items, total] = await Promise.all([
+      this.prisma.cliente.findMany({
+        skip,
+        take: limit,
+        include: clienteInclude,
+      }),
+      this.prisma.cliente.count(),
+    ]);
+
+    return {
+      items,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async findOne(id: string): Promise<ClienteWithRelations | null> {
@@ -344,6 +369,20 @@ export class ClientesService {
   async remove(id: string): Promise<void> {
     await this.prisma.cliente.delete({
       where: { id },
+    });
+  }
+
+  async search(query: string) {
+    return await this.prisma.cliente.findMany({
+      where: {
+        OR: [
+          { nombre: { contains: query, mode: 'insensitive' } },
+          { apellidos: { contains: query, mode: 'insensitive' } },
+          { dni: { contains: query } },
+        ],
+        activo: true,
+      },
+      take: 10,
     });
   }
 }

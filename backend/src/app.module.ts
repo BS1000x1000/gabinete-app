@@ -11,6 +11,8 @@ import { DisponibilidadModule } from './disponibilidad/disponibilidad.module';
 import { RolesModule } from './roles/roles.module';
 import { ObjetivosGeneralesModule } from './objetivos-generales/objetivos-generales.module';
 import { AreasDesarrolloModule } from './areas-desarrollo/areas-desarrollo.module';
+import { HealthModule } from './health/health.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -24,6 +26,8 @@ import { AreasDesarrolloModule } from './areas-desarrollo/areas-desarrollo.modul
     RolesModule,
     ObjetivosGeneralesModule,
     AreasDesarrolloModule,
+    HealthModule,
+    DashboardModule
     // NO VA N8nModule
   ],
   controllers: [AppController],

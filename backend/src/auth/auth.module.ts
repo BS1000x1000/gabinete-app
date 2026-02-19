@@ -7,6 +7,7 @@ import { PassportModule } from "@nestjs/passport";
 import { JwtModule } from "@nestjs/jwt";
 import { JwtStrategy } from "./strategies/jwt.strategy";
 import { AuthController } from "./auth.controller";
+import { TrabajadorModule } from "src/trabajador/trabajador.module";
 
 @Module({
     imports: [
@@ -14,7 +15,8 @@ import { AuthController } from "./auth.controller";
         JwtModule.register({
             secret: process.env.SECRET,
             signOptions: { expiresIn: '8hrs'}
-        })
+        }), 
+        TrabajadorModule
     ],
     // controllers: [AuthController],
     providers: [AuthService, TrabajadorService, LocalStrategy, JwtStrategy], 
