@@ -1,0 +1,86 @@
+// ========================================
+// TAB CONTENT LAYOUT
+// ========================================
+.tab-content-modern {
+  min-height: 400px;
+  padding: $spacing-lg;
+
+  @include respond-to('md') {
+    padding: $spacing-md;
+  }
+
+  .section {
+    @include card;
+    padding: $spacing-xl;
+    margin-bottom: $spacing-lg;
+
+    @include respond-to('md') {
+      padding: $spacing-lg;
+    }
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .section-title {
+    @include section-title;
+
+    &.text-danger i {
+      color: $danger;
+    }
+
+    &.text-info i {
+      color: $info;
+    }
+
+    &.text-success i {
+      color: $success;
+    }
+  }
+
+  .data-grid {
+    @include data-grid;
+  }
+
+  // Alerts mejorados
+  .alert {
+    border-radius: $border-radius;
+    border-left: 4px solid;
+    padding: $spacing-md;
+
+    &-danger {
+      @include alert-variant($danger);
+    }
+
+    &-info {
+      @include alert-variant($info);
+    }
+
+    &-warning {
+      @include alert-variant($warning);
+    }
+
+    &-success {
+      @include alert-variant($success);
+    }
+  }
+
+  // Estado vacío
+  .empty-state {
+    text-align: center;
+    padding: $spacing-2xl $spacing-md;
+    color: $gray-500;
+
+    i {
+      font-size: 3rem;
+      margin-bottom: $spacing-md;
+      opacity: 0.5;
+    }
+
+    p {
+      margin: 0;
+      font-size: $font-size-base;
+    }
+  }
+}

@@ -1,26 +1,37 @@
+import { Component, inject, signal } from '@angular/core';
+import { Router, RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { AgendaComponent } from './agenda/agenda.component';
+import { AuthService } from '../../services/auth.service';
+import { SidebarComponent } from '../../shared/components/layout/sidebar/sidebar.component';
+import { AgendaCompactComponent } from '../../components/agenda-compact/agenda-compact.component';
+import { SearchBarComponent } from '../../components/search-bar/search-bar.component';
 
-// src/app/features/home/home.component.ts
 @Component({
   selector: 'app-home',
   standalone: true,
   imports: [
     CommonModule,
-    RouterLink,
     RouterOutlet,
-    RouterLinkActive,
-    AgendaComponent,
+    SidebarComponent,
+    AgendaCompactComponent,
+    SearchBarComponent,
   ],
   templateUrl: './home.component.html',
-  styleUrls: ['./home.component.scss'],
+  styleUrl: './home.component.scss',
 })
-export class HomeComponent implements OnInit {
-  constructor() {}
+export class HomeComponent {
+  private auth = inject(AuthService);
+  private router = inject(Router);
 
-  ngOnInit() {
+  currentUser = this.auth.currentUser;
+  mobileSidebarOpen = signal(false);
+
+  toggleMobileSidebar() {
+    this.mobileSidebarOpen.update((v) => !v);
   }
 
+  logout() {
+    this.auth.logout();
+    this.router.navigate(['/login']);
+  }
 }

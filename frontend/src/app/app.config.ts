@@ -10,7 +10,7 @@ import { CalendarModule, DateAdapter } from 'angular-calendar';
 import { adapterFactory } from 'angular-calendar/date-adapters/date-fns';
 import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideQuillConfig, QuillModule } from 'ngx-quill';
-import { authInterceptor } from './utils/auth-interceptor';
+import { authInterceptor } from './shared/utils/auth-interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [

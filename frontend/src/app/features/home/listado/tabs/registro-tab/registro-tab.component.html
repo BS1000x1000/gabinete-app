@@ -1,0 +1,236 @@
+<div class="container-fluid p-0">
+  <div class="row g-4 flex-column">
+    
+    <!-- Formulario de Entrada -->
+    <div class="col-12">
+      <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-body p-3">
+          
+          <!-- Editor de texto -->
+          <div class="mb-3">
+            <label class="form-label fw-bold text-secondary">
+              Nuevo Registro
+            </label>
+            <quill-editor
+              class="w-100 bg-light"
+              [ngModel]="nuevoContenido()"
+              (ngModelChange)="nuevoContenido.set($event)"
+              [disabled]="cargando()"
+              [placeholder]="'Inserta registro aquí...'"
+            ></quill-editor>
+          </div>
+
+          <!-- Sección de objetivos trabajados -->
+          <div class="mb-3">
+            <button
+              class="btn btn-sm btn-outline-primary"
+              (click)="mostrarObjetivos.set(!mostrarObjetivos())"
+              type="button"
+            >
+              <i
+                class="bi"
+                [ngClass]="mostrarObjetivos() ? 'bi-chevron-up' : 'bi-chevron-down'"
+              ></i>
+              {{ mostrarObjetivos() ? "Ocultar" : "Marcar" }} Objetivos Trabajados
+              <span
+                *ngIf="objetivosSeleccionados().length > 0"
+                class="badge bg-primary ms-2"
+              >
+                {{ objetivosSeleccionados().length }}
+              </span>
+            </button>
+
+            <!-- Panel de selección de objetivos -->
+            <div
+              *ngIf="mostrarObjetivos()"
+              class="mt-3 p-3 border rounded bg-light"
+            >
+              <p class="text-muted small mb-3">
+                <i class="bi bi-info-circle me-1"></i>
+                Selecciona los objetivos que trabajaste en esta sesión
+              </p>
+
+              <!-- Si no hay objetivos asignados -->
+              <div
+                *ngIf="objetivosAgrupados().length === 0"
+                class="text-center py-3"
+              >
+                <i class="bi bi-inbox fs-4 text-muted"></i>
+                <p class="text-muted mt-2 mb-0">
+                  Este cliente no tiene objetivos asignados.
+                </p>
+              </div>
+
+              <!-- Objetivos agrupados por área -->
+              <div *ngFor="let grupo of objetivosAgrupados()" class="mb-3">
+                
+                <!-- Header del área -->
+                <div class="d-flex align-items-center mb-2">
+                  <span
+                    class="badge me-2"
+                    [style.background-color]="grupo.color"
+                  >
+                    {{ grupo.area }}
+                  </span>
+                </div>
+
+                <!-- Checkboxes de objetivos -->
+                <div class="row g-2">
+                  <div
+                    *ngFor="let objetivo of grupo.objetivos"
+                    class="col-md-6"
+                  >
+                    <!-- ✅ CORREGIDO: Label como contenedor sin atributo [for] -->
+                    <label
+                      class="objetivo-card"
+                      [class.selected]="esObjetivoSeleccionado(objetivo.id)"
+                    >
+                      <input
+                        type="checkbox"
+                        [checked]="esObjetivoSeleccionado(objetivo.id)"
+                        (change)="toggleObjetivo(objetivo.id)"
+                        class="form-check-input objetivo-checkbox"
+                      />
+                      <span class="objetivo-titulo flex-grow-1">
+                        {{ objetivo.titulo }}
+                      </span>
+                      <i
+                        *ngIf="esObjetivoSeleccionado(objetivo.id)"
+                        class="bi bi-check-circle-fill objetivo-check-icon"
+                      ></i>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Footer con botones -->
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="text-muted small">
+              <i class="bi bi-calendar3 me-1"></i>
+              {{ hoy | date: "dd/MM/yyyy" }}
+            </span>
+            <div class="d-flex gap-2">
+              <button
+                class="btn btn-outline-secondary"
+                (click)="limpiar()"
+                [disabled]="cargando()"
+              >
+                Limpiar
+              </button>
+              <button
+                class="btn btn-primary px-4 shadow-sm"
+                (click)="guardar()"
+                [disabled]="!nuevoContenido()?.trim() || cargando()"
+              >
+                @if (cargando()) {
+                  <span class="spinner-border spinner-border-sm me-2"></span>
+                  Guardando...
+                } @else {
+                  <i class="bi bi-send-fill me-2"></i>Guardar Registro
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Historial de Registros -->
+    <div class="col-12">
+      <div class="card border-0 shadow-sm rounded-3">
+        
+        <!-- Header con filtros -->
+        <div
+          class="card-header bg-white py-3 d-flex flex-wrap justify-content-between align-items-center gap-2"
+        >
+          <h6 class="card-title mb-0 fw-bold text-uppercase text-secondary small">
+            <i class="bi bi-clock-history me-2"></i>Historial de Actividad
+          </h6>
+
+          <div class="btn-group btn-group-sm rounded-pill overflow-hidden border">
+            @for (opcion of ["Todo", "Hoy", "Semana", "Mes"]; track opcion) {
+              <button
+                type="button"
+                (click)="filtro.set(opcion)"
+                class="btn btn-white border-0 py-1 px-3 fw-medium"
+                [class.btn-primary]="filtro() === opcion"
+                [class.text-primary]="filtro() !== opcion"
+              >
+                {{ opcion }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Lista de registros -->
+        <div class="card-body p-0">
+          <div
+            class="list-group list-group-flush"
+            style="max-height: 500px; overflow-y: auto"
+          >
+            @if (registrosFiltrados().length === 0) {
+              <div class="text-center py-5">
+                <i class="bi bi-folder2-open display-4 text-muted"></i>
+                <p class="text-muted mt-2">
+                  No se encontraron registros para esta selección.
+                </p>
+              </div>
+            } @else {
+              @for (reg of registrosFiltrados(); track reg.id) {
+                <div class="list-group-item list-group-item-action p-3 border-start border-4">
+                  
+                  <!-- Header del registro -->
+                  <div class="d-flex w-100 justify-content-between align-items-center mb-2">
+                    <span class="badge rounded-pill bg-light text-dark border fw-medium">
+                      <i class="bi bi-person me-1"></i>
+                      {{ reg.trabajador?.nombre }} {{ reg.trabajador?.apellidos }}
+                    </span>
+                    <small class="text-muted fw-bold">
+                      <i class="bi bi-calendar3 me-1"></i>
+                      {{ reg.fechaRegistro | date: "dd/MM/yyyy HH:mm" }}
+                    </small>
+                  </div>
+
+                  <!-- Contenido del registro -->
+                  <p
+                    class="mb-2 text-dark small lh-base"
+                    [innerHTML]="reg.contenido"
+                  ></p>
+
+                  <!-- Objetivos trabajados en este registro -->
+                  <div
+                    *ngIf="reg.objetivosGeneralesTrabajados!.length > 0"
+                    class="mt-2"
+                  >
+                    <small class="text-muted d-block mb-1">
+                      <i class="bi bi-bullseye me-1"></i>Objetivos trabajados:
+                    </small>
+                    <div class="d-flex flex-wrap gap-1">
+                      <span
+                        *ngFor="let objTrabajado of reg.objetivosGeneralesTrabajados"
+                        class="badge"
+                        [style.background-color]="objTrabajado.objetivoGeneral.areaDesarrollo.color"
+                      >
+                        {{ objTrabajado.objetivoGeneral.titulo }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              }
+            }
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="card-footer bg-white text-center py-2 border-top-0">
+          <small class="text-muted">
+            Total de registros: {{ registrosFiltrados().length }}
+          </small>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

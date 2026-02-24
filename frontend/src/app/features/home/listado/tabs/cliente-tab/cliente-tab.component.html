@@ -1,171 +1,123 @@
-<div class="card border-0 shadow-sm rounded-3 tab-content bg-white py-2">
-  <div>
-    <!-- Listado de datos (solo lectura) -->
-    <div class="data-view px-4 py-2 bg-white">
-      <!-- Contenedor principal para la sincronización de filas -->
-      <!-- Ahora cada "row" representa una fila de datos que cruza ambas columnas lógicas. -->
+<div class="tab-content-modern p-4">
+  
+  <!-- Sección: Información Personal -->
+  <div class="section mb-1">
+    <h6 class="section-title">
+      <i class="bi bi-person-fill me-2"></i>Información Personal
+    </h6>
+    <div class="data-grid">
+      <app-data-field
+        label="Nombre completo"
+        [value]="cliente()?.nombre + ' ' + cliente()?.apellidos"
+        icon="bi-person"
+      ></app-data-field>
 
-      <!-- Fila 1: Nombre vs. Ciudad -->
-      <div class="row g-2 mb-2">
-        <div
-          class="col-6 d-flex justify-content-between align-items-center mb-3"
-        >
-          <small class="me-3">Nombre</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light">{{
-            cliente()?.nombre
-          }}</span>
-        </div>
-        <div
-          class="col-6 d-flex justify-content-between align-items-center mb-3"
-        >
-          <small class="me-3">Apellidos</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light">{{
-            cliente()?.apellidos 
-          }}</span>
-        </div>
-      </div>
+      <app-data-field
+        label="Fecha de nacimiento"
+        [value]="cliente()?.fechaNacimiento"
+        type="date"
+        icon="bi-calendar3"
+      ></app-data-field>
 
-      <!-- Fila 2: Apellidos vs. Móvil -->
-      <div class="row g-2 mb-2">
-        <div
-          class="col-6 d-flex justify-content-between align-items-center mb-3"
-        >
-          <small class="me-3">Fecha Nacimiento</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light">{{
-            cliente()?.fechaNacimiento | date : "d/M/YYYY"
-          }}</span>
-        </div>
-        <div
-          class="col-6 d-flex justify-content-between align-items-center mb-3"
-        >
-          <small class="me-3">DNI</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light">{{
-            cliente()?.dni
-          }}</span>
-        </div>
-      </div>
+      <app-data-field
+        label="Edad"
+        [value]="cliente()?.edad + ' años'"
+        icon="bi-cake2"
+      ></app-data-field>
 
-      <!-- Fila 3: DNI vs. Teléfono -->
-      <div class="row g-2 mb-2">
-        <div
-          class="col-6 d-flex justify-content-between align-items-center mb-3"
-        >
-          <small class="me-3">Email</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light">{{
-            cliente()?.email
-          }}</span>
-        </div>
-        <div
-          class="col-6 d-flex justify-content-between align-items-center mb-3"
-        >
-          <small class="me-3">Telefono</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light">{{
-            cliente()?.movil
-          }}</span>
-        </div>
-      </div>
-
-      <!-- Fila 4: Fecha de nacimiento vs. Email (con text-break) -->
-      <div class="row g-2 mb-2">
-        <div
-          class="col-6 d-flex justify-content-between align-items-center mb-3"
-        >
-          <small class="me-3">Provincia</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light">{{
-            cliente()?.provincia
-          }}</span>
-        </div>
-        <div
-          class="col-6 d-flex justify-content-between align-items-center mb-3"
-        >
-          <small class="me-3">Ciudad</small>
-          <!-- text-break para correos largos -->
-          <span class="text-muted flex-grow-1 me-2 bg-light text-break">{{
-            cliente()?.ciudad
-          }}</span>
-        </div>
-      </div>
-
-      <!-- Fila 5: Domicilio (con text-break) vs. Fecha de alta -->
-      <div class="row g-2 mb-2">
-        <div
-          class="col-6 d-flex justify-content-between align-items-center mb-3"
-        >
-          <small class="me-3">Domicilio</small>
-          <!-- text-break para direcciones largas -->
-          <span class="text-muted flex-grow-1 me-2 bg-light text-break">{{
-            cliente()?.domicilio
-          }}</span>
-        </div>
-        <div
-          class="col-6 d-flex justify-content-between align-items-center mb-3"
-        >
-          <small class="me-3"></small>
-          <span class="text-muted flex-grow-1 me-2 bg-light"></span>
-        </div>
-      </div>
-
-      <!-- Fila 6: Provincia vs. Fecha de inicio -->
-      <div class="row g-2 mb-2">
-        <div
-          class="col-6 d-flex justify-content-between align-items-center mb-3"
-        >
-          <small class="me-3">Fecha de Inicio</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light">{{
-            cliente()?.fechaInicio | date:'d/M/YYYY'
-          }}</span>
-        </div>
-        <div
-          class="col-6 d-flex justify-content-between align-items-center mb-3"
-        >
-          <small class="me-3">Fecha de alta</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light">{{
-            cliente()?.fechaAlta | date:'d/M/YYYY'
-          }}</span>
-        </div>
-      </div>
-
-      <!-- Fila 7: Autoriza datos personales vs. Autoriza uso imagen -->
-      <div class="row g-2 mb-2">
-        <div
-          class="col-6 d-flex justify-content-between align-items-center mb-3"
-        >
-          <small class="flex-shrink-0 me-2 w-50"
-            >Autoriza la inclusión de los datos personales</small
-          >
-          <span class="text-muted flex-grow-1 me-2 bg-light"
-            ><span class="badge bg-success">{{
-              cliente()?.autorizaDatosPersonales ? "SI" : "NO"
-            }}</span></span
-          >
-        </div>
-        <div
-          class="col-6 d-flex justify-content-between align-items-center mb-3"
-        >
-          <small class="flex-shrink-0 me-2 w-50"
-            >Autoriza el uso de la imagen</small
-          >
-          <span class="text-muted flex-grow-1 me-2 bg-light"
-            ><span class="badge bg-success">{{
-              cliente()?.autorizaDatosImagen ? "SI" : "NO"
-            }}</span></span
-          >
-        </div>
-      </div>
-
-      <!-- Fila 9: Tutor legal (Este campo no tiene par en la columna derecha) -->
-      <div class="row g-2 mb-2">
-        <div
-          class="col-6 d-flex justify-content-between align-items-center mb-2"
-        >
-          <small class="me-3">Tutor legal</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light">{{
-            contactos()?.nombreMadre || 'nombreMadre'
-          }}</span>
-        </div>
-        <!-- La columna de la derecha se deja vacía en esta fila -->
-        <div class="col-6"></div>
-      </div>
+      <app-data-field
+        label="DNI"
+        [value]="cliente()?.dni"
+        icon="bi-card-text"
+      ></app-data-field>
     </div>
   </div>
+
+  <!-- Sección: Contacto -->
+  <div class="section mb-1">
+    <h6 class="section-title">
+      <i class="bi bi-telephone-fill me-2"></i>Información de Contacto
+    </h6>
+    <div class="data-grid">
+      <app-data-field
+        label="Email"
+        [value]="cliente()?.email"
+        type="email"
+        icon="bi-envelope"
+      ></app-data-field>
+
+      <app-data-field
+        label="Teléfono"
+        [value]="cliente()?.movil"
+        type="phone"
+        icon="bi-phone"
+      ></app-data-field>
+
+      <app-data-field
+        label="Domicilio"
+        [value]="cliente()?.domicilio"
+        [fullWidth]="true"
+        icon="bi-house"
+      ></app-data-field>
+
+      <app-data-field
+        label="Provincia"
+        [value]="cliente()?.provincia"
+        icon="bi-geo-alt"
+      ></app-data-field>
+
+      <app-data-field
+        label="Ciudad"
+        [value]="cliente()?.ciudad"
+        icon="bi-map"
+      ></app-data-field>
+    </div>
+  </div>
+
+  <!-- Sección: Información Académica -->
+  <div class="section mb-1">
+    <h6 class="section-title">
+      <i class="bi bi-calendar-check-fill me-2"></i>Información del Gabinete
+    </h6>
+    <div class="data-grid">
+      <app-data-field
+        label="Fecha de inicio"
+        [value]="cliente()?.fechaInicio"
+        type="date"
+        icon="bi-calendar-plus"
+      ></app-data-field>
+
+      <app-data-field
+        label="Fecha de alta"
+        [value]="cliente()?.fechaAlta"
+        type="date"
+        icon="bi-calendar-check"
+      ></app-data-field>
+    </div>
+  </div>
+
+  <!-- Sección: Autorizaciones -->
+  <div class="section">
+    <h6 class="section-title">
+      <i class="bi bi-shield-check-fill me-2"></i>Autorizaciones
+    </h6>
+    <div class="data-grid">
+      <app-data-field
+        label="Autoriza datos personales"
+        [value]="cliente()?.autorizaDatosPersonales ? 'SÍ' : 'NO'"
+        type="badge"
+        [badgeClass]="cliente()?.autorizaDatosPersonales ? 'bg-success' : 'bg-danger'"
+        icon="bi-file-earmark-person"
+      ></app-data-field>
+
+      <app-data-field
+        label="Autoriza uso de imagen"
+        [value]="cliente()?.autorizaDatosImagen ? 'SÍ' : 'NO'"
+        type="badge"
+        [badgeClass]="cliente()?.autorizaDatosImagen ? 'bg-success' : 'bg-danger'"
+        icon="bi-camera"
+      ></app-data-field>
+    </div>
+  </div>
+
 </div>

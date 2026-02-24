@@ -1,0 +1,102 @@
+// ========================================
+// UTILIDADES
+// ========================================
+
+// Espaciado
+.mt-0 { margin-top: 0 !important; }
+.mb-0 { margin-bottom: 0 !important; }
+.mb-1 { margin-bottom: $spacing-xs !important; }
+.mb-2 { margin-bottom: $spacing-sm !important; }
+.mb-3 { margin-bottom: $spacing-md !important; }
+.mb-4 { margin-bottom: $spacing-lg !important; }
+.mb-5 { margin-bottom: $spacing-xl !important; }
+
+.mt-1 { margin-top: $spacing-xs !important; }
+.mt-2 { margin-top: $spacing-sm !important; }
+.mt-3 { margin-top: $spacing-md !important; }
+.mt-4 { margin-top: $spacing-lg !important; }
+.mt-5 { margin-top: $spacing-xl !important; }
+
+// Display
+.d-none { display: none !important; }
+.d-block { display: block !important; }
+.d-flex { display: flex !important; }
+.d-grid { display: grid !important; }
+
+// Flex
+.flex-column { flex-direction: column !important; }
+.flex-grow-1 { flex-grow: 1 !important; }
+.justify-content-between { justify-content: space-between !important; }
+.align-items-center { align-items: center !important; }
+.gap-2 { gap: $spacing-sm !important; }
+.gap-3 { gap: $spacing-md !important; }
+
+// Texto
+.text-center { text-align: center !important; }
+.text-muted { color: $gray-500 !important; }
+
+// Ancho completo
+.w-100 { width: 100% !important; }
+
+// Clases de fondo con tus colores pastel
+.bg-lila-suave {
+  background-color: $lila-suave !important;
+}
+
+.bg-azul-bebe {
+  background-color: $azul-bebe !important;
+}
+
+.bg-amarillo-pastel {
+  background-color: $amarillo-pastel !important;
+}
+
+// Clases de texto
+.text-primary {
+  color: $primary !important;
+}
+
+.text-secondary {
+  color: $secondary !important;
+}
+
+// ========================================
+// UTILIDADES DE GRADIENTE
+// ========================================
+.bg-gradient-lila {
+  background: $gradient-lila-suave !important;
+}
+
+.bg-gradient-azul {
+  background: $gradient-azul-suave !important;
+}
+
+.bg-gradient-hero {
+  background: $gradient-hero !important;
+}
+
+// ========================================
+// UTILIDADES DE SOMBRA
+// ========================================
+.shadow-card {
+  box-shadow: $shadow-card !important;
+}
+
+.shadow-hover {
+  box-shadow: $shadow-hover !important;
+}
+
+// ========================================
+// UTILIDADES DE BORDE
+// ========================================
+.border-lila {
+  border-color: $lila-suave !important;
+}
+
+.border-azul {
+  border-color: $azul-bebe !important;
+}
+
+.border-primary {
+  border-color: $primary !important;
+}

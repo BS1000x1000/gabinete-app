@@ -1,77 +1,195 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   computed,
   inject,
   signal,
   type OnInit,
 } from '@angular/core';
-import { Router, ActivatedRoute } from '@angular/router';
-import { TurnosService } from '../../../services/turnos.service';
-import { TurnoAgenda } from '../../../models/turno.model';
+import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { MOCK_TURNOS } from '../mock-turnos';
 import { AuthService } from '../../../services/auth.service';
-import { ScheduleComponent } from '../../../components/schedule/schedule.component';
-import { HorarioData } from '../../../../interface/horario.interface';
+import { SesionData, EstadoSesion } from '../../../interface/sesion.interface';
+import { SesionesService } from '../../../services/sesiones.service';
+import { CalendarioFullComponent } from '../../../components/calendario-full/calendario-full.component';
 
 @Component({
   selector: 'app-agenda',
   standalone: true,
-  imports: [CommonModule, ScheduleComponent],
+  imports: [CommonModule, CalendarioFullComponent],
   templateUrl: './agenda.component.html',
-  styleUrl: './agenda.component.scss',
 })
 export class AgendaComponent implements OnInit {
   private router = inject(Router);
-  private route = inject(ActivatedRoute);
   private auth = inject(AuthService);
-  private agendaSvc = inject(TurnosService);
-  turnos = this.agendaSvc.turnos;
-  modoFijo = signal<'agenda' | 'cuadrante'>('agenda');
+  private sesionesSvc = inject(SesionesService);
 
-  /* signal<number | null>  →  la usás en el template */
-  currentTrabajadorId = this.auth.currentTrabajadorId;
+  // Estado
+  sesiones = signal<any[]>([]);
+  isLoading = signal(false);
+  modoFijo = signal<'agenda' | 'calendario'>('agenda');
   selectedRowId = signal<string | null>(null);
-  constructor(private turnosSvc: TurnosService) {}
+  fechaSeleccionada = signal<Date>(new Date());
 
-  clienteIdTurno = computed(() => {
-    const turnosArray = this.turnos();
-    if(turnosArray.length > 0) return turnosArray[0].clienteId;
-    return null;
-  })
+  // Computed
+  totalSesiones = computed(() => this.sesiones().length);
+
+  sesionesCompletadas = computed(
+    () =>
+      this.sesiones().filter((s) => s.estado === EstadoSesion.COMPLETADA)
+        .length,
+  );
+
+  sesionesProgramadas = computed(
+    () =>
+      this.sesiones().filter((s) => s.estado === EstadoSesion.PROGRAMADA)
+        .length,
+  );
+
+  sesionesCanceladas = computed(
+    () =>
+      this.sesiones().filter(
+        (s) =>
+          s.estado === EstadoSesion.CANCELADA_CON_AVISO ||
+          s.estado === EstadoSesion.CANCELADA_SIN_AVISO,
+      ).length,
+  );
+
+  fechaFormateada = computed(() => {
+    const fecha = this.fechaSeleccionada();
+    return this.formatearFechaCompleta(fecha);
+  });
+
+  esHoy = computed(() => {
+    const hoy = new Date();
+    const seleccionada = this.fechaSeleccionada();
+    return hoy.toDateString() === seleccionada.toDateString();
+  });
 
   ngOnInit() {
-    this.loadHorarios();
-    // this.turnosSvc.getAgendaHoy().subscribe((data: any) => this.turnos.set(data));
-    // this.turnos.set(MOCK_TURNOS);
+    this.loadSesiones();
   }
 
-  loadHorarios() {
-    const trabajadorId = this.auth.currentTrabajadorId();
-    console.log('Trabajador ID', trabajadorId);
-    this.turnosSvc.getHorariosMapped(trabajadorId!).subscribe({
-      next: (data) => this.turnos.set(data),
-      error: (err) => console.error('Error al cargar horarios:', err),
+  /**
+   * ✅ Cargar sesiones usando el endpoint de calendario diario
+   */
+  loadSesiones() {
+    this.isLoading.set(true);
+    const fechaISO = this.formatearFechaISO(this.fechaSeleccionada());
+
+    this.sesionesSvc.getCalendarioDiario(fechaISO).subscribe({
+      next: (calendario) => {
+        // ✅ Mapeo simple sin preocuparnos por tipos estrictos
+        const sesionesFormateadas = calendario.sesiones.map((s) => ({
+          id: s.id,
+          fechaHoraInicio: this.parseHoraToDate(
+            calendario.fecha,
+            s.horaInicio,
+          ).toISOString(),
+          fechaHoraFin: this.parseHoraToDate(
+            calendario.fecha,
+            s.horaFin,
+          ).toISOString(),
+          estado: s.estado,
+          tipoSesion: s.tipoSesion,
+          cliente: s.cliente,
+          clienteId: s.cliente.id,
+          trabajadorId: this.auth.currentTrabajadorId(),
+          notas: s.notas,
+        }));
+
+        this.sesiones.set(sesionesFormateadas);
+        this.isLoading.set(false);
+      },
+      error: (err) => {
+        console.error('❌ Error:', err);
+        this.isLoading.set(false);
+      },
     });
   }
 
-  verDetalle(horario: HorarioData) {
-    const clienteId = horario.clienteId;
-    this.agendaSvc.setSelectedId(horario.id);
-    this.router.navigate(['/home/listado', clienteId]);
+  // Helper para convertir hora string a Date
+  private parseHoraToDate(fechaISO: string, hora: string): Date {
+    const [horas, minutos] = hora.split(':').map(Number);
+    const fecha = new Date(fechaISO + 'T00:00:00.000Z');
+    fecha.setHours(horas, minutos, 0, 0);
+    return fecha;
+  }
+
+  // Navegación
+  diaAnterior() {
+    const fecha = this.fechaSeleccionada();
+    fecha.setDate(fecha.getDate() - 1);
+    this.fechaSeleccionada.set(new Date(fecha));
+    this.loadSesiones();
+  }
+
+  diaSiguiente() {
+    const fecha = this.fechaSeleccionada();
+    fecha.setDate(fecha.getDate() + 1);
+    this.fechaSeleccionada.set(new Date(fecha));
+    this.loadSesiones();
+  }
+
+  irAHoy() {
+    this.fechaSeleccionada.set(new Date());
+    this.loadSesiones();
+  }
+
+  // Acciones
+  verDetalle(sesion: SesionData) {
+    this.router.navigate(['/home/listado', sesion.clienteId, 'registro']);
   }
 
   marcarAsistencia(id: string, valor: boolean) {
-    // this.turnosSvc.marcarAsistencia(id, valor).subscribe(() => {
-    //   this.turnos.update((lista) =>
-    //     lista.map((t) => (t.id === id ? { ...t, asistio: valor } : t))
-    //   );
-    // });
+    this.sesiones.update((lista) =>
+      lista.map((s) => (s.id === id ? { ...s, asistio: valor } : s)),
+    );
   }
 
-  onFilaClick(horario: HorarioData) {
-    this.selectedRowId.update((id) => (id === horario.id! ? null : horario.id!));
-    this.router.navigate(['/home/listado', horario.clienteId, 'cliente']);
+  completarSesion(id: string) {
+    this.sesionesSvc
+      .completarSesion(id, { notas: 'Sesión completada desde agenda' })
+      .subscribe({
+        next: () => {
+          console.log('✅ Sesión completada');
+          this.loadSesiones();
+        },
+        error: (err) => console.error('❌ Error:', err),
+      });
+  }
+
+  onFilaClick(sesion: SesionData) {
+    this.selectedRowId.update((id) => (id === sesion.id ? null : sesion.id));
+    this.router.navigate(['/home/listado', sesion.clienteId, 'cliente']);
+  }
+
+  cancelarSesion(id: string, conAviso: boolean = true) {
+    if (!confirm('¿Estás seguro de cancelar esta sesión?')) return;
+
+    this.sesionesSvc.cancelarSesion(id, conAviso).subscribe({
+      next: () => this.loadSesiones(),
+      error: (err) => console.error('❌ Error:', err),
+    });
+  }
+
+  refrescar() {
+    this.loadSesiones();
+  }
+
+  // Helpers
+  private formatearFechaCompleta(fecha: Date): string {
+    const opciones: Intl.DateTimeFormatOptions = {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    };
+    return fecha.toLocaleDateString('es-ES', opciones);
+  }
+
+  private formatearFechaISO(fecha: Date): string {
+    return fecha.toISOString().split('T')[0];
   }
 }
+
+export default AgendaComponent;

@@ -29,8 +29,7 @@ interface NavButton {
     RouterLinkActive,
     RouterModule,
   ],
-  templateUrl: './listado.component.html',
-  styleUrls: ['./listado.component.scss'],
+  templateUrl: './listado.component.html'
 })
 export class ListadoComponent implements OnInit, OnDestroy {
   // --- Dependencias e Inyecciones ---
@@ -43,13 +42,12 @@ export class ListadoComponent implements OnInit, OnDestroy {
 
   // Metadatos para los botones de iconos del panel lateral
   readonly quickNavButtons: NavButton[] = [
-    { label: 'Perfil', icon: 'bi-person', target: 'cliente' },
-    { label: 'Contactos', icon: 'bi-telephone', target: 'contactos' },
-    { label: 'Colegio', icon: 'bi-book', target: 'colegio' },
-    { label: 'Sanitario', icon: 'bi-hospital', target: 'sanitario' },
-    // { label: 'Demanda', icon: 'bi-envelope', target: 'demanda' },
-    // { label: 'Tratamientos', icon: 'bi-calendar', target: 'tratamientos' },
-    { label: 'Fichaje', icon: 'bi-pencil', target: 'fichaje' },
+    { label: 'Cliente', icon: 'bi-person-fill', target: 'cliente' },
+    { label: 'Contactos', icon: 'bi-telephone-fill', target: 'contactos' },
+    { label: 'Colegio', icon: 'bi-book-fill', target: 'colegio' },
+    { label: 'Sanitario', icon: 'bi-heart-pulse-fill', target: 'sanitario' },
+    { label: 'Objetivos', icon: 'bi-bullseye', target: 'objetivos' }, // ✅ NUEVO
+    { label: 'Registro', icon: 'bi-journal-text', target: 'registro' }, // ✅ Cambiado de "registro"
   ];
 
   // --- Estado de la UI ---
@@ -84,13 +82,15 @@ export class ListadoComponent implements OnInit, OnDestroy {
 
           return this.clientesSvc.loadAll(id).pipe(
             catchError((err) => {
-              this.handleError('Error al cargar los datos completos del cliente');
+              this.handleError(
+                'Error al cargar los datos completos del cliente',
+              );
               console.error('Error fetching client:', err);
               return EMPTY;
-            })
+            }),
           );
         }),
-        takeUntil(this.destroy$)
+        takeUntil(this.destroy$),
       )
       .subscribe({
         next: () => this.finalizeLoad(),
@@ -118,7 +118,7 @@ export class ListadoComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-    
+
     // Limpieza de estado al salir (si el método existe en el servicio)
     if (this.clientesSvc.clearCliente) {
       this.clientesSvc.clearCliente();

@@ -1,68 +1,72 @@
-<div class="card border-0 shadow-sm rounded-3 tab-content bg-white py-2">
-  <div>
-    <!-- Listado de datos (solo lectura) -->
-    <div class="data-view px-4 py-2">
-      
-      <!-- Fila 1: Madre (Nombre) vs. DNI -->
-      <div class="row g-2 mb-2">
-        <!-- Columna Izquierda -->
-        <div class="col-4 d-flex justify-content-between align-items-center mb-3">
-          <small class="flex-shrink-0 me-2 w-25">Madre</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light">{{contactos()?.nombreMadre}}</span>
-        </div>
-        <!-- Columna Derecha -->
-        <div class="col-8 d-flex justify-content-between align-items-center mb-3">
-          <small class="me-3">DNI</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light">{{contactos()?.dniMadre}}</span>
-        </div>
+<div class="tab-content-modern p-4">
+
+  <!-- Si no hay contactos -->
+  <div *ngIf="!contactosFamiliares() || contactosFamiliares()!.length === 0" class="alert alert-info">
+    <i class="bi bi-info-circle me-2"></i>
+    No hay contactos familiares registrados
+  </div>
+
+  <!-- Mostrar todos los contactos -->
+  <div *ngFor="let contacto of contactosFamiliares(); let i = index" class="section mb-1">
+    <h6 class="section-title">
+      <i class="bi bi-person-fill me-2"></i>
+      Contacto {{ i + 1 }}: {{ contacto.parentesco }}
+    </h6>
+
+    <div class="data-grid">
+      <app-data-field
+        label="Nombre completo"
+        [value]="contacto.nombre + ' ' + contacto.apellidos"
+        icon="bi-person"
+      ></app-data-field>
+
+      <app-data-field
+        label="Parentesco"
+        [value]="contacto.parentesco"
+        icon="bi-diagram-3"
+      ></app-data-field>
+
+      <app-data-field
+        label="DNI"
+        [value]="contacto.dni"
+        icon="bi-card-text"
+      ></app-data-field>
+
+      <app-data-field
+        label="Teléfono"
+        [value]="contacto.telefono"
+        type="phone"
+        icon="bi-phone"
+      ></app-data-field>
+
+      <app-data-field
+        label="Email"
+        [value]="contacto.email"
+        type="email"
+        icon="bi-envelope"
+        [fullWidth]="true"
+      ></app-data-field>
+
+      <div *ngIf="contacto.esContactoPrincipal || contacto.esResponsablePago">
+        <app-data-field
+          *ngIf="contacto.esContactoPrincipal"
+          label="Contacto principal"
+          value="SÍ"
+          type="badge"
+          badgeClass="bg-primary"
+          icon="bi-star-fill"
+        ></app-data-field>
+
+        <app-data-field
+          *ngIf="contacto.esResponsablePago"
+          label="Responsable de pago"
+          value="SÍ"
+          type="badge"
+          badgeClass="bg-success"
+          icon="bi-credit-card"
+        ></app-data-field>
       </div>
-      
-      <!-- Fila 2: Teléfono vs. Email (Alineación garantizada) -->
-      <div class="row g-2 mb-2">
-        <!-- Columna Izquierda -->
-        <div class="col-4 d-flex justify-content-between align-items-center">
-          <small class="flex-shrink-0 me-2 w-25">Telefono</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light">{{contactos()?.telefonoMadre}}</span>
-        </div>
-        <!-- Columna Derecha -->
-        <div class="col-8 d-flex justify-content-between align-items-center">
-          <small class="me-3">Email</small>
-          <!-- text-break para correos largos -->
-          <span class="text-muted flex-grow-1 me-2 bg-light text-break">{{contactos()?.emailMadre}}</span>
-        </div>
-      </div>
-      
-      <!-- Separador entre contactos -->
-      <hr class="">
-      
-      <!-- Fila 3: Padre (Nombre) vs. DNI -->
-      <div class="row g-2 mb-2">
-        <!-- Columna Izquierda -->
-        <div class="col-4 d-flex justify-content-between align-items-center mb-3">
-          <small class="flex-shrink-0 me-2 w-25">Padre</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light">{{contactos()?.nombrePadre}}</span>
-        </div>
-        <!-- Columna Derecha -->
-        <div class="col-8 d-flex justify-content-between align-items-center mb-3">
-          <small class="me-3">DNI</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light">{{contactos()?.dniPadre}}</span>
-        </div>
-      </div>
-      
-      <!-- Fila 4: Teléfono vs. Email (Alineación garantizada) -->
-      <div class="row g-2 mb-2">
-        <!-- Columna Izquierda -->
-        <div class="col-4 d-flex justify-content-between align-items-center">
-          <small class="me-3">Telefono</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light">{{contactos()?.telefonoPadre}}</span>
-        </div>
-        <!-- Columna Derecha -->
-        <div class="col-8 d-flex justify-content-between align-items-center">
-          <small class="me-3">Email</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light text-break">{{contactos()?.emailPadre}}</span>
-        </div>
-      </div>
-      
     </div>
   </div>
+
 </div>

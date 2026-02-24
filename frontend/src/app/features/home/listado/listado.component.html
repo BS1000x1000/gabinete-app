@@ -1,107 +1,137 @@
-<div
-  class="d-flex listado-wrapper flex-column flex-lg-row gap-3 p-3 position-relative"
->
+<div class="listado-wrapper position-relative">
+  
   <!-- Loader -->
   <div
     *ngIf="isLoading()"
-    class="loader-overlay d-flex align-items-center justify-content-center z-3"
+    class="loader-overlay"
   >
-    <div class="spinner-border text-primary" role="status">
+    <div class="spinner-border text-primary mb-3" role="status">
       <span class="visually-hidden">Cargando...</span>
     </div>
+    <p class="text-muted">Cargando información del cliente...</p>
   </div>
 
   <!-- Error -->
-  <div *ngIf="error()" class="alert alert-danger w-100" role="alert">
+  <div *ngIf="error()" class="alert alert-danger alert-dismissible fade show position-absolute top-0 start-0 end-0 m-3" role="alert">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
     <strong>Error:</strong> {{ error() }}
+    <button type="button" class="btn-close" (click)="error.set(null)"></button>
   </div>
 
-  <!-- ASIDE IZQUIERDO -->
+  <!-- ========================================
+       ASIDE IZQUIERDO
+       ======================================== -->
   <aside
-    class="left-panel bg-white rounded shadow-sm p-3"
+    class="left-panel bg-white rounded-3 shadow-sm p-3"
     [class.opacity-50]="isLoading()"
     *ngIf="cliente()"
   >
-    <!-- Avatar con iniciales dinámicas -->
+    <!-- Avatar con gradiente -->
     <div class="d-flex justify-content-center mb-3">
-      <div
-        class="avatar-lg rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center fw-bold fs-4"
-        style="width: 80px; height: 80px"
-      >
-        {{ cliente()?.nombre?.charAt(0) || ""
-        }}{{ cliente()?.apellidos?.charAt(0) || "" }}
+      <div class="avatar-wrapper position-relative">
+        <div class="avatar-lg rounded-circle text-white d-flex align-items-center justify-content-center fw-bold fs-3 shadow">
+          {{ cliente()?.nombre?.charAt(0) || "" }}{{ cliente()?.apellidos?.charAt(0) || "" }}
+        </div>
+        <span class="badge bg-primary position-absolute bottom-0 end-0 rounded-pill px-2">
+          {{ cliente()?.edad || "?" }} años
+        </span>
       </div>
     </div>
 
-    <h5 class="text-center mb-1">
-      {{
-        cliente()?.apellidos
-          ? cliente()?.apellidos + ", " + cliente()?.nombre
-          : cliente()?.nombre
-      }}
+    <h5 class="text-center mb-1 fw-bold">
+      {{ cliente()?.apellidos ? cliente()?.apellidos + ", " + cliente()?.nombre : cliente()?.nombre }}
     </h5>
-    <p class="text-center text-muted small mb-3">
-      {{ cliente()?.edad ? cliente()?.edad + " años" : "Edad no disponible" }}
-    </p>
-
-    <!-- Botones Accionadores -->
-    <div class="d-flex mb-3 justify-content-center btn-group">
-      <button class="btn btn-primary btn-sm">Imagen</button>
-      <button class="btn btn-danger btn-sm">Alergias</button>
-      <button class="btn btn-info btn-sm text-white">Medicación</button>
+    
+    <div class="text-center text-muted small mb-3">
+      <div>
+        <i class="bi bi-calendar3 me-1"></i>
+        {{ cliente()?.fechaNacimiento | date: 'dd/MM/yyyy' }}
+      </div>
+      <div *ngIf="cliente()?.dni">
+        <i class="bi bi-card-text me-1"></i>
+        {{ cliente()?.dni }}
+      </div>
     </div>
 
-    <!-- Info Sanitaria resumida -->
+    <hr class="my-3" />
+
+    <!-- Info Sanitaria -->
     <div class="mb-2">
-      <label class="form-label fw-bold small mb-0">Alergias</label>
-      <div class="p-2 border rounded bg-light small">
-        {{ sanitario()?.alergias || "No registradas" }}
+      <div class="d-flex align-items-center mb-1">
+        <i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>
+        <span class="fw-bold small">Alergias</span>
+      </div>
+      <div class="alert alert-danger py-2 px-3 mb-2" *ngIf="sanitario()?.alergias">
+        <small>{{ sanitario()?.alergias }}</small>
+      </div>
+      <div class="text-muted small" *ngIf="!sanitario()?.alergias">
+        <small>No registradas</small>
       </div>
     </div>
 
     <div class="mb-3">
-      <label class="form-label fw-bold small mb-0">Medicación</label>
-      <div class="p-2 border rounded bg-light small">
-        {{ sanitario()?.medicacion || "No registrada" }}
+      <div class="d-flex align-items-center mb-1">
+        <i class="bi bi-capsule text-info me-2"></i>
+        <span class="fw-bold small">Medicación</span>
+      </div>
+      <div class="alert alert-info py-2 px-3 mb-2" *ngIf="sanitario()?.medicacion">
+        <small>{{ sanitario()?.medicacion }}</small>
+      </div>
+      <div class="text-muted small" *ngIf="!sanitario()?.medicacion">
+        <small>No registrada</small>
       </div>
     </div>
 
-    <hr />
+    <hr class="my-3" />
 
-    <!-- SECCIÓN DE BOTONES PEQUEÑOS (Implementación solicitada) -->
-    <div class="d-flex justify-content-center btn-group">
+    <!-- Navegación rápida -->
+    <div class="nav-buttons-wrapper">
       <button
         *ngFor="let btn of quickNavButtons"
-        class="btn btn-sm"
+        class="btn btn-sm nav-icon-btn"
         [routerLink]="['./', btn.target]"
-        routerLinkActive
-        #rla="routerLinkActive"
-        [class.btn-primary]="rla.isActive"
-        [class.btn-outline-secondary]="!rla.isActive"
+        routerLinkActive="active"
         [title]="btn.label"
+        type="button"
       >
         <i class="bi" [ngClass]="btn.icon"></i>
       </button>
     </div>
+
+    <!-- Acciones rápidas -->
+    <div class="actions-wrapper">
+      <button class="btn btn-sm btn-outline-primary" type="button">
+        <i class="bi bi-printer me-2"></i>Imprimir Ficha
+      </button>
+      <button class="btn btn-sm btn-outline-secondary" type="button">
+        <i class="bi bi-download me-2"></i>Exportar PDF
+      </button>
+    </div>
   </aside>
 
-  <!-- SECCIÓN DERECHA -->
-  <section class="right-panel flex-grow-1 bg-white rounded shadow-sm p-3">
-    <ul class="nav nav-tabs nav-fill mb-3">
+  <!-- ========================================
+       SECCIÓN DERECHA
+       ======================================== -->
+  <section class="right-panel bg-white rounded-3 shadow-sm">
+    
+    <!-- Tabs -->
+    <ul class="nav nav-tabs nav-fill border-bottom-0">
       <li class="nav-item" *ngFor="let t of quickNavButtons">
         <a
-          class="nav-link fw-medium"
+          class="nav-link tab-link"
           [routerLink]="['./', t.target]"
-          [routerLinkActive]="['active', 'text-primary']"
-          style="cursor: pointer"
+          [routerLinkActive]="['active']"
         >
-          {{ t.target| titlecase }}
+          <i class="bi" [ngClass]="t.icon"></i>
+          <span class="tab-label">{{ t.label }}</span>
         </a>
       </li>
     </ul>
 
+    <!-- Contenido -->
     <div class="tab-content-wrapper">
       <router-outlet></router-outlet>
     </div>
   </section>
+
 </div>

@@ -1,20 +1,56 @@
-.table-agenda {
-  --bs-table-cell-padding-x: .4rem;   /* lateral  */
-  --bs-table-cell-padding-y: 0.2rem;   /* vertical */
+// ==========================================
+// AGENDA COMPONENT - USANDO PALETA
+// ==========================================
 
-  th, td {
-    padding: var(--bs-table-cell-padding-y) var(--bs-table-cell-padding-x);
+.agenda-wrapper {
+  padding: $spacing-lg;
+  max-width: 1400px;
+  margin: 0 auto;
+
+  @media (max-width: $breakpoint-md) {
+    padding: $spacing-md;
   }
 }
-.table-sm td {
-  vertical-align: middle;
-  font-size: 0.9rem;
-}
-.badge {
-  font-size: 0.75em;
-}
 
-.table-active {
-  --bs-table-bg: var(--bs-info-bg-subtle); /* azul suave de Bootstrap */
-  /* o tu color: #e3f2fd */
+.table-agenda {
+  background: $white;
+  border-radius: $border-radius-lg;
+  overflow: hidden;
+  box-shadow: $shadow-card;
+
+  tbody tr {
+    transition: $transition-base;
+    border-bottom: 1px solid $border-color-light;
+    
+    &:hover {
+      background-color: $primary-ultra-light;
+    }
+    
+    &.table-active {
+      background-color: $primary-light;
+    }
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  th {
+    background-color: $gray-50;
+    font-weight: $font-weight-semibold;
+    color: $gray-700;
+    border-bottom: 2px solid $border-color;
+    font-size: $font-size-sm;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  td {
+    color: $gray-800;
+    vertical-align: middle;
+  }
+
+  .badge {
+    font-weight: $font-weight-medium;
+  }
 }

@@ -1,0 +1,233 @@
+// ========================================
+// MIXINS DE RESPONSIVE
+// ========================================
+@mixin respond-to($breakpoint) {
+  @if $breakpoint == 'sm' {
+    @media (max-width: $breakpoint-sm) { @content; }
+  }
+  @else if $breakpoint == 'md' {
+    @media (max-width: $breakpoint-md) { @content; }
+  }
+  @else if $breakpoint == 'lg' {
+    @media (max-width: $breakpoint-lg) { @content; }
+  }
+  @else if $breakpoint == 'xl' {
+    @media (max-width: $breakpoint-xl) { @content; }
+  }
+}
+
+// ========================================
+// FLEXBOX
+// ========================================
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@mixin flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+// ========================================
+// MIXINS DE COMPONENTES
+// ========================================
+@mixin card {
+  background: $bg-card;
+  border-radius: $border-radius-lg;
+  border: 1px solid $border-color;
+  box-shadow: $shadow-sm;
+  transition: $transition-base;
+
+  &:hover {
+    box-shadow: $shadow-md;
+  }
+}
+
+@mixin section-title {
+  font-size: 1rem;
+  font-weight: $font-weight-semibold;
+  color: $gray-700;
+  margin-bottom: $spacing-lg;
+  padding-bottom: $spacing-sm;
+  border-bottom: 2px solid $gray-100;
+  display: flex;
+  align-items: center;
+
+  i {
+    margin-right: $spacing-sm;
+    color: $primary;
+    font-size: 1.1rem;
+  }
+}
+
+@mixin data-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: $spacing-lg;
+
+  @include respond-to('md') {
+    grid-template-columns: 1fr;
+  }
+}
+
+@mixin alert-variant($color) {
+  background-color: rgba($color, 0.1);
+  border-left: 4px solid $color;
+  color: darken($color, 10%);
+}
+
+// ========================================
+// BOTONES
+// ========================================
+@mixin button-base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: $spacing-sm $spacing-md;
+  font-size: $font-size-base;
+  font-weight: $font-weight-medium;
+  line-height: 1.5;
+  border: 1px solid transparent;
+  border-radius: $border-radius;
+  cursor: pointer;
+  transition: $transition-base;
+  user-select: none;
+
+  &:disabled {
+    opacity: $opacity-disabled;
+    cursor: not-allowed;
+  }
+}
+
+@mixin button-variant($bg, $color: $white, $hover-bg: null) {
+  @include button-base;
+  background-color: $bg;
+  color: $color;
+  border-color: $bg;
+
+  @if $hover-bg == null {
+    $hover-bg: darken($bg, 8%);
+  }
+
+  &:hover:not(:disabled) {
+    background-color: $hover-bg;
+    border-color: $hover-bg;
+    transform: translateY(-1px);
+    box-shadow: $shadow-sm;
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+}
+
+// ========================================
+// MIXINS DE UTILIDADES
+// ========================================
+@mixin truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@mixin clearfix {
+  &::after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+}
+
+// ✅ RENOMBRADO Y ACTUALIZADO
+@mixin custom-scrollbar($width: 6px, $track-bg: $gray-100, $thumb-bg: $gray-400) {
+  &::-webkit-scrollbar {
+    width: $width;
+    height: $width;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: $track-bg;
+    border-radius: $border-radius;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: $thumb-bg;
+    border-radius: $border-radius;
+
+    &:hover {
+      background: darken($thumb-bg, 10%);
+    }
+  }
+
+  // Firefox
+  scrollbar-width: thin;
+  scrollbar-color: $thumb-bg $track-bg;
+}
+
+// ========================================
+// TEXTO
+// ========================================
+@mixin text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@mixin text-clamp($lines: 2) {
+  display: -webkit-box;
+  -webkit-line-clamp: $lines;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+// ========================================
+// SOMBRAS
+// ========================================
+@mixin card-shadow {
+  box-shadow: $shadow-card;
+  transition: box-shadow $transition-base;
+
+  &:hover {
+    box-shadow: $shadow-hover;
+  }
+}
+
+// ========================================
+// ANIMACIONES
+// ========================================
+@mixin fade-in($duration: $animation-duration-base) {
+  animation: fadeIn $duration $animation-timing;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@mixin slide-in-up($duration: $animation-duration-base) {
+  animation: slideInUp $duration $animation-timing;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

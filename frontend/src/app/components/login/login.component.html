@@ -1,67 +1,141 @@
-<!-- login.component.html -->
-<div class="login-wrapper d-flex align-items-center justify-content-center mt-4">
-  <form class="login-form bg-white p-4 rounded shadow"
+<div class="login-container">
+  <!-- Background decorativo -->
+  <div class="login-background"></div>
+
+  <!-- Contenedor principal -->
+  <div class="login-content">
+    <div class="login-card">
+      
+      <!-- Logo/Branding -->
+      <div class="text-center mb-4">
+        <div class="logo-circle mx-auto mb-3">
+          <i class="bi bi-person-circle"></i>
+        </div>
+        <h2 class="login-title">Gabinete Psicopedagógico</h2>
+        <p class="text-muted small">Inicia sesión para continuar</p>
+      </div>
+
+      <!-- Formulario -->
+      <form 
         [formGroup]="form"
         (ngSubmit)="onSubmit()"
-        novalidate>
-    <h2 class="h4 mb-3 text-center">Iniciar Sesión</h2>
-
-    <!-- Usuario -->
-    <div class="mb-3">
-      <label for="username" class="form-label">Usuario</label>
-      <input id="username"
-             type="text"
-             class="form-control"
-             formControlName="username"
-             [class.is-invalid]="form.get('username')?.touched && form.get('username')?.invalid"
-             aria-describedby="username-error">
-      <div id="username-error"
-           class="invalid-feedback"
-           *ngIf="form.get('username')?.touched && form.get('username')?.hasError('required')">
-        Usuario requerido
-      </div>
-    </div>
-
-    <!-- Contraseña -->
-    <div class="mb-3">
-      <label for="password" class="form-label">Contraseña</label>
-      <div class="input-group">
-        <input id="password"
-               [type]="hidePwd() ? 'password' : 'text'"
-               class="form-control"
-               formControlName="password"
-               [class.is-invalid]="form.get('password')?.touched && form.get('password')?.invalid"
-               aria-describedby="pwd-error">
-        <button type="button"
-                class="btn btn-outline-secondary"
-                (click)="hidePwd.set(!hidePwd())">
-          <i class="bi"
-             [class.bi-eye]="hidePwd()"
-             [class.bi-eye-slash]="!hidePwd()"></i>
-        </button>
-        <div id="pwd-error"
-             class="invalid-feedback"
-             *ngIf="form.get('password')?.touched && form.get('password')?.hasError('required')">
-          Contraseña requerida
+        novalidate
+      >
+        
+        <!-- Usuario -->
+        <div class="form-floating mb-3">
+          <input 
+            id="username"
+            type="text"
+            class="form-control"
+            formControlName="username"
+            placeholder="Usuario"
+            [class.is-invalid]="form.get('username')?.touched && form.get('username')?.invalid"
+            autocomplete="username"
+          >
+          <label for="username">
+            <i class="bi bi-person me-2"></i>Usuario
+          </label>
+          <div 
+            class="invalid-feedback"
+            *ngIf="form.get('username')?.touched && form.get('username')?.hasError('required')"
+          >
+            Por favor, introduce tu usuario
+          </div>
         </div>
-      </div>
+
+        <!-- Contraseña -->
+        <div class="form-floating mb-3">
+          <input 
+            id="password"
+            [type]="hidePwd() ? 'password' : 'text'"
+            class="form-control pe-5"
+            formControlName="password"
+            placeholder="Contraseña"
+            [class.is-invalid]="form.get('password')?.touched && form.get('password')?.invalid"
+            autocomplete="current-password"
+          >
+          <label for="password">
+            <i class="bi bi-lock me-2"></i>Contraseña
+          </label>
+          <button 
+            type="button"
+            class="btn btn-link password-toggle"
+            (click)="hidePwd.set(!hidePwd())"
+            tabindex="-1"
+          >
+            <i 
+              class="bi"
+              [class.bi-eye]="hidePwd()"
+              [class.bi-eye-slash]="!hidePwd()"
+            ></i>
+          </button>
+          <div 
+            class="invalid-feedback"
+            *ngIf="form.get('password')?.touched && form.get('password')?.hasError('required')"
+          >
+            Por favor, introduce tu contraseña
+          </div>
+        </div>
+
+        <!-- Recordarme (opcional) -->
+        <div class="form-check mb-3">
+          <input 
+            class="form-check-input" 
+            type="checkbox" 
+            id="remember"
+          >
+          <label class="form-check-label small text-muted" for="remember">
+            Recordar mi sesión
+          </label>
+        </div>
+
+        <!-- Error del servidor -->
+        <div 
+          class="alert alert-danger d-flex align-items-center"
+          *ngIf="serverError()"
+          role="alert"
+        >
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
+          <div>{{ serverError() }}</div>
+        </div>
+
+        <!-- Botón submit -->
+        <button 
+          type="submit"
+          class="btn btn-primary w-100 btn-lg mb-3"
+          [disabled]="loading() || form.invalid"
+        >
+          <span *ngIf="!loading()">
+            <i class="bi bi-box-arrow-in-right me-2"></i>
+            Iniciar Sesión
+          </span>
+          <span *ngIf="loading()">
+            <span class="spinner-border spinner-border-sm me-2"></span>
+            Iniciando sesión...
+          </span>
+        </button>
+
+        <!-- Enlaces adicionales (opcional) -->
+        <div class="text-center">
+          <a 
+            href="#" 
+            class="text-decoration-none small text-muted"
+            (click)="$event.preventDefault()"
+          >
+            ¿Olvidaste tu contraseña?
+          </a>
+        </div>
+
+      </form>
+
     </div>
 
-    <!-- Error general -->
-    <div class="alert alert-danger py-2"
-         *ngIf="serverError()">
-      {{ serverError() }}
+    <!-- Footer -->
+    <div class="text-center mt-4">
+      <small class="text-muted">
+        © {{ currentYear }} Gabinete Psicopedagógico. Todos los derechos reservados.
+      </small>
     </div>
-
-    <!-- Submit -->
-    <button type="submit"
-            class="btn btn-primary w-100"
-            [disabled]="loading()">
-      <span *ngIf="!loading()">Iniciar Sesión</span>
-      <span *ngIf="loading()">
-        <span class="spinner-border spinner-border-sm me-2"></span>
-        Entrando...
-      </span>
-    </button>
-  </form>
+  </div>
 </div>

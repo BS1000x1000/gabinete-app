@@ -298,9 +298,15 @@ model ClienteObjetivo {
   fechaAsignacion DateTime @default(now()) @map("fecha_asignacion")
   activo          Boolean  @default(true)
   createdAt       DateTime @default(now()) @map("fecha_creacion")
+  updatedAt       DateTime @updatedAt @map("fecha_actualizacion")
 
   clienteId String  @map("id_cliente")
   cliente   Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+
+  vecesTrabajado  Int      @default(0) @map("veces_trabajado")
+  ultimaVez       DateTime? @map("ultima_vez_trabajado")
+  progreso        Int      @default(0) // 0-100 porcentaje
+  notas           String?  // Notas del psicopedagogo
 
   objetivoGeneralId String          @map("id_objetivo_general")
   objetivoGeneral   ObjetivoGeneral @relation(fields: [objetivoGeneralId], references: [id], onDelete: Cascade)

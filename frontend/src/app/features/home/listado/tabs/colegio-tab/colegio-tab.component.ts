@@ -1,13 +1,13 @@
 import { Component, inject } from '@angular/core';
-import { ClientesService } from '../../../../../services/cliente.service';
 import { CommonModule } from '@angular/common';
+import { ClientesService } from '../../../../../services/cliente.service';
+import { DataFieldComponent } from '../../../../../shared/components/data-field/data-field.component';
 
 @Component({
   selector: 'app-colegio-tab',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, DataFieldComponent],
   templateUrl: './colegio-tab.component.html',
-  styleUrl: './colegio-tab.component.scss'
 })
 export class ColegioTabComponent {
   private clienteSvc = inject(ClientesService);

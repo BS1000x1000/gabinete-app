@@ -1,13 +1,10 @@
-<!-- app.component.html -->
+<!--
 <div class="layout">
-  <!-- Sidebar: solo visible en desktop -->
   <aside class="left-sidebar d-none d-lg-flex">
     <app-sidebar class="w-100"></app-sidebar>
   </aside>
 
-  <!-- Área derecha -->
   <div class="content">
-    <!-- Header sin margen que rompe la barra -->
     <header class="header w-100">
       <app-header userName="Belen"
                   userSurname="Palacios"
@@ -15,9 +12,11 @@
       </app-header>
     </header>
 
-    <!-- Contenido scrolleable -->
     <main class="content-scrollable">
       <router-outlet></router-outlet>
     </main>
   </div>
+</div> -->
+<div class="app-wrapper">
+  <router-outlet></router-outlet>
 </div>

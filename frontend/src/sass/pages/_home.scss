@@ -1,0 +1,46 @@
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f5f7fa;
+}
+
+.app-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0; // Importante para evitar overflow
+}
+
+.app-header {
+  background: white;
+  border-bottom: 1px solid #e9ecef;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+
+  .avatar-sm {
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 0.9rem;
+  }
+}
+
+.app-main {
+  flex: 1;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+.agenda-sticky {
+  position: sticky;
+  top: 73px; // Altura del header
+  z-index: 1010;
+}
+
+// Responsive
+@media (max-width: 992px) {
+  .app-layout {
+    flex-direction: column;
+  }
+}

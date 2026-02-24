@@ -394,6 +394,107 @@ export class SesionesService {
     }
   }
 
+  async getCalendarioDiario(trabajadorId: string, fechaReferencia?: Date) {
+    try {
+      const fecha = fechaReferencia ? new Date(fechaReferencia) : new Date();
+      const inicioDia = startOfDay(fecha);
+      const finDia = endOfDay(fecha);
+
+      console.log('📅 Calendario diario solicitado:');
+      console.log('   Fecha:', format(fecha, 'yyyy-MM-dd'));
+      console.log('   Inicio:', inicioDia);
+      console.log('   Fin:', finDia);
+
+      const sesiones = await this.prisma.sesion.findMany({
+        where: {
+          trabajadorId,
+          fechaHoraInicio: {
+            gte: inicioDia,
+            lte: finDia,
+          },
+        },
+        include: {
+          cliente: {
+            select: {
+              id: true,
+              nombre: true,
+              apellidos: true,
+              curso: true,
+            },
+          },
+        },
+        orderBy: {
+          fechaHoraInicio: 'asc',
+        },
+      });
+
+      console.log(`   Sesiones encontradas: ${sesiones.length}`);
+
+      const ahora = new Date();
+
+      // Estadísticas
+      const estadisticas = {
+        completadas: sesiones.filter(
+          (s) => s.estado === EstadoSesion.COMPLETADA,
+        ).length,
+        programadas: sesiones.filter(
+          (s) => s.estado === EstadoSesion.PROGRAMADA,
+        ).length,
+        canceladas: sesiones.filter(
+          (s) =>
+            s.estado === EstadoSesion.CANCELADA_CON_AVISO ||
+            s.estado === EstadoSesion.CANCELADA_SIN_AVISO,
+        ).length,
+      };
+
+      return {
+        fecha: format(fecha, 'yyyy-MM-dd'),
+        fechaFormateada: format(fecha, "EEEE d 'de' MMMM 'de' yyyy", {
+          locale: es,
+        }),
+        diaSemana: format(fecha, 'EEEE', { locale: es }),
+        esHoy: format(fecha, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd'),
+        totalSesiones: sesiones.length,
+        estadisticas,
+        sesiones: sesiones.map((sesion) => {
+          const esPasada = sesion.fechaHoraFin < ahora;
+          const esActual =
+            sesion.fechaHoraInicio <= ahora && sesion.fechaHoraFin >= ahora;
+          const esFutura = sesion.fechaHoraInicio > ahora;
+
+          return {
+            id: sesion.id,
+            horaInicio: format(sesion.fechaHoraInicio, 'HH:mm'),
+            horaFin: format(sesion.fechaHoraFin, 'HH:mm'),
+            duracion: this.calcularDuracionMinutos(
+              sesion.fechaHoraInicio,
+              sesion.fechaHoraFin,
+            ),
+            estado: sesion.estado,
+            tipoSesion: sesion.tipoSesion,
+            cliente: {
+              id: sesion.cliente.id,
+              nombre: sesion.cliente.nombre,
+              apellidos: sesion.cliente.apellidos,
+              nombreCompleto: `${sesion.cliente.nombre} ${sesion.cliente.apellidos}`,
+              curso: sesion.cliente.curso,
+            },
+            notas: sesion.notas,
+            temporal: {
+              esPasada,
+              esActual,
+              esFutura,
+            },
+          };
+        }),
+      };
+    } catch (err) {
+      throw new BadRequestException(
+        `Error al obtener calendario diario: ${err.message}`,
+      );
+    }
+  }
+
   /**
    * Obtener calendario mensual del trabajador
    */

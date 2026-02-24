@@ -1,6 +1,8 @@
-<!-- src/app/features/home/home.component.html -->
 <div class="container-fluid mt-2">
-  <div class="d-flex mb-3">
+  <!-- Controles superiores -->
+  <div class="d-flex mb-3 justify-content-between align-items-center flex-wrap gap-2">
+    
+    <!-- Tabs de vista -->
     <ul class="nav nav-pills">
       <li class="nav-item">
         <button
@@ -8,85 +10,239 @@
           [class.active]="modoFijo() === 'agenda'"
           (click)="modoFijo.set('agenda')"
         >
-          Agenda
+          <i class="bi bi-list-ul me-2"></i>Lista
         </button>
       </li>
       <li class="nav-item">
         <button
           class="nav-link"
-          [class.active]="modoFijo() === 'cuadrante'"
-          (click)="modoFijo.set('cuadrante')"
+          [class.active]="modoFijo() === 'calendario'"
+          (click)="modoFijo.set('calendario')"
         >
-          Cuadrante
+          <i class="bi bi-calendar-day me-2"></i>Calendario
         </button>
       </li>
     </ul>
+
+    <!-- ✅ Navegación de días (solo en vista Agenda) -->
+    <div *ngIf="modoFijo() === 'agenda'" class="d-flex align-items-center gap-2">
+      <button
+        class="btn btn-sm btn-outline-secondary"
+        (click)="diaAnterior()"
+        [disabled]="isLoading()"
+      >
+        <i class="bi bi-chevron-left"></i>
+        Anterior
+      </button>
+
+      <div class="text-center px-3">
+        <div class="fw-bold small text-capitalize">{{ fechaFormateada() }}</div>
+        <button
+          *ngIf="!esHoy()"
+          class="btn btn-link btn-sm text-decoration-none p-0"
+          (click)="irAHoy()"
+        >
+          Ir a hoy
+        </button>
+      </div>
+
+      <button
+        class="btn btn-sm btn-outline-secondary"
+        (click)="diaSiguiente()"
+        [disabled]="isLoading()"
+      >
+        Siguiente
+        <i class="bi bi-chevron-right"></i>
+      </button>
+    </div>
+
+    <!-- Botón refrescar -->
+    <button
+      class="btn btn-sm btn-outline-primary"
+      (click)="refrescar()"
+      [disabled]="isLoading()"
+    >
+      <i class="bi bi-arrow-clockwise"></i>
+      <span class="d-none d-md-inline">Refrescar</span>
+    </button>
   </div>
 
-  @if (modoFijo() === 'agenda') {
-  <div class="table-responsive">
-    <table class="table table-sm align-middle table-agenda">
-      <thead class="table-light">
-        <tr>
-          <th>Hora</th>
-          <th>Estados</th>
-          <th>Tratamiento</th>
-          <th>Cliente</th>
-          <th>Asistencia</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (horario of turnos(); track horario.id) {
-        <tr
-          style="cursor: pointer"
-          [class.table-active]="selectedRowId() === horario.id"
-          (click)="onFilaClick(horario)"
-          (click)="verDetalle(horario)"
-        >
-          <td class="fw-semibold">
-            {{ horario.fechaHoraInicio | date : "HH:mm" }} -
-            {{ horario.fechaHoraFin | date : "HH:mm" }}
-          </td>
-          <td>
-            <span class="badge bg-secondary">{{ horario.estado }}</span>
-          </td>
-          <td>
-            <small>{{ horario.tipoSesion }}</small>
-          </td>
-          <td>
-            <span class="badge bg-secondary"
-              >{{ horario.cliente.nombre }}
-              {{ horario.cliente.apellidos }}</span
-            >
-          </td>
-          <td>
-            <div class="btn-group btn-group-sm" role="group">
-              <button
-                type="button"
-                class="btn"
-                [class.btn-success]="horario.asistio === true"
-                [class.btn-outline-success]="horario.asistio !== true"
-                (click)="marcarAsistencia(horario.id!, true)"
-              >
-                Sí
-              </button>
-              <button
-                type="button"
-                class="btn"
-                [class.btn-danger]="horario.asistio === false"
-                [class.btn-outline-danger]="horario.asistio !== false"
-                (click)="marcarAsistencia(horario.id!, false)"
-              >
-                No
-              </button>
-            </div>
-          </td>
-        </tr>
-        }
-      </tbody>
-    </table>
+  <!-- Loader -->
+  <div *ngIf="isLoading()" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Cargando sesiones...</span>
+    </div>
+    <p class="text-muted mt-2 small">Cargando sesiones...</p>
   </div>
-  } @if (modoFijo() === 'cuadrante') {
-  <app-schedule type="trabajadorId" [id]="currentTrabajadorId()!"></app-schedule>
-  }
+
+  <!-- Vista de Agenda (tabla) -->
+  <div *ngIf="modoFijo() === 'agenda' && !isLoading()">
+    
+    <!-- Mensaje informativo -->
+    <div class="alert alert-info d-flex align-items-center mb-3">
+      <i class="bi bi-info-circle me-2"></i>
+      <div>
+        Mostrando sesiones del día:
+        <strong class="text-capitalize">{{ fechaFormateada() }}</strong>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-sm align-middle table-hover table-agenda">
+        <thead class="table-light">
+          <tr>
+            <th>Hora</th>
+            <th>Estado</th>
+            <th>Tipo</th>
+            <th>Cliente</th>
+            <th>Asistencia</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="let sesion of sesiones()"
+            style="cursor: pointer"
+            [class.table-active]="selectedRowId() === sesion.id"
+            (click)="onFilaClick(sesion)"
+          >
+            <!-- Hora -->
+            <td class="fw-semibold">
+              {{ sesion.fechaHoraInicio | date: "HH:mm" }} -
+              {{ sesion.fechaHoraFin | date: "HH:mm" }}
+            </td>
+
+            <!-- Estado -->
+            <td>
+              <span
+                class="badge"
+                [class.bg-success]="sesion.estado === 'COMPLETADA'"
+                [class.bg-primary]="sesion.estado === 'PROGRAMADA'"
+                [class.bg-warning]="sesion.estado === 'CANCELADA_CON_AVISO'"
+                [class.bg-danger]="sesion.estado === 'CANCELADA_SIN_AVISO'"
+              >
+                {{ sesion.estado }}
+              </span>
+            </td>
+
+            <!-- Tipo -->
+            <td>
+              <small class="text-muted">{{ sesion.tipoSesion }}</small>
+            </td>
+
+            <!-- Cliente -->
+            <td>
+              <span class="badge bg-secondary">
+                {{ sesion.cliente.nombre }} {{ sesion.cliente.apellidos }}
+              </span>
+            </td>
+
+            <!-- Asistencia -->
+            <td>
+              <div class="btn-group btn-group-sm" role="group">
+                <button
+                  type="button"
+                  class="btn"
+                  [class.btn-success]="sesion.asistio === true"
+                  [class.btn-outline-success]="sesion.asistio !== true"
+                  (click)="marcarAsistencia(sesion.id!, true); $event.stopPropagation()"
+                >
+                  Sí
+                </button>
+                <button
+                  type="button"
+                  class="btn"
+                  [class.btn-danger]="sesion.asistio === false"
+                  [class.btn-outline-danger]="sesion.asistio !== false"
+                  (click)="marcarAsistencia(sesion.id!, false); $event.stopPropagation()"
+                >
+                  No
+                </button>
+              </div>
+            </td>
+
+            <!-- Acciones -->
+            <td>
+              <div class="btn-group btn-group-sm">
+                <button
+                  *ngIf="sesion.estado === 'PROGRAMADA'"
+                  class="btn btn-sm btn-outline-success"
+                  title="Completar sesión"
+                  (click)="completarSesion(sesion.id); $event.stopPropagation()"
+                >
+                  <i class="bi bi-check-circle"></i>
+                </button>
+                <button
+                  *ngIf="sesion.estado === 'PROGRAMADA'"
+                  class="btn btn-sm btn-outline-danger"
+                  title="Cancelar sesión"
+                  (click)="cancelarSesion(sesion.id); $event.stopPropagation()"
+                >
+                  <i class="bi bi-x-circle"></i>
+                </button>
+                <button
+                  class="btn btn-sm btn-outline-primary"
+                  title="Ver cliente"
+                  (click)="verDetalle(sesion); $event.stopPropagation()"
+                >
+                  <i class="bi bi-eye"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <tr *ngIf="sesiones().length === 0">
+            <td colspan="6" class="text-center text-muted py-5">
+              <i class="bi bi-calendar-x fs-3 d-block mb-2"></i>
+              <p class="mb-1">No hay sesiones en este día</p>
+              <small class="text-muted text-capitalize">
+                {{ fechaFormateada() }}
+              </small>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Resumen de sesiones -->
+    <div *ngIf="totalSesiones() > 0" class="row g-2 mt-3">
+      <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body text-center py-2">
+            <h5 class="mb-0">{{ totalSesiones() }}</h5>
+            <small class="text-muted">Total</small>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body text-center py-2">
+            <h5 class="mb-0 text-success">{{ sesionesCompletadas() }}</h5>
+            <small class="text-muted">Completadas</small>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body text-center py-2">
+            <h5 class="mb-0 text-primary">{{ sesionesProgramadas() }}</h5>
+            <small class="text-muted">Programadas</small>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body text-center py-2">
+            <h5 class="mb-0 text-danger">{{ sesionesCanceladas() }}</h5>
+            <small class="text-muted">Canceladas</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vista de Calendario -->
+  <div *ngIf="modoFijo() === 'calendario'">
+    <app-calendario-full></app-calendario-full>
+  </div>
 </div>

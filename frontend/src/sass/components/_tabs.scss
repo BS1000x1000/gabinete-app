@@ -1,0 +1,49 @@
+// ========================================
+// TABS MODERNOS
+// ========================================
+.nav-tabs {
+  padding: $spacing-sm $spacing-sm 0;
+  background: transparent;
+  border-bottom: 2px solid $border-color;
+
+  .nav-link {
+    border: none;
+    color: $gray-600;
+    font-weight: $font-weight-medium;
+    padding: $spacing-sm $spacing-md;
+    margin-bottom: -2px;
+    margin-right: $spacing-xs;
+    border-radius: $border-radius $border-radius 0 0;
+    transition: $transition-base;
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+
+    i {
+      font-size: 1.1rem;
+    }
+
+    &:hover {
+      background: $gray-50;
+      color: $primary;
+    }
+
+    &.active {
+      background: $bg-card;
+      color: $primary;
+      border-bottom: 3px solid $primary;
+      font-weight: $font-weight-semibold;
+    }
+  }
+
+  @include respond-to('md') {
+    .nav-link {
+      font-size: $font-size-sm;
+      padding: $spacing-sm;
+
+      span {
+        display: none;
+      }
+    }
+  }
+}

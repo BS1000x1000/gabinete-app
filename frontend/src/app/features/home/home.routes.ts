@@ -8,8 +8,22 @@ export default [
     path: '',
     component: HomeComponent, // HomeComponent es el contenedor con el <router-outlet>
     children: [
-      // La ruta final es: /home/listado/:id
-      { path: 'listado/:id', loadChildren: () => import('./listado/listado.routes') }
+      // ✅ AGREGAR: Ruta por defecto que redirige a agenda
+      {
+        path: '',
+        redirectTo: 'agenda',
+        pathMatch: 'full'
+      },
+      // ✅ AGREGAR: Ruta de agenda
+      {
+        path: 'agenda',
+        loadComponent: () => import('./agenda/agenda.component').then(m => m.AgendaComponent)
+      },
+      // ✅ Ruta de listado (ya existente)
+      {
+        path: 'listado/:id',
+        loadChildren: () => import('./listado/listado.routes')
+      }
     ]
   }
 ] as Route[];

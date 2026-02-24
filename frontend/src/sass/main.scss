@@ -1,11 +1,45 @@
-@import "../sass/layout/layout";
-@import "../sass/layout/sidebar";
-@import "../sass/layout/header";
-@import "../sass/layout/footer";
-@import "../sass/components/cards";
-@import "../sass/components/login";
-@import "../sass/components/home";
-@import "../sass/components/schedule";
-@import "../sass/components/agenda";
-@import "../sass/components/listado";
-@import "../sass/components/fichaje";
+// ========================================
+// ABSTRACTS
+// ========================================
+@import 'abstracts/variables';
+@import 'abstracts/mixins';
+@import 'abstracts/functions';
+
+// ========================================
+// BASE
+// ========================================
+@import 'base/root';
+@import 'base/reset';
+@import 'base/typography';
+@import 'base/utilities';
+
+// ========================================
+// LAYOUT
+// ========================================
+@import 'layout/header';
+@import 'layout/sidebar';
+@import 'layout/footer';
+@import 'layout/tab-contents';  // ✅ NUEVO
+
+// ========================================
+// COMPONENTS
+// ========================================
+// @import 'components/buttons';
+@import 'components/cards';
+// @import 'components/forms';
+@import 'components/data-field';  // ✅ NUEVO
+@import 'components/tabs';        // ✅ NUEVO
+@import 'components/alerts';      // ✅ NUEVO
+@import 'components/agenda';
+@import 'components/agenda-compact';
+@import 'components/listado';
+@import 'components/objetivos_generales';
+@import 'components/registro';
+@import 'components/search-bar';
+
+// ========================================
+// PAGES
+// ========================================
+@import 'pages/login';
+@import 'pages/home';
+// @import 'pages/cliente-detail';  // ✅ NUEVO (opcional)

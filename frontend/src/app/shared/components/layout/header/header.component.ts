@@ -10,7 +10,6 @@ import { AuthService } from '../../../../services/auth.service';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './header.component.html',
-  styleUrls: ['./header.component.scss']
 })
 export class HeaderComponent {
   private router = inject(Router);

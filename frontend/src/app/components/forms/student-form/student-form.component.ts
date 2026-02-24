@@ -34,7 +34,6 @@ import { Router } from '@angular/router';
     InputFieldComponent,
   ],
   templateUrl: './student-form.component.html',
-  styleUrl: './student-form.component.scss'
 })
 export class StudentFormComponent implements OnInit, OnChanges {
   @Input() type: 'create' | 'update' = 'create';

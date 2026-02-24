@@ -1,0 +1,10 @@
+// ========================================
+// FUNCIONES PERSONALIZADAS
+// ========================================
+
+// Convertir px a rem
+@function px-to-rem($px, $base: 16px) {
+  @return ($px / $base) * 1rem;
+}
+
+// Ejemplo: font-size: px-to-rem(14px); // = 0.875rem

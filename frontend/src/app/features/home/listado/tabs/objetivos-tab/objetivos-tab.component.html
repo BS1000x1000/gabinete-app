@@ -1,0 +1,212 @@
+<div class="card border-0 shadow-sm rounded-3 tab-content bg-white py-2">
+  <!-- Loader -->
+  <div *ngIf="cargando()" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Cargando objetivos...</span>
+    </div>
+  </div>
+
+  <!-- Contenido principal -->
+  <div *ngIf="!cargando()" class="data-view px-4 py-2">
+    
+    <!-- Header con estadísticas y botones -->
+    <div class="row g-2 mb-4">
+      <!-- Estadísticas -->
+      <div class="col-md-8">
+        <div class="d-flex gap-3">
+          <div class="stat-card">
+            <small class="text-muted d-block">Objetivos Asignados</small>
+            <h4 class="mb-0 text-primary">{{ estadisticas()?.totalObjetivosAsignados || 0 }}</h4>
+          </div>
+          <div class="stat-card">
+            <small class="text-muted d-block">Total Sesiones</small>
+            <h4 class="mb-0 text-secondary">{{ estadisticas()?.totalSesiones || 0 }}</h4>
+          </div>
+        </div>
+      </div>
+
+      <!-- Botón de edición -->
+      <div class="col-md-4 text-end">
+        <button 
+          *ngIf="!modoEdicion()"
+          class="btn btn-primary btn-sm"
+          (click)="activarModoEdicion()"
+        >
+          <i class="bi bi-pencil me-2"></i>Editar Objetivos
+        </button>
+        <div *ngIf="modoEdicion()" class="btn-group btn-group-sm">
+          <button 
+            class="btn btn-success"
+            (click)="guardarCambios()"
+            [disabled]="cargando()"
+          >
+            <i class="bi bi-check2 me-1"></i>Guardar
+          </button>
+          <button 
+            class="btn btn-outline-secondary"
+            (click)="cancelarEdicion()"
+          >
+            <i class="bi bi-x me-1"></i>Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <hr>
+
+    <!-- MODO VISUALIZACIÓN -->
+    <div *ngIf="!modoEdicion()">
+      <h6 class="text-uppercase text-muted small fw-bold mb-3">
+        <i class="bi bi-bullseye me-2"></i>Objetivos Asignados
+      </h6>
+
+      <!-- Si no hay objetivos -->
+      <div *ngIf="objetivosAgrupados().length === 0" class="text-center py-5">
+        <i class="bi bi-inbox display-4 text-muted"></i>
+        <p class="text-muted mt-3">
+          Este cliente no tiene objetivos asignados aún.
+        </p>
+        <button class="btn btn-primary btn-sm" (click)="activarModoEdicion()">
+          <i class="bi bi-plus-circle me-2"></i>Asignar Objetivos
+        </button>
+      </div>
+
+      <!-- Objetivos agrupados por área -->
+      <div *ngFor="let grupo of objetivosAgrupados()" class="mb-4">
+        <!-- Header del área -->
+        <div class="d-flex align-items-center mb-2">
+          <span 
+            class="badge me-2"
+            [style.background-color]="grupo.color"
+          >
+            {{ grupo.area }}
+          </span>
+          <small class="text-muted">({{ grupo.objetivos.length }} objetivos)</small>
+        </div>
+
+        <!-- Lista de objetivos del área -->
+        <div class="row g-2">
+          <div 
+            *ngFor="let objetivo of grupo.objetivos" 
+            class="col-12"
+          >
+            <div class="objetivo-view-card p-3 border rounded bg-light d-flex justify-content-between align-items-start">
+              <div class="flex-grow-1">
+                <h6 class="mb-1">{{ objetivo.titulo }}</h6>
+                <p *ngIf="objetivo.descripcion" class="text-muted small mb-2">
+                  {{ objetivo.descripcion }}
+                </p>
+                <div class="d-flex gap-3 flex-wrap">
+                  <small class="text-muted">
+                    <i class="bi bi-calendar-check me-1"></i>
+                    Asignado: {{ objetivo.fechaAsignacion | date:'dd/MM/yyyy' }}
+                  </small>
+                  <small class="text-primary">
+                    <i class="bi bi-graph-up me-1"></i>
+                    Trabajado {{ objetivo.vecesTrabajado }} veces
+                  </small>
+                  <small *ngIf="objetivo.ultimaVez" class="text-muted">
+                    <i class="bi bi-clock-history me-1"></i>
+                    Última vez: {{ objetivo.ultimaVez | date:'dd/MM/yyyy' }}
+                  </small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Objetivos más trabajados -->
+      <div *ngIf="estadisticas()?.objetivosMasTrabajados?.length" class="mt-4">
+        <h6 class="text-uppercase text-muted small fw-bold mb-3">
+          <i class="bi bi-trophy me-2"></i>Objetivos Más Trabajados
+        </h6>
+        <div class="row g-2">
+          <div 
+            *ngFor="let obj of estadisticas()?.objetivosMasTrabajados" 
+            class="col-md-6"
+          >
+            <div class="p-2 border rounded bg-light d-flex justify-content-between align-items-center">
+              <span class="small">
+                <span class="badge bg-secondary me-2">{{ obj.area }}</span>
+                {{ obj.titulo }}
+              </span>
+              <span class="badge bg-primary">{{ obj.veces }}x</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODO EDICIÓN: Selector de objetivos -->
+    <div *ngIf="modoEdicion()">
+      <p class="text-muted small mb-3">
+        <i class="bi bi-info-circle me-1"></i>
+        Marca los objetivos que deseas asignar a este cliente
+      </p>
+
+      <!-- ✅ CORREGIDO: Iterar sobre las áreas y filtrar dentro -->
+      <div *ngFor="let area of todasLasAreas()" class="mb-4">
+        
+        <!-- ✅ Crear un computed para los objetivos de esta área -->
+        <ng-container *ngIf="getObjetivosPorArea(area.id) as objetivosArea">
+          
+          <!-- Solo mostrar el header si hay objetivos en esta área -->
+          <div *ngIf="objetivosArea.length > 0">
+            <div class="d-flex align-items-center mb-2">
+              <span 
+                class="badge me-2"
+                [style.background-color]="area.color"
+              >
+                {{ area.nombre }}
+              </span>
+              <small class="text-muted">({{ objetivosArea.length }} disponibles)</small>
+            </div>
+
+            <!-- Checkboxes de objetivos -->
+            <div class="row g-2">
+              <div 
+                *ngFor="let objetivo of objetivosArea" 
+                class="col-md-6"
+              >
+                <!-- ✅ CORREGIDO: Label como contenedor -->
+                <label
+                  class="objetivo-selector-card"
+                  [class.selected]="esObjetivoSeleccionado(objetivo.id)"
+                >
+                  <input 
+                    type="checkbox" 
+                    [checked]="esObjetivoSeleccionado(objetivo.id)"
+                    (change)="toggleObjetivo(objetivo.id)"
+                    class="form-check-input me-2"
+                  >
+                  <div class="flex-grow-1">
+                    <strong class="d-block">{{ objetivo.titulo }}</strong>
+                    <small 
+                      *ngIf="objetivo.descripcion" 
+                      class="d-block objetivo-descripcion"
+                    >
+                      {{ objetivo.descripcion }}
+                    </small>
+                  </div>
+                  <i 
+                    *ngIf="esObjetivoSeleccionado(objetivo.id)"
+                    class="bi bi-check-circle-fill check-icon"
+                  ></i>
+                </label>
+              </div>
+            </div>
+          </div>
+
+        </ng-container>
+      </div>
+
+      <!-- Resumen de selección -->
+      <div class="alert alert-info mt-3">
+        <i class="bi bi-info-circle me-2"></i>
+        <strong>{{ objetivosSeleccionados().length }}</strong> objetivos seleccionados
+      </div>
+    </div>
+
+  </div>
+</div>

@@ -1,111 +1,132 @@
-<div class="card border-0 shadow-sm rounded-3 tab-content bg-white py-2">
-  <div>
-    <!-- Listado de datos (solo lectura) -->
-    <div class="data-view px-4 py-2">
-      <!-- SECCIÓN 1: DATOS GENERALES -->
-      <!-- Fila 1: Centro vs. Dirección -->
-      <div class="row g-2 mb-3">
-        <!-- Centro -->
-        <div class="col-6 d-flex justify-content-between align-items-start">
-          <small class="flex-shrink-0 me-2 w-25">Centro</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light">{{
-            colegio()?.nombreDelCentro
-          }}</span>
-        </div>
-        <!-- Dirección (con text-break para texto largo) -->
-        <div class="col-6 d-flex justify-content-between align-items-center">
-          <small class="w-25">Direccion</small>
-          <span
-            *ngIf="sanitario()?.adaptaciones"
-            class="text-muted flex-grow-1 bg-light"
-            >{{ colegio()?.direccionColegio }}</span
-          >
-        </div>
-      </div>
+<div class="tab-content-modern p-4">
 
-      <!-- Fila 2: Adaptacion curricular vs. Tipo -->
-      <div class="row g-2 mb-4">
-        <!-- Adaptacion curricular -->
-        <div class="col-6 d-flex justify-content-between align-items-center">
-          <small class="flex-shrink-0 me-2 w-25">Adaptacion curricular</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light"
-            ><span class="badge bg-success">{{
-              sanitario()?.adaptaciones ? "SI" : "NO"
-            }}</span></span
-          >
-        </div>
-        <!-- Tipo -->
-        <div class="col-6 d-flex justify-content-between align-items-center">
-          <small class="w-25">Tipo</small>
-          <span
-            *ngIf="sanitario()?.adaptaciones"
-            class="text-muted flex-grow-1 bg-light"
-            >{{ sanitario()?.tipoAdaptaciones }}</span
-          >
-        </div>
-      </div>
+  <!-- Si no hay datos del colegio -->
+  <div *ngIf="!colegio()" class="alert alert-info">
+    <i class="bi bi-info-circle me-2"></i>
+    No hay información del colegio registrada
+  </div>
 
-      <hr />
+  <ng-container *ngIf="colegio()">
+    
+    <!-- Sección: Datos del Centro -->
+    <div class="section mb-1">
+      <h6 class="section-title">
+        <i class="bi bi-building me-2"></i>Datos del Centro Educativo
+      </h6>
+      <div class="data-grid">
+        <app-data-field
+          label="Nombre del centro"
+          [value]="colegio()?.nombreDelCentro"
+          icon="bi-building"
+          [fullWidth]="true"
+        ></app-data-field>
 
-      <!-- Fila 3: Nombre vs. Relacion -->
-      <div class="row g-2 mb-2">
-        <!-- Nombre -->
-        <div class="col-4 d-flex justify-content-between align-items-start">
-          <small class="me-3">Contacto</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light">{{colegio()?.ctoColegioUno}}</span>
-        </div>
-        <!-- Relacion -->
-        <div class="col-8 d-flex justify-content-between align-items-start">
-          <small class="me-3">Relacion</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light">{{colegio()?.ctoRelacionColegioUno}}</span>
-        </div>
-      </div>
+        <app-data-field
+          label="Dirección"
+          [value]="colegio()?.direccionColegio"
+          icon="bi-geo-alt"
+          [fullWidth]="true"
+        ></app-data-field>
 
-      <!-- Fila 4: Email vs. Telefono -->
-      <div class="row g-2 mb-4">
-        <!-- Email (con text-break para el correo largo) -->
-        <div class="col-4 d-flex justify-content-between align-items-start">
-          <small class="me-3">Telefono</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light text-break"
-            >{{colegio()?.ctoTelefonoUno}}</span
-          >
-        </div>
-        <!-- Telefono -->
-        <div class="col-8 d-flex justify-content-between align-items-start">
-          <small class="me-3">Email</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light text-break"
-            >{{colegio()?.ctoEmailColegioUno}}</span
-          >
-        </div>
-      </div>
-
-      <!-- Fila 5: Contacto 2 (Nombre) vs. Relacion -->
-      <div class="row g-2 mb-2">
-        <!-- Nombre (usando 'Contacto 2' como etiqueta para mantener la estructura) -->
-        <div class="col-4 d-flex justify-content-between align-items-start">
-          <small class="me-3">Contacto</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light">{{colegio()?.ctoColegioDos}}</span>
-        </div>
-        <!-- Relacion -->
-        <div class="col-8 d-flex justify-content-between align-items-start">
-          <small class="me-3">Relacion</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light">{{colegio()?.ctoRelacionColegioDos}}</span>
-        </div>
-      </div>
-
-      <!-- Fila 6: Email vs. Telefono -->
-      <div class="row g-2 mb-2">
-        <!-- Email -->
-        <div class="col-4 d-flex justify-content-between align-items-start">
-          <small class="me-3">Telefono</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light text-break">{{colegio()?.ctoTelefonoDos}}</span>
-        </div>
-        <!-- Telefono -->
-        <div class="col-8 d-flex justify-content-between align-items-start">
-          <small class="me-3">Email</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light">{{colegio()?.ctoEmailColegioDos}}</span>
-        </div>
+        <app-data-field
+          label="Curso escolar"
+          [value]="colegio()?.cursoEscolar"
+          icon="bi-book"
+        ></app-data-field>
       </div>
     </div>
-  </div>
+
+    <!-- Sección: Adaptaciones -->
+    <div class="section mb-1">
+      <h6 class="section-title">
+        <i class="bi bi-gear-fill me-2"></i>Adaptaciones Curriculares
+      </h6>
+      <div class="data-grid">
+        <app-data-field
+          label="Tiene adaptación curricular"
+          [value]="sanitario()?.adaptaciones ? 'SÍ' : 'NO'"
+          type="badge"
+          [badgeClass]="sanitario()?.adaptaciones ? 'bg-success' : 'bg-secondary'"
+          icon="bi-check-circle"
+        ></app-data-field>
+
+        <app-data-field
+          *ngIf="sanitario()?.adaptaciones"
+          label="Tipo de adaptación"
+          [value]="sanitario()?.tipoAdaptaciones"
+          icon="bi-list-ul"
+        ></app-data-field>
+      </div>
+    </div>
+
+    <!-- Sección: Contacto Principal del Colegio -->
+    <div class="section mb-1" *ngIf="colegio()?.ctoColegioUno">
+      <h6 class="section-title">
+        <i class="bi bi-person-badge me-2"></i>Contacto Principal
+      </h6>
+      <div class="data-grid">
+        <app-data-field
+          label="Nombre"
+          [value]="colegio()?.ctoColegioUno"
+          icon="bi-person"
+        ></app-data-field>
+
+        <app-data-field
+          label="Relación/Cargo"
+          [value]="colegio()?.ctoRelacionColegioUno"
+          icon="bi-briefcase"
+        ></app-data-field>
+
+        <app-data-field
+          label="Teléfono"
+          [value]="colegio()?.ctoTelefonoUno"
+          type="phone"
+          icon="bi-phone"
+        ></app-data-field>
+
+        <app-data-field
+          label="Email"
+          [value]="colegio()?.ctoEmailColegioUno"
+          type="email"
+          icon="bi-envelope"
+        ></app-data-field>
+      </div>
+    </div>
+
+    <!-- Sección: Contacto Secundario del Colegio -->
+    <div class="section" *ngIf="colegio()?.ctoColegioDos">
+      <h6 class="section-title">
+        <i class="bi bi-person-badge me-2"></i>Contacto Secundario
+      </h6>
+      <div class="data-grid">
+        <app-data-field
+          label="Nombre"
+          [value]="colegio()?.ctoColegioDos"
+          icon="bi-person"
+        ></app-data-field>
+
+        <app-data-field
+          label="Relación/Cargo"
+          [value]="colegio()?.ctoRelacionColegioDos"
+          icon="bi-briefcase"
+        ></app-data-field>
+
+        <app-data-field
+          label="Teléfono"
+          [value]="colegio()?.ctoTelefonoDos"
+          type="phone"
+          icon="bi-phone"
+        ></app-data-field>
+
+        <app-data-field
+          label="Email"
+          [value]="colegio()?.ctoEmailColegioDos"
+          type="email"
+          icon="bi-envelope"
+        ></app-data-field>
+      </div>
+    </div>
+
+  </ng-container>
+
 </div>

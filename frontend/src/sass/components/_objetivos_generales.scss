@@ -1,0 +1,232 @@
+// ==========================================
+// OBJETIVOS GENERALES - USANDO PALETA
+// ==========================================
+
+// ========================================
+// ESTADÍSTICAS
+// ========================================
+.stat-card {
+  padding: $spacing-md;
+  background: $gray-50;
+  border-radius: $border-radius;
+  border-left: 4px solid $primary;
+  transition: $transition-base;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: $shadow-md;
+  }
+
+  small {
+    font-size: $font-size-xs;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: $gray-600;
+  }
+
+  h4 {
+    font-weight: $font-weight-bold;
+    color: $gray-900;
+  }
+}
+
+// ========================================
+// MODO VISUALIZACIÓN
+// ========================================
+.objetivo-view-card {
+  transition: $transition-base;
+  border-radius: $border-radius;
+
+  &:hover {
+    background: $gray-100 !important;
+    transform: translateX(4px);
+  }
+
+  h6 {
+    color: $gray-900;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+// ========================================
+// MODO EDICIÓN - SELECTOR
+// ========================================
+.objetivo-selector-card {
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-sm;
+  padding: 0.875rem $spacing-md;
+  border: 2px solid $border-color;
+  border-radius: $border-radius;
+  cursor: pointer;
+  transition: $transition-base;
+  background: $white;
+  user-select: none;
+  margin-bottom: 0;
+
+  &:hover {
+    border-color: $primary;
+    background: $gray-50;
+    transform: translateY(-1px);
+    box-shadow: $shadow-sm;
+  }
+
+  &.selected {
+    background: $gradient-primary;
+    border-color: $primary;
+    color: $white;
+    box-shadow: $shadow-md;
+
+    .form-check-input {
+      accent-color: $white;
+      background-color: $white;
+      border-color: $white;
+    }
+
+    .objetivo-descripcion {
+      color: rgba(255, 255, 255, 0.8);
+    }
+  }
+
+  .form-check-input {
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+    width: 20px;
+    height: 20px;
+  }
+
+  .check-icon {
+    flex-shrink: 0;
+    font-size: 1.25rem;
+    color: $white;
+    animation: scaleIn $animation-duration-base ease;
+  }
+
+  strong {
+    font-size: 0.95rem;
+    line-height: 1.4;
+  }
+
+  .objetivo-descripcion {
+    font-size: $font-size-sm;
+    color: $gray-600;
+    margin-top: $spacing-xs;
+  }
+}
+
+// ========================================
+// OBJETIVO CARD (Tab Fichaje)
+// ========================================
+.objetivo-card {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  border: 2px solid $border-color;
+  border-radius: $border-radius;
+  cursor: pointer;
+  transition: $transition-base;
+  background: $white;
+  user-select: none;
+  margin-bottom: 0;
+
+  &:hover {
+    border-color: $primary;
+    background: $gray-50;
+    transform: translateY(-1px);
+    box-shadow: $shadow-sm;
+  }
+
+  &.selected {
+    background: $gradient-primary;
+    border-color: $primary;
+    color: $white;
+    box-shadow: $shadow-md;
+
+    .objetivo-checkbox {
+      accent-color: $white;
+      background-color: $white;
+      border-color: $white;
+    }
+  }
+}
+
+.objetivo-checkbox {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  margin-top: 0;
+}
+
+.objetivo-titulo {
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.objetivo-check-icon {
+  flex-shrink: 0;
+  font-size: 1.25rem;
+  color: $white;
+  animation: scaleIn $animation-duration-base ease;
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+// ========================================
+// HISTORIAL
+// ========================================
+.list-group-item {
+  transition: background $animation-duration-base ease;
+
+  &:hover {
+    background: $gray-50;
+  }
+
+  &.border-start {
+    border-left-color: $primary !important;
+    border-left-width: 4px !important;
+  }
+}
+
+// ========================================
+// RESPONSIVE
+// ========================================
+@media (max-width: $breakpoint-md) {
+  .stat-card {
+    padding: $spacing-sm;
+
+    h4 {
+      font-size: $font-size-xl;
+    }
+  }
+
+  .objetivo-card,
+  .objetivo-selector-card {
+    font-size: $font-size-sm;
+    padding: $spacing-sm;
+
+    strong {
+      font-size: $font-size-sm;
+    }
+
+    .objetivo-descripcion {
+      font-size: $font-size-xs;
+    }
+  }
+
+  .objetivo-titulo {
+    font-size: $font-size-sm;
+  }
+
+  .objetivo-check-icon {
+    font-size: 1.1rem;
+  }
+}

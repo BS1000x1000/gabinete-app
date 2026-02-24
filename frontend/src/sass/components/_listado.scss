@@ -1,55 +1,198 @@
+// ========================================
+// LISTADO COMPONENT
+// ========================================
 .listado-wrapper {
-  min-height: 100%;
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: $spacing-lg;
+  min-height: calc(100vh - 80px);
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: $spacing-lg;
+
+  @include respond-to('lg') {
+    grid-template-columns: 1fr;
+    padding: $spacing-md;
+    gap: $spacing-md;
+  }
 }
 
+// ========================================
+// LEFT PANEL (SIDEBAR)
+// ========================================
 .left-panel {
-  width: 280px;               /* ancho fijo columna izq */
-  flex-shrink: 0;
+  position: sticky;
+  top: 90px;
+  height: fit-content;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+  @include custom-scrollbar(6px);
+
+  @include respond-to('lg') {
+    position: relative;
+    top: 0;
+    max-height: none;
+  }
 }
 
+// Avatar
+.avatar-wrapper {
+  .avatar-lg {
+    width: 90px;
+    height: 90px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    box-shadow: $shadow-md;
+    transition: $transition-base;
+
+    &:hover {
+      transform: scale(1.05);
+    }
+  }
+
+  .badge {
+    font-size: 0.7rem;
+  }
+}
+
+// Navegación de botones con iconos
+.nav-buttons-wrapper {
+  display: flex;
+  justify-content: center;
+  gap: $spacing-xs;
+  flex-wrap: wrap;
+  margin-bottom: $spacing-md;
+}
+
+.nav-icon-btn {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid $border-color;
+  border-radius: $border-radius;
+  transition: $transition-base;
+  background: white;
+
+  i {
+    font-size: 1.1rem;
+    color: $gray-600;
+  }
+
+  &:hover {
+    border-color: $primary;
+    background: $gray-50;
+    transform: translateY(-2px);
+
+    i {
+      color: $primary;
+    }
+  }
+
+  &.active {
+    border-color: $primary;
+    background: $primary;
+
+    i {
+      color: white;
+    }
+  }
+}
+
+// Acciones rápidas
+.actions-wrapper {
+  display: grid;
+  gap: $spacing-sm;
+  margin-top: $spacing-md;
+
+  button {
+    width: 100%;
+  }
+}
+
+// ========================================
+// RIGHT PANEL (CONTENIDO)
+// ========================================
 .right-panel {
-  flex-grow: 1;               /* ocupa el resto */
+  display: flex;
+  flex-direction: column;
+  min-height: 600px;
 }
 
-.avatar-lg {
-  width: 4rem;
-  height: 4rem;
-  font-size: 1.5rem;
-  display: inline-flex;
+// Tabs
+.tab-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-sm;
+
+  i {
+    font-size: 1.1rem;
+  }
+
+  .tab-label {
+    @include respond-to('md') {
+      display: none;
+    }
+  }
+}
+
+// Contenido de tabs
+.tab-content-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  @include custom-scrollbar(6px);
+}
+
+// ========================================
+// LOADER OVERLAY
+// ========================================
+.loader-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
 }
 
-/* botones en columna */
-.left-panel .btn {
-  width: 100%;
+// ========================================
+// RESPONSIVE
+// ========================================
+@include respond-to('lg') {
+  .listado-wrapper {
+    .left-panel {
+      order: 1;
+    }
+    
+    .right-panel {
+      order: 2;
+    }
+  }
 }
 
-/* tabs más compactos */
-.nav-pills .nav-link {
-  padding: 0.5rem 1rem;
-  font-size: 0.9rem;
-}
+@include respond-to('md') {
+  .left-panel {
+    padding: $spacing-md !important;
+  }
 
-/* barra de tabs → transparente (color del fondo de la página) */
-.nav-tabs {
-  background-color: transparent;
-  border-bottom: 1px solid var(--bs-border-color);
-}
+  .nav-buttons-wrapper {
+    gap: $spacing-xs;
+  }
 
-/* pestañas inactivas → mismo fondo transparente */
-.nav-tabs .nav-link {
-  background-color: transparent;
-  color: var(--bs-dark);
-  border: none;
-  margin-right: 0.25rem;
-}
+  .nav-icon-btn {
+    width: 35px;
+    height: 35px;
 
-/* pestaña activa → fondo blanco + esquinas superiores redondeadas */
-.nav-tabs .nav-link.active {
-  background-color: #fff;
-  color: var(--bs-dark);
-  border-color: var(--bs-border-color) var(--bs-border-color) #fff;
-  border-top-left-radius: 0.5rem;
-  border-top-right-radius: 0.5rem;
+    i {
+      font-size: 1rem;
+    }
+  }
 }

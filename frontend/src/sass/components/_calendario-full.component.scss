@@ -1,0 +1,256 @@
+// ==========================================
+// CALENDARIO FULL (FullCalendar) - USANDO PALETA
+// ==========================================
+
+.calendario-container {
+  position: relative;
+  padding: $spacing-lg;
+  background: $white;
+  border-radius: $border-radius-lg;
+  box-shadow: $shadow-card;
+}
+
+.loader-overlay {
+  @include flex-center;
+  @include flex-column;
+  position: absolute;
+  inset: 0;
+  background: rgba($white, 0.95);
+  z-index: $z-modal;
+  border-radius: $border-radius-lg;
+}
+
+.calendar-wrapper {
+  :host ::ng-deep {
+    .fc {
+      font-family: $font-family-base;
+    }
+
+    // ========================================
+    // HEADER Y TÍTULO
+    // ========================================
+    .fc-toolbar-title {
+      font-size: $font-size-2xl;
+      font-weight: $font-weight-bold;
+      color: $gray-900;
+      text-transform: capitalize;
+    }
+
+    // ========================================
+    // ✅ BOTONES PERSONALIZADOS (TU PALETA)
+    // ========================================
+    .fc-button {
+      background-color: $primary !important;
+      border-color: $primary !important;
+      color: $white !important;
+      text-transform: capitalize;
+      border-radius: $border-radius !important;
+      font-weight: $font-weight-medium !important;
+      padding: 0.5rem 1rem !important;
+      transition: $transition-base !important;
+      
+      &:hover:not(:disabled) {
+        background-color: $primary-dark !important;
+        border-color: $primary-dark !important;
+        transform: translateY(-1px);
+        box-shadow: $shadow-sm !important;
+      }
+
+      &:active,
+      &.fc-button-active {
+        background-color: $primary-dark !important;
+        border-color: $primary-dark !important;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15) !important;
+      }
+
+      &:disabled {
+        background-color: $gray-300 !important;
+        border-color: $gray-300 !important;
+        opacity: 0.5;
+      }
+    }
+
+    // Botón "Hoy" con estilo especial
+    .fc-today-button {
+      background-color: $secondary !important;
+      border-color: $secondary !important;
+
+      &:hover:not(:disabled) {
+        background-color: $secondary-dark !important;
+        border-color: $secondary-dark !important;
+      }
+    }
+
+    // ========================================
+    // EVENTOS
+    // ========================================
+    .fc-event {
+      cursor: pointer;
+      border-radius: $border-radius-sm;
+      padding: 2px 6px;
+      font-size: $font-size-sm;
+      font-weight: $font-weight-medium;
+      transition: $transition-fast;
+      border-width: 2px;
+      border-style: solid;
+      
+      &:hover {
+        opacity: $opacity-hover;
+        transform: translateY(-1px);
+        box-shadow: $shadow-sm;
+      }
+
+      .fc-event-time {
+        font-weight: $font-weight-semibold;
+      }
+
+      .fc-event-title {
+        font-weight: $font-weight-normal;
+      }
+    }
+
+    // ========================================
+    // GRID Y SLOTS
+    // ========================================
+    .fc-timegrid-slot {
+      height: 3em;
+      border-color: $border-color-light;
+    }
+
+    .fc-timegrid-slot-label {
+      color: $gray-600;
+      font-size: $font-size-sm;
+    }
+
+    // ========================================
+    // HEADER DE COLUMNAS (DÍAS)
+    // ========================================
+    .fc-col-header-cell {
+      background: $gray-50;
+      font-weight: $font-weight-semibold;
+      text-transform: uppercase;
+      font-size: $font-size-xs;
+      letter-spacing: 0.5px;
+      color: $gray-700;
+      border-color: $border-color;
+      padding: $spacing-sm;
+    }
+
+    // ========================================
+    // DÍA ACTUAL (HOY)
+    // ========================================
+    .fc-day-today {
+      background-color: rgba($primary, 0.05) !important;
+
+      &.fc-col-header-cell {
+        background-color: $primary-light !important;
+        color: $primary-dark;
+      }
+
+      .fc-col-header-cell-cushion {
+        color: $primary;
+        font-weight: $font-weight-bold;
+      }
+    }
+
+    // Indicador de "ahora"
+    .fc-timegrid-now-indicator-line {
+      border-color: $danger;
+      border-width: 2px;
+    }
+
+    .fc-timegrid-now-indicator-arrow {
+      border-color: $danger;
+    }
+
+    // ========================================
+    // HORARIO LABORAL
+    // ========================================
+    .fc-non-business {
+      background-color: $gray-50;
+    }
+
+    // ========================================
+    // VISTA LISTA
+    // ========================================
+    .fc-list-day-cushion {
+      background-color: $primary-light;
+      color: $primary-dark;
+      font-weight: $font-weight-semibold;
+    }
+
+    .fc-list-event:hover {
+      background-color: $primary-ultra-light;
+    }
+
+    // ========================================
+    // SCROLLBAR PERSONALIZADO
+    // ========================================
+    .fc-scroller {
+      @include custom-scrollbar(6px, $gray-100, $primary);
+    }
+
+    // ========================================
+    // BORDERS
+    // ========================================
+    .fc-theme-standard td,
+    .fc-theme-standard th {
+      border-color: $border-color-light;
+    }
+  }
+}
+
+// ========================================
+// LEYENDA
+// ========================================
+.legend {
+  @include flex-between;
+  flex-wrap: wrap;
+  gap: $spacing-md;
+  padding: $spacing-md;
+  background: $gray-50;
+  border-radius: $border-radius;
+  margin-top: $spacing-lg;
+
+  small {
+    color: $gray-600;
+    font-size: $font-size-sm;
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+
+    i {
+      width: 12px;
+      height: 12px;
+      border-radius: $border-radius-full;
+      display: inline-block;
+    }
+  }
+}
+
+// ========================================
+// RESPONSIVE
+// ========================================
+@media (max-width: $breakpoint-md) {
+  .calendario-container {
+    padding: $spacing-xs;
+  }
+
+  .calendar-wrapper :host ::ng-deep {
+    .fc-toolbar {
+      flex-direction: column;
+      gap: $spacing-xs;
+    }
+
+    .fc-toolbar-chunk {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .fc-button {
+      font-size: $font-size-sm !important;
+      padding: 0.375rem 0.75rem !important;
+    }
+  }
+}

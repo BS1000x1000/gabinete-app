@@ -24,7 +24,6 @@ import { SidebarService } from './services/sidebar.service';
     HeaderComponent,
   ],
   templateUrl: './app.component.html',
-  styleUrl: './app.component.scss',
 })
 export class AppComponent {
   public sidebar = inject(SidebarService);

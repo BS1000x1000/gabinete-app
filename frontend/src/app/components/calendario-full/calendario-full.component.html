@@ -1,0 +1,52 @@
+<div class="calendario-container">
+  
+  <!-- Loader -->
+  <div *ngIf="isLoading()" class="loader-overlay">
+    <div class="spinner-border text-primary"></div>
+    <p class="mt-2 text-muted">Cargando calendario...</p>
+  </div>
+
+  <!-- Calendario -->
+  <div class="calendar-wrapper">
+    <full-calendar 
+      #calendar
+      [options]="calendarOptions"
+    ></full-calendar>
+  </div>
+
+  <!-- ✅ Leyenda actualizada con tu paleta -->
+  <div class="legend mt-3">
+    <div class="d-flex align-items-center gap-2">
+      <strong class="text-muted small">Estados:</strong>
+      <small class="text-muted">
+        <i style="background-color: #7c6fd6;"></i> Programada
+      </small>
+      <small class="text-muted">
+        <i style="background-color: #10b981;"></i> Completada
+      </small>
+      <small class="text-muted">
+        <i style="background-color: #f59e0b;"></i> Cancelada (aviso)
+      </small>
+      <small class="text-muted">
+        <i style="background-color: #ef4444;"></i> Cancelada (sin aviso)
+      </small>
+    </div>
+
+    <div class="d-flex align-items-center gap-2">
+      <strong class="text-muted small">Tipos:</strong>
+      <small class="text-muted">
+        <i style="background-color: #7c6fd6;"></i> Pedagogía
+      </small>
+      <small class="text-muted">
+        <i style="background-color: #5a9de8;"></i> Neuropsicología
+      </small>
+      <small class="text-muted">
+        <i style="background-color: #f59e0b;"></i> Evaluación
+      </small>
+      <small class="text-muted">
+        <i style="background-color: #10b981;"></i> Reunión colegio
+      </small>
+    </div>
+  </div>
+
+</div>

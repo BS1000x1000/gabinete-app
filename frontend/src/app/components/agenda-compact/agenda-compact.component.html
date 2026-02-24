@@ -1,0 +1,100 @@
+
+<div class="agenda-compact-wrapper">
+  <div class="container-fluid">
+    
+    <!-- Header compacto -->
+    <div class="agenda-compact-header" (click)="toggleExpand()">
+      <div class="d-flex justify-content-between align-items-center">
+        
+        <!-- Info rápida -->
+        <div class="d-flex align-items-center gap-4">
+          <div class="agenda-stat">
+            <i class="bi bi-calendar-check text-success"></i>
+            <span class="fw-bold">{{ sesionesCompletadas() }}</span>
+            <small class="text-muted d-none d-md-inline">/ {{ sesionesHoy().length }}</small>
+          </div>
+
+          <div class="agenda-stat" *ngIf="proximaSesion()">
+            <i class="bi bi-clock text-primary"></i>
+            <span class="fw-semibold">{{ proximaSesion()!.fechaHoraInicio | date:'HH:mm' }}</span>
+            <small class="text-muted d-none d-md-inline">- {{ proximaSesion()!.cliente.nombre }}</small>
+          </div>
+
+          <div class="agenda-stat" *ngIf="!proximaSesion() && sesionesHoy().length === 0">
+            <i class="bi bi-check-circle text-success"></i>
+            <small class="text-muted">Sin sesiones hoy</small>
+          </div>
+        </div>
+
+        <!-- Acciones -->
+        <div class="d-flex align-items-center gap-2">
+          <button 
+            class="btn btn-sm btn-outline-primary"
+            (click)="verAgendaCompleta(); $event.stopPropagation()"
+          >
+            <i class="bi bi-calendar3"></i>
+            <span class="d-none d-md-inline ms-1">Ver agenda</span>
+          </button>
+          <button class="btn btn-sm btn-link text-dark">
+            <i class="bi" [ngClass]="expandido() ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Listado expandido -->
+    <div class="agenda-compact-body" *ngIf="expandido()">
+      
+      <!-- Loader -->
+      <div *ngIf="isLoading()" class="text-center py-3">
+        <div class="spinner-border spinner-border-sm text-primary"></div>
+      </div>
+
+      <!-- Sesiones -->
+      <div *ngIf="!isLoading() && sesionesHoy().length > 0" class="sesiones-list">
+        <div 
+          *ngFor="let sesion of sesionesHoy()" 
+          class="sesion-item"
+          [class.completada]="sesion.estado === 'COMPLETADA'"
+          (click)="verCliente(sesion)"
+        >
+          <div class="sesion-hora">
+            {{ sesion.fechaHoraInicio | date:'HH:mm' }}
+          </div>
+          <div class="sesion-info">
+            <strong>{{ sesion.cliente.nombre }} {{ sesion.cliente.apellidos }}</strong>
+            <small class="text-muted">{{ sesion.tipoSesion }}</small>
+          </div>
+          <div class="sesion-estado">
+            <span 
+              class="badge"
+              [class.bg-success]="sesion.estado === 'COMPLETADA'"
+              [class.bg-primary]="sesion.estado === 'PROGRAMADA'"
+              [class.bg-warning]="sesion.estado === 'CANCELADA_CON_AVISO'"
+            >
+              {{ sesion.estado }}
+            </span>
+          </div>
+          <div class="sesion-actions" *ngIf="sesion.estado === 'PROGRAMADA'">
+            <button 
+              class="btn btn-sm btn-success"
+              (click)="completarSesion(sesion.id, $event)"
+              title="Completar"
+            >
+              <i class="bi bi-check"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sin sesiones -->
+      <div *ngIf="!isLoading() && sesionesHoy().length === 0" class="text-center py-3 text-muted">
+        <i class="bi bi-calendar-x"></i>
+        <small class="d-block mt-1">No hay sesiones programadas para hoy</small>
+      </div>
+
+    </div>
+
+  </div>
+</div>

@@ -1,0 +1,212 @@
+// ==========================================
+// CSS CUSTOM PROPERTIES (Variables CSS)
+// ==========================================
+
+:root {
+  // Colores principales (mapeados desde variables SASS)
+  --bs-primary: #{$primary};
+  --bs-primary-rgb: 124, 111, 214;
+  --bs-primary-dark: #{$primary-dark};
+  --bs-primary-light: #{$primary-light};
+  
+  --bs-secondary: #{$secondary};
+  --bs-secondary-rgb: 90, 157, 232;
+  --bs-secondary-dark: #{$secondary-dark};
+  --bs-secondary-light: #{$secondary-light};
+  
+  --bs-success: #{$success};
+  --bs-success-rgb: 16, 185, 129;
+  
+  --bs-warning: #{$warning};
+  --bs-warning-rgb: 245, 158, 11;
+  
+  --bs-danger: #{$danger};
+  --bs-danger-rgb: 239, 68, 68;
+  
+  --bs-info: #{$info};
+  --bs-info-rgb: 59, 130, 246;
+  
+  --bs-light: #{$gray-100};
+  --bs-dark: #{$gray-900};
+  
+  // Grises
+  --bs-gray-50: #{$gray-50};
+  --bs-gray-100: #{$gray-100};
+  --bs-gray-200: #{$gray-200};
+  --bs-gray-300: #{$gray-300};
+  --bs-gray-400: #{$gray-400};
+  --bs-gray-500: #{$gray-500};
+  --bs-gray-600: #{$gray-600};
+  --bs-gray-700: #{$gray-700};
+  --bs-gray-800: #{$gray-800};
+  --bs-gray-900: #{$gray-900};
+  
+  // Bordes
+  --bs-border-radius: #{$border-radius};
+  --bs-border-radius-sm: #{$border-radius-sm};
+  --bs-border-radius-lg: #{$border-radius-lg};
+  --bs-border-radius-xl: #{$border-radius-xl};
+  --bs-border-color: #{$border-color};
+  
+  // Sombras
+  --bs-box-shadow: #{$shadow};
+  --bs-box-shadow-sm: #{$shadow-sm};
+  --bs-box-shadow-lg: #{$shadow-lg};
+  
+  // Espaciado
+  --bs-spacing-xs: #{$spacing-xs};
+  --bs-spacing-sm: #{$spacing-sm};
+  --bs-spacing-md: #{$spacing-md};
+  --bs-spacing-lg: #{$spacing-lg};
+  --bs-spacing-xl: #{$spacing-xl};
+  
+  // Tipografía
+  --bs-font-family: #{$font-family-base};
+  --bs-font-size-base: #{$font-size-base};
+  
+  // Transiciones
+  --bs-transition: #{$transition-base};
+}
+
+// ==========================================
+// SOBRESCRIBIR CLASES DE BOOTSTRAP
+// ==========================================
+
+// Botones
+.btn-primary {
+  background-color: $primary !important;
+  border-color: $primary !important;
+  
+  &:hover,
+  &:focus,
+  &:active {
+    background-color: $primary-dark !important;
+    border-color: $primary-dark !important;
+  }
+}
+
+.btn-secondary {
+  background-color: $secondary !important;
+  border-color: $secondary !important;
+  
+  &:hover,
+  &:focus,
+  &:active {
+    background-color: $secondary-dark !important;
+    border-color: $secondary-dark !important;
+  }
+}
+
+.btn-outline-primary {
+  color: $primary !important;
+  border-color: $primary !important;
+  
+  &:hover,
+  &:focus,
+  &:active {
+    background-color: $primary !important;
+    border-color: $primary !important;
+    color: white !important;
+  }
+}
+
+.btn-outline-secondary {
+  color: $secondary !important;
+  border-color: $secondary !important;
+  
+  &:hover,
+  &:focus,
+  &:active {
+    background-color: $secondary !important;
+    border-color: $secondary !important;
+    color: white !important;
+  }
+}
+
+// Fondos
+.bg-primary {
+  background-color: $primary !important;
+}
+
+.bg-secondary {
+  background-color: $secondary !important;
+}
+
+.bg-primary-light {
+  background-color: $primary-light !important;
+}
+
+.bg-secondary-light {
+  background-color: $secondary-light !important;
+}
+
+// Textos
+.text-primary {
+  color: $primary !important;
+}
+
+.text-secondary {
+  color: $secondary !important;
+}
+
+// Bordes
+.border-primary {
+  border-color: $primary !important;
+}
+
+.border-secondary {
+  border-color: $secondary !important;
+}
+
+// Badges
+.badge.bg-primary {
+  background-color: $primary !important;
+}
+
+.badge.bg-secondary {
+  background-color: $secondary !important;
+}
+
+// Links
+a {
+  color: $primary;
+  
+  &:hover {
+    color: $primary-dark;
+  }
+}
+
+// Alerts
+.alert-primary {
+  background-color: $primary-light !important;
+  border-color: $primary !important;
+  color: $primary-dark !important;
+}
+
+.alert-secondary {
+  background-color: $secondary-light !important;
+  border-color: $secondary !important;
+  color: $secondary-dark !important;
+}
+
+// Forms
+.form-check-input:checked {
+  background-color: $primary !important;
+  border-color: $primary !important;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: $primary !important;
+  box-shadow: 0 0 0 0.25rem rgba(124, 111, 214, 0.25) !important;
+}
+
+// Nav tabs/pills
+.nav-pills .nav-link.active {
+  background-color: $primary !important;
+}
+
+.nav-tabs .nav-link.active {
+  color: $primary !important;
+  border-bottom-color: $primary !important;
+}

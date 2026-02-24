@@ -1,17 +1,17 @@
 import { Component, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { ClientesService } from '../../../../../services/cliente.service';
+import { DataFieldComponent } from '../../../../../shared/components/data-field/data-field.component';
 
 @Component({
   selector: 'app-sanitario-tab',
   standalone: true,
-  imports: [],
+  imports: [CommonModule, DataFieldComponent],
   templateUrl: './sanitario-tab.component.html',
-  styleUrl: './sanitario-tab.component.scss'
 })
 export class SanitarioTabComponent {
-  private clientesvc = inject(ClientesService);
-  sanitario = this.clientesvc.sanitario;
-
+  private clienteSvc = inject(ClientesService);
+  sanitario = this.clienteSvc.sanitario;
 }
 
 export default SanitarioTabComponent;

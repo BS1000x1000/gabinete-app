@@ -21,25 +21,86 @@ import { CancelarSesionDto } from './dto/cancelar-sesion.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
 @Controller('sesiones')
+@UseGuards(JwtAuthGuard)
 export class SesionesController {
   private readonly logger = new Logger(SesionesController.name);
 
   constructor(private readonly sesionesService: SesionesService) {}
 
+  // ==========================================
+  // 🔥 RUTAS ESPECÍFICAS PRIMERO (SIN :id)
+  // ==========================================
+
   @Post('generar')
   @HttpCode(HttpStatus.CREATED)
   async generarSesiones(@Body() generarSesionesDto: GenerarSesionesDto) {
-    this.logger.log('Generando sesiones automáticamente desde disponibilidad');
+    this.logger.log('POST /sesiones/generar');
     return this.sesionesService.generarSesiones(generarSesionesDto);
   }
 
-  @Get('trabajador/:trabajadorId')
+  @Get('hoy')
+  async getSesionesHoy(@Req() req: any) {
+    const trabajadorId = req.user.userId;
+    this.logger.log(`GET /sesiones/hoy - Trabajador: ${trabajadorId}`);
+    return this.sesionesService.getSesionesHoy(trabajadorId);
+  }
+
+  @Get('mi-calendario/diario')
+  async getMiCalendarioDiario(
+    @Req() req: any,
+    @Query('fecha') fecha?: string,
+  ) {
+    const trabajadorId = req.user.userId;
+    const fechaReferencia = fecha ? new Date(fecha) : undefined;
+
+    this.logger.log(`GET /sesiones/mi-calendario/diario - Trabajador: ${trabajadorId}, Fecha: ${fecha || 'hoy'}`);
+
+    return this.sesionesService.getCalendarioDiario(
+      trabajadorId,
+      fechaReferencia,
+    );
+  }
+
+  @Get('mi-calendario/semanal')
+  async getMiCalendarioSemanal(
+    @Req() req: any,
+    @Query('fecha') fecha?: string,
+  ) {
+    const trabajadorId = req.user.userId;
+    const fechaReferencia = fecha ? new Date(fecha) : undefined;
+
+    this.logger.log(`GET /sesiones/mi-calendario/semanal`);
+
+    return this.sesionesService.getCalendarioSemanal(
+      trabajadorId,
+      fechaReferencia,
+    );
+  }
+
+  @Get('mi-calendario/mensual')
+  async getMiCalendarioMensual(
+    @Req() req: any,
+    @Query('fecha') fecha?: string,
+  ) {
+    const trabajadorId = req.user.userId;
+    const fechaReferencia = fecha ? new Date(fecha) : undefined;
+
+    this.logger.log(`GET /sesiones/mi-calendario/mensual`);
+
+    return this.sesionesService.getCalendarioMensual(
+      trabajadorId,
+      fechaReferencia,
+    );
+  }
+
+  @Get('trabajador/horario')
   async findByTrabajador(
-    @Param('trabajadorId') trabajadorId: string,
+    @Req() req: any,
     @Query('fechaInicio') fechaInicio?: string,
     @Query('fechaFin') fechaFin?: string,
   ) {
-    this.logger.log(`Obteniendo sesiones del trabajador: ${trabajadorId}`);
+    const trabajadorId = req.user.userId;
+    this.logger.log(`GET /sesiones/trabajador/${trabajadorId}`);
     return this.sesionesService.findByTrabajadorYFecha(
       trabajadorId,
       fechaInicio,
@@ -49,13 +110,17 @@ export class SesionesController {
 
   @Get('cliente/:clienteId')
   async findByCliente(@Param('clienteId') clienteId: string) {
-    this.logger.log(`Obteniendo sesiones del cliente: ${clienteId}`);
+    this.logger.log(`GET /sesiones/cliente/${clienteId}`);
     return this.sesionesService.findByCliente(clienteId);
   }
 
+  // ==========================================
+  // ⚠️ RUTAS CON :id AL FINAL
+  // ==========================================
+
   @Get(':id')
   async findOne(@Param('id') id: string) {
-    this.logger.log(`Buscando sesión con ID: ${id}`);
+    this.logger.log(`GET /sesiones/${id}`);
     const sesion = await this.sesionesService.findOne(id);
 
     if (!sesion) {
@@ -70,7 +135,7 @@ export class SesionesController {
     @Param('id') id: string,
     @Body() completarSesionDto: CompletarSesionDto,
   ) {
-    this.logger.log(`Completando sesión: ${id}`);
+    this.logger.log(`PATCH /sesiones/${id}/completar`);
     return this.sesionesService.completarSesion(id, completarSesionDto);
   }
 
@@ -79,80 +144,23 @@ export class SesionesController {
     @Param('id') id: string,
     @Body() cancelarSesionDto: CancelarSesionDto,
   ) {
-    this.logger.log(`Cancelando sesión: ${id}`);
+    this.logger.log(`PATCH /sesiones/${id}/cancelar`);
     return this.sesionesService.cancelarSesion(
       id,
       cancelarSesionDto.conAviso ?? true,
     );
   }
 
-  /**
-   * Calendario semanal del trabajador autenticado
-   */
-  @Get('mi-calendario/semanal')
-  @UseGuards(JwtAuthGuard)
-  async getMiCalendarioSemanal(
-    @Req() req: any,
-    @Query('fecha') fecha?: string,
-  ) {
-    const trabajadorId = req.user.userId;
-    const fechaReferencia = fecha ? new Date(fecha) : undefined;
-
-    this.logger.log(
-      `Obteniendo calendario semanal del trabajador ${trabajadorId}${fecha ? ` para ${fecha}` : ''}`,
-    );
-
-    return this.sesionesService.getCalendarioSemanal(
-      trabajadorId,
-      fechaReferencia,
-    );
-  }
-
-  /**
-   * Calendario mensual del trabajador autenticado
-   */
-  @Get('mi-calendario/mensual')
-  @UseGuards(JwtAuthGuard)
-  async getMiCalendarioMensual(
-    @Req() req: any,
-    @Query('fecha') fecha?: string,
-  ) {
-    const trabajadorId = req.user.userId;
-    const fechaReferencia = fecha ? new Date(fecha) : undefined;
-
-    this.logger.log(
-      `Obteniendo calendario mensual del trabajador ${trabajadorId}${fecha ? ` para ${fecha}` : ''}`,
-    );
-
-    return this.sesionesService.getCalendarioMensual(
-      trabajadorId,
-      fechaReferencia,
-    );
-  }
-
-  /**
-   * Sesiones de hoy del trabajador autenticado
-   */
-  @Get('hoy')
-  @UseGuards(JwtAuthGuard)
-  async getSesionesHoy(@Req() req: any) {
-    const trabajadorId = req.user.userId;
-    this.logger.log(
-      `Obteniendo sesiones de hoy del trabajador ${trabajadorId}`,
-    );
-    return this.sesionesService.getSesionesHoy(trabajadorId);
-  }
-
   @Patch(':id')
   async update(@Param('id') id: string, @Body() updateDto: any) {
-    this.logger.log(`Actualizando sesión: ${id}`);
+    this.logger.log(`PATCH /sesiones/${id}`);
     return this.sesionesService.update(id, updateDto);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
   async remove(@Param('id') id: string) {
-    this.logger.warn(`Eliminando sesión: ${id}`);
+    this.logger.warn(`DELETE /sesiones/${id}`);
     return this.sesionesService.remove(id);
   }
 }

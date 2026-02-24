@@ -28,10 +28,11 @@ export class FichajeController {
   async create(@Body() createDto: CreateRegistroDiarioDto, @Req() req: any) {
 
     const trabajadorId = req.user.userId
-    
+    this.logger.log(`TRABAJADOR ID ${trabajadorId}`);
     this.logger.log(`Creando registro diario para cliente: ${createDto.clienteId}`);
     if (createDto.objetivosGeneralesTrabajados?.length) {
       this.logger.log(`Con ${createDto.objetivosGeneralesTrabajados.length} objetivos trabajados`);
+      this.logger.log(`Objetivo: ${createDto.objetivosGeneralesTrabajados}`);
     }
     return this.fichajeService.create(createDto, trabajadorId);
   }

@@ -1,76 +1,129 @@
-<div class="card border-0 shadow-sm rounded-3 tab-content bg-white py-2">
-  <div>
-    <div class="data-view px-4 py-2">
-      <div class="row g-2 mb-2">
-        <div class="col-12 d-flex flex-column mb-3">
-          <small class="flex-shrink-0 me-2 w-50">Centro de salud</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light">{{sanitario()?.centroSalud}}</span>
-        </div>
-        <div class="col-12 d-flex flex-column mb-3">
-          <small class="flex-shrink-0 me-2 w-50"
-            >Especialistas que atienden al cliente</small
-          >
-          <span class="text-muted flex-grow-1 me-2 bg-light"
-            >{{sanitario()?.especialistas}}</span
-          >
-        </div>
-        <div class="col-12 d-flex flex-column mb-3">
-          <small class="flex-shrink-0 me-2 w-50"
-            >Diagnóstico o patologias relevantes</small
-          >
-          <span class="text-muted flex-grow-1 me-2 bg-light"
-            >{{sanitario()?.diagnostico}}</span
-          >
-        </div>
-        <!-- Columna Izquierda -->
-        <div
-          class="col-4 d-flex justify-content-between align-items-center mb-3"
-        >
-          <small class="flex-shrink-0 me-2 w-50">Medicacion</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light">{{sanitario()?.medicacion ? 'SI' : 'NO'}}</span>
-        </div>
-        <!-- Columna Derecha -->
-        <div
-          class="col-8 d-flex justify-content-between align-items-center mb-3"
-        >
-          <small class="flex-shrink-0 me-3">Tipo</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light text-break"
-            >{{sanitario()?.medicacion}}</span
-          >
-        </div>
-      </div>
+<div class="tab-content-modern p-4">
 
-      <div class="row g-2 mb-2">
-        <!-- Columna Izquierda -->
-        <div class="col-4 d-flex justify-content-between align-items-center">
-          <small class="flex-shrink-0 me-2 w-50">Alergias</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light">{{sanitario()?.alergias ? 'SI' : 'NO'}}</span>
-        </div>
-        <!-- Columna Derecha -->
-        <div class="col-8 d-flex justify-content-between align-items-center">
-          <small class="me-3">Tipo</small>
-          <!-- text-break para correos largos -->
-          <span class="text-muted flex-grow-1 me-2 bg-light text-break">{{sanitario()?.alergias}}</span>
-        </div>
-      </div>
+  <!-- Si no hay datos sanitarios -->
+  <div *ngIf="!sanitario()" class="alert alert-info">
+    <i class="bi bi-info-circle me-2"></i>
+    No hay información sanitaria registrada
+  </div>
 
-      <!-- Separador entre contactos -->
-      <hr class="" />
+  <ng-container *ngIf="sanitario()">
 
-      <!-- Fila 3: Padre (Nombre) vs. DNI -->
-      <div class="row g-2 mb-2">
-        <!-- Columna Izquierda -->
-        <div
-          class="col-6 d-flex justify-content-between align-items-center mb-3"
-        >
-          <small class="flex-shrink-0 me-2 w-50">Marcado como importante</small>
-          <span class="text-muted flex-grow-1 me-2 bg-light">NO</span>
-        </div>
-        <!-- Columna Derecha -->
-        <div
-          class="col-6 d-flex justify-content-between align-items-center mb-3"
-        ></div>
+    <!-- Sección: Centro de Salud -->
+    <div class="section mb-1">
+      <h6 class="section-title">
+        <i class="bi bi-hospital me-2"></i>Centro de Salud
+      </h6>
+      <div class="data-grid">
+        <app-data-field
+          label="Centro de salud asignado"
+          [value]="sanitario()?.centroSalud"
+          icon="bi-hospital"
+          [fullWidth]="true"
+        ></app-data-field>
       </div>
     </div>
-  </div>
+
+    <!-- Sección: Alergias (destacado) -->
+    <div class="section mb-1" *ngIf="sanitario()?.alergias">
+      <h6 class="section-title text-danger">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>Alergias
+      </h6>
+      <div class="alert alert-danger mb-0">
+        <div class="d-flex align-items-start">
+          <i class="bi bi-exclamation-circle-fill fs-4 me-3"></i>
+          <div>
+            <strong class="d-block mb-1">⚠️ IMPORTANTE</strong>
+            <p class="mb-0">{{ sanitario()?.alergias }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sección: Medicación (destacado) -->
+    <div class="section mb-1" *ngIf="sanitario()?.medicacion">
+      <h6 class="section-title text-info">
+        <i class="bi bi-capsule me-2"></i>Medicación
+      </h6>
+      <div class="alert alert-info mb-0">
+        <div class="d-flex align-items-start">
+          <i class="bi bi-info-circle-fill fs-4 me-3"></i>
+          <div>
+            <strong class="d-block mb-1">💊 Medicación Actual</strong>
+            <p class="mb-0">{{ sanitario()?.medicacion }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sección: Diagnóstico -->
+    <div class="section mb-1">
+      <h6 class="section-title">
+        <i class="bi bi-clipboard2-pulse me-2"></i>Información Médica
+      </h6>
+      <div class="data-grid">
+        <app-data-field
+          label="Diagnóstico"
+          [value]="sanitario()?.diagnostico"
+          icon="bi-clipboard2-pulse"
+          [fullWidth]="true"
+        ></app-data-field>
+
+        <app-data-field
+          label="Tratamientos"
+          [value]="sanitario()?.tratamientos"
+          icon="bi-prescription2"
+          [fullWidth]="true"
+        ></app-data-field>
+      </div>
+    </div>
+
+    <!-- Sección: Especialistas -->
+    <div class="section mb-1" *ngIf="sanitario()?.especialistas && sanitario()?.especialistas!.length > 0">
+      <h6 class="section-title">
+        <i class="bi bi-people me-2"></i>Especialistas
+      </h6>
+      <div class="data-grid">
+        <app-data-field
+          label="Especialistas que atienden al cliente"
+          [value]="sanitario()?.especialistas"
+          type="list"
+          icon="bi-person-badge"
+          [fullWidth]="true"
+        ></app-data-field>
+      </div>
+    </div>
+
+    <!-- Sección: Adaptaciones -->
+    <div class="section mb-1">
+      <h6 class="section-title">
+        <i class="bi bi-gear-fill me-2"></i>Apoyos y Adaptaciones
+      </h6>
+      <div class="data-grid">
+        <app-data-field
+          label="Tiene adaptaciones"
+          [value]="sanitario()?.adaptaciones ? 'SÍ' : 'NO'"
+          type="badge"
+          [badgeClass]="sanitario()?.adaptaciones ? 'bg-success' : 'bg-secondary'"
+          icon="bi-check-circle"
+        ></app-data-field>
+
+        <app-data-field
+          *ngIf="sanitario()?.adaptaciones"
+          label="Tipo de adaptaciones"
+          [value]="sanitario()?.tipoAdaptaciones"
+          icon="bi-list-ul"
+        ></app-data-field>
+
+        <app-data-field
+          label="Recibe apoyos"
+          [value]="sanitario()?.apoyos ? 'SÍ' : 'NO'"
+          type="badge"
+          [badgeClass]="sanitario()?.apoyos ? 'bg-success' : 'bg-secondary'"
+          icon="bi-people"
+        ></app-data-field>
+      </div>
+    </div>
+
+  </ng-container>
+
 </div>

@@ -1,0 +1,96 @@
+<!-- Botón de búsqueda (visible en desktop) -->
+<div class="search-container">
+  <i class="bi bi-search"></i>
+  <input 
+    type="text" 
+    class="search-input" 
+    placeholder="Buscar cliente"
+  >
+  <kbd>Ctrl+K</kbd>
+</div>
+
+<!-- Botón de búsqueda (móvil) -->
+<button 
+  class="btn btn-link text-dark p-0 d-md-none"
+  (click)="toggleSearch()"
+>
+  <i class="bi bi-search fs-5"></i>
+</button>
+
+<!-- Modal de búsqueda -->
+<div 
+  *ngIf="isOpen()"
+  class="search-overlay"
+  (click)="cerrarBusqueda()"
+>
+  <div 
+    class="search-modal"
+    (click)="$event.stopPropagation()"
+  >
+    <!-- Input de búsqueda -->
+    <div class="search-input-wrapper">
+      <i class="bi bi-search"></i>
+      <input 
+        id="search-input"
+        type="text"
+        class="search-input"
+        placeholder="Buscar por nombre, apellidos o DNI..."
+        [ngModel]="searchTerm()"
+        (ngModelChange)="searchTerm.set($event); selectedIndex.set(0)"
+        autocomplete="off"
+      >
+      <button 
+        class="btn btn-sm btn-link text-muted"
+        (click)="cerrarBusqueda()"
+      >
+        <kbd>ESC</kbd>
+      </button>
+    </div>
+
+    <!-- Resultados -->
+    <div class="search-results">
+      
+      <!-- Sin resultados -->
+      <div *ngIf="searchTerm() && resultados().length === 0" class="text-center py-4">
+        <i class="bi bi-inbox text-muted fs-3"></i>
+        <p class="text-muted mt-2 mb-0">No se encontraron clientes</p>
+      </div>
+
+      <!-- Lista de resultados -->
+      <div 
+        *ngFor="let cliente of resultados(); let i = index"
+        class="search-result-item"
+        [class.active]="i === selectedIndex()"
+        (click)="seleccionarCliente(cliente)"
+        (mouseenter)="selectedIndex.set(i)"
+      >
+        <div class="d-flex align-items-center">
+          <div class="avatar-sm rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold me-3">
+            {{ cliente.nombre.charAt(0) }}{{ cliente.apellidos.charAt(0) }}
+          </div>
+          <div class="flex-grow-1">
+            <div class="fw-semibold">
+              {{ cliente.apellidos }}, {{ cliente.nombre }}
+            </div>
+            <div class="text-muted small">
+              <span *ngIf="cliente.edad">{{ cliente.edad }} años</span>
+              <span *ngIf="cliente.edad && cliente.curso"> • </span>
+              <span *ngIf="cliente.curso">{{ cliente.curso }}</span>
+              <span *ngIf="cliente.dni"> • DNI: {{ cliente.dni }}</span>
+            </div>
+          </div>
+          <i class="bi bi-arrow-right text-muted"></i>
+        </div>
+      </div>
+
+      <!-- Ayuda de teclado -->
+      <div *ngIf="resultados().length > 0" class="search-footer">
+        <small class="text-muted">
+          <kbd class="text-muted">↑</kbd> <kbd class="text-muted">↓</kbd> navegar
+          <kbd class="text-muted">Enter</kbd> seleccionar
+          <kbd class="text-muted">ESC</kbd> cerrar
+        </small>
+      </div>
+    </div>
+  </div>
+</div>

@@ -185,7 +185,8 @@ export class ClientesService {
         });
 
         return {
-          id: asignacion.id,
+          id: asignacion.objetivoGeneral.id,
+          objetivoGeneralId: asignacion.objetivoGeneralId,
           area: asignacion.objetivoGeneral.areaDesarrollo.nombre,
           titulo: asignacion.objetivoGeneral.titulo,
           descripcion: asignacion.objetivoGeneral.descripcion,
@@ -207,6 +208,7 @@ export class ClientesService {
    * Asignar objetivos generales a un cliente
    */
   async asignarObjetivosGenerales(clienteId: string, objetivosIds: string[]) {
+    // 1. Validar cliente
     const cliente = await this.prisma.cliente.findUnique({
       where: { id: clienteId },
     });
@@ -215,33 +217,69 @@ export class ClientesService {
       throw new NotFoundException(`Cliente con ID ${clienteId} no encontrado`);
     }
 
-    // Verificar que los objetivos existen
+    // 2. Validar que los objetivos existen
     const objetivos = await this.prisma.objetivoGeneral.findMany({
-      where: {
-        id: { in: objetivosIds },
-      },
+      where: { id: { in: objetivosIds } },
     });
 
     if (objetivos.length !== objetivosIds.length) {
       throw new NotFoundException('Uno o más objetivos no encontrados');
     }
 
-    // Crear las asignaciones (ignora duplicados con createMany + skipDuplicates)
-    const asignaciones = await this.prisma.clienteObjetivo.createMany({
-      data: objetivosIds.map((objId) => ({
+    // 3. ✅ Obtener todos los existentes de UNA SOLA VEZ (activos e inactivos)
+    const existentes = await this.prisma.clienteObjetivo.findMany({
+      where: {
         clienteId,
-        objetivoGeneralId: objId,
-      })),
-      skipDuplicates: true,
+        objetivoGeneralId: { in: objetivosIds },
+      },
     });
 
+    // Crear un mapa para búsqueda rápida
+    const existentesMap = new Map(
+      existentes.map((obj) => [obj.objetivoGeneralId, obj]),
+    );
+
+    let nuevosAsignados = 0;
+    let reactivados = 0;
+
+    // 4. ✅ Usar transaction para atomicidad
+    await this.prisma.$transaction(async (tx) => {
+      for (const objetivoId of objetivosIds) {
+        const existente = existentesMap.get(objetivoId);
+
+        if (existente) {
+          // Si existe pero está inactivo, reactivar
+          if (!existente.activo) {
+            await tx.clienteObjetivo.update({
+              where: { id: existente.id },
+              data: { activo: true }, // ✅ updatedAt se actualiza automáticamente
+            });
+            reactivados++;
+          }
+        } else {
+          // Si no existe, crear nuevo
+          await tx.clienteObjetivo.create({
+            data: {
+              clienteId,
+              objetivoGeneralId: objetivoId,
+              activo: true,
+            },
+          });
+          nuevosAsignados++;
+        }
+      }
+    });
+
+    const total = nuevosAsignados + reactivados;
+
     return {
-      message: `Se asignaron ${asignaciones.count} objetivos al cliente`,
+      message: `Se procesaron ${total} objetivos correctamente`,
       clienteId,
-      objetivosAsignados: asignaciones.count,
+      nuevosAsignados,
+      reactivados,
+      total,
     };
   }
-
   /**
    * Desasignar un objetivo general de un cliente
    */
