@@ -98,29 +98,35 @@ model Cliente {
   colegioId             String?             @map("id_colegio")
   colegio               Colegio?            @relation(fields: [colegioId], references: [id])
 
-  disponibilidad       DisponibilidadCliente[] // Horario teórico semanal
-  sesiones             Sesion[] // Sesiones reales en calendario
-  informes             Informe[]
-  contactosFamiliares  Familiar[]
-  sanitario            Sanitario?
-  registrosDiarios     RegistroDiario[]
+  disponibilidad              DisponibilidadCliente[] // Horario teórico semanal
+  sesiones                    Sesion[] // Sesiones reales en calendario
+  informes                    Informe[]
+  contactosFamiliares         Familiar[]
+  sanitario                   Sanitario?
+  registrosDiarios            RegistroDiario[]
   // Relación con objetivos generales
   objetivosGeneralesAsignados ClienteObjetivo[]
-  objetivosEspecificos Objetivo[]
+  objetivosEspecificos        Objetivo[]
 
   @@map("clientes")
 }
 
 model ClienteTrabajador {
+  id           String   @id @default(uuid()) // ✅ AGREGAR: ID único
   clienteId    String   @map("id_cliente")
   trabajadorId String   @map("id_trabajador")
+  tipoTerapia  String   @map("tipo_terapia") // ✅ HACER OBLIGATORIO
+  activo       Boolean  @default(true) // ✅ AGREGAR: Para soft delete
   createdAt    DateTime @default(now()) @map("fecha_asignacion")
-  tipoTerapia  String?  @map("tipo_terapia")
+  updatedAt    DateTime @updatedAt @map("fecha_actualizacion") // ✅ AGREGAR
 
-  cliente    Cliente    @relation(fields: [clienteId], references: [id])
-  trabajador Trabajador @relation(fields: [trabajadorId], references: [id])
+  cliente    Cliente    @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  trabajador Trabajador @relation(fields: [trabajadorId], references: [id], onDelete: Cascade)
 
-  @@id([clienteId, trabajadorId])
+  // ✅ AGREGAR: Horarios específicos de esta relación
+  horarios DisponibilidadClienteTrabajador[]
+
+  @@unique([clienteId, trabajadorId, tipoTerapia])
   @@map("clientes_trabajadores")
 }
 
@@ -136,6 +142,21 @@ model DisponibilidadCliente {
   cliente   Cliente @relation(fields: [clienteId], references: [id])
 
   @@map("disponibilidad_clientes")
+}
+
+model DisponibilidadClienteTrabajador {
+  id         String @id @default(uuid())
+  diaSemana  Int // 0-6 (Domingo-Sábado)
+  horaInicio String // "17:00"
+  horaFin    String // "18:00"
+
+  clienteTrabajadorId String            @map("id_cliente_trabajador")
+  clienteTrabajador   ClienteTrabajador @relation(fields: [clienteTrabajadorId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("fecha_creacion")
+  updatedAt DateTime @updatedAt @map("fecha_actualizacion")
+
+  @@map("disponibilidad_cliente_trabajador")
 }
 
 model Sesion {
@@ -231,9 +252,9 @@ model RegistroDiario {
   trabajadorId String     @map("id_trabajador")
   trabajador   Trabajador @relation(fields: [trabajadorId], references: [id])
 
-  createdAt               DateTime                 @default(now()) @map("fecha_creacion")
-  updatedAt               DateTime                 @updatedAt @map("ultima_actualizacion")
-  objetivosGeneralesTrabajados  RegistroDiarioObjetivo[]
+  createdAt                    DateTime                 @default(now()) @map("fecha_creacion")
+  updatedAt                    DateTime                 @updatedAt @map("ultima_actualizacion")
+  objetivosGeneralesTrabajados RegistroDiarioObjetivo[]
 
   @@map("registros_diarios")
 }
@@ -303,10 +324,10 @@ model ClienteObjetivo {
   clienteId String  @map("id_cliente")
   cliente   Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
 
-  vecesTrabajado  Int      @default(0) @map("veces_trabajado")
-  ultimaVez       DateTime? @map("ultima_vez_trabajado")
-  progreso        Int      @default(0) // 0-100 porcentaje
-  notas           String?  // Notas del psicopedagogo
+  vecesTrabajado Int       @default(0) @map("veces_trabajado")
+  ultimaVez      DateTime? @map("ultima_vez_trabajado")
+  progreso       Int       @default(0) // 0-100 porcentaje
+  notas          String? // Notas del psicopedagogo
 
   objetivoGeneralId String          @map("id_objetivo_general")
   objetivoGeneral   ObjetivoGeneral @relation(fields: [objetivoGeneralId], references: [id], onDelete: Cascade)

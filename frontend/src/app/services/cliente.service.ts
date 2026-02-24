@@ -9,12 +9,13 @@ import {
   ClienteData,
 } from '../interface/cliente-frontend.interface';
 import { ClienteDataBackend } from '../interface/cliente-backend.interface';
-import { 
+import {
   ClienteObjetivosResponse,
   EstadisticasObjetivos,
-  AsignarObjetivosDto 
+  AsignarObjetivosDto,
 } from '../interface/objetivo-general.interface';
 import { calcularEdad } from '../shared/utils/date';
+import { VerificacionDniResponse } from '../interface/verificacion-dni.interface';
 
 // ✅ NUEVO: Interface para respuestas envueltas
 interface WrappedResponse<T> {
@@ -42,6 +43,17 @@ export class ClientesService {
   // ========================================
   // CRUD BÁSICO
   // ========================================
+
+  create(clienteData: any): Observable<any> {
+    return this.http
+      .post<WrappedResponse<any>>(`${this.api}`, clienteData)
+      .pipe(
+        map((res) => res.data || res),
+        tap((cliente) => {
+          console.log('✅ Cliente creado:', cliente);
+        }),
+      );
+  }
 
   /**
    * Obtener todos los clientes
@@ -93,8 +105,10 @@ export class ClientesService {
             autorizaDatosImagen: true,
             objetivosResumen: {
               total: c.objetivosGeneralesAsignados?.length || 0,
-              activos: c.objetivosGeneralesAsignados?.filter(o => o.activo).length || 0
-            }
+              activos:
+                c.objetivosGeneralesAsignados?.filter((o) => o.activo).length ||
+                0,
+            },
           });
 
           // Actualizar contactos
@@ -103,7 +117,9 @@ export class ClientesService {
               nombrePadre: familiarData.nombre,
               dniPadre: familiarData.dni,
               emailPadre: familiarData.email,
-              telefonoPadre: familiarData.telefono ? Number(familiarData.telefono) : undefined,
+              telefonoPadre: familiarData.telefono
+                ? Number(familiarData.telefono)
+                : undefined,
               nombreMadre: undefined,
               dniMadre: undefined,
               emailMadre: undefined,
@@ -149,7 +165,7 @@ export class ClientesService {
             this.sanitario.set(null);
           }
         }),
-        map(() => {})
+        map(() => {}),
       );
   }
 
@@ -162,60 +178,96 @@ export class ClientesService {
    */
   getObjetivosCliente(clienteId: string): Observable<ClienteObjetivosResponse> {
     return this.http
-      .get<WrappedResponse<ClienteObjetivosResponse>>(`${this.api}/${clienteId}/objetivos-generales`)
+      .get<
+        WrappedResponse<ClienteObjetivosResponse>
+      >(`${this.api}/${clienteId}/objetivos-generales`)
       .pipe(
         map((res) => res.data || res),
         tap((res) => {
           this.objetivos.set(res);
-          console.log('🎯 Objetivos del cliente cargados:', res.objetivos.length);
-        })
+          console.log(
+            '🎯 Objetivos del cliente cargados:',
+            res.objetivos.length,
+          );
+        }),
       );
   }
 
   /**
    * Asignar objetivos generales a un cliente
    */
-  asignarObjetivos(clienteId: string, dto: AsignarObjetivosDto): Observable<any> {
+  asignarObjetivos(
+    clienteId: string,
+    dto: AsignarObjetivosDto,
+  ): Observable<any> {
     return this.http
-      .post<WrappedResponse<any>>(`${this.api}/${clienteId}/objetivos-generales`, dto)
+      .post<
+        WrappedResponse<any>
+      >(`${this.api}/${clienteId}/objetivos-generales`, dto)
       .pipe(
         map((res) => res.data || res),
         tap((res) => {
           console.log('✅ Objetivos asignados:', res);
           this.getObjetivosCliente(clienteId).subscribe();
-        })
+        }),
       );
   }
 
   /**
    * Desasignar un objetivo general del cliente
    */
-  desasignarObjetivo(clienteId: string, objetivoGeneralId: string): Observable<any> {
+  desasignarObjetivo(
+    clienteId: string,
+    objetivoGeneralId: string,
+  ): Observable<any> {
     return this.http
-      .delete<WrappedResponse<any>>(`${this.api}/${clienteId}/objetivos-generales/${objetivoGeneralId}`)
+      .delete<
+        WrappedResponse<any>
+      >(`${this.api}/${clienteId}/objetivos-generales/${objetivoGeneralId}`)
       .pipe(
         map((res) => res.data || res),
         tap(() => {
           console.log('❌ Objetivo desasignado');
           this.getObjetivosCliente(clienteId).subscribe();
-        })
+        }),
       );
   }
 
   /**
    * Obtener estadísticas de objetivos del cliente
    */
-  getEstadisticasObjetivos(clienteId: string): Observable<EstadisticasObjetivos> {
+  getEstadisticasObjetivos(
+    clienteId: string,
+  ): Observable<EstadisticasObjetivos> {
     return this.http
-      .get<WrappedResponse<EstadisticasObjetivos>>(`${this.api}/${clienteId}/objetivos-generales/estadisticas`)
+      .get<
+        WrappedResponse<EstadisticasObjetivos>
+      >(`${this.api}/${clienteId}/objetivos-generales/estadisticas`)
       .pipe(
         map((res) => res.data || res),
         tap((res) => {
           this.estadisticasObjetivos.set(res);
           console.log('📊 Estadísticas de objetivos cargadas');
-        })
+        }),
       );
   }
+
+  /**
+   * Verificar si un DNI está disponible
+   */
+  verificarDniDisponible(dni: string): Observable<VerificacionDniResponse> {
+  return this.http
+    .get<WrappedResponse<VerificacionDniResponse>>(`${this.api}/verificar-dni/${dni}`) // ✅ Agregar WrappedResponse
+    .pipe(
+      map((res) => res.data || res), // ✅ Desempaquetar como los demás endpoints
+      tap((res) => {
+        console.log(
+          `🔍 Verificación DNI ${res.dni}:`,
+          res.disponible ? '✅ Disponible' : '❌ Ya existe',
+        );
+      }),
+    );
+}
 
   // ========================================
   // HELPERS

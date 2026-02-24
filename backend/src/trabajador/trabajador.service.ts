@@ -1,9 +1,9 @@
-import { 
-  Injectable, 
-  InternalServerErrorException, 
-  NotFoundException, 
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
   ConflictException,
-  BadRequestException 
+  BadRequestException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { CreateTrabajadorDto, UpdateTrabajadorDto } from './dto/trabajador.dto';
@@ -21,36 +21,33 @@ export class TrabajadorService {
    */
   async create(dto: CreateTrabajadorDto): Promise<TrabajadorSafe> {
     try {
-      // 1. Verificar que el rol exista
-      const rol = await this.prisma.rol.findUnique({ 
-        where: { id: dto.rolId } 
+      const rol = await this.prisma.rol.findUnique({
+        where: { id: dto.rolId },
       });
-      
+
       if (!rol) {
         throw new NotFoundException(`Rol con ID ${dto.rolId} no encontrado`);
       }
 
-      // 2. Verificar que no exista username o email duplicado
       const existente = await this.prisma.trabajador.findFirst({
-        where: { 
-          OR: [
-            { username: dto.username }, 
-            { email: dto.email }
-          ] 
+        where: {
+          OR: [{ username: dto.username }, { email: dto.email }],
         },
       });
 
       if (existente) {
         if (existente.username === dto.username) {
-          throw new ConflictException(`El username "${dto.username}" ya está registrado`);
+          throw new ConflictException(
+            `El username "${dto.username}" ya está registrado`,
+          );
         }
-        throw new ConflictException(`El email "${dto.email}" ya está registrado`);
+        throw new ConflictException(
+          `El email "${dto.email}" ya está registrado`,
+        );
       }
 
-      // 3. Hash de contraseña
       const passwordHash = await bcrypt.hash(dto.password, this.SALT_ROUNDS);
 
-      // 4. Crear el trabajador
       const trabajador = await this.prisma.trabajador.create({
         data: {
           username: dto.username,
@@ -60,22 +57,27 @@ export class TrabajadorService {
           email: dto.email,
           telefono: dto.telefono,
           img: dto.img,
-          fechaContratacion: dto.fechaContratacion ? new Date(dto.fechaContratacion) : null,
+          fechaContratacion: dto.fechaContratacion
+            ? new Date(dto.fechaContratacion)
+            : null,
           rolId: dto.rolId,
           activo: dto.activo ?? true,
         },
         include: trabajadorInclude,
       });
 
-      // 5. Eliminar passwordHash antes de retornar
       const { passwordHash: _, ...trabajadorSeguro } = trabajador;
       return trabajadorSeguro as TrabajadorSafe;
-
     } catch (err) {
-      if (err instanceof NotFoundException || err instanceof ConflictException) {
+      if (
+        err instanceof NotFoundException ||
+        err instanceof ConflictException
+      ) {
         throw err;
       }
-      throw new InternalServerErrorException(`Error al crear trabajador: ${err.message}`);
+      throw new InternalServerErrorException(
+        `Error al crear trabajador: ${err.message}`,
+      );
     }
   }
 
@@ -90,11 +92,13 @@ export class TrabajadorService {
         orderBy: { createdAt: 'desc' },
       });
 
-      // Eliminar passwordHash de todos
-      return trabajadores.map(({ passwordHash, ...trabajador }) => trabajador as TrabajadorSafe);
-
+      return trabajadores.map(
+        ({ passwordHash, ...trabajador }) => trabajador as TrabajadorSafe,
+      );
     } catch (err) {
-      throw new InternalServerErrorException(`Error al obtener trabajadores: ${err.message}`);
+      throw new InternalServerErrorException(
+        `Error al obtener trabajadores: ${err.message}`,
+      );
     }
   }
 
@@ -114,10 +118,11 @@ export class TrabajadorService {
 
       const { passwordHash, ...trabajadorSeguro } = trabajador;
       return trabajadorSeguro as TrabajadorSafe;
-
     } catch (err) {
       if (err instanceof NotFoundException) throw err;
-      throw new InternalServerErrorException(`Error al obtener trabajador: ${err.message}`);
+      throw new InternalServerErrorException(
+        `Error al obtener trabajador: ${err.message}`,
+      );
     }
   }
 
@@ -131,9 +136,11 @@ export class TrabajadorService {
         include: { rol: true },
       });
 
-      return usuario; // Incluye passwordHash para validación en auth
+      return usuario;
     } catch (error) {
-      throw new InternalServerErrorException(`Error al obtener usuario: ${error.message}`);
+      throw new InternalServerErrorException(
+        `Error al obtener usuario: ${error.message}`,
+      );
     }
   }
 
@@ -143,7 +150,7 @@ export class TrabajadorService {
   async findByRol(rolId: string): Promise<TrabajadorSafe[]> {
     try {
       const trabajadores = await this.prisma.trabajador.findMany({
-        where: { 
+        where: {
           rolId,
           activo: true,
         },
@@ -151,9 +158,13 @@ export class TrabajadorService {
         orderBy: { nombre: 'asc' },
       });
 
-      return trabajadores.map(({ passwordHash, ...trabajador }) => trabajador as TrabajadorSafe);
+      return trabajadores.map(
+        ({ passwordHash, ...trabajador }) => trabajador as TrabajadorSafe,
+      );
     } catch (err) {
-      throw new InternalServerErrorException(`Error al obtener trabajadores por rol: ${err.message}`);
+      throw new InternalServerErrorException(
+        `Error al obtener trabajadores por rol: ${err.message}`,
+      );
     }
   }
 
@@ -166,6 +177,7 @@ export class TrabajadorService {
         where: { id: trabajadorId },
         include: {
           clientesAsignados: {
+            where: { activo: true }, // ✅ Solo asignaciones activas
             include: {
               cliente: {
                 include: {
@@ -173,24 +185,29 @@ export class TrabajadorService {
                   contactosFamiliares: true,
                 },
               },
+              horarios: true, // ✅ Incluir horarios específicos
             },
           },
         },
       });
 
       if (!trabajador) {
-        throw new NotFoundException(`Trabajador con ID ${trabajadorId} no encontrado`);
+        throw new NotFoundException(
+          `Trabajador con ID ${trabajadorId} no encontrado`,
+        );
       }
 
-      return trabajador.clientesAsignados.map(ca => ({
+      return trabajador.clientesAsignados.map((ca) => ({
         ...ca.cliente,
         tipoTerapia: ca.tipoTerapia,
         fechaAsignacion: ca.createdAt,
+        horarios: ca.horarios,
       }));
-
     } catch (err) {
       if (err instanceof NotFoundException) throw err;
-      throw new InternalServerErrorException(`Error al obtener clientes asignados: ${err.message}`);
+      throw new InternalServerErrorException(
+        `Error al obtener clientes asignados: ${err.message}`,
+      );
     }
   }
 
@@ -198,11 +215,16 @@ export class TrabajadorService {
    * Asignar un cliente a un trabajador
    */
   async asignarCliente(
-    trabajadorId: string, 
-    clienteId: string, 
-    tipoTerapia?: string
+    trabajadorId: string,
+    clienteId: string,
+    tipoTerapia: string, // ✅ Ahora obligatorio (sin ?)
   ) {
     try {
+      // ✅ Validar tipoTerapia al principio
+      if (!tipoTerapia) {
+        throw new BadRequestException('El tipo de terapia es obligatorio');
+      }
+
       // Verificar que ambos existan
       const [trabajador, cliente] = await Promise.all([
         this.prisma.trabajador.findUnique({ where: { id: trabajadorId } }),
@@ -210,24 +232,31 @@ export class TrabajadorService {
       ]);
 
       if (!trabajador) {
-        throw new NotFoundException(`Trabajador con ID ${trabajadorId} no encontrado`);
+        throw new NotFoundException(
+          `Trabajador con ID ${trabajadorId} no encontrado`,
+        );
       }
       if (!cliente) {
-        throw new NotFoundException(`Cliente con ID ${clienteId} no encontrado`);
+        throw new NotFoundException(
+          `Cliente con ID ${clienteId} no encontrado`,
+        );
       }
 
-      // Verificar si ya está asignado
-      const asignacionExistente = await this.prisma.clienteTrabajador.findUnique({
-        where: {
-          clienteId_trabajadorId: {
+      // ✅ Verificar si ya está asignado (con findFirst)
+      const asignacionExistente = await this.prisma.clienteTrabajador.findFirst(
+        {
+          where: {
             clienteId,
             trabajadorId,
+            tipoTerapia,
           },
         },
-      });
+      );
 
       if (asignacionExistente) {
-        throw new ConflictException('El cliente ya está asignado a este trabajador');
+        throw new ConflictException(
+          `El cliente ya está asignado a este trabajador para ${tipoTerapia}`,
+        );
       }
 
       // Crear la asignación
@@ -254,51 +283,64 @@ export class TrabajadorService {
           },
         },
       });
-
     } catch (err) {
-      if (err instanceof NotFoundException || err instanceof ConflictException) {
+      if (
+        err instanceof NotFoundException ||
+        err instanceof ConflictException ||
+        err instanceof BadRequestException
+      ) {
         throw err;
       }
-      throw new InternalServerErrorException(`Error al asignar cliente: ${err.message}`);
+      throw new InternalServerErrorException(
+        `Error al asignar cliente: ${err.message}`,
+      );
     }
   }
 
   /**
    * Desasignar un cliente de un trabajador
+   * ✅ CORREGIDO: Ahora acepta tipoTerapia opcional
    */
-  async desasignarCliente(trabajadorId: string, clienteId: string) {
+  async desasignarCliente(
+    trabajadorId: string,
+    clienteId: string,
+    tipoTerapia?: string,
+  ) {
     try {
-      const asignacion = await this.prisma.clienteTrabajador.findUnique({
-        where: {
-          clienteId_trabajadorId: {
-            clienteId,
-            trabajadorId,
-          },
-        },
+      // ✅ Buscar con findFirst
+      const whereCondition: any = {
+        clienteId,
+        trabajadorId,
+      };
+
+      if (tipoTerapia) {
+        whereCondition.tipoTerapia = tipoTerapia;
+      }
+
+      const asignacion = await this.prisma.clienteTrabajador.findFirst({
+        where: whereCondition,
       });
 
       if (!asignacion) {
         throw new NotFoundException('Asignación no encontrada');
       }
 
+      // Eliminar usando el ID
       await this.prisma.clienteTrabajador.delete({
-        where: {
-          clienteId_trabajadorId: {
-            clienteId,
-            trabajadorId,
-          },
-        },
+        where: { id: asignacion.id },
       });
 
-      return { 
+      return {
         message: 'Cliente desasignado correctamente',
         clienteId,
         trabajadorId,
+        tipoTerapia: asignacion.tipoTerapia,
       };
-
     } catch (err) {
       if (err instanceof NotFoundException) throw err;
-      throw new InternalServerErrorException(`Error al desasignar cliente: ${err.message}`);
+      throw new InternalServerErrorException(
+        `Error al desasignar cliente: ${err.message}`,
+      );
     }
   }
 
@@ -307,31 +349,28 @@ export class TrabajadorService {
    */
   async update(id: string, dto: UpdateTrabajadorDto): Promise<TrabajadorSafe> {
     try {
-      // 1. Verificar que exista
-      const trabajadorActual = await this.prisma.trabajador.findUnique({ 
-        where: { id } 
+      const trabajadorActual = await this.prisma.trabajador.findUnique({
+        where: { id },
       });
 
       if (!trabajadorActual) {
         throw new NotFoundException(`Trabajador con ID ${id} no encontrado`);
       }
 
-      // 2. Si cambia rol, verificar que exista
       if (dto.rolId && dto.rolId !== trabajadorActual.rolId) {
-        const rol = await this.prisma.rol.findUnique({ 
-          where: { id: dto.rolId } 
+        const rol = await this.prisma.rol.findUnique({
+          where: { id: dto.rolId },
         });
         if (!rol) {
           throw new NotFoundException(`Rol con ID ${dto.rolId} no encontrado`);
         }
       }
 
-      // 3. Si cambia username o email, verificar que no estén duplicados
       if (dto.username || dto.email) {
         const existente = await this.prisma.trabajador.findFirst({
           where: {
             AND: [
-              { id: { not: id } }, // Excluir el trabajador actual
+              { id: { not: id } },
               {
                 OR: [
                   ...(dto.username ? [{ username: dto.username }] : []),
@@ -344,19 +383,21 @@ export class TrabajadorService {
 
         if (existente) {
           if (existente.username === dto.username) {
-            throw new ConflictException(`El username "${dto.username}" ya está registrado`);
+            throw new ConflictException(
+              `El username "${dto.username}" ya está registrado`,
+            );
           }
-          throw new ConflictException(`El email "${dto.email}" ya está registrado`);
+          throw new ConflictException(
+            `El email "${dto.email}" ya está registrado`,
+          );
         }
       }
 
-      // 4. Si cambia contraseña, hashearla
       let passwordHash: string | undefined;
       if (dto.password) {
         passwordHash = await bcrypt.hash(dto.password, this.SALT_ROUNDS);
       }
 
-      // 5. Actualizar
       const trabajadorActualizado = await this.prisma.trabajador.update({
         where: { id },
         data: {
@@ -367,8 +408,8 @@ export class TrabajadorService {
           ...(dto.email && { email: dto.email }),
           ...(dto.telefono !== undefined && { telefono: dto.telefono }),
           ...(dto.img !== undefined && { img: dto.img }),
-          ...(dto.fechaContratacion && { 
-            fechaContratacion: new Date(dto.fechaContratacion) 
+          ...(dto.fechaContratacion && {
+            fechaContratacion: new Date(dto.fechaContratacion),
           }),
           ...(dto.rolId && { rolId: dto.rolId }),
           ...(dto.activo !== undefined && { activo: dto.activo }),
@@ -378,12 +419,16 @@ export class TrabajadorService {
 
       const { passwordHash: _, ...trabajadorSeguro } = trabajadorActualizado;
       return trabajadorSeguro as TrabajadorSafe;
-
     } catch (err) {
-      if (err instanceof NotFoundException || err instanceof ConflictException) {
+      if (
+        err instanceof NotFoundException ||
+        err instanceof ConflictException
+      ) {
         throw err;
       }
-      throw new InternalServerErrorException(`Error al actualizar trabajador: ${err.message}`);
+      throw new InternalServerErrorException(
+        `Error al actualizar trabajador: ${err.message}`,
+      );
     }
   }
 
@@ -392,27 +437,27 @@ export class TrabajadorService {
    */
   async remove(id: string): Promise<{ message: string }> {
     try {
-      const trabajador = await this.prisma.trabajador.findUnique({ 
-        where: { id } 
+      const trabajador = await this.prisma.trabajador.findUnique({
+        where: { id },
       });
 
       if (!trabajador) {
         throw new NotFoundException(`Trabajador con ID ${id} no encontrado`);
       }
 
-      // Soft delete
-      await this.prisma.trabajador.update({ 
-        where: { id }, 
-        data: { activo: false } 
+      await this.prisma.trabajador.update({
+        where: { id },
+        data: { activo: false },
       });
 
-      return { 
-        message: `Trabajador ${trabajador.nombre} ${trabajador.apellidos} desactivado correctamente` 
+      return {
+        message: `Trabajador ${trabajador.nombre} ${trabajador.apellidos} desactivado correctamente`,
       };
-
     } catch (err) {
       if (err instanceof NotFoundException) throw err;
-      throw new InternalServerErrorException(`Error al eliminar trabajador: ${err.message}`);
+      throw new InternalServerErrorException(
+        `Error al eliminar trabajador: ${err.message}`,
+      );
     }
   }
 
@@ -421,8 +466,8 @@ export class TrabajadorService {
    */
   async reactivar(id: string): Promise<TrabajadorSafe> {
     try {
-      const trabajador = await this.prisma.trabajador.findUnique({ 
-        where: { id } 
+      const trabajador = await this.prisma.trabajador.findUnique({
+        where: { id },
       });
 
       if (!trabajador) {
@@ -437,17 +482,22 @@ export class TrabajadorService {
 
       const { passwordHash, ...trabajadorSeguro } = trabajadorReactivado;
       return trabajadorSeguro as TrabajadorSafe;
-
     } catch (err) {
       if (err instanceof NotFoundException) throw err;
-      throw new InternalServerErrorException(`Error al reactivar trabajador: ${err.message}`);
+      throw new InternalServerErrorException(
+        `Error al reactivar trabajador: ${err.message}`,
+      );
     }
   }
 
   /**
    * Cambiar contraseña
    */
-  async cambiarPassword(id: string, passwordActual: string, passwordNueva: string) {
+  async cambiarPassword(
+    id: string,
+    passwordActual: string,
+    passwordNueva: string,
+  ) {
     try {
       const trabajador = await this.prisma.trabajador.findUnique({
         where: { id },
@@ -457,28 +507,32 @@ export class TrabajadorService {
         throw new NotFoundException(`Trabajador con ID ${id} no encontrado`);
       }
 
-      // Verificar contraseña actual
-      const passwordValida = await bcrypt.compare(passwordActual, trabajador.passwordHash);
+      const passwordValida = await bcrypt.compare(
+        passwordActual,
+        trabajador.passwordHash,
+      );
       if (!passwordValida) {
         throw new BadRequestException('La contraseña actual es incorrecta');
       }
 
-      // Hashear nueva contraseña
       const nuevoHash = await bcrypt.hash(passwordNueva, this.SALT_ROUNDS);
 
-      // Actualizar
       await this.prisma.trabajador.update({
         where: { id },
         data: { passwordHash: nuevoHash },
       });
 
       return { message: 'Contraseña actualizada correctamente' };
-
     } catch (err) {
-      if (err instanceof NotFoundException || err instanceof BadRequestException) {
+      if (
+        err instanceof NotFoundException ||
+        err instanceof BadRequestException
+      ) {
         throw err;
       }
-      throw new InternalServerErrorException(`Error al cambiar contraseña: ${err.message}`);
+      throw new InternalServerErrorException(
+        `Error al cambiar contraseña: ${err.message}`,
+      );
     }
   }
 }

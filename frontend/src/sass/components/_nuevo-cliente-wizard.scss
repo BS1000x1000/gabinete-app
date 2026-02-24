@@ -1,0 +1,460 @@
+// ==========================================
+// WIZARD MODAL - NUEVO CLIENTE
+// ==========================================
+
+.wizard-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba($black, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: $z-modal;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-md;
+  animation: fadeIn $animation-duration-base ease;
+}
+
+.wizard-modal {
+  background: $white;
+  border-radius: $border-radius-xl;
+  box-shadow: $shadow-2xl;
+  max-width: 900px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  animation: slideInUp $animation-duration-base ease;
+
+  @media (max-width: $breakpoint-md) {
+    max-width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+}
+
+// ========================================
+// HEADER
+// ========================================
+.wizard-header {
+  padding: $spacing-lg $spacing-xl;
+  border-bottom: 1px solid $border-color;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: $gradient-hero;
+
+  h3 {
+    margin: 0;
+    font-weight: $font-weight-bold;
+    color: $gray-900;
+  }
+
+  .btn-close {
+    &:hover {
+      transform: scale(1.1);
+    }
+  }
+}
+
+// ========================================
+// STEPPER
+// ========================================
+.wizard-stepper {
+  padding: $spacing-sm $spacing-xl;
+  background: $gray-50;
+  border-bottom: 1px solid $border-color;
+}
+
+.stepper-progress {
+  height: .4rem;
+  background: $gray-200;
+  border-radius: $border-radius-full;
+  overflow: hidden;
+  margin-bottom: $spacing-lg;
+
+  .progress-bar {
+    height: 100%;
+    background: $gradient-primary;
+    transition: width $transition-slow;
+  }
+}
+
+.stepper-steps {
+  display: flex;
+  justify-content: space-between;
+  gap: $spacing-sm;
+  overflow-x: auto;
+  @include custom-scrollbar(4px, transparent, $gray-300);
+
+  @media (max-width: $breakpoint-md) {
+    justify-content: flex-start;
+  }
+}
+
+.stepper-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-xs;
+  min-width: 80px;
+  cursor: not-allowed;
+  transition: $transition-base;
+
+  &.clickable {
+    cursor: pointer;
+
+    &:hover {
+      transform: translateY(-2px);
+
+      .step-circle {
+        box-shadow: $shadow-md;
+      }
+    }
+  }
+
+  &.active {
+    .step-circle {
+      background: $gradient-primary;
+      color: $white;
+      box-shadow: 0 0 0 4px rgba($primary, 0.2);
+      transform: scale(1.1);
+    }
+
+    .step-label {
+      color: $primary;
+      font-weight: $font-weight-semibold;
+    }
+  }
+
+  &.completed {
+    .step-circle {
+      background: $success;
+      color: $white;
+    }
+
+    .step-label {
+      color: $success;
+    }
+  }
+}
+
+.step-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: $border-radius-full;
+  background: $white;
+  border: 2px solid $border-color;
+  @include flex-center;
+  font-size: 1.25rem;
+  color: $gray-400;
+  transition: $transition-base;
+}
+
+.step-label {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $gray-600;
+  text-align: center;
+  transition: $transition-base;
+
+  @media (max-width: $breakpoint-md) {
+    display: none;
+  }
+}
+
+.step-opcional {
+  font-size: 0.65rem;
+  color: $gray-400;
+  font-style: italic;
+}
+
+// ========================================
+// BODY
+// ========================================
+.wizard-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: $spacing-xl;
+  @include custom-scrollbar(6px, $gray-100, $primary);
+
+  @media (max-width: $breakpoint-md) {
+    padding: $spacing-lg;
+  }
+}
+
+.paso-content {
+  animation: fadeIn $animation-duration-fast ease;
+}
+
+.paso-titulo {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $gray-900;
+  margin-bottom: $spacing-sm;
+}
+
+// ========================================
+// FORMULARIOS
+// ========================================
+.form-label {
+  font-weight: $font-weight-medium;
+  color: $gray-700;
+  margin-bottom: $spacing-xs;
+}
+
+.form-control,
+.form-select {
+  border-radius: $border-radius;
+  border: 1px solid $border-color;
+  transition: $transition-base;
+
+  &:focus {
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba($primary, 0.1);
+  }
+}
+
+// ========================================
+// CARDS DE CONTACTO Y DISPONIBILIDAD
+// ========================================
+.contacto-card,
+.disponibilidad-card {
+  padding: $spacing-lg;
+  background: $gray-50;
+  border: 1px solid $border-color;
+  border-radius: $border-radius-lg;
+  transition: $transition-base;
+
+  &:hover {
+    border-color: $primary;
+    box-shadow: $shadow-sm;
+  }
+}
+
+// ========================================
+// OBJETIVOS
+// ========================================
+.objetivos-por-area {
+  max-height: 500px;
+  overflow-y: auto;
+  @include custom-scrollbar(6px, $gray-100, $primary);
+}
+
+.area-section {
+  .area-titulo {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+    color: $gray-800;
+    padding-left: $spacing-md;
+    border-left: 4px solid $primary;
+    margin-bottom: $spacing-md;
+  }
+}
+
+.objetivos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: $spacing-sm;
+}
+
+.objetivo-item {
+  padding: $spacing-md;
+  background: $white;
+  border: 2px solid $border-color;
+  border-radius: $border-radius;
+  cursor: pointer;
+  transition: $transition-base;
+
+  &:hover {
+    border-color: $primary;
+    background: $primary-ultra-light;
+    transform: translateY(-1px);
+    box-shadow: $shadow-sm;
+  }
+
+  &.selected {
+    background: $gradient-primary;
+    border-color: $primary;
+    color: $white;
+    box-shadow: $shadow-md;
+
+    .form-check-input {
+      background-color: $white;
+      border-color: $white;
+    }
+
+    .form-check-label {
+      color: $white;
+
+      small {
+        color: rgba($white, 0.8);
+      }
+    }
+  }
+
+  .form-check {
+    margin: 0;
+
+    .form-check-input {
+      margin-top: 0.25em;
+    }
+
+    .form-check-label {
+      width: 100%;
+      cursor: pointer;
+    }
+  }
+}
+
+// ========================================
+// RESUMEN
+// ========================================
+.resumen-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: $spacing-lg;
+}
+
+.resumen-section {
+  padding: $spacing-lg;
+  background: $gray-50;
+  border-radius: $border-radius-lg;
+  border-left: 4px solid $primary;
+
+  .resumen-section-titulo {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+    color: $gray-900;
+    margin-bottom: $spacing-md;
+    padding-bottom: $spacing-sm;
+    border-bottom: 1px solid $border-color;
+  }
+
+  dl {
+    font-size: $font-size-sm;
+
+    dt {
+      font-weight: $font-weight-semibold;
+      color: $gray-700;
+    }
+
+    dd {
+      color: $gray-900;
+      margin-bottom: $spacing-sm;
+    }
+  }
+}
+
+.asignacion-resumen {
+  background-color: #f8f9fa;
+  border-left: 4px solid var(--bs-primary) !important;
+  
+  &:hover {
+    background-color: #e9ecef;
+  }
+}
+
+// ========================================
+// FOOTER
+// ========================================
+.wizard-footer {
+  padding: $spacing-lg $spacing-xl;
+  border-top: 1px solid $border-color;
+  background: $white;
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+
+  @media (max-width: $breakpoint-md) {
+    padding: $spacing-md;
+  }
+
+  .btn {
+    min-width: 120px;
+
+    @media (max-width: $breakpoint-md) {
+      min-width: 100px;
+      font-size: $font-size-sm;
+    }
+  }
+}
+
+// ========================================
+// ANIMACIONES
+// ========================================
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// ========================================
+// UTILIDADES
+// ========================================
+.text-danger {
+  color: $danger;
+}
+
+.badge {
+  font-weight: $font-weight-medium;
+  padding: 0.35em 0.65em;
+  border-radius: $border-radius-full;
+}
+
+.spinner-border-sm {
+  width: 1rem;
+  height: 1rem;
+  border-width: 0.15em;
+}
+
+// Estilos para validación de inputs
+.form-control {
+  &.is-valid {
+    border-color: $success;
+    
+    &:focus {
+      border-color: $success;
+      box-shadow: 0 0 0 0.25rem rgba($success, 0.25);
+    }
+  }
+
+  &.is-invalid {
+    border-color: $danger;
+    
+    &:focus {
+      border-color: $danger;
+      box-shadow: 0 0 0 0.25rem rgba($danger, 0.25);
+    }
+  }
+}
+
+.input-group-text {
+  &.bg-success {
+    border-color: $success;
+  }
+
+  &.bg-danger {
+    border-color: $danger;
+  }
+}
+
+.spinner-border-sm {
+  width: 1rem;
+  height: 1rem;
+  border-width: 0.15em;
+}

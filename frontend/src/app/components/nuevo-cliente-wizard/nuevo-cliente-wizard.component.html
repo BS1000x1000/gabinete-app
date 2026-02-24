@@ -1,0 +1,1235 @@
+<div class="wizard-overlay" (click)="cerrarModal()">
+  <div class="wizard-modal" (click)="$event.stopPropagation()">
+    <!-- Header -->
+    <div class="wizard-header">
+      <h6 class="mb-0">
+        <i class="bi bi-person-plus me-2"></i>
+        Nuevo Cliente
+      </h6>
+      <button class="btn-close" (click)="cerrarModal()"></button>
+    </div>
+
+    <!-- Stepper -->
+    <div class="wizard-stepper">
+      <div class="stepper-progress">
+        <div class="progress-bar" [style.width.%]="progreso()"></div>
+      </div>
+
+      <div class="stepper-steps">
+        <div
+          *ngFor="let paso of pasos; let i = index"
+          class="stepper-step"
+          [class.active]="pasoActual() === i"
+          [class.completed]="paso.completado"
+          [class.clickable]="i < pasoActual() || paso.completado"
+          (click)="irAPaso(i)"
+        >
+          <div class="step-circle">
+            <i *ngIf="!paso.completado" class="bi bi-{{ paso.icono }}"></i>
+            <i *ngIf="paso.completado" class="bi bi-check-lg"></i>
+          </div>
+          <span class="step-label">{{ paso.titulo }}</span>
+          <span *ngIf="paso.opcional" class="step-opcional">(opcional)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contenido -->
+    <div class="wizard-body">
+      <!-- ========================================
+           PASO 1: DATOS BÁSICOS
+      ======================================== -->
+      <div *ngIf="pasoActual() === 0" class="paso-content">
+        <h4 class="paso-titulo">
+          <i class="bi bi-person me-2"></i>
+          Datos Básicos del Cliente
+        </h4>
+        <p class="text-muted mb-4">Información personal del cliente</p>
+
+        <form [formGroup]="formDatosBasicos">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label"
+                >Nombre <span class="text-danger">*</span></label
+              >
+              <input
+                type="text"
+                class="form-control"
+                formControlName="nombre"
+                placeholder="Ej: María"
+              />
+              <div
+                *ngIf="
+                  formDatosBasicos.get('nombre')?.invalid &&
+                  formDatosBasicos.get('nombre')?.touched
+                "
+                class="text-danger small mt-1"
+              >
+                El nombre es obligatorio (mínimo 2 caracteres)
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label"
+                >Apellidos <span class="text-danger">*</span></label
+              >
+              <input
+                type="text"
+                class="form-control"
+                formControlName="apellidos"
+                placeholder="Ej: López Martínez"
+              />
+              <div
+                *ngIf="
+                  formDatosBasicos.get('apellidos')?.invalid &&
+                  formDatosBasicos.get('apellidos')?.touched
+                "
+                class="text-danger small mt-1"
+              >
+                Los apellidos son obligatorios (mínimo 2 caracteres)
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label"
+                >DNI <span class="text-danger">*</span></label
+              >
+              <div class="input-group">
+                <input
+                  type="text"
+                  class="form-control"
+                  formControlName="dni"
+                  placeholder="12345678A"
+                  maxlength="9"
+                  [class.is-invalid]="
+                    formDatosBasicos.get('dni')?.invalid &&
+                    formDatosBasicos.get('dni')?.touched
+                  "
+                  [class.is-valid]="
+                    formDatosBasicos.get('dni')?.valid &&
+                    formDatosBasicos.get('dni')?.dirty
+                  "
+                />
+                <!-- ✅ Icono de validación -->
+                <span
+                  class="input-group-text"
+                  *ngIf="formDatosBasicos.get('dni')?.pending"
+                >
+                  <span
+                    class="spinner-border spinner-border-sm text-primary"
+                  ></span>
+                </span>
+                <span
+                  class="input-group-text bg-success text-white"
+                  *ngIf="
+                    formDatosBasicos.get('dni')?.valid &&
+                    formDatosBasicos.get('dni')?.dirty
+                  "
+                >
+                  <i class="bi bi-check-lg"></i>
+                </span>
+                <span
+                  class="input-group-text bg-danger text-white"
+                  *ngIf="
+                    formDatosBasicos.get('dni')?.invalid &&
+                    formDatosBasicos.get('dni')?.touched &&
+                    !formDatosBasicos.get('dni')?.pending
+                  "
+                >
+                  <i class="bi bi-x-lg"></i>
+                </span>
+              </div>
+
+              <div
+                *ngIf="
+                  formDatosBasicos.get('dni')?.invalid &&
+                  formDatosBasicos.get('dni')?.touched &&
+                  !formDatosBasicos.get('dni')?.pending
+                "
+                class="text-danger small mt-1"
+              >
+                <div *ngIf="formDatosBasicos.get('dni')?.hasError('required')">
+                  El DNI es obligatorio
+                </div>
+                <div *ngIf="formDatosBasicos.get('dni')?.hasError('pattern')">
+                  DNI inválido (formato: 12345678A)
+                </div>
+                <div
+                  *ngIf="formDatosBasicos.get('dni')?.hasError('dniDuplicado')"
+                >
+                  <i class="bi bi-exclamation-triangle me-1"></i>
+                  Este DNI ya está registrado en el sistema
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label"
+                >Fecha de Nacimiento <span class="text-danger">*</span></label
+              >
+              <input
+                type="date"
+                class="form-control"
+                formControlName="fechaNacimiento"
+              />
+              <small
+                class="text-muted"
+                *ngIf="formDatosBasicos.get('fechaNacimiento')?.value"
+              >
+                Edad:
+                {{
+                  calcularEdad(formDatosBasicos.get("fechaNacimiento")?.value)
+                }}
+                años
+              </small>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label"
+                >Curso <span class="text-danger">*</span></label
+              >
+              <select class="form-select" formControlName="curso">
+                <option value="">Seleccionar curso...</option>
+                <optgroup label="Infantil">
+                  <option value="1º Infantil">1º Infantil</option>
+                  <option value="2º Infantil">2º Infantil</option>
+                  <option value="3º Infantil">3º Infantil</option>
+                </optgroup>
+                <optgroup label="Primaria">
+                  <option value="1º Primaria">1º Primaria</option>
+                  <option value="2º Primaria">2º Primaria</option>
+                  <option value="3º Primaria">3º Primaria</option>
+                  <option value="4º Primaria">4º Primaria</option>
+                  <option value="5º Primaria">5º Primaria</option>
+                  <option value="6º Primaria">6º Primaria</option>
+                </optgroup>
+                <optgroup label="ESO">
+                  <option value="1º ESO">1º ESO</option>
+                  <option value="2º ESO">2º ESO</option>
+                  <option value="3º ESO">3º ESO</option>
+                  <option value="4º ESO">4º ESO</option>
+                </optgroup>
+                <optgroup label="Bachillerato">
+                  <option value="1º Bachillerato">1º Bachillerato</option>
+                  <option value="2º Bachillerato">2º Bachillerato</option>
+                </optgroup>
+              </select>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">Domicilio</label>
+              <input
+                type="text"
+                class="form-control"
+                formControlName="domicilio"
+                placeholder="Calle, número, piso..."
+              />
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Ciudad</label>
+              <input
+                type="text"
+                class="form-control"
+                formControlName="ciudad"
+                placeholder="Ej: Madrid"
+              />
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Provincia</label>
+              <input
+                type="text"
+                class="form-control"
+                formControlName="provincia"
+                placeholder="Ej: Madrid"
+              />
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- ========================================
+           PASO 2: COLEGIO
+      ======================================== -->
+      <div *ngIf="pasoActual() === 1" class="paso-content">
+        <h4 class="paso-titulo">
+          <i class="bi bi-building me-2"></i>
+          Datos del Colegio
+        </h4>
+        <p class="text-muted mb-4">
+          Información del centro educativo (opcional)
+        </p>
+
+        <form [formGroup]="formColegio">
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label">Nombre del Colegio</label>
+              <input
+                type="text"
+                class="form-control"
+                formControlName="nombre"
+                placeholder="Ej: CEIP Miguel de Cervantes"
+              />
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">Dirección del Colegio</label>
+              <input
+                type="text"
+                class="form-control"
+                formControlName="direccionColegio"
+                placeholder="Calle, número, código postal..."
+              />
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Contacto/a 1</label>
+              <input
+                type="text"
+                class="form-control"
+                formControlName="contactoUno"
+                placeholder="Nombre del contacto/a"
+              />
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Teléfono del Colegio</label>
+              <input
+                type="tel"
+                class="form-control"
+                formControlName="telefono"
+                placeholder="912345678"
+              />
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">Email del Colegio</label>
+              <input
+                type="email"
+                class="form-control"
+                formControlName="email"
+                placeholder="contacto@colegio.edu"
+              />
+            </div>
+            <div class="col-12">
+              <h6 class="text-muted mt-3 mb-2">
+                <i class="bi bi-person me-2"></i>
+                Contacto Secundario (Opcional)
+              </h6>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Contacto/a 2</label>
+              <input
+                type="text"
+                class="form-control"
+                formControlName="contactoDos"
+                placeholder="Nombre del segundo tutor/a"
+              />
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Teléfono 2</label>
+              <input
+                type="tel"
+                class="form-control"
+                formControlName="telefonoDos"
+                placeholder="912345678"
+              />
+            </div>
+
+            <div class="col-md-12">
+              <label class="form-label">Email 2</label>
+              <input
+                type="email"
+                class="form-control"
+                formControlName="emailDos"
+                placeholder="contacto2@colegio.edu"
+              />
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- ========================================
+           PASO 3: FAMILIA/CONTACTOS
+      ======================================== -->
+      <div *ngIf="pasoActual() === 2" class="paso-content">
+        <h4 class="paso-titulo">
+          <i class="bi bi-people me-2"></i>
+          Contactos de Familia
+        </h4>
+        <p class="text-muted mb-4">
+          Al menos un contacto familiar es obligatorio
+        </p>
+
+        <form [formGroup]="formFamilia">
+          <div formArrayName="contactos">
+            <div
+              *ngFor="let contacto of contactos.controls; let i = index"
+              class="contacto-card mb-3"
+              [formGroupName]="i"
+            >
+              <div
+                class="d-flex justify-content-between align-items-center mb-3"
+              >
+                <h5 class="mb-0">
+                  <i class="bi bi-person-circle me-2"></i>
+                  Contacto {{ i + 1 }}
+                </h5>
+                <button
+                  *ngIf="contactos.length > 1"
+                  type="button"
+                  class="btn btn-sm btn-outline-danger"
+                  (click)="eliminarContacto(i)"
+                >
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label"
+                    >Nombre Completo <span class="text-danger">*</span></label
+                  >
+                  <input
+                    type="text"
+                    class="form-control"
+                    formControlName="nombreCompleto"
+                    placeholder="Ej: Ana García López"
+                  />
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">DNI</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    formControlName="dni"
+                    placeholder="12345678A (opcional)"
+                    maxlength="9"
+                  />
+                  <small class="text-muted">Opcional</small>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label"
+                    >Parentesco <span class="text-danger">*</span></label
+                  >
+                  <select class="form-select" formControlName="parentesco">
+                    <option value="">Seleccionar...</option>
+                    <option value="Madre">Madre</option>
+                    <option value="Padre">Padre</option>
+                    <option value="Tutor/a Legal">Tutor/a Legal</option>
+                    <option value="Abuelo/a">Abuelo/a</option>
+                    <option value="Tío/a">Tío/a</option>
+                    <option value="Otro">Otro</option>
+                  </select>
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label"
+                    >Teléfono <span class="text-danger">*</span></label
+                  >
+                  <input
+                    type="tel"
+                    class="form-control"
+                    formControlName="telefono"
+                    placeholder="612345678"
+                    maxlength="9"
+                  />
+                </div>
+
+                <div class="col-md-5">
+                  <label class="form-label">Email</label>
+                  <input
+                    type="email"
+                    class="form-control"
+                    formControlName="email"
+                    placeholder="email@ejemplo.com"
+                  />
+                </div>
+
+                <div class="col-md-3">
+                  <label class="form-label d-block">Contacto Principal</label>
+                  <div class="form-check form-switch">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      formControlName="esPrincipal"
+                    />
+                    <label class="form-check-label">
+                      {{ contacto.get("esPrincipal")?.value ? "Sí" : "No" }}
+                    </label>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label d-block">Responsable de Pago</label>
+                  <div class="form-check form-switch">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      formControlName="esPago"
+                    />
+                    <label class="form-check-label">
+                      {{ contacto.get("esPago")?.value ? "Sí" : "No" }}
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            class="btn btn-outline-primary w-100"
+            (click)="agregarContacto()"
+          >
+            <i class="bi bi-plus-lg me-2"></i>
+            Agregar otro contacto
+          </button>
+        </form>
+      </div>
+
+      <!-- ========================================
+           PASO 4: DATOS SANITARIOS
+      ======================================== -->
+      <div *ngIf="pasoActual() === 3" class="paso-content">
+        <h4 class="paso-titulo">
+          <i class="bi bi-heart-pulse me-2"></i>
+          Datos Sanitarios
+        </h4>
+        <p class="text-muted mb-4">Información médica relevante (opcional)</p>
+
+        <form [formGroup]="formSanitario">
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label">Diagnóstico</label>
+              <input
+                type="text"
+                class="form-control"
+                formControlName="diagnostico"
+                placeholder="Ej: TDAH, Dislexia, TEA..."
+              />
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Centro de Salud</label>
+              <input
+                type="text"
+                class="form-control"
+                formControlName="centroSalud"
+                placeholder="Nombre del centro de salud"
+              />
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Tratamientos</label>
+              <input
+                type="text"
+                class="form-control"
+                formControlName="tratamientos"
+                placeholder="Tratamientos que recibe"
+              />
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">Medicación Actual</label>
+              <textarea
+                class="form-control"
+                formControlName="medicacion"
+                rows="2"
+                placeholder="Medicamentos que toma actualmente..."
+              ></textarea>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">Alergias</label>
+              <textarea
+                class="form-control"
+                formControlName="alergias"
+                rows="2"
+                placeholder="Alergias conocidas..."
+              ></textarea>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label d-block"
+                >¿Tiene adaptaciones curriculares?</label
+              >
+              <div class="form-check form-switch">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  formControlName="adaptaciones"
+                />
+                <label class="form-check-label">
+                  {{ formSanitario.get("adaptaciones")?.value ? "Sí" : "No" }}
+                </label>
+              </div>
+            </div>
+
+            <div
+              class="col-md-6"
+              *ngIf="formSanitario.get('adaptaciones')?.value"
+            >
+              <label class="form-label">Tipo de Adaptaciones</label>
+              <input
+                type="text"
+                class="form-control"
+                formControlName="tipoAdaptaciones"
+                placeholder="Ej: ACI, ACIS..."
+              />
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label d-block"
+                >¿Recibe apoyos escolares?</label
+              >
+              <div class="form-check form-switch">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  formControlName="apoyos"
+                />
+                <label class="form-check-label">
+                  {{ formSanitario.get("apoyos")?.value ? "Sí" : "No" }}
+                </label>
+              </div>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">Especialistas</label>
+              <p class="text-muted small mb-2">
+                Otros profesionales que atienden al cliente
+              </p>
+
+              <div formArrayName="especialistas">
+                <div
+                  *ngFor="
+                    let especialista of especialistas.controls;
+                    let i = index
+                  "
+                  class="input-group mb-2"
+                >
+                  <input
+                    type="text"
+                    class="form-control"
+                    [formControlName]="i"
+                    placeholder="Ej: Logopeda, Psicólogo..."
+                  />
+                  <button
+                    type="button"
+                    class="btn btn-outline-danger"
+                    (click)="eliminarEspecialista(i)"
+                  >
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                class="btn btn-outline-primary btn-sm mt-2"
+                (click)="agregarEspecialista()"
+              >
+                <i class="bi bi-plus-lg me-2"></i>
+                Agregar especialista
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- ========================================
+           PASO 5: HORARIO/DISPONIBILIDAD
+      ======================================== -->
+      <div *ngIf="pasoActual() === 4" class="paso-content">
+        <h4 class="paso-titulo">
+          <i class="bi bi-clock me-2"></i>
+          Horario y Disponibilidad
+        </h4>
+        <p class="text-muted mb-4">Días y horas disponibles para sesiones</p>
+
+        <form [formGroup]="formHorario">
+          <div formArrayName="disponibilidades">
+            <div
+              *ngFor="
+                let disponibilidad of disponibilidades.controls;
+                let i = index
+              "
+              class="disponibilidad-card mb-3"
+              [formGroupName]="i"
+            >
+              <div
+                class="d-flex justify-content-between align-items-center mb-3"
+              >
+                <h5 class="mb-0">
+                  <i class="bi bi-calendar-week me-2"></i>
+                  Horario {{ i + 1 }}
+                </h5>
+                <button
+                  *ngIf="disponibilidades.length > 1"
+                  type="button"
+                  class="btn btn-sm btn-outline-danger"
+                  (click)="eliminarDisponibilidad(i)"
+                >
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <label class="form-label"
+                    >Día <span class="text-danger">*</span></label
+                  >
+                  <select class="form-select" formControlName="diaSemana">
+                    <option value="">Seleccionar...</option>
+                    <option value="0">Domingo</option>
+                    <option value="1">Lunes</option>
+                    <option value="2">Martes</option>
+                    <option value="3">Miércoles</option>
+                    <option value="4">Jueves</option>
+                    <option value="5">Viernes</option>
+                    <option value="6">Sábado</option>
+                  </select>
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label"
+                    >Hora Inicio <span class="text-danger">*</span></label
+                  >
+                  <input
+                    type="time"
+                    class="form-control"
+                    formControlName="horaInicio"
+                  />
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label"
+                    >Hora Fin <span class="text-danger">*</span></label
+                  >
+                  <input
+                    type="time"
+                    class="form-control"
+                    formControlName="horaFin"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            class="btn btn-outline-primary w-100"
+            (click)="agregarDisponibilidad()"
+          >
+            <i class="bi bi-plus-lg me-2"></i>
+            Agregar otro horario
+          </button>
+        </form>
+      </div>
+
+      <!-- ========================================
+           PASO 6: OBJETIVOS INICIALES
+      ======================================== -->
+      <div *ngIf="pasoActual() === 5" class="paso-content">
+        <h4 class="paso-titulo">
+          <i class="bi bi-bullseye me-2"></i>
+          Objetivos Iniciales
+        </h4>
+        <p class="text-muted mb-4">
+          Selecciona objetivos para empezar a trabajar (opcional)
+        </p>
+
+        <div class="objetivos-por-area">
+          <div *ngFor="let area of areas()" class="area-section mb-4">
+            <h5 class="area-titulo" [style.border-left-color]="area.color">
+              <i
+                class="bi bi-bookmark-fill me-2"
+                [style.color]="area.color"
+              ></i>
+              {{ area.nombre }}
+            </h5>
+
+            <div class="objetivos-grid">
+              <div
+                *ngFor="let objetivo of getObjetivosPorArea(area.id)"
+                class="objetivo-item"
+                [class.selected]="isObjetivoSeleccionado(objetivo.id)"
+                (click)="toggleObjetivo(objetivo.id)"
+              >
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    [checked]="isObjetivoSeleccionado(objetivo.id)"
+                    (click)="$event.stopPropagation()"
+                  />
+                  <label class="form-check-label">
+                    <strong>{{ objetivo.titulo }}</strong>
+                    <small class="d-block text-muted">{{
+                      objetivo.descripcion
+                    }}</small>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div
+            *ngIf="objetivosGenerales().length === 0"
+            class="text-center py-5 text-muted"
+          >
+            <i class="bi bi-inbox display-4 d-block mb-3"></i>
+            <p>No hay objetivos disponibles</p>
+          </div>
+        </div>
+
+        <div
+          *ngIf="objetivosSeleccionados().length > 0"
+          class="alert alert-info mt-3"
+        >
+          <i class="bi bi-info-circle me-2"></i>
+          Has seleccionado
+          <strong>{{ objetivosSeleccionados().length }}</strong> objetivo(s)
+        </div>
+      </div>
+
+      <!-- ========================================
+     PASO 6: ASIGNACIÓN A TRABAJADOR
+======================================== -->
+      <div *ngIf="pasoActual() === 6" class="paso-content">
+        <h4 class="paso-titulo">
+          <i class="bi bi-person-badge me-2"></i>
+          Asignación de Terapeutas
+        </h4>
+        <p class="text-muted mb-4">
+          Asigna terapeutas a los horarios que definiste anteriormente
+        </p>
+
+        <!-- Resumen de horarios disponibles -->
+        <div class="alert alert-info mb-4">
+          <h6 class="alert-heading">
+            <i class="bi bi-calendar-week me-2"></i>
+            Horarios disponibles del cliente:
+          </h6>
+          <div class="d-flex flex-wrap gap-2 mt-2">
+            <span
+              *ngFor="let disp of disponibilidadesDisponibles"
+              class="badge bg-light text-dark border"
+            >
+              {{ disp.diaNombre }}: {{ disp.horaInicio }} - {{ disp.horaFin }}
+            </span>
+          </div>
+        </div>
+
+        <form [formGroup]="formAsignacion">
+          <div formArrayName="asignaciones">
+            <div
+              *ngFor="let asignacion of asignaciones.controls; let i = index"
+              class="asignacion-card mb-4"
+              [formGroupName]="i"
+            >
+              <div
+                class="d-flex justify-content-between align-items-center mb-3"
+              >
+                <h6 class="mb-0">
+                  <i class="bi bi-person-workspace me-2"></i>
+                  Asignación {{ i + 1 }}
+                </h6>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-danger"
+                  (click)="eliminarAsignacion(i)"
+                >
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+
+              <div class="row g-3">
+                <!-- Seleccionar horario disponible -->
+                <div class="col-12">
+                  <label class="form-label">
+                    Seleccionar horario <span class="text-danger">*</span>
+                  </label>
+                  <select
+                    class="form-select"
+                    formControlName="disponibilidadIndex"
+                  >
+                    <option value="">Seleccionar horario...</option>
+                    <option
+                      *ngFor="let disp of disponibilidadesDisponibles"
+                      [value]="disp.index"
+                    >
+                      {{ disp.diaNombre }}: {{ disp.horaInicio }} -
+                      {{ disp.horaFin }}
+                    </option>
+                  </select>
+                </div>
+
+                <!-- Mostrar solo si hay horario seleccionado -->
+                <ng-container
+                  *ngIf="getDisponibilidadSeleccionada(i) as dispSel"
+                >
+                  <!-- Psicopedagogo -->
+                  <div class="col-md-6">
+                    <label class="form-label">
+                      Psicopedagogo/a <span class="text-danger">*</span>
+                    </label>
+                    <select class="form-select" formControlName="trabajadorId">
+                      <option value="">Seleccionar...</option>
+                      <option
+                        *ngFor="let trabajador of trabajadores()"
+                        [value]="trabajador.id"
+                      >
+                        {{ trabajador.nombre }} {{ trabajador.apellidos }}
+                      </option>
+                    </select>
+                  </div>
+
+                  <!-- Tipo de terapia -->
+                  <div class="col-md-6">
+                    <label class="form-label">
+                      Tipo de Terapia <span class="text-danger">*</span>
+                    </label>
+                    <select class="form-select" formControlName="tipoTerapia">
+                      <option value="">Seleccionar...</option>
+                      <option value="Pedagogía">Pedagogía</option>
+                      <option value="Neuropsicología">Neuropsicología</option>
+                      <option value="Logopedia">Logopedia</option>
+                      <option value="Psicología">Psicología</option>
+                      <option value="Refuerzo Educativo">
+                        Refuerzo Educativo
+                      </option>
+                    </select>
+                  </div>
+
+                  <!-- Preview de la asignación -->
+                  <div
+                    *ngIf="
+                      asignacion.get('trabajadorId')?.value &&
+                      asignacion.get('tipoTerapia')?.value
+                    "
+                    class="col-12"
+                  >
+                    <div class="alert alert-success mb-0">
+                      <i class="bi bi-check-circle me-2"></i>
+                      <strong>{{ dispSel.diaNombre }}</strong>
+                      {{ asignacion.get("horaInicio")?.value }} -
+                      {{ asignacion.get("horaFin")?.value }}:
+                      <strong>{{
+                        asignacion.get("tipoTerapia")?.value
+                      }}</strong>
+                      con
+                      <strong>{{
+                        getNombreTrabajador(
+                          asignacion.get("trabajadorId")?.value
+                        )
+                      }}</strong>
+                    </div>
+                  </div>
+                </ng-container>
+              </div>
+            </div>
+
+            <!-- Botón agregar asignación -->
+            <button
+              type="button"
+              class="btn btn-outline-primary w-100"
+              (click)="agregarAsignacion()"
+              [disabled]="asignaciones.length >= disponibilidades.length"
+            >
+              <i class="bi bi-plus-lg me-2"></i>
+              Agregar otra asignación
+            </button>
+
+            <small class="text-muted d-block mt-2 text-center">
+              {{ asignaciones.length }} de
+              {{ disponibilidades.length }} horarios asignados
+            </small>
+          </div>
+        </form>
+      </div>
+
+      <!-- ========================================
+           PASO 7: RESUMEN
+      ======================================== -->
+      <div *ngIf="pasoActual() === 7" class="paso-content">
+        <h4 class="paso-titulo">
+          <i class="bi bi-check-circle me-2"></i>
+          Resumen y Confirmación
+        </h4>
+        <p class="text-muted mb-4">
+          Revisa la información antes de crear el cliente
+        </p>
+
+        <div class="resumen-grid">
+          <!-- Datos Básicos -->
+          <div class="resumen-section">
+            <h5 class="resumen-section-titulo">
+              <i class="bi bi-person me-2"></i>
+              Datos Básicos
+            </h5>
+            <dl class="row mb-0">
+              <dt class="col-sm-4">Nombre completo:</dt>
+              <dd class="col-sm-8">
+                {{ getResumenDatosBasicos().nombre }}
+                {{ getResumenDatosBasicos().apellidos }}
+              </dd>
+
+              <dt class="col-sm-4">DNI:</dt>
+              <dd class="col-sm-8">{{ getResumenDatosBasicos().dni }}</dd>
+
+              <dt class="col-sm-4">Fecha de nacimiento:</dt>
+              <dd class="col-sm-8">
+                {{
+                  getResumenDatosBasicos().fechaNacimiento | date: "dd/MM/yyyy"
+                }}
+                ({{ calcularEdad(getResumenDatosBasicos().fechaNacimiento) }}
+                años)
+              </dd>
+
+              <dt class="col-sm-4">Curso:</dt>
+              <dd class="col-sm-8">{{ getResumenDatosBasicos().curso }}</dd>
+
+              <dt class="col-sm-4" *ngIf="getResumenDatosBasicos().domicilio">
+                Domicilio:
+              </dt>
+              <dd class="col-sm-8" *ngIf="getResumenDatosBasicos().domicilio">
+                {{ getResumenDatosBasicos().domicilio }},
+                {{ getResumenDatosBasicos().ciudad }},
+                {{ getResumenDatosBasicos().provincia }}
+              </dd>
+            </dl>
+          </div>
+
+          <!-- Colegio -->
+          <div class="resumen-section" *ngIf="getResumenColegio().nombre">
+            <h5 class="resumen-section-titulo">
+              <i class="bi bi-building me-2"></i>
+              Colegio
+            </h5>
+            <dl class="row mb-0">
+              <dt class="col-sm-4">Colegio:</dt>
+              <dd class="col-sm-8">{{ getResumenColegio().nombre }}</dd>
+
+              <dt class="col-sm-4" *ngIf="getResumenColegio().contactoUno">
+                Contacto 1:
+              </dt>
+              <dd class="col-sm-8" *ngIf="getResumenColegio().contactoUno">
+                {{ getResumenColegio().contactoUno }}
+              </dd>
+              <dt class="col-sm-4" *ngIf="getResumenColegio().contactoDos">
+                Contacto 2:
+              </dt>
+              <dd class="col-sm-8" *ngIf="getResumenColegio().contactoDos">
+                {{ getResumenColegio().contactoDos }}
+              </dd>
+            </dl>
+          </div>
+
+          <!-- Familia -->
+          <div class="resumen-section">
+            <h5 class="resumen-section-titulo">
+              <i class="bi bi-people me-2"></i>
+              Contactos Familiares ({{ getResumenFamilia().length }})
+            </h5>
+            <div *ngFor="let contacto of getResumenFamilia()" class="mb-2">
+              <strong>{{ contacto.nombreCompleto }}</strong>
+              <span class="badge bg-secondary ms-2">{{
+                contacto.parentesco
+              }}</span>
+              <span *ngIf="contacto.esPrincipal" class="badge bg-primary ms-1"
+                >Principal</span
+              >
+              <span *ngIf="contacto.esPago" class="badge bg-success ms-1"
+                >Pagador</span
+              >
+              <br />
+              <small class="text-muted">
+                <i class="bi bi-telephone me-1"></i>{{ contacto.telefono }}
+                <span *ngIf="contacto.email">
+                  · <i class="bi bi-envelope me-1"></i
+                  >{{ contacto.email }}</span
+                >
+              </small>
+            </div>
+          </div>
+
+          <!-- Sanitario -->
+          <div
+            class="resumen-section"
+            *ngIf="getResumenSanitario().diagnostico"
+          >
+            <h5 class="resumen-section-titulo">
+              <i class="bi bi-heart-pulse me-2"></i>
+              Datos Sanitarios
+            </h5>
+            <dl class="row mb-0">
+              <dt class="col-sm-4" *ngIf="getResumenSanitario().diagnostico">
+                Diagnóstico:
+              </dt>
+              <dd class="col-sm-8" *ngIf="getResumenSanitario().diagnostico">
+                {{ getResumenSanitario().diagnostico }}
+              </dd>
+
+              <dt class="col-sm-4" *ngIf="getResumenSanitario().medicacion">
+                Medicación:
+              </dt>
+              <dd class="col-sm-8" *ngIf="getResumenSanitario().medicacion">
+                {{ getResumenSanitario().medicacion }}
+              </dd>
+            </dl>
+          </div>
+
+          <!-- Horario -->
+          <div class="resumen-section">
+            <h5 class="resumen-section-titulo">
+              <i class="bi bi-clock me-2"></i>
+              Disponibilidad ({{ getResumenHorario().length }})
+            </h5>
+            <div *ngFor="let horario of getResumenHorario()" class="mb-1">
+              <strong>{{ getDiaNombre(horario.diaSemana) }}</strong
+              >: {{ horario.horaInicio }} - {{ horario.horaFin }}
+            </div>
+          </div>
+
+          <!-- Objetivos -->
+          <div
+            class="resumen-section"
+            *ngIf="objetivosSeleccionados().length > 0"
+          >
+            <h5 class="resumen-section-titulo">
+              <i class="bi bi-bullseye me-2"></i>
+              Objetivos Iniciales ({{ objetivosSeleccionados().length }})
+            </h5>
+            <div class="d-flex flex-wrap gap-2">
+              <span
+                *ngFor="let objId of objetivosSeleccionados()"
+                class="badge bg-primary"
+              >
+                {{ getObjetivoTitulo(objId) }}
+              </span>
+            </div>
+          </div>
+
+          <!-- ========================================
+                    Sección de Asignaciones
+          ======================================== -->
+          <div class="resumen-section">
+            <h5 class="resumen-section-titulo">
+              <i class="bi bi-person-badge me-2"></i>
+              Asignaciones de Terapeutas
+            </h5>
+
+            <!-- Sin asignaciones -->
+            <div *ngIf="asignaciones.length === 0" class="text-muted">
+              <i class="bi bi-info-circle me-2"></i>
+              No se han asignado terapeutas
+            </div>
+
+            <!-- Listado de asignaciones -->
+            <div *ngIf="asignaciones.length > 0">
+              <div
+                *ngFor="let asignacion of asignaciones.value; let i = index"
+                class="asignacion-resumen mb-3 p-3 border rounded"
+              >
+                <div class="d-flex align-items-center mb-2">
+                  <span class="badge bg-primary me-2">{{ i + 1 }}</span>
+                  <h6 class="mb-0">
+                    {{ getNombreTrabajador(asignacion.trabajadorId) }}
+                  </h6>
+                </div>
+
+                <dl class="row mb-0 small">
+                  <dt class="col-sm-5">Tipo de terapia:</dt>
+                  <dd class="col-sm-7">
+                    <span class="badge bg-info">{{
+                      asignacion.tipoTerapia
+                    }}</span>
+                  </dd>
+
+                  <dt class="col-sm-5">Horario general:</dt>
+                  <dd class="col-sm-7">
+                    <ng-container
+                      *ngIf="
+                        disponibilidadesDisponibles[
+                          asignacion.disponibilidadIndex
+                        ] as disp
+                      "
+                    >
+                      {{ disp.diaNombre }}: {{ disp.horaInicio }} -
+                      {{ disp.horaFin }}
+                    </ng-container>
+                  </dd>
+
+                  <dt class="col-sm-5">Hora específica:</dt>
+                  <dd class="col-sm-7">
+                    <i class="bi bi-clock me-1"></i>
+                    <strong
+                      >{{ asignacion.horaInicio }} -
+                      {{ asignacion.horaFin }}</strong
+                    >
+                  </dd>
+                </dl>
+              </div>
+
+              <!-- Resumen total -->
+              <div class="alert alert-info mb-0 mt-3">
+                <i class="bi bi-check-circle me-2"></i>
+                Total de asignaciones:
+                <strong>{{ asignaciones.length }}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer con botones -->
+    <div class="wizard-footer">
+      <button
+        class="btn btn-outline-secondary"
+        [disabled]="esPrimerPaso() || isSubmitting()"
+        (click)="anterior()"
+      >
+        <i class="bi bi-chevron-left me-2"></i>
+        Atrás
+      </button>
+
+      <div class="flex-grow-1"></div>
+
+      <button
+        class="btn btn-outline-secondary me-2"
+        [disabled]="isSubmitting()"
+        (click)="cerrarModal()"
+      >
+        Cancelar
+      </button>
+
+      <button
+        class="btn btn-primary"
+        [disabled]="!puedeAvanzar() || isSubmitting()"
+        (click)="siguiente()"
+      >
+        <span *ngIf="!esUltimoPaso()">
+          Siguiente
+          <i class="bi bi-chevron-right ms-2"></i>
+        </span>
+        <span *ngIf="esUltimoPaso()">
+          <span *ngIf="!isSubmitting()">
+            <i class="bi bi-check-lg me-2"></i>
+            Crear Cliente
+          </span>
+          <span *ngIf="isSubmitting()">
+            <span class="spinner-border spinner-border-sm me-2"></span>
+            Creando...
+          </span>
+        </span>
+      </button>
+    </div>
+  </div>
+</div>

@@ -46,8 +46,9 @@ export class ListadoComponent implements OnInit, OnDestroy {
     { label: 'Contactos', icon: 'bi-telephone-fill', target: 'contactos' },
     { label: 'Colegio', icon: 'bi-book-fill', target: 'colegio' },
     { label: 'Sanitario', icon: 'bi-heart-pulse-fill', target: 'sanitario' },
-    { label: 'Objetivos', icon: 'bi-bullseye', target: 'objetivos' }, // ✅ NUEVO
-    { label: 'Registro', icon: 'bi-journal-text', target: 'registro' }, // ✅ Cambiado de "registro"
+    { label: 'Terapeutas', icon: 'bi-person', target: 'terapeutas' },
+    { label: 'Objetivos', icon: 'bi-bullseye', target: 'objetivos' },
+    { label: 'Registro', icon: 'bi-journal-text', target: 'registro' }, 
   ];
 
   // --- Estado de la UI ---

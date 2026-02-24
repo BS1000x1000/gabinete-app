@@ -5,7 +5,7 @@ export const clienteInclude = {
   colegio: true,
   contactosFamiliares: true,
   sanitario: true,
-  disponibilidad: true,
+  disponibilidad: true, // Disponibilidad general
   trabajadoresAsignados: {
     include: {
       trabajador: {
@@ -14,13 +14,15 @@ export const clienteInclude = {
           nombre: true,
           apellidos: true,
           email: true,
-          // NO incluyas passwordHash por seguridad
         },
       },
+      horarios: true, // ✅ AGREGAR: Horarios específicos con el trabajador
     },
   },
   objetivosGeneralesAsignados: {
-    where: { activo: true },
+    where: {
+      activo: true,
+    },
     include: {
       objetivoGeneral: {
         include: {

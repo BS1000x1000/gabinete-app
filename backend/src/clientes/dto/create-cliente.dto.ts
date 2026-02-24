@@ -6,7 +6,10 @@ import {
   IsArray, 
   ValidateNested, 
   IsBoolean, 
-  IsUUID
+  IsUUID,
+  IsInt,
+  Max,
+  Min
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 
@@ -99,7 +102,7 @@ export class FamiliarDto {
  * DTO para disponibilidad horaria del cliente
  */
 export class DisponibilidadDto {
-  @IsString()
+  @IsInt()
   @Transform(({ value }) => {
     // Convierte día de la semana a número 0-6
     const dias: { [key: string]: number } = {
@@ -115,6 +118,33 @@ export class DisponibilidadDto {
 
   @IsString()
   horaFin: string; // Formato "HH:mm" ej: "18:00"
+}
+
+export class HorarioTrabajadorDto {
+  @IsInt()
+  @Min(0)
+  @Max(6)
+  @Transform(({ value }) => Number(value))
+  diaSemana: number;
+
+  @IsString()
+  horaInicio: string;
+
+  @IsString()
+  horaFin: string;
+}
+
+export class AsignacionTrabajadorDto {
+  @IsString()
+  trabajadorId: string;
+
+  @IsString()
+  tipoTerapia: string;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => HorarioTrabajadorDto)
+  horarios: HorarioTrabajadorDto[];
 }
 
 /**
@@ -235,6 +265,12 @@ export class CreateClienteDto {
   @IsArray()
   @IsUUID('4', { each: true })
   objetivosGeneralesIds?: string[];
+
+  // ✅ NUEVO: Asignación a trabajador
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => AsignacionTrabajadorDto)
+  asignaciones?: AsignacionTrabajadorDto[];
 }
 
 /**

@@ -30,15 +30,6 @@ export class ClientesController {
   /**
    * GET /api/clientes
    */
-  // @Get()
-  // async findAll(@Query() paginationDto: PaginationDto) {
-  //   this.logger.log('📋 GET /api/clientes');
-  //   return this.clientesService.findAllPaginated(paginationDto);
-  // }
-
-  /**
-   * GET /api/clientes
-   */
   @Get()
   async findAll() {
     this.logger.log('📋 GET /api/clientes');
@@ -69,6 +60,26 @@ export class ClientesController {
     return this.clientesService.search(query);
   }
 
+  /**
+   * GET /api/clientes/verificar-dni/:dni
+   * ✅ Verifica si un DNI ya está registrado
+   * ✅ El interceptor global agregará el WrappedResponse automáticamente
+   */
+  @Get('verificar-dni/:dni')
+  @HttpCode(HttpStatus.OK)
+  async verificarDni(@Param('dni') dni: string) {
+    this.logger.log(`🔍 Verificando DNI: ${dni}`);
+    
+    const existe = await this.clientesService.existeDni(dni);
+    
+    // ✅ Retornar objeto simple, el interceptor lo envolverá automáticamente
+    return {
+      dni,
+      disponible: !existe,
+      mensaje: existe ? 'DNI ya registrado' : 'DNI disponible',
+    };
+  }
+
   // ========================================
   // RUTAS ESPECÍFICAS CON PARÁMETROS (SEGUNDO)
   // ========================================
@@ -79,7 +90,9 @@ export class ClientesController {
    */
   @Get(':id/objetivos-generales/estadisticas')
   async getEstadisticasObjetivos(@Param('id') id: string) {
-    this.logger.log(`📊 GET /api/clientes/${id}/objetivos-generales/estadisticas`);
+    this.logger.log(
+      `📊 GET /api/clientes/${id}/objetivos-generales/estadisticas`,
+    );
     return this.clientesService.getEstadisticasObjetivos(id);
   }
 
@@ -103,12 +116,37 @@ export class ClientesController {
     @Body() body: { objetivosGeneralesIds: string[] },
   ) {
     this.logger.log(`🎯 POST /api/clientes/${id}/objetivos-generales`);
-    this.logger.log(`Objetivos a asignar: ${body.objetivosGeneralesIds.length}`);
+    this.logger.log(
+      `Objetivos a asignar: ${body.objetivosGeneralesIds.length}`,
+    );
     return this.clientesService.asignarObjetivosGenerales(
       id,
       body.objetivosGeneralesIds,
     );
   }
+
+  /**
+ * POST /api/clientes/:id/asignar-trabajador
+ * Asigna un trabajador adicional a un cliente existente
+ */
+@Post(':id/asignar-trabajador')
+@HttpCode(HttpStatus.CREATED)
+async asignarTrabajador(
+  @Param('id') id: string,
+  @Body() body: {
+    trabajadorId: string;
+    tipoTerapia: string;
+    horarios: { diaSemana: number; horaInicio: string; horaFin: string }[];
+  },
+) {
+  this.logger.log(`🎯 POST /api/clientes/${id}/asignar-trabajador`);
+  return this.clientesService.asignarTrabajador(
+    id,
+    body.trabajadorId,
+    body.tipoTerapia,
+    body.horarios,
+  );
+}
 
   /**
    * DELETE /api/clientes/:id/objetivos-generales/:objetivoId
@@ -119,7 +157,9 @@ export class ClientesController {
     @Param('id') id: string,
     @Param('objetivoId') objetivoId: string,
   ) {
-    this.logger.log(`🎯 DELETE /api/clientes/${id}/objetivos-generales/${objetivoId}`);
+    this.logger.log(
+      `🎯 DELETE /api/clientes/${id}/objetivos-generales/${objetivoId}`,
+    );
     return this.clientesService.desasignarObjetivoGeneral(id, objetivoId);
   }
 

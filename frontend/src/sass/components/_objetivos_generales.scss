@@ -72,10 +72,10 @@
   }
 
   &.selected {
-    background: $gradient-primary;
+    background: $lila-suave;
     border-color: $primary;
-    color: $white;
-    box-shadow: $shadow-md;
+    color: $black;
+    box-shadow: $shadow-sm;
 
     .form-check-input {
       accent-color: $white;
@@ -138,9 +138,9 @@
   }
 
   &.selected {
-    background: $gradient-primary;
+    background: $lila-suave;
     border-color: $primary;
-    color: $white;
+    color: $black;
     box-shadow: $shadow-md;
 
     .objetivo-checkbox {

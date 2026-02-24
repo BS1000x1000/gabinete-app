@@ -19,11 +19,14 @@ export default [
         path: 'agenda',
         loadComponent: () => import('./agenda/agenda.component').then(m => m.AgendaComponent)
       },
-      // ✅ Ruta de listado (ya existente)
       {
         path: 'listado/:id',
         loadChildren: () => import('./listado/listado.routes')
-      }
+      },
+      {
+        path: 'clientes',
+        loadComponent: () => import('../clientes/clientes.component')
+      },
     ]
   }
 ] as Route[];

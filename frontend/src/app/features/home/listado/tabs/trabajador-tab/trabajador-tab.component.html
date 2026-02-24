@@ -1,0 +1,148 @@
+<!-- Sección de Psicopedagogos Asignados -->
+<div class="card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">
+      <i class="bi bi-person-badge me-2"></i>
+      Terapeutas Asignados
+      <span class="badge bg-secondary ms-2">{{ asignaciones().length }}</span>
+    </h5>
+    <button 
+      class="btn btn-sm btn-primary" 
+      (click)="abrirModalAsignarTrabajador()"
+    >
+      <i class="bi bi-plus-lg me-1"></i>
+      Asignar Profesional
+    </button>
+  </div>
+
+  <div class="card-body">
+    <!-- Loading -->
+    <div *ngIf="isLoading()" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+      <p class="text-muted mt-2">Cargando asignaciones...</p>
+    </div>
+
+    <!-- Sin asignaciones -->
+    <div *ngIf="!isLoading() && asignaciones().length === 0" class="text-center py-5">
+      <i class="bi bi-person-x display-4 text-muted"></i>
+      <p class="text-muted mt-3">
+        Este cliente aún no tiene terapeutas asignados.
+      </p>
+      <button 
+        class="btn btn-primary mt-2" 
+        (click)="abrirModalAsignarTrabajador()"
+      >
+        <i class="bi bi-plus-lg me-2"></i>
+        Asignar primer profesional
+      </button>
+    </div>
+
+    <!-- Tabla de asignaciones -->
+    <div *ngIf="!isLoading() && asignaciones().length > 0" class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Profesional</th>
+            <th>Tipo de Terapia</th>
+            <th>Horarios</th>
+            <th class="text-center">Estado</th>
+            <th class="text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let asignacion of asignaciones()">
+            <!-- Profesional -->
+            <td>
+              <div class="d-flex align-items-center">
+                <div class="avatar-circle bg-primary text-white me-2">
+                  {{ asignacion.trabajador.nombre.charAt(0) }}{{ asignacion.trabajador.apellidos.charAt(0) }}
+                </div>
+                <div>
+                  <div class="fw-semibold">
+                    {{ asignacion.trabajador.nombre }} {{ asignacion.trabajador.apellidos }}
+                  </div>
+                  <small class="text-muted">{{ asignacion.trabajador.email }}</small>
+                </div>
+              </div>
+            </td>
+
+            <!-- Tipo de Terapia -->
+            <td>
+              <span class="badge" [ngClass]="getBadgeClass(asignacion.tipoTerapia)">
+                {{ asignacion.tipoTerapia }}
+              </span>
+            </td>
+
+            <!-- Horarios -->
+            <td>
+              <div *ngIf="asignacion.horarios.length === 0" class="text-muted small">
+                Sin horarios definidos
+              </div>
+              <div *ngIf="asignacion.horarios.length > 0">
+                <div 
+                  *ngFor="let horario of asignacion.horarios" 
+                  class="small mb-1"
+                >
+                  <i class="bi bi-clock me-1"></i>
+                  <strong>{{ getDiaNombre(horario.diaSemana) }}</strong>: 
+                  {{ horario.horaInicio }} - {{ horario.horaFin }}
+                </div>
+              </div>
+            </td>
+
+            <!-- Estado -->
+            <td class="text-center">
+              <span 
+                class="badge" 
+                [class.bg-success]="asignacion.activo" 
+                [class.bg-secondary]="!asignacion.activo"
+              >
+                {{ asignacion.activo ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+
+            <!-- Acciones -->
+            <td class="text-center">
+              <div class="btn-group btn-group-sm">
+                <button 
+                  class="btn btn-outline-primary"
+                  title="Editar horarios"
+                >
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button 
+                  class="btn btn-outline-danger"
+                  title="Eliminar asignación"
+                  (click)="desasignarTrabajador(asignacion.id)"
+                >
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de asignar trabajador (por ahora placeholder) -->
+<div *ngIf="mostrarModalAsignar()" class="modal-overlay" (click)="cerrarModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h5 class="modal-title">
+        <i class="bi bi-person-badge me-2"></i>
+        Asignar Terapeuta
+      </h5>
+      <button type="button" class="btn-close" (click)="cerrarModal()"></button>
+    </div>
+    <div class="modal-body">
+      <p class="text-muted">
+        Funcionalidad en desarrollo...
+      </p>
+      <!-- TODO: Agregar formulario de asignación -->
+    </div>
+  </div>
+</div>

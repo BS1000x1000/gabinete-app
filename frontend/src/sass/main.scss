@@ -36,10 +36,12 @@
 @import 'components/objetivos_generales';
 @import 'components/registro';
 @import 'components/search-bar';
+@import 'components/nuevo-cliente-wizard';
 
 // ========================================
 // PAGES
 // ========================================
 @import 'pages/login';
 @import 'pages/home';
+@import 'pages/clientes';
 // @import 'pages/cliente-detail';  // ✅ NUEVO (opcional)

@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { ClienteWithRelations, clienteInclude } from './clientes.types';
 import { CreateClienteDto } from './dto/create-cliente.dto';
@@ -12,28 +17,58 @@ export class ClientesService {
   async create(
     createClienteDto: CreateClienteDto,
   ): Promise<ClienteWithRelations> {
-    let colegioId = createClienteDto.colegio?.id;
+    // Verificar DNI duplicado
+    const dniExiste = await this.existeDni(createClienteDto.dni);
 
-    // Si viene un objeto colegio con datos, créalo primero
-    if (createClienteDto.colegio && !createClienteDto.colegio?.id) {
-      const nuevoColegio = await this.prisma.colegio.create({
-        data: {
-          nombre: createClienteDto.colegio.nombre,
-          direccionColegio: createClienteDto.colegio.direccionColegio,
-          ctoColegioUno: createClienteDto.colegio.ctoColegioUno,
-          ctoTelefonoUno: createClienteDto.colegio.ctoTelefonoUno,
-          ctoEmailColegioUno: createClienteDto.colegio.ctoEmailColegioUno,
-          ctoRelacionColegioUno: createClienteDto.colegio.ctoRelacionColegioUno,
-          ctoColegioDos: createClienteDto.colegio.ctoColegioDos,
-          ctoTelefonoDos: createClienteDto.colegio.ctoTelefonoDos,
-          ctoEmailColegioDos: createClienteDto.colegio.ctoEmailColegioDos,
-          ctoRelacionColegioDos: createClienteDto.colegio.ctoRelacionColegioDos,
-        },
-      });
-      colegioId = nuevoColegio.id;
+    if (dniExiste) {
+      throw new ConflictException(
+        `Ya existe un cliente registrado con el DNI ${createClienteDto.dni}`,
+      );
     }
 
-    return await this.prisma.cliente.create({
+    let colegioId = createClienteDto.colegio?.id;
+
+    // Buscar o crear colegio
+    if (createClienteDto.colegio && !createClienteDto.colegio?.id) {
+      const colegioExistente = await this.prisma.colegio.findUnique({
+        where: { nombre: createClienteDto.colegio.nombre },
+      });
+
+      if (colegioExistente) {
+        colegioId = colegioExistente.id;
+        console.log(`✅ Usando colegio existente: ${colegioExistente.nombre}`);
+      } else {
+        const nuevoColegio = await this.prisma.colegio.create({
+          data: {
+            nombre: createClienteDto.colegio.nombre,
+            direccionColegio: createClienteDto.colegio.direccionColegio,
+            ctoColegioUno: createClienteDto.colegio.ctoColegioUno,
+            ctoTelefonoUno: createClienteDto.colegio.ctoTelefonoUno,
+            ctoEmailColegioUno: createClienteDto.colegio.ctoEmailColegioUno,
+            ctoRelacionColegioUno:
+              createClienteDto.colegio.ctoRelacionColegioUno,
+            ctoColegioDos: createClienteDto.colegio.ctoColegioDos,
+            ctoTelefonoDos: createClienteDto.colegio.ctoTelefonoDos,
+            ctoEmailColegioDos: createClienteDto.colegio.ctoEmailColegioDos,
+            ctoRelacionColegioDos:
+              createClienteDto.colegio.ctoRelacionColegioDos,
+          },
+        });
+        colegioId = nuevoColegio.id;
+        console.log(`✅ Colegio creado: ${nuevoColegio.nombre}`);
+      }
+    }
+
+    // Convertir fechas a ISO
+    const fechaNacimientoISO = new Date(
+      createClienteDto.fechaNacimiento!,
+    ).toISOString();
+    const fechaInicioISO = new Date(
+      createClienteDto.fechaInicio!,
+    ).toISOString();
+
+    // ✅ CREAR CLIENTE
+    const cliente = await this.prisma.cliente.create({
       data: {
         nombre: createClienteDto.nombre,
         apellidos: createClienteDto.apellidos,
@@ -42,20 +77,21 @@ export class ClientesService {
         provincia: createClienteDto.provincia,
         ciudad: createClienteDto.ciudad,
         curso: createClienteDto.curso,
-        fechaNacimiento: createClienteDto.fechaNacimiento,
-        fechaInicio: createClienteDto.fechaInicio,
-        colegioId: colegioId, // Usa el ID (existente o recién creado)
+        fechaNacimiento: fechaNacimientoISO,
+        fechaInicio: fechaInicioISO,
+        colegioId: colegioId,
         idCarpetaDrive: createClienteDto.idCarpetaDrive,
 
+        // Familiares
         contactosFamiliares: createClienteDto.familiares
           ? {
               create: createClienteDto.familiares.map((f) => ({
                 nombre: f.nombre,
                 apellidos: f.apellidos,
-                dni: f.dni,
+                dni: f.dni || '',
                 parentesco: f.parentesco,
                 telefono: f.telefono,
-                email: f.email,
+                email: f.email || '',
                 esResponsablePago: f.esResponsablePago ?? false,
                 esContactoPrincipal: f.esContactoPrincipal ?? false,
                 whatsapp: f.whatsapp ?? false,
@@ -63,18 +99,31 @@ export class ClientesService {
             }
           : undefined,
 
+        // ✅ Disponibilidad GENERAL del cliente
+        disponibilidad: createClienteDto.disponibilidad
+          ? {
+              create: createClienteDto.disponibilidad.map((d) => ({
+                diaSemana: d.diaSemana,
+                horaInicio: d.horaInicio,
+                horaFin: d.horaFin,
+              })),
+            }
+          : undefined,
+
+        // Datos sanitarios
         sanitario: createClienteDto.datosSanitarios
           ? {
               create: {
-                diagnostico: createClienteDto.datosSanitarios.diagnostico,
-                centroSalud: createClienteDto.datosSanitarios.centroSalud,
-                tratamientos: createClienteDto.datosSanitarios.tratamientos,
-                medicacion: createClienteDto.datosSanitarios.medicacion,
-                alergias: createClienteDto.datosSanitarios.alergias,
+                diagnostico: createClienteDto.datosSanitarios.diagnostico || '',
+                centroSalud: createClienteDto.datosSanitarios.centroSalud || '',
+                tratamientos:
+                  createClienteDto.datosSanitarios.tratamientos || '',
+                medicacion: createClienteDto.datosSanitarios.medicacion || '',
+                alergias: createClienteDto.datosSanitarios.alergias || '',
                 adaptaciones:
                   createClienteDto.datosSanitarios.adaptaciones ?? false,
                 tipoAdaptaciones:
-                  createClienteDto.datosSanitarios.tipoAdaptaciones,
+                  createClienteDto.datosSanitarios.tipoAdaptaciones || null,
                 especialistas:
                   createClienteDto.datosSanitarios.especialistas ?? [],
                 apoyos: createClienteDto.datosSanitarios.apoyos ?? false,
@@ -82,6 +131,7 @@ export class ClientesService {
             }
           : undefined,
 
+        // Objetivos generales
         objetivosGeneralesAsignados: createClienteDto.objetivosGeneralesIds
           ? {
               create: createClienteDto.objetivosGeneralesIds.map((objId) => ({
@@ -92,6 +142,47 @@ export class ClientesService {
       },
       include: clienteInclude,
     });
+
+    console.log(`✅ Cliente creado: ${cliente.nombre} ${cliente.apellidos}`);
+
+    // ✅ NUEVO: Si viene asignación, crear relación con trabajador y horarios específicos
+    if (
+      createClienteDto.asignaciones &&
+      createClienteDto.asignaciones.length > 0
+    ) {
+      for (const asignacion of createClienteDto.asignaciones) {
+        await this.prisma.clienteTrabajador.create({
+          data: {
+            clienteId: cliente.id,
+            trabajadorId: asignacion.trabajadorId,
+            tipoTerapia: asignacion.tipoTerapia,
+            horarios: {
+              create: asignacion.horarios.map((h) => ({
+                diaSemana: h.diaSemana,
+                horaInicio: h.horaInicio,
+                horaFin: h.horaFin,
+              })),
+            },
+          },
+        });
+
+        console.log(
+          `✅ Asignación creada: ${asignacion.tipoTerapia} con trabajador ${asignacion.trabajadorId}`,
+        );
+      }
+    }
+    // Retornar cliente con todas las relaciones
+    const clienteCreado = await this.prisma.cliente.findUnique({
+      where: { id: cliente.id },
+      include: clienteInclude,
+    });
+
+    if (!clienteCreado) {
+      throw new Error('Error al recuperar el cliente recién creado');
+    }
+
+    // Retornar cliente con todas las relaciones
+    return clienteCreado;
   }
 
   async findAll(): Promise<ClienteWithRelations[]> {
@@ -312,6 +403,92 @@ export class ClientesService {
   }
 
   /**
+   * Asignar un trabajador adicional a un cliente existente
+   */
+  async asignarTrabajador(
+    clienteId: string,
+    trabajadorId: string,
+    tipoTerapia: string,
+    horarios: { diaSemana: number; horaInicio: string; horaFin: string }[],
+  ) {
+    // ✅ MOVER ESTA VALIDACIÓN AL PRINCIPIO
+    if (!tipoTerapia) {
+      throw new BadRequestException('El tipo de terapia es obligatorio');
+    }
+
+    // Verificar que el cliente existe
+    const cliente = await this.prisma.cliente.findUnique({
+      where: { id: clienteId },
+    });
+
+    if (!cliente) {
+      throw new NotFoundException(`Cliente con ID ${clienteId} no encontrado`);
+    }
+
+    // Verificar que el trabajador existe
+    const trabajador = await this.prisma.trabajador.findUnique({
+      where: { id: trabajadorId },
+    });
+
+    if (!trabajador) {
+      throw new NotFoundException(
+        `Trabajador con ID ${trabajadorId} no encontrado`,
+      );
+    }
+
+    // Verificar si ya existe esta asignación
+    const asignacionExistente = await this.prisma.clienteTrabajador.findFirst({
+      where: {
+        clienteId,
+        trabajadorId,
+        tipoTerapia,
+      },
+    });
+
+    if (asignacionExistente) {
+      throw new ConflictException(
+        `El cliente ya tiene asignado este trabajador para ${tipoTerapia}`,
+      );
+    }
+
+    // Crear la nueva asignación
+    const asignacion = await this.prisma.clienteTrabajador.create({
+      data: {
+        clienteId,
+        trabajadorId,
+        tipoTerapia,
+        horarios: {
+          create: horarios.map((h) => ({
+            diaSemana: h.diaSemana,
+            horaInicio: h.horaInicio,
+            horaFin: h.horaFin,
+          })),
+        },
+      },
+      include: {
+        trabajador: {
+          select: {
+            id: true,
+            nombre: true,
+            apellidos: true,
+            email: true,
+          },
+        },
+        horarios: true,
+      },
+    });
+
+    console.log(
+      `✅ Cliente ${clienteId} asignado a trabajador ${trabajadorId} para ${tipoTerapia}`,
+    );
+
+    return {
+      message: 'Trabajador asignado correctamente',
+      asignacion,
+    };
+  }
+
+  /**
    * Estadísticas de objetivos del cliente
    */
   async getEstadisticasObjetivos(clienteId: string) {
@@ -422,5 +599,14 @@ export class ClientesService {
       },
       take: 10,
     });
+  }
+
+  async existeDni(dni: string): Promise<boolean> {
+    const cliente = await this.prisma.cliente.findUnique({
+      where: { dni },
+      select: { id: true },
+    });
+
+    return !!cliente;
   }
 }

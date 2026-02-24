@@ -64,13 +64,13 @@ export class TrabajadorController {
   async asignarCliente(
     @Param('trabajadorId') trabajadorId: string,
     @Param('clienteId') clienteId: string,
-    @Body() body?: { tipoTerapia?: string },
+    @Body() body: { tipoTerapia: string },
   ) {
     this.logger.log(`Asignando cliente ${clienteId} al trabajador ${trabajadorId}`);
     return this.trabajadorService.asignarCliente(
       trabajadorId, 
       clienteId, 
-      body?.tipoTerapia
+      body.tipoTerapia
     );
   }
 

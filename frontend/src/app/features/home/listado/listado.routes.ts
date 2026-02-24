@@ -13,7 +13,8 @@ export default [
       },
       {
         path: 'contactos',
-        loadComponent: () => import('./tabs/contactos-tab/contactos-tab.component'),
+        loadComponent: () =>
+          import('./tabs/contactos-tab/contactos-tab.component'),
       },
       {
         path: 'colegio',
@@ -21,15 +22,23 @@ export default [
       },
       {
         path: 'sanitario',
-        loadComponent: () => import('./tabs/sanitario-tab/sanitario-tab.component'),
+        loadComponent: () =>
+          import('./tabs/sanitario-tab/sanitario-tab.component'),
+      },
+      {
+        path: 'terapeutas',
+        loadComponent: () =>
+          import('./tabs/trabajador-tab/trabajador-tab.component'),
       },
       {
         path: 'objetivos',
-        loadComponent: () => import('./tabs/objetivos-tab/objetivos-tab.component'),
+        loadComponent: () =>
+          import('./tabs/objetivos-tab/objetivos-tab.component'),
       },
       {
         path: 'registro',
-        loadComponent: () => import('./tabs/registro-tab/registro-tab.component'),
+        loadComponent: () =>
+          import('./tabs/registro-tab/registro-tab.component'),
       },
     ],
   },
