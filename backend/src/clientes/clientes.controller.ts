@@ -190,6 +190,49 @@ export class ClientesController {
       body.confirmarActualizacionSesiones ?? false,
     );
   }
+
+  // ── FAMILIARES ────────────────────────────────────────────
+  @Post(':id/familiares')
+  @HttpCode(HttpStatus.CREATED)
+  async crearFamiliar(@Param('id') id: string, @Body() body: any) {
+    this.logger.log(`👨‍👩‍👧 POST /api/clientes/${id}/familiares`);
+    return this.clientesService.crearFamiliar(id, body);
+  }
+
+  @Patch(':id/familiares/:familiarId')
+  async updateFamiliar(
+    @Param('id') id: string,
+    @Param('familiarId') familiarId: string,
+    @Body() body: any,
+  ) {
+    this.logger.log(`👨‍👩‍👧 PATCH /api/clientes/${id}/familiares/${familiarId}`);
+    return this.clientesService.updateFamiliar(id, familiarId, body);
+  }
+
+  @Delete(':id/familiares/:familiarId')
+  @HttpCode(HttpStatus.OK)
+  async eliminarFamiliar(
+    @Param('id') id: string,
+    @Param('familiarId') familiarId: string,
+  ) {
+    this.logger.log(`👨‍👩‍👧 DELETE /api/clientes/${id}/familiares/${familiarId}`);
+    return this.clientesService.eliminarFamiliar(id, familiarId);
+  }
+
+  // ── SANITARIO ─────────────────────────────────────────────
+  @Patch(':id/sanitario')
+  async updateSanitario(@Param('id') id: string, @Body() body: any) {
+    this.logger.log(`🏥 PATCH /api/clientes/${id}/sanitario`);
+    return this.clientesService.updateSanitario(id, body);
+  }
+
+  // ── COLEGIO ───────────────────────────────────────────────
+  @Patch(':id/colegio')
+  async updateColegio(@Param('id') id: string, @Body() body: any) {
+    this.logger.log(`🏫 PATCH /api/clientes/${id}/colegio`);
+    return this.clientesService.updateColegio(id, body);
+  }
+
   /**
    * DELETE /api/clientes/:id/objetivos-generales/:objetivoId
    */

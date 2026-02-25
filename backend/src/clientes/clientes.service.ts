@@ -728,22 +728,40 @@ export class ClientesService {
 
   async update(
     id: string,
-    updateDto: Partial<CreateClienteDto>,
+    updateDto: Partial<CreateClienteDto> & {
+      autorizaDatosPersonales?: boolean;
+      autorizaDatosImagen?: boolean;
+      email?: string;
+      movil?: string;
+      fechaAlta?: string;
+    },
   ): Promise<ClienteWithRelations> {
-    // Construye el objeto de actualización correctamente
     const updateData: any = {};
 
-    if (updateDto.nombre) updateData.nombre = updateDto.nombre;
-    if (updateDto.apellidos) updateData.apellidos = updateDto.apellidos;
-    if (updateDto.dni) updateData.dni = updateDto.dni;
-    if (updateDto.domicilio) updateData.domicilio = updateDto.domicilio;
-    if (updateDto.provincia) updateData.provincia = updateDto.provincia;
-    if (updateDto.ciudad) updateData.ciudad = updateDto.ciudad;
-    if (updateDto.curso) updateData.curso = updateDto.curso;
-    if (updateDto.fechaNacimiento)
-      updateData.fechaNacimiento = updateDto.fechaNacimiento;
-    if (updateDto.fechaInicio) updateData.fechaInicio = updateDto.fechaInicio;
-    if (updateDto.colegio?.id) updateData.colegioId = updateDto.colegio.id;
+    if (updateDto.nombre !== undefined) updateData.nombre = updateDto.nombre;
+    if (updateDto.apellidos !== undefined)
+      updateData.apellidos = updateDto.apellidos;
+    if (updateDto.dni !== undefined) updateData.dni = updateDto.dni;
+    if (updateDto.domicilio !== undefined)
+      updateData.domicilio = updateDto.domicilio;
+    if (updateDto.provincia !== undefined)
+      updateData.provincia = updateDto.provincia;
+    if (updateDto.ciudad !== undefined) updateData.ciudad = updateDto.ciudad;
+    if (updateDto.curso !== undefined) updateData.curso = updateDto.curso;
+    if (updateDto.email !== undefined) updateData.email = updateDto.email;
+    if (updateDto.movil !== undefined) updateData.movil = updateDto.movil;
+    if (updateDto.fechaNacimiento !== undefined)
+      updateData.fechaNacimiento = new Date(updateDto.fechaNacimiento);
+    if (updateDto.fechaInicio !== undefined)
+      updateData.fechaInicio = new Date(updateDto.fechaInicio);
+    if (updateDto.fechaAlta !== undefined)
+      updateData.fechaAlta = new Date(updateDto.fechaAlta);
+    if (updateDto.autorizaDatosPersonales !== undefined)
+      updateData.autorizaDatosPersonales = updateDto.autorizaDatosPersonales;
+    if (updateDto.autorizaDatosImagen !== undefined)
+      updateData.autorizaDatosImagen = updateDto.autorizaDatosImagen;
+    if (updateDto.colegio?.id !== undefined)
+      updateData.colegioId = updateDto.colegio.id;
 
     return await this.prisma.cliente.update({
       where: { id },
@@ -779,5 +797,121 @@ export class ClientesService {
     });
 
     return !!cliente;
+  }
+
+  // ── FAMILIARES ────────────────────────────────────────────
+  async crearFamiliar(clienteId: string, data: any) {
+    const cliente = await this.prisma.cliente.findUnique({ where: { id: clienteId } });
+    if (!cliente) throw new NotFoundException(`Cliente ${clienteId} no encontrado`);
+
+    return this.prisma.familiar.create({
+      data: {
+        clienteId,
+        nombre:             data.nombre,
+        apellidos:          data.apellidos,
+        parentesco:         data.parentesco,
+        telefono:           data.telefono,
+        email:              data.email ?? '',
+        dni:                data.dni ?? '',
+        esContactoPrincipal:data.esContactoPrincipal ?? false,
+        esResponsablePago:  data.esResponsablePago ?? false,
+        whatsapp:           data.whatsapp ?? true,
+      },
+    });
+  }
+
+  async updateFamiliar(clienteId: string, familiarId: string, data: any) {
+    const familiar = await this.prisma.familiar.findFirst({
+      where: { id: familiarId, clienteId },
+    });
+    if (!familiar) throw new NotFoundException(`Familiar ${familiarId} no encontrado`);
+
+    return this.prisma.familiar.update({
+      where: { id: familiarId },
+      data: {
+        ...(data.nombre             !== undefined && { nombre: data.nombre }),
+        ...(data.apellidos          !== undefined && { apellidos: data.apellidos }),
+        ...(data.parentesco         !== undefined && { parentesco: data.parentesco }),
+        ...(data.telefono           !== undefined && { telefono: data.telefono }),
+        ...(data.esContactoPrincipal!== undefined && { esContactoPrincipal: data.esContactoPrincipal }),
+        ...(data.esResponsablePago  !== undefined && { esResponsablePago: data.esResponsablePago }),
+        ...(data.whatsapp           !== undefined && { whatsapp: data.whatsapp }),
+      },
+    });
+  }
+
+  async eliminarFamiliar(clienteId: string, familiarId: string) {
+    const familiar = await this.prisma.familiar.findFirst({
+      where: { id: familiarId, clienteId },
+    });
+    if (!familiar) throw new NotFoundException(`Familiar ${familiarId} no encontrado`);
+
+    await this.prisma.familiar.delete({ where: { id: familiarId } });
+    return { message: 'Contacto eliminado correctamente', familiarId };
+  }
+
+  // ── SANITARIO ─────────────────────────────────────────────
+  async updateSanitario(clienteId: string, data: any) {
+    const sanitario = await this.prisma.sanitario.findUnique({ where: { clienteId } });
+
+    if (!sanitario) {
+      // Crear si no existe
+      return this.prisma.sanitario.create({
+        data: {
+          clienteId,
+          diagnostico:     data.diagnostico  ?? '',
+          centroSalud:     data.centroSalud  ?? '',
+          tratamientos:    data.tratamientos ?? '',
+          medicacion:      data.medicacion   ?? '',
+          alergias:        data.alergias     ?? '',
+          adaptaciones:    data.adaptaciones ?? false,
+          tipoAdaptaciones:data.tipoAdaptaciones ?? null,
+          especialistas:   data.especialistas ?? [],
+          apoyos:          data.apoyos       ?? false,
+        },
+      });
+    }
+
+    return this.prisma.sanitario.update({
+      where: { clienteId },
+      data: {
+        ...(data.diagnostico      !== undefined && { diagnostico: data.diagnostico }),
+        ...(data.centroSalud      !== undefined && { centroSalud: data.centroSalud }),
+        ...(data.tratamientos     !== undefined && { tratamientos: data.tratamientos }),
+        ...(data.medicacion       !== undefined && { medicacion: data.medicacion }),
+        ...(data.alergias         !== undefined && { alergias: data.alergias }),
+        ...(data.adaptaciones     !== undefined && { adaptaciones: data.adaptaciones }),
+        ...(data.tipoAdaptaciones !== undefined && { tipoAdaptaciones: data.tipoAdaptaciones }),
+        ...(data.especialistas    !== undefined && { especialistas: data.especialistas }),
+        ...(data.apoyos           !== undefined && { apoyos: data.apoyos }),
+      },
+    });
+  }
+
+  // ── COLEGIO ───────────────────────────────────────────────
+  async updateColegio(clienteId: string, data: any) {
+    // Obtener el colegioId actual del cliente
+    const cliente = await this.prisma.cliente.findUnique({
+      where: { id: clienteId },
+      select: { colegioId: true },
+    });
+    if (!cliente) throw new NotFoundException(`Cliente ${clienteId} no encontrado`);
+    if (!cliente.colegioId) throw new NotFoundException('Este cliente no tiene colegio asignado');
+
+    return this.prisma.colegio.update({
+      where: { id: cliente.colegioId },
+      data: {
+        ...(data.nombre               !== undefined && { nombre: data.nombre }),
+        ...(data.direccionColegio     !== undefined && { direccionColegio: data.direccionColegio }),
+        ...(data.ctoColegioUno        !== undefined && { ctoColegioUno: data.ctoColegioUno }),
+        ...(data.ctoTelefonoUno       !== undefined && { ctoTelefonoUno: data.ctoTelefonoUno }),
+        ...(data.ctoEmailColegioUno   !== undefined && { ctoEmailColegioUno: data.ctoEmailColegioUno }),
+        ...(data.ctoRelacionColegioUno!== undefined && { ctoRelacionColegioUno: data.ctoRelacionColegioUno }),
+        ...(data.ctoColegioDos        !== undefined && { ctoColegioDos: data.ctoColegioDos }),
+        ...(data.ctoTelefonoDos       !== undefined && { ctoTelefonoDos: data.ctoTelefonoDos }),
+        ...(data.ctoEmailColegioDos   !== undefined && { ctoEmailColegioDos: data.ctoEmailColegioDos }),
+        ...(data.ctoRelacionColegioDos!== undefined && { ctoRelacionColegioDos: data.ctoRelacionColegioDos }),
+      },
+    });
   }
 }

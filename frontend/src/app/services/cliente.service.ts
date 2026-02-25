@@ -56,6 +56,19 @@ export class ClientesService {
   }
 
   /**
+   * Actualizar campos parciales de un cliente
+   * PATCH /api/clientes/:id
+   */
+  updateCliente(id: string, data: Partial<any>): Observable<any> {
+    return this.http
+      .patch<WrappedResponse<any>>(`${this.api}/${id}`, data)
+      .pipe(
+        map((res) => res.data || res),
+        tap(() => console.log('✅ Cliente actualizado:', id)),
+      );
+  }
+
+  /**
    * Obtener todos los clientes
    */
   getAll(): Observable<ClienteDataBackend[]> {
@@ -96,6 +109,7 @@ export class ClientesService {
             edad: calcularEdad(new Date(c.fechaNacimiento)),
             fechaNacimiento: new Date(c.fechaNacimiento),
             domicilio: c.domicilio,
+            curso: c.curso,
             dni: c.dni,
             ciudad: c.ciudad,
             provincia: c.provincia,
@@ -167,6 +181,47 @@ export class ClientesService {
         }),
         map(() => {}),
       );
+  }
+
+  // ── FAMILIAR ──────────────────────────────────────────────
+  crearFamiliar(clienteId: string, data: any): Observable<any> {
+    return this.http
+      .post<WrappedResponse<any>>(`${this.api}/${clienteId}/familiares`, data)
+      .pipe(map((res) => res.data || res));
+  }
+
+  updateFamiliar(
+    clienteId: string,
+    familiarId: string,
+    data: any,
+  ): Observable<any> {
+    return this.http
+      .patch<
+        WrappedResponse<any>
+      >(`${this.api}/${clienteId}/familiares/${familiarId}`, data)
+      .pipe(map((res) => res.data || res));
+  }
+
+  eliminarFamiliar(clienteId: string, familiarId: string): Observable<any> {
+    return this.http
+      .delete<
+        WrappedResponse<any>
+      >(`${this.api}/${clienteId}/familiares/${familiarId}`)
+      .pipe(map((res) => res.data || res));
+  }
+
+  // ── SANITARIO ─────────────────────────────────────────────
+  updateSanitario(clienteId: string, data: any): Observable<any> {
+    return this.http
+      .patch<WrappedResponse<any>>(`${this.api}/${clienteId}/sanitario`, data)
+      .pipe(map((res) => res.data || res));
+  }
+
+  // ── COLEGIO ───────────────────────────────────────────────
+  updateColegio(clienteId: string, data: any): Observable<any> {
+    return this.http
+      .patch<WrappedResponse<any>>(`${this.api}/${clienteId}/colegio`, data)
+      .pipe(map((res) => res.data || res));
   }
 
   // ========================================

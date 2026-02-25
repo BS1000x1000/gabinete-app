@@ -1,129 +1,149 @@
 <div class="tab-content-modern p-4">
 
-  <!-- Si no hay datos sanitarios -->
-  <div *ngIf="!sanitario()" class="alert alert-info">
-    <i class="bi bi-info-circle me-2"></i>
-    No hay información sanitaria registrada
+  <div *ngIf="error()" class="alert alert-danger alert-dismissible py-2 mb-3">
+    <i class="bi bi-exclamation-triangle me-2"></i>{{ error() }}
+    <button type="button" class="btn-close" (click)="error.set(null)"></button>
   </div>
 
-  <ng-container *ngIf="sanitario()">
-
-    <!-- Sección: Centro de Salud -->
-    <div class="section mb-1">
-      <h6 class="section-title">
-        <i class="bi bi-hospital me-2"></i>Centro de Salud
-      </h6>
-      <div class="data-grid">
-        <app-data-field
-          label="Centro de salud asignado"
-          [value]="sanitario()?.centroSalud"
-          icon="bi-hospital"
-          [fullWidth]="true"
-        ></app-data-field>
+  <!-- ══ DIAGNÓSTICO ══ -->
+  <div class="section mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h6 class="section-title mb-0"><i class="bi bi-heart-pulse-fill me-2"></i>Diagnóstico y Centro</h6>
+      <div>
+        <button *ngIf="seccionEditando() !== 'diagnostico'" class="btn btn-sm btn-outline-primary" (click)="editar('diagnostico')">
+          <i class="bi bi-pencil me-1"></i>Editar
+        </button>
+        <ng-container *ngIf="seccionEditando() === 'diagnostico'">
+          <button class="btn btn-sm btn-primary me-2" [disabled]="guardando()" (click)="guardar()">
+            <span *ngIf="guardando()" class="spinner-border spinner-border-sm me-1"></span>
+            <i *ngIf="!guardando()" class="bi bi-check-lg me-1"></i>{{ guardando() ? 'Guardando...' : 'Guardar' }}
+          </button>
+          <button class="btn btn-sm btn-outline-secondary" (click)="cancelar()">Cancelar</button>
+        </ng-container>
       </div>
     </div>
 
-    <!-- Sección: Alergias (destacado) -->
-    <div class="section mb-1" *ngIf="sanitario()?.alergias">
-      <h6 class="section-title text-danger">
-        <i class="bi bi-exclamation-triangle-fill me-2"></i>Alergias
-      </h6>
-      <div class="alert alert-danger mb-0">
-        <div class="d-flex align-items-start">
-          <i class="bi bi-exclamation-circle-fill fs-4 me-3"></i>
-          <div>
-            <strong class="d-block mb-1">⚠️ IMPORTANTE</strong>
-            <p class="mb-0">{{ sanitario()?.alergias }}</p>
+    <div *ngIf="seccionEditando() !== 'diagnostico'" class="data-grid">
+      <app-data-field label="Diagnóstico"   [value]="sanitario()?.diagnostico" icon="bi-clipboard2-pulse" [fullWidth]="true"></app-data-field>
+      <app-data-field label="Centro de salud" [value]="sanitario()?.centroSalud" icon="bi-hospital"></app-data-field>
+      <app-data-field label="Alergias"      [value]="sanitario()?.alergias"    icon="bi-exclamation-triangle" emptyText="Sin alergias registradas"></app-data-field>
+    </div>
+
+    <div *ngIf="seccionEditando() === 'diagnostico'" class="border rounded p-3 bg-light" [formGroup]="formDiagnostico">
+      <div class="row g-3">
+        <div class="col-12">
+          <label class="form-label small fw-semibold">Diagnóstico <span class="text-danger">*</span></label>
+          <textarea class="form-control form-control-sm" rows="3" formControlName="diagnostico"
+                    [class.is-invalid]="formDiagnostico.get('diagnostico')?.invalid && formDiagnostico.get('diagnostico')?.touched"></textarea>
+          <div class="invalid-feedback">Campo obligatorio</div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold">Centro de salud</label>
+          <input class="form-control form-control-sm" formControlName="centroSalud">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold">Alergias</label>
+          <input class="form-control form-control-sm" formControlName="alergias" placeholder="Ej: Polen, frutos secos...">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ MEDICACIÓN ══ -->
+  <div class="section mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h6 class="section-title mb-0"><i class="bi bi-capsule-pill me-2"></i>Medicación y Tratamientos</h6>
+      <div>
+        <button *ngIf="seccionEditando() !== 'medicacion'" class="btn btn-sm btn-outline-primary" (click)="editar('medicacion')">
+          <i class="bi bi-pencil me-1"></i>Editar
+        </button>
+        <ng-container *ngIf="seccionEditando() === 'medicacion'">
+          <button class="btn btn-sm btn-primary me-2" [disabled]="guardando()" (click)="guardar()">
+            <span *ngIf="guardando()" class="spinner-border spinner-border-sm me-1"></span>
+            <i *ngIf="!guardando()" class="bi bi-check-lg me-1"></i>{{ guardando() ? 'Guardando...' : 'Guardar' }}
+          </button>
+          <button class="btn btn-sm btn-outline-secondary" (click)="cancelar()">Cancelar</button>
+        </ng-container>
+      </div>
+    </div>
+
+    <div *ngIf="seccionEditando() !== 'medicacion'" class="data-grid">
+      <app-data-field label="Medicación"    [value]="sanitario()?.medicacion"   icon="bi-capsule"        [fullWidth]="true" emptyText="Sin medicación"></app-data-field>
+      <app-data-field label="Tratamientos"  [value]="sanitario()?.tratamientos" icon="bi-prescription2"  [fullWidth]="true" emptyText="Sin tratamientos"></app-data-field>
+      <app-data-field label="Especialistas" [value]="sanitario()?.especialistas" type="list" icon="bi-person-badge" [fullWidth]="true"></app-data-field>
+    </div>
+
+    <div *ngIf="seccionEditando() === 'medicacion'" class="border rounded p-3 bg-light" [formGroup]="formMedicacion">
+      <div class="row g-3">
+        <div class="col-12">
+          <label class="form-label small fw-semibold">Medicación</label>
+          <textarea class="form-control form-control-sm" rows="2" formControlName="medicacion" placeholder="Medicamentos actuales..."></textarea>
+        </div>
+        <div class="col-12">
+          <label class="form-label small fw-semibold">Tratamientos</label>
+          <textarea class="form-control form-control-sm" rows="2" formControlName="tratamientos" placeholder="Tratamientos en curso..."></textarea>
+        </div>
+        <div class="col-12">
+          <label class="form-label small fw-semibold">Especialistas</label>
+          <input class="form-control form-control-sm" formControlName="especialistas" placeholder="Separa por comas: Neurólogo, Psicólogo...">
+          <div class="form-text">Separa cada especialista con una coma</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ ADAPTACIONES ══ -->
+  <div class="section">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h6 class="section-title mb-0"><i class="bi bi-gear-fill me-2"></i>Apoyos y Adaptaciones</h6>
+      <div>
+        <button *ngIf="seccionEditando() !== 'adaptaciones'" class="btn btn-sm btn-outline-primary" (click)="editar('adaptaciones')">
+          <i class="bi bi-pencil me-1"></i>Editar
+        </button>
+        <ng-container *ngIf="seccionEditando() === 'adaptaciones'">
+          <button class="btn btn-sm btn-primary me-2" [disabled]="guardando()" (click)="guardar()">
+            <span *ngIf="guardando()" class="spinner-border spinner-border-sm me-1"></span>
+            <i *ngIf="!guardando()" class="bi bi-check-lg me-1"></i>{{ guardando() ? 'Guardando...' : 'Guardar' }}
+          </button>
+          <button class="btn btn-sm btn-outline-secondary" (click)="cancelar()">Cancelar</button>
+        </ng-container>
+      </div>
+    </div>
+
+    <div *ngIf="seccionEditando() !== 'adaptaciones'" class="data-grid">
+      <app-data-field label="Adaptación curricular" [value]="sanitario()?.adaptaciones ? 'SÍ' : 'NO'" type="badge"
+                      [badgeClass]="sanitario()?.adaptaciones ? 'bg-success' : 'bg-secondary'" icon="bi-check-circle"></app-data-field>
+      <app-data-field *ngIf="sanitario()?.adaptaciones" label="Tipo de adaptación" [value]="sanitario()?.tipoAdaptaciones" icon="bi-list-ul"></app-data-field>
+      <app-data-field label="Recibe apoyos" [value]="sanitario()?.apoyos ? 'SÍ' : 'NO'" type="badge"
+                      [badgeClass]="sanitario()?.apoyos ? 'bg-success' : 'bg-secondary'" icon="bi-people"></app-data-field>
+    </div>
+
+    <div *ngIf="seccionEditando() === 'adaptaciones'" class="border rounded p-3 bg-light" [formGroup]="formAdaptaciones">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label small fw-semibold d-block">Adaptación curricular</label>
+          <div class="form-check form-switch mt-1">
+            <input class="form-check-input" type="checkbox" formControlName="adaptaciones" id="adaptaciones">
+            <label class="form-check-label small" for="adaptaciones">
+              {{ formAdaptaciones.get('adaptaciones')?.value ? 'SÍ' : 'NO' }}
+            </label>
+          </div>
+        </div>
+        <div class="col-md-8" *ngIf="formAdaptaciones.get('adaptaciones')?.value">
+          <label class="form-label small fw-semibold">Tipo de adaptación</label>
+          <input class="form-control form-control-sm" formControlName="tipoAdaptaciones" placeholder="ACIs, ACIS, ACI no significativa...">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small fw-semibold d-block">Recibe apoyos</label>
+          <div class="form-check form-switch mt-1">
+            <input class="form-check-input" type="checkbox" formControlName="apoyos" id="apoyos">
+            <label class="form-check-label small" for="apoyos">
+              {{ formAdaptaciones.get('apoyos')?.value ? 'SÍ' : 'NO' }}
+            </label>
           </div>
         </div>
       </div>
     </div>
-
-    <!-- Sección: Medicación (destacado) -->
-    <div class="section mb-1" *ngIf="sanitario()?.medicacion">
-      <h6 class="section-title text-info">
-        <i class="bi bi-capsule me-2"></i>Medicación
-      </h6>
-      <div class="alert alert-info mb-0">
-        <div class="d-flex align-items-start">
-          <i class="bi bi-info-circle-fill fs-4 me-3"></i>
-          <div>
-            <strong class="d-block mb-1">💊 Medicación Actual</strong>
-            <p class="mb-0">{{ sanitario()?.medicacion }}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Sección: Diagnóstico -->
-    <div class="section mb-1">
-      <h6 class="section-title">
-        <i class="bi bi-clipboard2-pulse me-2"></i>Información Médica
-      </h6>
-      <div class="data-grid">
-        <app-data-field
-          label="Diagnóstico"
-          [value]="sanitario()?.diagnostico"
-          icon="bi-clipboard2-pulse"
-          [fullWidth]="true"
-        ></app-data-field>
-
-        <app-data-field
-          label="Tratamientos"
-          [value]="sanitario()?.tratamientos"
-          icon="bi-prescription2"
-          [fullWidth]="true"
-        ></app-data-field>
-      </div>
-    </div>
-
-    <!-- Sección: Especialistas -->
-    <div class="section mb-1" *ngIf="sanitario()?.especialistas && sanitario()?.especialistas!.length > 0">
-      <h6 class="section-title">
-        <i class="bi bi-people me-2"></i>Especialistas
-      </h6>
-      <div class="data-grid">
-        <app-data-field
-          label="Especialistas que atienden al cliente"
-          [value]="sanitario()?.especialistas"
-          type="list"
-          icon="bi-person-badge"
-          [fullWidth]="true"
-        ></app-data-field>
-      </div>
-    </div>
-
-    <!-- Sección: Adaptaciones -->
-    <div class="section mb-1">
-      <h6 class="section-title">
-        <i class="bi bi-gear-fill me-2"></i>Apoyos y Adaptaciones
-      </h6>
-      <div class="data-grid">
-        <app-data-field
-          label="Tiene adaptaciones"
-          [value]="sanitario()?.adaptaciones ? 'SÍ' : 'NO'"
-          type="badge"
-          [badgeClass]="sanitario()?.adaptaciones ? 'bg-success' : 'bg-secondary'"
-          icon="bi-check-circle"
-        ></app-data-field>
-
-        <app-data-field
-          *ngIf="sanitario()?.adaptaciones"
-          label="Tipo de adaptaciones"
-          [value]="sanitario()?.tipoAdaptaciones"
-          icon="bi-list-ul"
-        ></app-data-field>
-
-        <app-data-field
-          label="Recibe apoyos"
-          [value]="sanitario()?.apoyos ? 'SÍ' : 'NO'"
-          type="badge"
-          [badgeClass]="sanitario()?.apoyos ? 'bg-success' : 'bg-secondary'"
-          icon="bi-people"
-        ></app-data-field>
-      </div>
-    </div>
-
-  </ng-container>
+  </div>
 
 </div>

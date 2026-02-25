@@ -1,122 +1,249 @@
 <div class="tab-content-modern p-4">
-  
-  <!-- Sección: Información Personal -->
-  <div class="section mb-1">
-    <h6 class="section-title">
-      <i class="bi bi-person-fill me-2"></i>Información Personal
-    </h6>
-    <div class="data-grid">
-      <app-data-field
-        label="Nombre completo"
-        [value]="cliente()?.nombre + ' ' + cliente()?.apellidos"
-        icon="bi-person"
-      ></app-data-field>
 
-      <app-data-field
-        label="Fecha de nacimiento"
-        [value]="cliente()?.fechaNacimiento"
-        type="date"
-        icon="bi-calendar3"
-      ></app-data-field>
+  <!-- Error global -->
+  <div *ngIf="errorGuardado()" class="alert alert-danger alert-dismissible py-2 mb-3">
+    <i class="bi bi-exclamation-triangle me-2"></i>{{ errorGuardado() }}
+    <button type="button" class="btn-close" (click)="errorGuardado.set(null)"></button>
+  </div>
 
-      <app-data-field
-        label="Edad"
-        [value]="cliente()?.edad + ' años'"
-        icon="bi-cake2"
-      ></app-data-field>
+  <!-- ══════════════════════════════════════════════
+       SECCIÓN: INFORMACIÓN PERSONAL
+  ══════════════════════════════════════════════ -->
+  <div class="section mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h6 class="section-title mb-0">
+        <i class="bi bi-person-fill me-2"></i>Información Personal
+      </h6>
+      <div>
+        <button *ngIf="seccionEditando() !== 'personal'"
+                class="btn btn-sm btn-outline-primary"
+                (click)="editar('personal')">
+          <i class="bi bi-pencil me-1"></i>Editar
+        </button>
+        <ng-container *ngIf="seccionEditando() === 'personal'">
+          <button class="btn btn-sm btn-primary me-2"
+                  [disabled]="guardando()"
+                  (click)="guardar()">
+            <span *ngIf="guardando()" class="spinner-border spinner-border-sm me-1"></span>
+            <i *ngIf="!guardando()" class="bi bi-check-lg me-1"></i>
+            {{ guardando() ? 'Guardando...' : 'Guardar' }}
+          </button>
+          <button class="btn btn-sm btn-outline-secondary" (click)="cancelar()">
+            Cancelar
+          </button>
+        </ng-container>
+      </div>
+    </div>
 
-      <app-data-field
-        label="DNI"
-        [value]="cliente()?.dni"
-        icon="bi-card-text"
-      ></app-data-field>
+    <!-- Modo lectura -->
+    <div *ngIf="seccionEditando() !== 'personal'" class="data-grid">
+      <app-data-field label="Nombre" [value]="cliente()?.nombre" icon="bi-person"></app-data-field>
+      <app-data-field label="Apellidos" [value]="cliente()?.apellidos" icon="bi-person"></app-data-field>
+      <app-data-field label="Fecha de nacimiento" [value]="cliente()?.fechaNacimiento" type="date" icon="bi-calendar3"></app-data-field>
+      <app-data-field label="Edad" [value]="cliente()?.edad + ' años'" icon="bi-cake2"></app-data-field>
+      <app-data-field label="DNI" [value]="cliente()?.dni" icon="bi-card-text"></app-data-field>
+      <app-data-field label="Curso" [value]="cliente()?.curso" icon="bi-mortarboard"></app-data-field>
+    </div>
+
+    <!-- Modo edición -->
+    <div *ngIf="seccionEditando() === 'personal'"
+         class="border rounded p-3 bg-light" [formGroup]="formPersonal">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label small fw-semibold">Nombre <span class="text-danger">*</span></label>
+          <input class="form-control form-control-sm" formControlName="nombre"
+                 [class.is-invalid]="formPersonal.get('nombre')?.invalid && formPersonal.get('nombre')?.touched">
+          <div class="invalid-feedback">Campo obligatorio</div>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small fw-semibold">Apellidos <span class="text-danger">*</span></label>
+          <input class="form-control form-control-sm" formControlName="apellidos"
+                 [class.is-invalid]="formPersonal.get('apellidos')?.invalid && formPersonal.get('apellidos')?.touched">
+          <div class="invalid-feedback">Campo obligatorio</div>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small fw-semibold">DNI <span class="text-danger">*</span></label>
+          <input class="form-control form-control-sm" formControlName="dni"
+                 [class.is-invalid]="formPersonal.get('dni')?.invalid && formPersonal.get('dni')?.touched">
+          <div class="invalid-feedback">Campo obligatorio</div>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small fw-semibold">Fecha de nacimiento</label>
+          <input type="date" class="form-control form-control-sm" formControlName="fechaNacimiento">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small fw-semibold">Curso</label>
+          <input class="form-control form-control-sm" formControlName="curso" placeholder="Ej: 3º Primaria">
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Sección: Contacto -->
-  <div class="section mb-1">
-    <h6 class="section-title">
-      <i class="bi bi-telephone-fill me-2"></i>Información de Contacto
-    </h6>
-    <div class="data-grid">
-      <app-data-field
-        label="Email"
-        [value]="cliente()?.email"
-        type="email"
-        icon="bi-envelope"
-      ></app-data-field>
+  <!-- ══════════════════════════════════════════════
+       SECCIÓN: CONTACTO
+  ══════════════════════════════════════════════ -->
+  <div class="section mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h6 class="section-title mb-0">
+        <i class="bi bi-telephone-fill me-2"></i>Información de Contacto
+      </h6>
+      <div>
+        <button *ngIf="seccionEditando() !== 'contacto'"
+                class="btn btn-sm btn-outline-primary"
+                (click)="editar('contacto')">
+          <i class="bi bi-pencil me-1"></i>Editar
+        </button>
+        <ng-container *ngIf="seccionEditando() === 'contacto'">
+          <button class="btn btn-sm btn-primary me-2" [disabled]="guardando()" (click)="guardar()">
+            <span *ngIf="guardando()" class="spinner-border spinner-border-sm me-1"></span>
+            <i *ngIf="!guardando()" class="bi bi-check-lg me-1"></i>
+            {{ guardando() ? 'Guardando...' : 'Guardar' }}
+          </button>
+          <button class="btn btn-sm btn-outline-secondary" (click)="cancelar()">Cancelar</button>
+        </ng-container>
+      </div>
+    </div>
 
-      <app-data-field
-        label="Teléfono"
-        [value]="cliente()?.movil"
-        type="phone"
-        icon="bi-phone"
-      ></app-data-field>
+    <!-- Modo lectura -->
+    <div *ngIf="seccionEditando() !== 'contacto'" class="data-grid">
+      <app-data-field label="Domicilio" [value]="cliente()?.domicilio" [fullWidth]="true" icon="bi-house"></app-data-field>
+      <app-data-field label="Provincia" [value]="cliente()?.provincia" icon="bi-geo-alt"></app-data-field>
+      <app-data-field label="Ciudad" [value]="cliente()?.ciudad" icon="bi-map"></app-data-field>
+    </div>
 
-      <app-data-field
-        label="Domicilio"
-        [value]="cliente()?.domicilio"
-        [fullWidth]="true"
-        icon="bi-house"
-      ></app-data-field>
-
-      <app-data-field
-        label="Provincia"
-        [value]="cliente()?.provincia"
-        icon="bi-geo-alt"
-      ></app-data-field>
-
-      <app-data-field
-        label="Ciudad"
-        [value]="cliente()?.ciudad"
-        icon="bi-map"
-      ></app-data-field>
+    <!-- Modo edición -->
+    <div *ngIf="seccionEditando() === 'contacto'"
+         class="border rounded p-3 bg-light" [formGroup]="formContacto">
+      <div class="row g-3">
+        <div class="col-12">
+          <label class="form-label small fw-semibold">Domicilio</label>
+          <input class="form-control form-control-sm" formControlName="domicilio" placeholder="Calle, número, piso...">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold">Provincia</label>
+          <input class="form-control form-control-sm" formControlName="provincia">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold">Ciudad</label>
+          <input class="form-control form-control-sm" formControlName="ciudad">
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Sección: Información Académica -->
-  <div class="section mb-1">
-    <h6 class="section-title">
-      <i class="bi bi-calendar-check-fill me-2"></i>Información del Gabinete
-    </h6>
-    <div class="data-grid">
-      <app-data-field
-        label="Fecha de inicio"
-        [value]="cliente()?.fechaInicio"
-        type="date"
-        icon="bi-calendar-plus"
-      ></app-data-field>
+  <!-- ══════════════════════════════════════════════
+       SECCIÓN: GABINETE
+  ══════════════════════════════════════════════ -->
+  <div class="section mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h6 class="section-title mb-0">
+        <i class="bi bi-calendar-check-fill me-2"></i>Información del Gabinete
+      </h6>
+      <div>
+        <button *ngIf="seccionEditando() !== 'gabinete'"
+                class="btn btn-sm btn-outline-primary"
+                (click)="editar('gabinete')">
+          <i class="bi bi-pencil me-1"></i>Editar
+        </button>
+        <ng-container *ngIf="seccionEditando() === 'gabinete'">
+          <button class="btn btn-sm btn-primary me-2" [disabled]="guardando()" (click)="guardar()">
+            <span *ngIf="guardando()" class="spinner-border spinner-border-sm me-1"></span>
+            <i *ngIf="!guardando()" class="bi bi-check-lg me-1"></i>
+            {{ guardando() ? 'Guardando...' : 'Guardar' }}
+          </button>
+          <button class="btn btn-sm btn-outline-secondary" (click)="cancelar()">Cancelar</button>
+        </ng-container>
+      </div>
+    </div>
 
-      <app-data-field
-        label="Fecha de alta"
-        [value]="cliente()?.fechaAlta"
-        type="date"
-        icon="bi-calendar-check"
-      ></app-data-field>
+    <!-- Modo lectura -->
+    <div *ngIf="seccionEditando() !== 'gabinete'" class="data-grid">
+      <app-data-field label="Fecha de inicio" [value]="cliente()?.fechaInicio" type="date" icon="bi-calendar-plus"></app-data-field>
+      <app-data-field label="Fecha de alta" [value]="cliente()?.fechaAlta" type="date" icon="bi-calendar-check"></app-data-field>
+    </div>
+
+    <!-- Modo edición -->
+    <div *ngIf="seccionEditando() === 'gabinete'"
+         class="border rounded p-3 bg-light" [formGroup]="formGabinete">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold">Fecha de inicio de tratamiento</label>
+          <input type="date" class="form-control form-control-sm" formControlName="fechaInicio">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold">Fecha de alta</label>
+          <input type="date" class="form-control form-control-sm" formControlName="fechaAlta">
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Sección: Autorizaciones -->
+  <!-- ══════════════════════════════════════════════
+       SECCIÓN: AUTORIZACIONES
+  ══════════════════════════════════════════════ -->
   <div class="section">
-    <h6 class="section-title">
-      <i class="bi bi-shield-check-fill me-2"></i>Autorizaciones
-    </h6>
-    <div class="data-grid">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h6 class="section-title mb-0">
+        <i class="bi bi-shield-check-fill me-2"></i>Autorizaciones
+      </h6>
+      <div>
+        <button *ngIf="seccionEditando() !== 'autorizaciones'"
+                class="btn btn-sm btn-outline-primary"
+                (click)="editar('autorizaciones')">
+          <i class="bi bi-pencil me-1"></i>Editar
+        </button>
+        <ng-container *ngIf="seccionEditando() === 'autorizaciones'">
+          <button class="btn btn-sm btn-primary me-2" [disabled]="guardando()" (click)="guardar()">
+            <span *ngIf="guardando()" class="spinner-border spinner-border-sm me-1"></span>
+            <i *ngIf="!guardando()" class="bi bi-check-lg me-1"></i>
+            {{ guardando() ? 'Guardando...' : 'Guardar' }}
+          </button>
+          <button class="btn btn-sm btn-outline-secondary" (click)="cancelar()">Cancelar</button>
+        </ng-container>
+      </div>
+    </div>
+
+    <!-- Modo lectura -->
+    <div *ngIf="seccionEditando() !== 'autorizaciones'" class="data-grid">
       <app-data-field
         label="Autoriza datos personales"
         [value]="cliente()?.autorizaDatosPersonales ? 'SÍ' : 'NO'"
         type="badge"
         [badgeClass]="cliente()?.autorizaDatosPersonales ? 'bg-success' : 'bg-danger'"
-        icon="bi-file-earmark-person"
-      ></app-data-field>
-
+        icon="bi-file-earmark-person">
+      </app-data-field>
       <app-data-field
         label="Autoriza uso de imagen"
         [value]="cliente()?.autorizaDatosImagen ? 'SÍ' : 'NO'"
         type="badge"
         [badgeClass]="cliente()?.autorizaDatosImagen ? 'bg-success' : 'bg-danger'"
-        icon="bi-camera"
-      ></app-data-field>
+        icon="bi-camera">
+      </app-data-field>
+    </div>
+
+    <!-- Modo edición -->
+    <div *ngIf="seccionEditando() === 'autorizaciones'"
+         class="border rounded p-3 bg-light" [formGroup]="formAutorizaciones">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold d-block">Autoriza datos personales</label>
+          <div class="form-check form-switch mt-1">
+            <input class="form-check-input" type="checkbox" formControlName="autorizaDatosPersonales" id="autDatos">
+            <label class="form-check-label" for="autDatos">
+              {{ formAutorizaciones.get('autorizaDatosPersonales')?.value ? 'SÍ' : 'NO' }}
+            </label>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold d-block">Autoriza uso de imagen</label>
+          <div class="form-check form-switch mt-1">
+            <input class="form-check-input" type="checkbox" formControlName="autorizaDatosImagen" id="autImagen">
+            <label class="form-check-label" for="autImagen">
+              {{ formAutorizaciones.get('autorizaDatosImagen')?.value ? 'SÍ' : 'NO' }}
+            </label>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
