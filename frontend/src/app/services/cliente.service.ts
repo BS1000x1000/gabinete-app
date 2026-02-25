@@ -256,18 +256,80 @@ export class ClientesService {
    * Verificar si un DNI está disponible
    */
   verificarDniDisponible(dni: string): Observable<VerificacionDniResponse> {
-  return this.http
-    .get<WrappedResponse<VerificacionDniResponse>>(`${this.api}/verificar-dni/${dni}`) // ✅ Agregar WrappedResponse
-    .pipe(
-      map((res) => res.data || res), // ✅ Desempaquetar como los demás endpoints
-      tap((res) => {
-        console.log(
-          `🔍 Verificación DNI ${res.dni}:`,
-          res.disponible ? '✅ Disponible' : '❌ Ya existe',
-        );
-      }),
-    );
-}
+    return this.http
+      .get<WrappedResponse<VerificacionDniResponse>>(
+        `${this.api}/verificar-dni/${dni}`,
+      ) // ✅ Agregar WrappedResponse
+      .pipe(
+        map((res) => res.data || res), // ✅ Desempaquetar como los demás endpoints
+        tap((res) => {
+          console.log(
+            `🔍 Verificación DNI ${res.dni}:`,
+            res.disponible ? '✅ Disponible' : '❌ Ya existe',
+          );
+        }),
+      );
+  }
+
+  // ========================================
+  // TERAPEUTAS
+  // ========================================
+
+  /**
+   * Asignar un nuevo terapeuta a un cliente
+   * POST /api/clientes/:clienteId/asignar-trabajador
+   */
+  asignarTrabajador(
+    clienteId: string,
+    body: {
+      trabajadorId: string;
+      tipoTerapia: string;
+      horarios: { diaSemana: number; horaInicio: string; horaFin: string }[];
+    },
+  ): Observable<any> {
+    return this.http
+      .post<
+        WrappedResponse<any>
+      >(`${this.api}/${clienteId}/asignar-trabajador`, body)
+      .pipe(
+        map((res) => res.data || res),
+        tap(() => console.log('✅ Terapeuta asignado')),
+      );
+  }
+
+  /**
+   * Reemplazar los horarios de una asignación cliente-trabajador
+   * PATCH /api/clientes/:clienteId/asignaciones/:asignacionId/horarios
+   */
+  actualizarHorarios(
+    clienteId: string,
+    asignacionId: string,
+    horarios: { diaSemana: number; horaInicio: string; horaFin: string }[],
+    confirmar: boolean = false,
+  ): Observable<any> {
+    return this.http
+      .patch<
+        WrappedResponse<any>
+      >(`${this.api}/${clienteId}/asignaciones/${asignacionId}/horarios`, { horarios, confirmarActualizacionSesiones: confirmar })
+      .pipe(map((res) => res.data || res));
+  }
+
+  /**
+   * Desasignar un trabajador de un cliente por ID de asignación
+   */
+  desasignarTrabajador(
+    clienteId: string,
+    asignacionId: string,
+  ): Observable<any> {
+    return this.http
+      .delete<
+        WrappedResponse<any>
+      >(`${this.api}/${clienteId}/asignaciones/${asignacionId}`)
+      .pipe(
+        map((res) => res.data || res),
+        tap(() => console.log(`❌ Asignación ${asignacionId} eliminada`)),
+      );
+  }
 
   // ========================================
   // HELPERS

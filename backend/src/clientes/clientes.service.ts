@@ -489,6 +489,177 @@ export class ClientesService {
   }
 
   /**
+   * Eliminar una asignación cliente-trabajador por su ID
+   * Elimina también en cascada los horarios (DisponibilidadClienteTrabajador)
+   */
+  async desasignarTrabajador(clienteId: string, asignacionId: string) {
+    const asignacion = await this.prisma.clienteTrabajador.findFirst({
+      where: { id: asignacionId, clienteId },
+      include: { trabajador: true },
+    });
+
+    if (!asignacion) {
+      throw new NotFoundException(
+        `Asignación con ID ${asignacionId} no encontrada para este cliente`,
+      );
+    }
+
+    // Cascade borra los horarios automáticamente (onDelete: Cascade en schema)
+    await this.prisma.clienteTrabajador.delete({
+      where: { id: asignacionId },
+    });
+
+    return {
+      message: `Asignación de ${asignacion.trabajador.nombre} ${asignacion.trabajador.apellidos} eliminada correctamente`,
+      asignacionId,
+      clienteId,
+    };
+  }
+
+  async actualizarHorariosAsignacion(
+    clienteId: string,
+    asignacionId: string,
+    horarios: { diaSemana: number; horaInicio: string; horaFin: string }[],
+    confirmarActualizacionSesiones: boolean = false,
+  ) {
+    const asignacion = await this.prisma.clienteTrabajador.findFirst({
+      where: { id: asignacionId, clienteId },
+      include: {
+        trabajador: true,
+        horarios: true, // horarios actuales (antes de cambiar)
+      },
+    });
+
+    if (!asignacion) {
+      throw new NotFoundException(
+        `Asignación con ID ${asignacionId} no encontrada para este cliente`,
+      );
+    }
+
+    if (horarios.length === 0) {
+      throw new BadRequestException('Debes proporcionar al menos un horario');
+    }
+
+    const ahora = new Date();
+
+    // 1. Buscar sesiones futuras de esta asignación cliente-trabajador
+    const sesionesFuturas = await this.prisma.sesion.findMany({
+      where: {
+        clienteId,
+        trabajadorId: asignacion.trabajadorId,
+        fechaHoraInicio: { gt: ahora },
+      },
+      select: {
+        id: true,
+        fechaHoraInicio: true,
+        fechaHoraFin: true,
+        tipoSesion: true,
+      },
+    });
+
+    // 2. Si hay sesiones futuras y el usuario NO ha confirmado → devolver aviso
+    if (sesionesFuturas.length > 0 && !confirmarActualizacionSesiones) {
+      return {
+        requiereConfirmacion: true,
+        ssesionesFuturas: sesionesFuturas.length,
+        mensaje: `Hay ${sesionesFuturas.length} sesiones futuras programadas para este terapeuta. ¿Quieres eliminarlas y regenerarlas con el nuevo horario?`,
+      };
+    }
+
+    // 3. Ejecutar todo en una transacción
+    await this.prisma.$transaction(async (tx) => {
+      // 3a. Reemplazar horarios
+      await tx.disponibilidadClienteTrabajador.deleteMany({
+        where: { clienteTrabajadorId: asignacionId },
+      });
+      await tx.disponibilidadClienteTrabajador.createMany({
+        data: horarios.map((h) => ({
+          clienteTrabajadorId: asignacionId,
+          diaSemana: h.diaSemana,
+          horaInicio: h.horaInicio,
+          horaFin: h.horaFin,
+        })),
+      });
+
+      // 3b. Si hay sesiones futuras y el usuario confirmó → eliminar y regenerar
+      if (sesionesFuturas.length > 0 && confirmarActualizacionSesiones) {
+        // Borrar las sesiones futuras existentes
+        await tx.sesion.deleteMany({
+          where: {
+            clienteId,
+            trabajadorId: asignacion.trabajadorId,
+            fechaHoraInicio: { gt: ahora },
+          },
+        });
+
+        // Regenerar con el nuevo horario
+        // Rango: desde mañana hasta la fecha máxima de las sesiones eliminadas
+        const fechasExistentes = sesionesFuturas.map((s) => s.fechaHoraInicio);
+        const fechaMaxima = new Date(
+          Math.max(...fechasExistentes.map((f) => f.getTime())),
+        );
+
+        const sesionesNuevas: any[] = [];
+        const cursor = new Date(ahora);
+        cursor.setDate(cursor.getDate() + 1); // Empezar desde mañana
+        cursor.setHours(0, 0, 0, 0);
+
+        // Tomar el tipoSesion de la primera sesión eliminada
+        const tipoSesion = sesionesFuturas[0]?.tipoSesion ?? 'PEDAGOGIA';
+
+        while (cursor <= fechaMaxima) {
+          const diaSemana = cursor.getDay();
+          const horarioDelDia = horarios.find((h) => h.diaSemana === diaSemana);
+
+          if (horarioDelDia) {
+            const [hInicio, mInicio] = horarioDelDia.horaInicio
+              .split(':')
+              .map(Number);
+            const [hFin, mFin] = horarioDelDia.horaFin.split(':').map(Number);
+
+            const inicio = new Date(cursor);
+            inicio.setHours(hInicio, mInicio, 0, 0);
+
+            const fin = new Date(cursor);
+            fin.setHours(hFin, mFin, 0, 0);
+
+            sesionesNuevas.push({
+              fechaHoraInicio: inicio,
+              fechaHoraFin: fin,
+              estado: 'PROGRAMADA',
+              tipoSesion,
+              clienteId,
+              trabajadorId: asignacion.trabajadorId,
+            });
+          }
+
+          cursor.setDate(cursor.getDate() + 1);
+        }
+
+        if (sesionesNuevas.length > 0) {
+          await tx.sesion.createMany({ data: sesionesNuevas });
+        }
+      }
+    });
+
+    const sesionesMigradas =
+      confirmarActualizacionSesiones && sesionesFuturas.length > 0
+        ? `Se eliminaron ${sesionesFuturas.length} sesiones antiguas y se regeneraron con el nuevo horario.`
+        : '';
+
+    return {
+      requiereConfirmacion: false,
+      message:
+        `Horarios actualizados correctamente. ${sesionesMigradas}`.trim(),
+      asignacionId,
+      horariosActualizados: horarios.length,
+      sesionesMigradas: confirmarActualizacionSesiones
+        ? sesionesFuturas.length
+        : 0,
+    };
+  }
+
+  /**
    * Estadísticas de objetivos del cliente
    */
   async getEstadisticasObjetivos(clienteId: string) {

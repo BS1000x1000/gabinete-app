@@ -27,59 +27,72 @@ export class SesionesService {
    * Generar sesiones automáticamente desde la disponibilidad del cliente
    */
   async generarSesiones(dto: GenerarSesionesDto) {
-    // 1. Verificar que cliente y trabajador existen
-    const [cliente, trabajador] = await Promise.all([
-      this.prisma.cliente.findUnique({ where: { id: dto.clienteId } }),
-      this.prisma.trabajador.findUnique({ where: { id: dto.trabajadorId } }),
-    ]);
-
-    if (!cliente) {
-      throw new NotFoundException(
-        `Cliente con ID ${dto.clienteId} no encontrado`,
-      );
-    }
-    if (!trabajador) {
-      throw new NotFoundException(
-        `Trabajador con ID ${dto.trabajadorId} no encontrado`,
-      );
-    }
-
-    // 2. Obtener disponibilidad del cliente
-    const disponibilidades = await this.prisma.disponibilidadCliente.findMany({
-      where: { clienteId: dto.clienteId },
+    // 1. Verificar que la asignación cliente-trabajador existe y está activa
+    const asignacion = await this.prisma.clienteTrabajador.findFirst({
+      where: {
+        clienteId: dto.clienteId,
+        trabajadorId: dto.trabajadorId,
+        activo: true,
+      },
+      include: {
+        cliente: true,
+        trabajador: true,
+        horarios: true, // DisponibilidadClienteTrabajador
+      },
     });
 
-    if (disponibilidades.length === 0) {
-      throw new BadRequestException(
-        'El cliente no tiene disponibilidad configurada',
+    if (!asignacion) {
+      throw new NotFoundException(
+        `No existe una asignación activa entre el cliente y el trabajador`,
       );
     }
 
-    // 3. Generar sesiones
-    const sesionesACrear: any = [];
-    const fechaInicio = new Date(dto.fechaInicio);
-    const fechaFin = new Date(dto.fechaFin);
-    const fechaActual = new Date(fechaInicio);
+    if (asignacion.horarios.length === 0) {
+      throw new BadRequestException(
+        'La asignación no tiene horarios configurados. Añade horarios al terapeuta desde la ficha del cliente.',
+      );
+    }
+
+    // 2. Comprobar duplicados: sesiones ya existentes en ese rango
+    const sesionesExistentes = await this.prisma.sesion.count({
+      where: {
+        clienteId: dto.clienteId,
+        trabajadorId: dto.trabajadorId,
+        fechaHoraInicio: {
+          gte: new Date(dto.fechaInicio),
+          lte: new Date(dto.fechaFin + 'T23:59:59'),
+        },
+      },
+    });
+
+    if (sesionesExistentes > 0) {
+      throw new BadRequestException(
+        `Ya existen ${sesionesExistentes} sesiones en ese rango de fechas para esta asignación. Elige otro rango o elimina las existentes.`,
+      );
+    }
+
+    // 3. Generar sesiones iterando día a día
+    const sesionesACrear: any[] = [];
+    const fechaActual = new Date(dto.fechaInicio + 'T12:00:00'); // Mediodía para evitar cambios de día por DST
+    const fechaFin = new Date(dto.fechaFin + 'T23:59:59');
 
     while (fechaActual <= fechaFin) {
-      const diaSemana = fechaActual.getDay();
-      const disponibilidadDelDia = disponibilidades.find(
-        (d) => d.diaSemana === diaSemana,
+      const diaSemana = fechaActual.getDay(); // 0=Dom, 1=Lun...
+      const horarioDelDia = asignacion.horarios.find(
+        (h) => h.diaSemana === diaSemana,
       );
 
-      if (disponibilidadDelDia) {
-        const [horaInicio, minInicio] = disponibilidadDelDia.horaInicio
+      if (horarioDelDia) {
+        const [hInicio, mInicio] = horarioDelDia.horaInicio
           .split(':')
           .map(Number);
-        const [horaFin, minFin] = disponibilidadDelDia.horaFin
-          .split(':')
-          .map(Number);
+        const [hFin, mFin] = horarioDelDia.horaFin.split(':').map(Number);
 
         const fechaHoraInicio = new Date(fechaActual);
-        fechaHoraInicio.setHours(horaInicio, minInicio, 0, 0);
+        fechaHoraInicio.setHours(hInicio, mInicio, 0, 0);
 
         const fechaHoraFin = new Date(fechaActual);
-        fechaHoraFin.setHours(horaFin, minFin, 0, 0);
+        fechaHoraFin.setHours(hFin, mFin, 0, 0);
 
         sesionesACrear.push({
           fechaHoraInicio,
@@ -94,20 +107,33 @@ export class SesionesService {
       fechaActual.setDate(fechaActual.getDate() + 1);
     }
 
-    // 4. Crear sesiones
-    if (sesionesACrear.length > 0) {
-      await this.prisma.sesion.createMany({
-        data: sesionesACrear,
-      });
+    if (sesionesACrear.length === 0) {
+      throw new BadRequestException(
+        'No se generaron sesiones. Verifica que los días de los horarios coincidan con el rango de fechas seleccionado.',
+      );
     }
 
+    // 4. Crear sesiones + actualizar fechaInicio del cliente en transacción
+    await this.prisma.$transaction(async (tx) => {
+      await tx.sesion.createMany({ data: sesionesACrear });
+
+      // Actualizar fechaInicio del cliente si no la tiene todavía
+      if (!asignacion.cliente.fechaInicio) {
+        await tx.cliente.update({
+          where: { id: dto.clienteId },
+          data: { fechaInicio: new Date(dto.fechaInicio) },
+        });
+      }
+    });
+
     return {
-      message: `Se generaron ${sesionesACrear.length} sesiones`,
+      message: `Se generaron ${sesionesACrear.length} sesiones correctamente`,
       sesionesCreadas: sesionesACrear.length,
       fechaInicio: dto.fechaInicio,
       fechaFin: dto.fechaFin,
-      cliente: `${cliente.nombre} ${cliente.apellidos}`,
-      trabajador: `${trabajador.nombre} ${trabajador.apellidos}`,
+      cliente: `${asignacion.cliente.nombre} ${asignacion.cliente.apellidos}`,
+      trabajador: `${asignacion.trabajador.nombre} ${asignacion.trabajador.apellidos}`,
+      tipoTerapia: asignacion.tipoTerapia,
     };
   }
 
@@ -119,12 +145,24 @@ export class SesionesService {
     fechaInicio?: string,
     fechaFin?: string,
   ): Promise<SesionWithRelations[]> {
-    const where: any = { trabajadorId };
+    const where: any = {
+      trabajadorId,
+      // ✅ Solo sesiones de clientes que estén asignados a este trabajador
+      cliente: {
+        trabajadoresAsignados: {
+          some: {
+            trabajadorId,
+            activo: true,
+          },
+        },
+      },
+    };
 
     if (fechaInicio || fechaFin) {
       where.fechaHoraInicio = {};
       if (fechaInicio) where.fechaHoraInicio.gte = new Date(fechaInicio);
-      if (fechaFin) where.fechaHoraInicio.lte = new Date(fechaFin);
+      if (fechaFin)
+        where.fechaHoraInicio.lte = new Date(fechaFin + 'T23:59:59');
     }
 
     return await this.prisma.sesion.findMany({
@@ -282,16 +320,21 @@ export class SesionesService {
 
       // Calcular inicio y fin de semana (lunes a domingo)
       const inicioSemana = startOfWeek(fecha, { weekStartsOn: 1 }); // 1 = Lunes
-      const finSemana = endOfWeek(fecha, { weekStartsOn: 1 });
+      const finSemana = endOfWeek(fecha + 'T23:59:59', { weekStartsOn: 1 });
 
       // Obtener sesiones de la semana
       const sesiones = await this.prisma.sesion.findMany({
         where: {
           trabajadorId,
-          fechaHoraInicio: {
-            gte: inicioSemana,
-            lte: finSemana,
+          cliente: {
+            trabajadoresAsignados: {
+              some: {
+                trabajadorId,
+                activo: true,
+              },
+            },
           },
+          fechaHoraInicio: { gte: inicioSemana, lte: finSemana },
         },
         include: {
           cliente: {
@@ -319,8 +362,24 @@ export class SesionesService {
       const diasSemana: any = [];
       for (let i = 0; i < 7; i++) {
         const dia = addDays(inicioSemana, i);
-        const inicioDia = startOfDay(dia);
-        const finDia = endOfDay(dia);
+        const inicioDia = new Date(
+          dia.getFullYear(),
+          dia.getMonth(),
+          dia.getDate(),
+          0,
+          0,
+          0,
+          0,
+        );
+        const finDia = new Date(
+          dia.getFullYear(),
+          dia.getMonth(),
+          dia.getDate(),
+          23,
+          59,
+          59,
+          999,
+        );
 
         const sesionesDia = sesiones.filter(
           (sesion) =>
@@ -397,8 +456,24 @@ export class SesionesService {
   async getCalendarioDiario(trabajadorId: string, fechaReferencia?: Date) {
     try {
       const fecha = fechaReferencia ? new Date(fechaReferencia) : new Date();
-      const inicioDia = startOfDay(fecha);
-      const finDia = endOfDay(fecha);
+      const inicioDia = new Date(
+        fecha.getFullYear(),
+        fecha.getMonth(),
+        fecha.getDate(),
+        0,
+        0,
+        0,
+        0,
+      );
+      const finDia = new Date(
+        fecha.getFullYear(),
+        fecha.getMonth(),
+        fecha.getDate(),
+        23,
+        59,
+        59,
+        999,
+      );
 
       console.log('📅 Calendario diario solicitado:');
       console.log('   Fecha:', format(fecha, 'yyyy-MM-dd'));
@@ -408,10 +483,15 @@ export class SesionesService {
       const sesiones = await this.prisma.sesion.findMany({
         where: {
           trabajadorId,
-          fechaHoraInicio: {
-            gte: inicioDia,
-            lte: finDia,
+          cliente: {
+            trabajadoresAsignados: {
+              some: {
+                trabajadorId,
+                activo: true,
+              },
+            },
           },
+          fechaHoraInicio: { gte: inicioDia, lte: finDia },
         },
         include: {
           cliente: {
@@ -571,8 +651,24 @@ export class SesionesService {
   async getSesionesHoy(trabajadorId: string) {
     try {
       const hoy = new Date();
-      const inicioHoy = startOfDay(hoy);
-      const finHoy = endOfDay(hoy);
+      const inicioHoy = new Date(
+        hoy.getFullYear(),
+        hoy.getMonth(),
+        hoy.getDate(),
+        0,
+        0,
+        0,
+        0,
+      );
+      const finHoy = new Date(
+        hoy.getFullYear(),
+        hoy.getMonth(),
+        hoy.getDate(),
+        23,
+        59,
+        59,
+        999,
+      );
 
       const sesiones = await this.prisma.sesion.findMany({
         where: {

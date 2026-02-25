@@ -69,9 +69,9 @@ export class ClientesController {
   @HttpCode(HttpStatus.OK)
   async verificarDni(@Param('dni') dni: string) {
     this.logger.log(`🔍 Verificando DNI: ${dni}`);
-    
+
     const existe = await this.clientesService.existeDni(dni);
-    
+
     // ✅ Retornar objeto simple, el interceptor lo envolverá automáticamente
     return {
       dni,
@@ -126,28 +126,70 @@ export class ClientesController {
   }
 
   /**
- * POST /api/clientes/:id/asignar-trabajador
- * Asigna un trabajador adicional a un cliente existente
- */
-@Post(':id/asignar-trabajador')
-@HttpCode(HttpStatus.CREATED)
-async asignarTrabajador(
-  @Param('id') id: string,
-  @Body() body: {
-    trabajadorId: string;
-    tipoTerapia: string;
-    horarios: { diaSemana: number; horaInicio: string; horaFin: string }[];
-  },
-) {
-  this.logger.log(`🎯 POST /api/clientes/${id}/asignar-trabajador`);
-  return this.clientesService.asignarTrabajador(
-    id,
-    body.trabajadorId,
-    body.tipoTerapia,
-    body.horarios,
-  );
-}
+   * POST /api/clientes/:id/asignar-trabajador
+   * Asigna un trabajador adicional a un cliente existente
+   */
+  @Post(':id/asignar-trabajador')
+  @HttpCode(HttpStatus.CREATED)
+  async asignarTrabajador(
+    @Param('id') id: string,
+    @Body()
+    body: {
+      trabajadorId: string;
+      tipoTerapia: string;
+      horarios: { diaSemana: number; horaInicio: string; horaFin: string }[];
+    },
+  ) {
+    this.logger.log(`🎯 POST /api/clientes/${id}/asignar-trabajador`);
+    return this.clientesService.asignarTrabajador(
+      id,
+      body.trabajadorId,
+      body.tipoTerapia,
+      body.horarios,
+    );
+  }
 
+  /**
+   * DELETE /api/clientes/:clienteId/asignaciones/:asignacionId
+   * Elimina una asignación cliente-trabajador por su ID directo
+   */
+  @Delete(':clienteId/asignaciones/:asignacionId')
+  @HttpCode(HttpStatus.OK)
+  async desasignarTrabajador(
+    @Param('clienteId') clienteId: string,
+    @Param('asignacionId') asignacionId: string,
+  ) {
+    this.logger.log(
+      `🎯 DELETE /api/clientes/${clienteId}/asignaciones/${asignacionId}`,
+    );
+    return this.clientesService.desasignarTrabajador(clienteId, asignacionId);
+  }
+
+  /**
+   * PATCH /api/clientes/:clienteId/asignaciones/:asignacionId/horarios
+   * Reemplaza todos los horarios de una asignación
+   */
+  @Patch(':clienteId/asignaciones/:asignacionId/horarios')
+  @HttpCode(HttpStatus.OK)
+  async actualizarHorariosAsignacion(
+    @Param('clienteId') clienteId: string,
+    @Param('asignacionId') asignacionId: string,
+    @Body()
+    body: {
+      horarios: { diaSemana: number; horaInicio: string; horaFin: string }[];
+      confirmarActualizacionSesiones?: boolean;
+    },
+  ) {
+    this.logger.log(
+      `🕐 PATCH /api/clientes/${clienteId}/asignaciones/${asignacionId}/horarios - confirmar: ${body.confirmarActualizacionSesiones ?? false}`,
+    );
+    return this.clientesService.actualizarHorariosAsignacion(
+      clienteId,
+      asignacionId,
+      body.horarios,
+      body.confirmarActualizacionSesiones ?? false,
+    );
+  }
   /**
    * DELETE /api/clientes/:id/objetivos-generales/:objetivoId
    */
