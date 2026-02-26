@@ -48,6 +48,7 @@ export class ListadoComponent implements OnInit, OnDestroy {
     { label: 'Sanitario', icon: 'bi-heart-pulse-fill', target: 'sanitario' },
     { label: 'Terapeutas', icon: 'bi-person', target: 'terapeutas' },
     { label: 'Objetivos', icon: 'bi-bullseye', target: 'objetivos' },
+    { label: 'Sesiones', icon: 'bi-calendar2-week', target: 'sesiones' },
     { label: 'Registro', icon: 'bi-journal-text', target: 'registro' }, 
   ];
 

@@ -36,6 +36,11 @@ export default [
           import('./tabs/objetivos-tab/objetivos-tab.component'),
       },
       {
+        path: 'sesiones',
+        loadComponent: () =>
+          import('./tabs/sesiones-tab/sesiones-tab.component'),
+      },
+      {
         path: 'registro',
         loadComponent: () =>
           import('./tabs/registro-tab/registro-tab.component'),

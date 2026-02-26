@@ -1,0 +1,689 @@
+// ============================================================
+// SESIONES TAB — Estilos
+// Se añade a: src/sass/components/_sesiones.scss
+// Y se importa en main.scss: @import 'components/sesiones';
+// ============================================================
+
+// ==========================================
+// CONTENEDOR PRINCIPAL
+// ==========================================
+.sesiones-tab {
+  padding: $spacing-lg;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+// ==========================================
+// HEADER CON ESTADÍSTICAS
+// ==========================================
+.sesiones-header {
+  margin-bottom: $spacing-sm;
+}
+
+.sesiones-stats-row {
+  display: flex;
+  gap: $spacing-sm;
+  flex-wrap: wrap;
+  justify-content: space-around;
+}
+
+.stat-pill {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: $spacing-sm $spacing-sm;
+  border-radius: $border-radius-lg;
+  border: 1px solid transparent;
+  min-width: 0;
+
+  i {
+    font-size: 1.25rem;
+    flex-shrink: 0; 
+  }
+
+  div {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+    min-width: 0;
+  }
+
+  .stat-num {
+    font-size: 1.25rem;
+    font-weight: $font-weight-bold;
+  }
+
+  .stat-lbl {
+    font-size: $font-size-xs;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    white-space: nowrap;
+    opacity: 0.75;
+    text-overflow: ellipsis;
+  }
+
+  &.stat-total {
+    background: $gray-100;
+    border-color: $gray-200;
+    color: $gray-700;
+    i { color: $gray-500; }
+  }
+
+  &.stat-programada {
+    background: $warning-light;
+    border-color: rgba($warning, 0.3);
+    color: $warning-dark;
+    i { color: $warning; }
+  }
+
+  &.stat-completada {
+    background: $success-light;
+    border-color: rgba($success, 0.3);
+    color: $success-dark;
+    i { color: $success; }
+  }
+
+  &.stat-cancelada {
+    background: $danger-light;
+    border-color: rgba($danger, 0.3);
+    color: $danger-dark;
+    i { color: $danger; }
+  }
+
+  &.stat-ratio {
+    background: $primary-light;
+    border-color: rgba($primary, 0.3);
+    color: $primary-dark;
+    i { color: $primary; }
+  }
+}
+
+// ==========================================
+// BARRA DE FILTROS
+// ==========================================
+.sesiones-filtros {
+  display: flex;
+  align-items: flex-end;
+  gap: $spacing-md;
+  flex-wrap: wrap;
+  padding: $spacing-md;
+  background: $gray-50;
+  border-radius: $border-radius;
+  border: 1px solid $border-color;
+}
+
+.filtro-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.filtro-label {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: $gray-500;
+}
+
+.filtro-pills {
+  display: flex;
+  gap: $spacing-xs;
+  flex-wrap: wrap;
+}
+
+.filtro-pill {
+  padding: 0.25rem 0.75rem;
+  border-radius: $border-radius-full;
+  border: 1.5px solid $border-color;
+  background: $white;
+  font-size: $font-size-sm;
+  cursor: pointer;
+  transition: $transition-fast;
+  color: $gray-600;
+
+  &:hover {
+    border-color: $primary;
+    color: $primary;
+    background: $primary-ultra-light;
+  }
+
+  &.active {
+    background: $primary;
+    border-color: $primary;
+    color: $white;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+.filtro-mes {
+  .form-select {
+    min-width: 180px;
+    font-size: $font-size-sm;
+    padding: 0.3rem 0.75rem;
+    border-color: $border-color;
+    border-radius: $border-radius;
+
+    &:focus {
+      border-color: $primary;
+      box-shadow: 0 0 0 0.2rem rgba($primary, 0.15);
+    }
+  }
+}
+
+// ==========================================
+// ESTADOS VACÍO / CARGANDO
+// ==========================================
+.sesiones-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-xl;
+  color: $gray-500;
+  font-size: $font-size-sm;
+}
+
+.sesiones-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-2xl;
+  color: $gray-400;
+  text-align: center;
+  gap: $spacing-sm;
+
+  i {
+    font-size: 2.5rem;
+  }
+
+  p {
+    margin: 0;
+    color: $gray-500;
+  }
+}
+
+.sesiones-count {
+  color: $gray-500;
+}
+
+// ==========================================
+// TABLA DE SESIONES
+// ==========================================
+.sesiones-table-wrapper {
+  overflow-x: auto;
+}
+
+.sesiones-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: $font-size-sm;
+
+  thead tr {
+    th {
+      padding: $spacing-sm $spacing-md;
+      font-weight: $font-weight-semibold;
+      font-size: $font-size-xs;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: $gray-500;
+      border-bottom: 2px solid $gray-200;
+      white-space: nowrap;
+      background: $gray-50;
+
+      &:first-child { border-radius: $border-radius 0 0 0; }
+      &:last-child  { border-radius: 0 $border-radius 0 0; }
+    }
+  }
+
+  tbody tr.sesion-row {
+    cursor: pointer;
+    transition: $transition-fast;
+    border-bottom: 1px solid $gray-100;
+
+    td {
+      padding: $spacing-sm $spacing-sm;
+      vertical-align: middle;
+      border-bottom: 1px solid $gray-100;
+    }
+
+    &:hover {
+      background: $primary-ultra-light;
+
+      td { border-bottom-color: rgba($primary, 0.1); }
+    }
+
+    &:last-child td { border-bottom: none; }
+
+    &.row-cancelada {
+      opacity: 0.6;
+
+      .fecha-texto, .horario-badge {
+        text-decoration: line-through;
+        text-decoration-color: $gray-400;
+      }
+    }
+  }
+}
+
+// ==========================================
+// ELEMENTOS DE LA TABLA
+// ==========================================
+.fecha-texto {
+  color: $gray-700;
+  font-weight: $font-weight-medium;
+  white-space: nowrap;
+}
+
+.horario-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: $font-size-sm;
+  color: $gray-600;
+  white-space: nowrap;
+
+  i { opacity: 0.6; }
+}
+
+.terapeuta-nombre {
+  color: $gray-600;
+  white-space: nowrap;
+}
+
+.terapeuta-iniciales {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: $primary-light;
+  color: $primary-dark;
+  font-size: 0.75rem;
+  font-weight: $font-weight-bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: default;
+}
+
+.notas-preview {
+  cursor: default;
+
+  i { font-size: 1rem; }
+}
+
+// Badges de estado
+.estado-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.6rem;
+  border-radius: $border-radius-full;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  white-space: nowrap;
+
+  &.badge-programada {
+    background: $warning-light;
+    color: $warning-dark;
+  }
+  &.badge-completada {
+    background: $success-light;
+    color: $success-dark;
+  }
+  &.badge-cancelada-aviso {
+    background: $danger-light;
+    color: $danger-dark;
+  }
+  &.badge-cancelada-sin-aviso {
+    background: $danger-light;
+    color: $danger-dark;
+    border: 1.5px solid rgba($danger, 0.3);
+  }
+}
+
+// Badges de tipo de sesión
+.tipo-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: $border-radius-sm;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  white-space: nowrap;
+
+  &.tipo-pedagogia    { background: $secondary-light; color: $secondary-dark; }
+  &.tipo-neuro        { background: $info-light; color: $info-dark; }
+  &.tipo-evaluacion   { background: $accent-light; color: $accent-dark; }
+  &.tipo-reunion      { background: $primary-light; color: $primary-dark; }
+}
+
+// ==========================================
+// ACCIONES EN TABLA
+// ==========================================
+.acciones-grupo {
+  display: flex;
+  gap: $spacing-xs;
+  justify-content: flex-end;
+}
+
+.btn-accion {
+  width: 30px;
+  height: 30px;
+  border-radius: $border-radius;
+  border: 1.5px solid $border-color;
+  background: $white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: $transition-fast;
+  font-size: 0.8rem;
+  padding: 0;
+
+  &.btn-reprogramar {
+    color: $primary;
+    &:hover {
+      background: $primary;
+      border-color: $primary;
+      color: $white;
+    }
+  }
+
+  &.btn-cancelar {
+    color: $danger;
+    &:hover {
+      background: $danger;
+      border-color: $danger;
+      color: $white;
+    }
+  }
+
+  &.btn-detalle {
+    color: $gray-500;
+    &:hover {
+      background: $gray-700;
+      border-color: $gray-700;
+      color: $white;
+    }
+  }
+}
+
+// ==========================================
+// MODALES
+// ==========================================
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba($gray-900, 0.45);
+  backdrop-filter: blur(2px);
+  z-index: $z-modal;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-md;
+  animation: fadeIn 0.15s ease;
+}
+
+.modal-card {
+  background: $white;
+  border-radius: $border-radius-xl;
+  box-shadow: $shadow-2xl;
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  animation: slideInUp 0.2s ease;
+  overflow: hidden;
+}
+
+.modal-card-header {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-lg;
+  border-bottom: 1px solid $gray-100;
+
+  h5 { font-weight: $font-weight-bold; color: $gray-900; }
+}
+
+.modal-card-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: $border-radius-lg;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 1.25rem;
+
+  &.icon-reprogramar {
+    background: $primary-light;
+    color: $primary;
+  }
+  &.icon-cancelar {
+    background: $danger-light;
+    color: $danger;
+  }
+  &.icon-detalle {
+    background: $secondary-light;
+    color: $secondary-dark;
+  }
+}
+
+.btn-close-modal {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: $gray-400;
+  cursor: pointer;
+  padding: $spacing-xs;
+  border-radius: $border-radius;
+  transition: $transition-fast;
+  font-size: 1rem;
+  line-height: 1;
+
+  &:hover {
+    background: $gray-100;
+    color: $gray-700;
+  }
+}
+
+.modal-card-body {
+  padding: $spacing-lg;
+  flex: 1;
+}
+
+.modal-card-footer {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-md $spacing-lg;
+  border-top: 1px solid $gray-100;
+  background: $gray-50;
+}
+
+// ==========================================
+// MODAL REPROGRAMAR
+// ==========================================
+.reprogramar-form {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.form-group-custom {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.form-label-custom {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $gray-600;
+}
+
+.horas-row {
+  display: flex;
+  align-items: flex-end;
+  gap: $spacing-sm;
+
+  .form-group-custom { flex: 1; }
+}
+
+.horas-separador {
+  font-size: 1.25rem;
+  color: $gray-400;
+  padding-bottom: $spacing-xs;
+  flex-shrink: 0;
+}
+
+.duracion-preview {
+  display: flex;
+  align-items: center;
+  padding: $spacing-sm $spacing-md;
+  background: $primary-ultra-light;
+  border-radius: $border-radius;
+  color: $primary-dark;
+  font-size: $font-size-sm;
+  border: 1px solid rgba($primary, 0.2);
+}
+
+// ==========================================
+// MODAL CANCELAR
+// ==========================================
+.cancelar-opciones {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.cancelar-opcion {
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-sm;
+  padding: $spacing-md;
+  border: 2px solid $border-color;
+  border-radius: $border-radius-lg;
+  cursor: pointer;
+  transition: $transition-fast;
+  background: $white;
+
+  &:hover {
+    border-color: $danger;
+    background: $danger-light;
+  }
+
+  &.selected {
+    border-color: $danger;
+    background: $danger-light;
+
+    .cancelar-opcion-radio i {
+      color: $danger;
+    }
+  }
+
+  strong { color: $gray-800; font-size: $font-size-sm; }
+}
+
+.cancelar-opcion-radio {
+  flex-shrink: 0;
+  font-size: 1.1rem;
+  color: $gray-400;
+  margin-top: 1px;
+}
+
+// ==========================================
+// MODAL DETALLE
+// ==========================================
+.detalle-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $spacing-md;
+}
+
+.detalle-item {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+
+  &.detalle-full {
+    grid-column: 1 / -1;
+  }
+}
+
+.detalle-label {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: $gray-400;
+}
+
+.detalle-valor {
+  font-size: $font-size-sm;
+  color: $gray-800;
+  font-weight: $font-weight-medium;
+}
+
+.detalle-notas {
+  font-size: $font-size-sm;
+  color: $gray-700;
+  line-height: 1.6;
+  background: $gray-50;
+  border-radius: $border-radius;
+  padding: $spacing-sm $spacing-md;
+  border-left: 3px solid $primary-light;
+  white-space: pre-wrap;
+}
+
+// ==========================================
+// ANIMACIONES
+// ==========================================
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+// ==========================================
+// RESPONSIVE
+// ==========================================
+@include respond-to('md') {
+  .sesiones-stats-row {
+    .stat-pill {
+      flex: 1 1 calc(50% - #{$spacing-sm});
+      min-width: 0;
+    }
+  }
+
+  .sesiones-filtros {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .detalle-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-card {
+    max-width: 100%;
+    margin: 0;
+    border-radius: $border-radius-lg $border-radius-lg 0 0;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+  }
+
+  .modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+}
