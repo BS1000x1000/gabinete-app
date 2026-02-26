@@ -6,29 +6,14 @@ export default [
     path: '',
     component: ListadoComponent,
     children: [
-      { path: '', redirectTo: 'cliente', pathMatch: 'full' },
+      // Redirige por defecto a registro (uso más frecuente del día a día)
+      { path: '', redirectTo: 'registro', pathMatch: 'full' },
+
+      // ── 3 tabs de trabajo activo ──
       {
-        path: 'cliente',
-        loadComponent: () => import('./tabs/cliente-tab/cliente-tab.component'),
-      },
-      {
-        path: 'contactos',
+        path: 'registro',
         loadComponent: () =>
-          import('./tabs/contactos-tab/contactos-tab.component'),
-      },
-      {
-        path: 'colegio',
-        loadComponent: () => import('./tabs/colegio-tab/colegio-tab.component'),
-      },
-      {
-        path: 'sanitario',
-        loadComponent: () =>
-          import('./tabs/sanitario-tab/sanitario-tab.component'),
-      },
-      {
-        path: 'terapeutas',
-        loadComponent: () =>
-          import('./tabs/trabajador-tab/trabajador-tab.component'),
+          import('./tabs/registro-tab/registro-tab.component'),
       },
       {
         path: 'objetivos',
@@ -36,15 +21,23 @@ export default [
           import('./tabs/objetivos-tab/objetivos-tab.component'),
       },
       {
-        path: 'sesiones',
+        path: 'informes',
         loadComponent: () =>
-          import('./tabs/sesiones-tab/sesiones-tab.component'),
+          import('./tabs/informes-tab/informes-tab.component'),
       },
+
+      // ── Rutas de gestión (accesibles desde el aside, sin tab en header) ──
       {
-        path: 'registro',
+        path: 'terapeutas',
         loadComponent: () =>
-          import('./tabs/registro-tab/registro-tab.component'),
+          import('./tabs/trabajador-tab/trabajador-tab.component'),
       },
+
+      // ── Rutas legacy mantenidas para compatibilidad ──
+      { path: 'cliente',   redirectTo: 'registro', pathMatch: 'full' },
+      { path: 'contactos', redirectTo: 'registro', pathMatch: 'full' },
+      { path: 'colegio',   redirectTo: 'registro', pathMatch: 'full' },
+      { path: 'sanitario', redirectTo: 'registro', pathMatch: 'full' },
     ],
   },
 ] as Route[];

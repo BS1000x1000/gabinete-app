@@ -38,6 +38,7 @@ export class ClientesService {
   sanitario = signal<SanitarioData | null>(null);
   objetivos = signal<ClienteObjetivosResponse | null>(null);
   estadisticasObjetivos = signal<EstadisticasObjetivos | null>(null);
+  clienteRaw = signal<ClienteDataBackend | null>(null);
   contactosFamiliares = signal<any[]>([]);
 
   // ========================================
@@ -95,6 +96,7 @@ export class ClientesService {
       .pipe(
         map((res) => res.data || res), // ✅ Extraer data
         tap((c) => {
+          this.clienteRaw.set(c);
           const familiarData = c.contactosFamiliares?.[0] || null;
           const colegioData = c.colegio || null;
           const sanitarioData = c.sanitario || null;
@@ -395,6 +397,7 @@ export class ClientesService {
    */
   clearCliente(): void {
     this.cliente.set(null);
+    this.clienteRaw.set(null);
     this.contactos.set(null);
     this.colegio.set(null);
     this.sanitario.set(null);

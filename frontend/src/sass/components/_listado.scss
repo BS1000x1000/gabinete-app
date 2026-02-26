@@ -1,14 +1,16 @@
 // ========================================
-// LISTADO COMPONENT
+// LISTADO — Layout principal
 // ========================================
+
 .listado-wrapper {
   display: grid;
-  grid-template-columns: 300px 1fr;
+  grid-template-columns: 320px 1fr;
   gap: $spacing-lg;
   min-height: calc(100vh - 80px);
   max-width: 1600px;
   margin: 0 auto;
   padding: $spacing-lg;
+  align-items: start;
 
   @include respond-to('lg') {
     grid-template-columns: 1fr;
@@ -18,15 +20,16 @@
 }
 
 // ========================================
-// LEFT PANEL (SIDEBAR)
+// LEFT PANEL — Ficha del alumno
 // ========================================
 .left-panel {
   position: sticky;
   top: 90px;
-  height: fit-content;
-  max-height: calc(100vh - 100px);
+  max-height: calc(100vh - 110px);
   overflow-y: auto;
-  @include custom-scrollbar(6px);
+  display: flex;
+  flex-direction: column;
+  @include custom-scrollbar(4px);
 
   @include respond-to('lg') {
     position: relative;
@@ -35,109 +38,401 @@
   }
 }
 
-// Avatar
-.avatar-wrapper {
-  .avatar-lg {
-    width: 90px;
-    height: 90px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    box-shadow: $shadow-md;
-    transition: $transition-base;
+// ── Cabecera del aside ──
+.aside-header {
+  padding: $spacing-md $spacing-md $spacing-sm;
+  text-align: center;
+  border-bottom: 1px solid $border-color;
+}
 
-    &:hover {
-      transform: scale(1.05);
-    }
+.avatar-wrapper {
+  position: relative;
+  display: inline-block;
+  margin-bottom: $spacing-sm;
+
+  .avatar-lg {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.35);
+    font-size: 1.6rem !important;
   }
 
-  .badge {
-    font-size: 0.7rem;
+  .age-badge {
+    position: absolute;
+    bottom: -2px;
+    right: -6px;
+    background: $primary;
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 20px;
+    border: 2px solid white;
+    white-space: nowrap;
   }
 }
 
-// Navegación de botones con iconos
-.nav-buttons-wrapper {
+.aside-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: $gray-800;
+  margin-bottom: $spacing-xs;
+  line-height: 1.3;
+}
+
+.aside-meta {
   display: flex;
   justify-content: center;
   gap: $spacing-xs;
   flex-wrap: wrap;
-  margin-bottom: $spacing-md;
+  margin-bottom: $spacing-sm;
 }
 
-.nav-icon-btn {
-  width: 40px;
-  height: 40px;
-  padding: 0;
+.meta-chip {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: $gray-100;
+  color: $gray-600;
+  border: 1px solid $border-color;
+  font-weight: 500;
+
+  &.chip-active {
+    background: #dcfce7;
+    color: #16a34a;
+    border-color: #bbf7d0;
+  }
+
+  &.chip-inactive {
+    background: $gray-100;
+    color: $gray-500;
+  }
+}
+
+// Alertas críticas (siempre visibles)
+.critical-alert {
+  font-size: 0.75rem;
+  padding: 6px 10px;
+  border-radius: $border-radius;
+  margin-top: $spacing-xs;
+  text-align: left;
+  line-height: 1.4;
+
+  &.alert-alergias {
+    background: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+  }
+
+  &.alert-medicacion {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+  }
+}
+
+// ── Secciones acordeón ──
+.aside-sections {
+  flex: 1;
+  overflow-y: auto;
+  @include custom-scrollbar(3px);
+}
+
+.aside-section {
+  border-bottom: 1px solid $gray-100;
+}
+
+// Fila que contiene toggle + botón editar
+.section-toggle-row {
+  display: flex;
+  align-items: center;
+
+  .section-toggle {
+    flex: 1;
+  }
+}
+
+// Botón de editar pequeño junto al toggle
+.section-edit-btn {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  margin-right: 8px;
+  border: 1px solid $border-color;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid $border-color;
-  border-radius: $border-radius;
-  transition: $transition-base;
-  background: white;
+  color: $gray-400;
+  transition: all 0.15s ease;
+  padding: 0;
 
-  i {
-    font-size: 1.1rem;
-    color: $gray-600;
-  }
+  i { font-size: 0.7rem; }
 
   &:hover {
     border-color: $primary;
-    background: $gray-50;
-    transform: translateY(-2px);
+    color: $primary;
+    background: lighten($primary, 46%);
+  }
+}
 
-    i {
-      color: $primary;
-    }
+.section-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px $spacing-md;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: $gray-700;
+  transition: background 0.15s ease, color 0.15s ease;
+  text-align: left;
+
+  &:hover {
+    background: $gray-50;
+    color: $primary;
   }
 
-  &.active {
-    border-color: $primary;
-    background: $primary;
+  &.open {
+    color: $primary;
+    background: lighten($primary, 46%);
 
-    i {
-      color: white;
+    .toggle-chevron {
+      transform: rotate(180deg);
     }
   }
 }
 
-// Acciones rápidas
-.actions-wrapper {
-  display: grid;
-  gap: $spacing-sm;
-  margin-top: $spacing-md;
+.toggle-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 
-  button {
-    width: 100%;
+  i {
+    font-size: 0.85rem;
+    width: 16px;
+    text-align: center;
+  }
+}
+
+.toggle-chevron {
+  font-size: 0.75rem;
+  color: $gray-400;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.count-badge {
+  background: $primary;
+  color: white;
+  font-size: 0.6rem;
+  padding: 1px 6px;
+  border-radius: 20px;
+  font-weight: 700;
+}
+
+// Cuerpo colapsable
+.section-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.25s ease, padding 0.25s ease;
+  padding: 0 $spacing-md;
+
+  &.expanded {
+    max-height: 600px;
+    padding: $spacing-xs $spacing-md $spacing-sm;
+  }
+}
+
+// ── Filas de información ──
+.info-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.info-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.info-label {
+  color: $gray-500;
+  flex-shrink: 0;
+  min-width: 70px;
+  font-size: 0.72rem;
+}
+
+.info-value {
+  color: $gray-800;
+  word-break: break-word;
+}
+
+.info-sublabel {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: $gray-400;
+  margin-bottom: 4px;
+}
+
+// ── Tarjeta de contacto ──
+.contacto-card {
+  padding: $spacing-xs 0;
+  border-bottom: 1px dashed $gray-100;
+  margin-bottom: 6px;
+
+  &:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+  }
+}
+
+.contacto-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.contacto-nombre {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: $gray-800;
+}
+
+.contacto-rol {
+  font-size: 0.68rem;
+  color: $gray-500;
+  background: $gray-100;
+  padding: 1px 6px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.contacto-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+// ── Mini badges ──
+.mini-badge {
+  font-size: 0.65rem;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-weight: 600;
+  display: inline-block;
+
+  &.badge-yes   { background: #dcfce7; color: #15803d; }
+  &.badge-no    { background: $gray-100; color: $gray-500; }
+  &.badge-primary { background: #dbeafe; color: #1d4ed8; }
+  &.badge-success { background: #dcfce7; color: #15803d; }
+  &.badge-whatsapp { background: #dcfce7; color: #15803d; }
+}
+
+// ── Acciones del aside ──
+.aside-actions {
+  padding: $spacing-sm $spacing-md;
+  border-top: 1px solid $border-color;
+}
+
+// ── Estado vacío ──
+.empty-section {
+  font-size: 0.75rem;
+  color: $gray-400;
+  font-style: italic;
+  padding: $spacing-xs 0;
+}
+
+// ── Botón gestión secundaria (desde aside al right panel) ──
+.btn-manage-section {
+  display: block;
+  margin-top: $spacing-sm;
+  padding: 5px 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: $primary;
+  background: lighten($primary, 46%);
+  border: 1px solid lighten($primary, 36%);
+  border-radius: $border-radius;
+  text-decoration: none;
+  text-align: center;
+  transition: background 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background: lighten($primary, 40%);
+    color: darken($primary, 5%);
+  }
+
+  &.btn-manage-active {
+    background: $primary;
+    color: white;
+    border-color: $primary;
   }
 }
 
 // ========================================
-// RIGHT PANEL (CONTENIDO)
+// RIGHT PANEL — Trabajo activo
 // ========================================
 .right-panel {
   display: flex;
   flex-direction: column;
   min-height: 600px;
-  min-width: 0;
 }
 
-// Tabs
-.tab-link {
+// Tabs de trabajo activo (3 tabs grandes y claras)
+.work-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-bottom: 2px solid $gray-100;
+  flex-shrink: 0;
+}
+
+.work-tab {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: $spacing-sm;
-  font-size: $font-size-sm;
-  white-space: nowrap;
+  gap: 8px;
+  padding: 14px $spacing-md;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: $gray-500;
+  text-decoration: none;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  cursor: pointer;
 
   i {
-    font-size: 0.95rem;
+    font-size: 1rem;
   }
 
-  .tab-label {
-    @include respond-to('md') {
-      display: none;
-    }
+  &:hover {
+    color: $primary;
+    background: lighten($primary, 48%);
+  }
+
+  &.active {
+    color: $primary;
+    border-bottom-color: $primary;
+    background: lighten($primary, 48%);
+  }
+
+  @include respond-to('md') {
+    span { display: none; }
+    padding: 12px;
+    justify-content: center;
   }
 }
 
@@ -171,31 +466,225 @@
 // ========================================
 @include respond-to('lg') {
   .listado-wrapper {
-    .left-panel {
-      order: 1;
-    }
-    
-    .right-panel {
-      order: 2;
-    }
+    .left-panel { order: 1; }
+    .right-panel { order: 2; }
+  }
+
+  .left-panel {
+    max-height: none;
+    position: relative;
+    top: 0;
   }
 }
 
 @include respond-to('md') {
-  .left-panel {
-    padding: $spacing-md !important;
+  .aside-name { font-size: 0.9rem; }
+  .left-panel { padding: 0 !important; }
+}
+
+
+// ========================================
+// CLIENTE DRAWER — Slide-over panel
+// ========================================
+
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(2px);
+  z-index: 1040;
+  animation: drawerFadeIn 0.2s ease;
+}
+
+@keyframes drawerFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.drawer-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 480px;
+  max-width: 100vw;
+  background: white;
+  z-index: 1050;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.14);
+  transform: translateX(100%);
+  transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+
+  &.drawer-open {
+    transform: translateX(0);
   }
 
-  .nav-buttons-wrapper {
-    gap: $spacing-xs;
+  @media (max-width: 576px) {
+    width: 100%;
+  }
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e9ecef;
+  flex-shrink: 0;
+  min-height: 65px;
+  background: #fafafa;
+}
+
+.drawer-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  h5 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
   }
 
-  .nav-icon-btn {
-    width: 35px;
-    height: 35px;
+  small { font-size: 0.72rem; }
+}
 
-    i {
-      font-size: 1rem;
+.drawer-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  i { color: white; font-size: 1rem; }
+}
+
+.drawer-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #64748b;
+  transition: all 0.15s ease;
+  padding: 0;
+
+  &:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+    border-color: #cbd5e1;
+  }
+
+  i { font-size: 0.85rem; }
+}
+
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+  .form-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 4px;
+  }
+
+  .form-control,
+  .form-select {
+    font-size: 0.875rem;
+    border-color: #e2e8f0;
+    border-radius: 8px;
+    padding: 7px 12px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+    &:focus {
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+    }
+
+    &.is-invalid {
+      border-color: #ef4444;
+      &:focus { box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1); }
     }
   }
+
+  textarea.form-control {
+    resize: vertical;
+    min-height: 70px;
+  }
+
+  .form-check-input:checked {
+    background-color: #6366f1;
+    border-color: #6366f1;
+  }
+}
+
+.drawer-footer {
+  padding: 16px 20px;
+  border-top: 1px solid #e9ecef;
+  flex-shrink: 0;
+  background: #fafafa;
+
+  .btn {
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    padding: 9px 16px;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+
+    &:hover:not(:disabled) {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+
+    &:disabled { opacity: 0.6; }
+  }
+}
+
+.drawer-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-section {
+  padding: 16px 0;
+  border-bottom: 1px solid #f1f5f9;
+
+  &:last-child { border-bottom: none; }
+}
+
+.form-section-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+  margin-bottom: 12px;
+}
+
+.contacto-section {
+  background: #f8fafc;
+  border: 1px solid #e9ecef !important;
+  border-radius: 10px;
+  padding: 16px !important;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #e9ecef !important;
 }

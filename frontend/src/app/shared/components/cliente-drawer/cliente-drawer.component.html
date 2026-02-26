@@ -1,0 +1,368 @@
+<!-- Backdrop -->
+<div
+  *ngIf="state().isOpen"
+  class="drawer-backdrop"
+  (click)="close()"
+></div>
+
+<!-- Drawer panel -->
+<aside
+  class="drawer-panel"
+  [class.drawer-open]="state().isOpen"
+>
+  <!-- Header -->
+  <div class="drawer-header">
+    <div class="drawer-title">
+      <div class="drawer-icon">
+        <i class="bi" [ngClass]="sectionIcon()"></i>
+      </div>
+      <div>
+        <h5 class="mb-0">{{ sectionTitle() }}</h5>
+        <small class="text-muted">Editar información</small>
+      </div>
+    </div>
+    <button class="drawer-close" (click)="close()" type="button">
+      <i class="bi bi-x-lg"></i>
+    </button>
+  </div>
+
+  <!-- Body con scroll -->
+  <div class="drawer-body">
+
+    <!-- ══════════════════════════
+         SECCIÓN: DATOS PERSONALES
+    ══════════════════════════ -->
+    <ng-container *ngIf="state().section === 'personal'">
+      <form [formGroup]="formPersonal" class="drawer-form">
+
+        <div class="form-section">
+          <h6 class="form-section-title">Identificación</h6>
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label">Nombre <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" formControlName="nombre"
+                     [class.is-invalid]="formPersonal.get('nombre')?.invalid && formPersonal.get('nombre')?.touched" />
+              <div class="invalid-feedback">Mínimo 2 caracteres</div>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Apellidos <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" formControlName="apellidos"
+                     [class.is-invalid]="formPersonal.get('apellidos')?.invalid && formPersonal.get('apellidos')?.touched" />
+              <div class="invalid-feedback">Mínimo 2 caracteres</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">DNI</label>
+              <input type="text" class="form-control" formControlName="dni" placeholder="12345678A" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Fecha de nacimiento <span class="text-danger">*</span></label>
+              <input type="date" class="form-control" formControlName="fechaNacimiento" />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h6 class="form-section-title">Domicilio</h6>
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label">Dirección</label>
+              <input type="text" class="form-control" formControlName="domicilio" placeholder="Calle, número, piso..." />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Ciudad</label>
+              <input type="text" class="form-control" formControlName="ciudad" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Provincia</label>
+              <input type="text" class="form-control" formControlName="provincia" />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h6 class="form-section-title">Información del gabinete</h6>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Curso escolar</label>
+              <input type="text" class="form-control" formControlName="curso" placeholder="Ej: 3º Primaria" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Fecha de inicio</label>
+              <input type="date" class="form-control" formControlName="fechaInicio" />
+            </div>
+          </div>
+        </div>
+
+      </form>
+    </ng-container>
+
+    <!-- ══════════════════════════
+         SECCIÓN: SANITARIO
+    ══════════════════════════ -->
+    <ng-container *ngIf="state().section === 'sanitario'">
+      <form [formGroup]="formSanitario" class="drawer-form">
+
+        <div class="form-section">
+          <h6 class="form-section-title">Datos clínicos</h6>
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label">Diagnóstico</label>
+              <input type="text" class="form-control" formControlName="diagnostico"
+                     placeholder="Ej: TDAH, Dislexia, TEA..." />
+            </div>
+            <div class="col-12">
+              <label class="form-label">Centro de salud</label>
+              <input type="text" class="form-control" formControlName="centroSalud" />
+            </div>
+            <div class="col-12">
+              <label class="form-label">Tratamientos</label>
+              <textarea class="form-control" formControlName="tratamientos" rows="2"
+                        placeholder="Tratamientos actuales..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h6 class="form-section-title">
+            <span class="text-danger">⚠ </span>Alertas importantes
+          </h6>
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label">Medicación</label>
+              <textarea class="form-control" formControlName="medicacion" rows="2"
+                        placeholder="Medicación actual y dosis..."></textarea>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Alergias</label>
+              <input type="text" class="form-control" formControlName="alergias"
+                     placeholder="Alergias conocidas..." />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h6 class="form-section-title">Apoyos y adaptaciones</h6>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" formControlName="adaptaciones" id="adaptaciones" />
+                <label class="form-check-label" for="adaptaciones">Tiene adaptaciones curriculares</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" formControlName="apoyos" id="apoyos" />
+                <label class="form-check-label" for="apoyos">Recibe apoyos</label>
+              </div>
+            </div>
+            <div class="col-12" *ngIf="formSanitario.get('adaptaciones')?.value">
+              <label class="form-label">Tipo de adaptaciones</label>
+              <input type="text" class="form-control" formControlName="tipoAdaptaciones"
+                     placeholder="Ej: ACI, ACUS, refuerzo..." />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="form-section-title mb-0">Especialistas</h6>
+            <button type="button" class="btn btn-sm btn-outline-primary" (click)="addEspecialista()">
+              <i class="bi bi-plus me-1"></i>Añadir
+            </button>
+          </div>
+          <div formArrayName="especialistas" class="row g-2">
+            <div *ngFor="let ctrl of especialistas.controls; let i = index" class="col-12">
+              <div class="input-group">
+                <input type="text" class="form-control" [formControlName]="i"
+                       placeholder="Ej: Logopeda, Psicólogo..." />
+                <button type="button" class="btn btn-outline-danger" (click)="removeEspecialista(i)">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </div>
+            <div *ngIf="especialistas.length === 0" class="col-12">
+              <p class="text-muted small mb-0">No hay especialistas registrados</p>
+            </div>
+          </div>
+        </div>
+
+      </form>
+    </ng-container>
+
+    <!-- ══════════════════════════
+         SECCIÓN: CONTACTOS
+    ══════════════════════════ -->
+    <ng-container *ngIf="state().section === 'contactos'">
+      <form [formGroup]="formContactos" class="drawer-form">
+
+        <div formArrayName="contactos">
+          <div *ngFor="let ctrl of contactosArray.controls; let i = index">
+            <div [formGroupName]="i" class="form-section contacto-section">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="form-section-title mb-0">
+                  <i class="bi bi-person-fill me-2"></i>Contacto {{ i + 1 }}
+                </h6>
+                <button *ngIf="contactosArray.length > 1" type="button"
+                        class="btn btn-sm btn-outline-danger" (click)="removeContacto(i)">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Nombre <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" formControlName="nombre" />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Apellidos <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" formControlName="apellidos" />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Parentesco <span class="text-danger">*</span></label>
+                  <select class="form-select" formControlName="parentesco">
+                    <option value="">Seleccionar...</option>
+                    <option value="Madre">Madre</option>
+                    <option value="Padre">Padre</option>
+                    <option value="Tutor/a">Tutor/a</option>
+                    <option value="Abuelo/a">Abuelo/a</option>
+                    <option value="Otro">Otro</option>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">DNI</label>
+                  <input type="text" class="form-control" formControlName="dni" placeholder="12345678A" />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Teléfono <span class="text-danger">*</span></label>
+                  <input type="tel" class="form-control" formControlName="telefono" />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Email</label>
+                  <input type="email" class="form-control" formControlName="email" />
+                </div>
+                <div class="col-12">
+                  <div class="d-flex gap-3 flex-wrap">
+                    <div class="form-check form-switch">
+                      <input class="form-check-input" type="checkbox" formControlName="esContactoPrincipal"
+                             [id]="'principal-' + i" />
+                      <label class="form-check-label" [for]="'principal-' + i">Contacto principal</label>
+                    </div>
+                    <div class="form-check form-switch">
+                      <input class="form-check-input" type="checkbox" formControlName="esResponsablePago"
+                             [id]="'pago-' + i" />
+                      <label class="form-check-label" [for]="'pago-' + i">Responsable de pago</label>
+                    </div>
+                    <div class="form-check form-switch">
+                      <input class="form-check-input" type="checkbox" formControlName="whatsapp"
+                             [id]="'wa-' + i" />
+                      <label class="form-check-label" [for]="'wa-' + i">WhatsApp</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button type="button" class="btn btn-outline-primary w-100 mt-2" (click)="addContacto()">
+          <i class="bi bi-plus-lg me-2"></i>Añadir contacto
+        </button>
+
+      </form>
+    </ng-container>
+
+    <!-- ══════════════════════════
+         SECCIÓN: COLEGIO
+    ══════════════════════════ -->
+    <ng-container *ngIf="state().section === 'colegio'">
+      <form [formGroup]="formColegio" class="drawer-form">
+
+        <div class="form-section">
+          <h6 class="form-section-title">Centro educativo</h6>
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label">Nombre del centro</label>
+              <input type="text" class="form-control" formControlName="nombre"
+                     placeholder="Ej: CEIP Miguel de Cervantes" />
+            </div>
+            <div class="col-12">
+              <label class="form-label">Dirección</label>
+              <input type="text" class="form-control" formControlName="direccionColegio"
+                     placeholder="Calle, número, CP..." />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h6 class="form-section-title">Contacto principal del colegio</h6>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Nombre / Cargo</label>
+              <input type="text" class="form-control" formControlName="ctoColegioUno"
+                     placeholder="Ej: María García (Tutora)" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Relación</label>
+              <input type="text" class="form-control" formControlName="ctoRelacionColegioUno"
+                     placeholder="Ej: Tutora, Orientadora..." />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Teléfono</label>
+              <input type="tel" class="form-control" formControlName="ctoTelefonoUno" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Email</label>
+              <input type="email" class="form-control" formControlName="ctoEmailColegioUno" />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h6 class="form-section-title">Contacto secundario <small class="text-muted">(opcional)</small></h6>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Nombre / Cargo</label>
+              <input type="text" class="form-control" formControlName="ctoColegioDos" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Relación</label>
+              <input type="text" class="form-control" formControlName="ctoRelacionColegioDos" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Teléfono</label>
+              <input type="tel" class="form-control" formControlName="ctoTelefonoDos" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Email</label>
+              <input type="email" class="form-control" formControlName="ctoEmailColegioDos" />
+            </div>
+          </div>
+        </div>
+
+      </form>
+    </ng-container>
+
+  </div><!-- /drawer-body -->
+
+  <!-- Footer con acciones -->
+  <div class="drawer-footer">
+    <!-- Feedback de guardado -->
+    <div *ngIf="saveError" class="alert alert-danger py-2 mb-2 small">
+      <i class="bi bi-exclamation-circle me-1"></i>{{ saveError }}
+    </div>
+    <div *ngIf="saveSuccess" class="alert alert-success py-2 mb-2 small">
+      <i class="bi bi-check-circle me-1"></i>¡Guardado correctamente!
+    </div>
+
+    <div class="d-flex gap-2">
+      <button type="button" class="btn btn-outline-secondary flex-fill" (click)="close()" [disabled]="isSaving">
+        Cancelar
+      </button>
+      <button type="button" class="btn btn-primary flex-fill" (click)="save()" [disabled]="isSaving">
+        <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-2"></span>
+        <i *ngIf="!isSaving" class="bi bi-check2 me-2"></i>
+        {{ isSaving ? 'Guardando...' : 'Guardar cambios' }}
+      </button>
+    </div>
+  </div>
+
+</aside>
