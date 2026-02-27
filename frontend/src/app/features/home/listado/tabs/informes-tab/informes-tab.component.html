@@ -1,0 +1,380 @@
+<div class="card border-0 shadow-sm rounded-3 tab-content bg-white py-2">
+
+  <!-- Loader principal -->
+  <div *ngIf="cargando()" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status"></div>
+  </div>
+
+  <div *ngIf="!cargando()">
+
+    <!-- ══════════════════════════════════════════════════════════
+         VISTA: LISTA DE INFORMES
+    ══════════════════════════════════════════════════════════ -->
+    <div *ngIf="vista() === 'lista'" class="px-4 py-3">
+
+      <!-- Header -->
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h6 class="fw-bold mb-0">Informes</h6>
+          <small class="text-muted">{{ informes().length }} informe{{ informes().length !== 1 ? 's' : '' }}</small>
+        </div>
+        <button class="btn btn-primary btn-sm" (click)="abrirFormNuevo()">
+          <i class="bi bi-plus-lg me-1"></i>Nuevo informe
+        </button>
+      </div>
+
+      <!-- Formulario nuevo informe (inline) -->
+      <div *ngIf="mostrarFormNuevo()" class="border rounded-3 p-3 mb-4 bg-light">
+        <h6 class="fw-semibold mb-3">Nuevo informe</h6>
+
+        <!-- Tipo -->
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Tipo de informe</label>
+          <div class="d-flex gap-2">
+            <div
+              *ngFor="let tipo of TIPOS"
+              class="p-2 border rounded flex-grow-1 text-center"
+              [class.border-primary]="formNuevo().tipoInforme === tipo"
+              [class.border-2]="formNuevo().tipoInforme === tipo"
+              [style.background-color]="formNuevo().tipoInforme === tipo ? TIPO_LABELS[tipo].bg : ''"
+              [style.color]="formNuevo().tipoInforme === tipo ? TIPO_LABELS[tipo].color : ''"
+              style="cursor: pointer;"
+              (click)="setTipoInforme(tipo)"
+            >
+              <div class="fw-semibold small">{{ TIPO_LABELS[tipo].texto }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Título -->
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Título</label>
+          <input
+            type="text"
+            class="form-control form-control-sm"
+            placeholder="Ej: Informe Inicial — Curso 2024/25"
+            [value]="formNuevo().titulo"
+            (input)="setFormField('titulo', $any($event.target).value)"
+          />
+        </div>
+
+        <!-- Período (solo SEGUIMIENTO) -->
+        <div *ngIf="formNuevo().tipoInforme === 'SEGUIMIENTO'" class="row g-2 mb-3">
+          <div class="col">
+            <label class="form-label small fw-semibold">Período desde</label>
+            <input
+              type="date"
+              class="form-control form-control-sm"
+              [value]="formNuevo().periodoDesde"
+              (input)="setFormField('periodoDesde', $any($event.target).value)"
+            />
+          </div>
+          <div class="col">
+            <label class="form-label small fw-semibold">Período hasta</label>
+            <input
+              type="date"
+              class="form-control form-control-sm"
+              [value]="formNuevo().periodoHasta"
+              (input)="setFormField('periodoHasta', $any($event.target).value)"
+            />
+          </div>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button
+            class="btn btn-primary btn-sm"
+            (click)="crearInforme()"
+            [disabled]="!formNuevo().titulo.trim() || guardando()"
+          >
+            <span *ngIf="guardando()" class="spinner-border spinner-border-sm me-1"></span>
+            <i *ngIf="!guardando()" class="bi bi-check2 me-1"></i>Crear y editar
+          </button>
+          <button class="btn btn-outline-secondary btn-sm" (click)="mostrarFormNuevo.set(false)">
+            Cancelar
+          </button>
+        </div>
+      </div>
+
+      <!-- Sin informes -->
+      <div *ngIf="informes().length === 0 && !mostrarFormNuevo()" class="text-center py-5">
+        <i class="bi bi-file-earmark-text display-4 text-muted d-block mb-3"></i>
+        <p class="text-muted">No hay informes para este alumno.</p>
+        <button class="btn btn-primary btn-sm" (click)="abrirFormNuevo()">
+          <i class="bi bi-plus-lg me-1"></i>Crear primer informe
+        </button>
+      </div>
+
+      <!-- Lista de informes -->
+      <div *ngFor="let informe of informes()" class="mb-2">
+        <div
+          class="p-3 border rounded d-flex justify-content-between align-items-start"
+          [class.bg-light]="informe.estado !== 'FINALIZADO'"
+          style="cursor: pointer;"
+          (click)="abrirEditor(informe)"
+        >
+          <div class="flex-grow-1 me-3">
+            <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+              <!-- Tipo -->
+              <span
+                class="badge"
+                [style.background-color]="TIPO_LABELS[informe.tipoInforme].bg"
+                [style.color]="TIPO_LABELS[informe.tipoInforme].color"
+                style="border: 1px solid currentColor; font-size: 0.72rem;"
+              >{{ TIPO_LABELS[informe.tipoInforme].texto }}</span>
+              <!-- Estado -->
+              <span class="badge {{ ESTADO_LABELS[informe.estado].badgeClass }}" style="font-size: 0.72rem;">
+                {{ ESTADO_LABELS[informe.estado].texto }}
+              </span>
+            </div>
+            <p class="mb-1 fw-semibold small">{{ informe.titulo }}</p>
+            <small class="text-muted">
+              <i class="bi bi-calendar3 me-1"></i>{{ formatearFecha(informe.createdAt) }}
+              <span *ngIf="informe.periodoDesde" class="ms-2">
+                <i class="bi bi-arrow-left-right me-1"></i>
+                {{ formatearFecha(informe.periodoDesde) }} — {{ formatearFecha(informe.periodoHasta) }}
+              </span>
+            </small>
+          </div>
+
+          <div class="d-flex gap-1 align-items-center">
+            <button
+              class="btn btn-sm btn-outline-primary"
+              (click)="abrirEditor(informe); $event.stopPropagation()"
+              title="Editar"
+            >
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button
+              *ngIf="informe.estado !== 'FINALIZADO'"
+              class="btn btn-sm btn-outline-danger"
+              (click)="eliminarInforme(informe.id, $event)"
+              title="Eliminar"
+            >
+              <i class="bi bi-trash3"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <!-- /vista lista -->
+
+
+    <!-- ══════════════════════════════════════════════════════════
+         VISTA: EDITOR DE INFORME
+    ══════════════════════════════════════════════════════════ -->
+    <div *ngIf="vista() === 'editor' && informeActivo()" class="d-flex" style="min-height: 600px;">
+
+      <!-- Columna izquierda: navegación de secciones -->
+      <div class="border-end p-3" style="width: 220px; flex-shrink: 0;">
+
+        <!-- Cabecera del informe -->
+        <button class="btn btn-link btn-sm text-muted p-0 mb-3 d-flex align-items-center gap-1" (click)="volverALista()">
+          <i class="bi bi-chevron-left"></i> Volver
+        </button>
+
+        <div class="mb-3">
+          <span
+            class="badge mb-1"
+            [style.background-color]="TIPO_LABELS[informeActivo()!.tipoInforme].bg"
+            [style.color]="TIPO_LABELS[informeActivo()!.tipoInforme].color"
+            style="border: 1px solid currentColor; font-size: 0.7rem;"
+          >{{ TIPO_LABELS[informeActivo()!.tipoInforme].texto }}</span>
+          <p class="small fw-semibold mb-1">{{ informeActivo()!.titulo }}</p>
+          <span class="badge {{ ESTADO_LABELS[informeActivo()!.estado].badgeClass }}" style="font-size: 0.7rem;">
+            {{ ESTADO_LABELS[informeActivo()!.estado].texto }}
+          </span>
+        </div>
+
+        <hr class="my-2">
+
+        <!-- Índice de secciones -->
+        <p class="text-uppercase text-muted small fw-bold mb-2" style="font-size: 0.65rem;">Secciones</p>
+        <div
+          *ngFor="let seccion of secciones(); let i = index"
+          class="p-2 rounded mb-1 small"
+          [class.bg-primary]="seccionActiva() === seccion.key"
+          [class.text-white]="seccionActiva() === seccion.key"
+          [class.text-muted]="seccionActiva() !== seccion.key"
+          style="cursor: pointer; font-size: 0.8rem;"
+          (click)="cambiarSeccion(seccion.key)"
+        >
+          {{ seccion.titulo }}
+        </div>
+
+        <!-- Sección GAS (solo lectura en informes) -->
+        <div
+          class="p-2 rounded mb-1 small"
+          [class.bg-primary]="seccionActiva() === 'gas'"
+          [class.text-white]="seccionActiva() === 'gas'"
+          [class.text-muted]="seccionActiva() !== 'gas'"
+          style="cursor: pointer; font-size: 0.8rem;"
+          (click)="cambiarSeccion('gas')"
+        >
+          {{ informeActivo()!.tipoInforme === 'INICIAL' ? '5. Objetivos específicos (GAS)' : '· Estado GAS' }}
+        </div>
+
+        <hr class="my-2">
+
+        <!-- Botones de acción -->
+        <div class="d-grid gap-2">
+          <button
+            *ngIf="!esFinalizado()"
+            class="btn btn-success btn-sm"
+            (click)="guardarSeccion()"
+            [disabled]="guardando()"
+          >
+            <span *ngIf="guardando()" class="spinner-border spinner-border-sm me-1"></span>
+            <i *ngIf="!guardando()" class="bi bi-floppy me-1"></i>Guardar
+          </button>
+          <button
+            *ngIf="!esFinalizado()"
+            class="btn btn-outline-success btn-sm"
+            (click)="finalizarInforme()"
+            [disabled]="guardando()"
+          >
+            <i class="bi bi-lock me-1"></i>Finalizar
+          </button>
+          <button
+            class="btn btn-outline-secondary btn-sm"
+            (click)="descargarPdf()"
+          >
+            <i class="bi bi-file-earmark-pdf me-1"></i>Descargar PDF
+          </button>
+          <div *ngIf="esFinalizado()" class="alert alert-success py-2 px-2 small mb-0 text-center">
+            <i class="bi bi-lock-fill me-1"></i>Informe finalizado
+          </div>
+        </div>
+
+      </div>
+      <!-- /columna izquierda -->
+
+      <!-- Columna derecha: contenido de la sección activa -->
+      <div class="flex-grow-1 p-4 overflow-auto">
+
+        <!-- ── Sección de texto normal ─────────────────────────── -->
+        <ng-container *ngIf="seccionActiva() !== 'gas'">
+          <ng-container *ngFor="let seccion of secciones()">
+            <div *ngIf="seccionActiva() === seccion.key">
+
+              <h5 class="fw-bold mb-1">{{ seccion.titulo }}</h5>
+              <hr class="mt-1 mb-3">
+
+              <div *ngIf="!esFinalizado()">
+                <textarea
+                  class="form-control"
+                  rows="18"
+                  [placeholder]="seccion.placeholder"
+                  [value]="getTextoSeccion(seccion.key)"
+                  (input)="setTextoSeccion(seccion.key, $any($event.target).value)"
+                ></textarea>
+                <div class="d-flex justify-content-end mt-2">
+                  <small class="text-muted">{{ getTextoSeccion(seccion.key).length }} caracteres</small>
+                </div>
+              </div>
+
+              <!-- Solo lectura si está finalizado -->
+              <div *ngIf="esFinalizado()" class="p-3 bg-light rounded" style="white-space: pre-wrap; min-height: 200px;">
+                {{ getTextoSeccion(seccion.key) || 'Sin contenido.' }}
+              </div>
+
+            </div>
+          </ng-container>
+        </ng-container>
+
+        <!-- ── Sección GAS ──────────────────────────────────────── -->
+        <div *ngIf="seccionActiva() === 'gas'">
+
+          <h5 class="fw-bold mb-1">
+            {{ informeActivo()!.tipoInforme === 'INICIAL' ? '5. Objetivos específicos (GAS)' : 'Estado GAS de los objetivos' }}
+          </h5>
+          <hr class="mt-1 mb-3">
+
+          <!-- Aviso informativo -->
+          <div class="alert alert-info small py-2 mb-3">
+            <i class="bi bi-info-circle me-1"></i>
+            <span *ngIf="informeActivo()!.tipoInforme === 'INICIAL'">
+              Esta sección muestra los niveles GAS definidos para cada objetivo. Para definir o editar los niveles, usa la pestaña <strong>Objetivos</strong>.
+            </span>
+            <span *ngIf="informeActivo()!.tipoInforme === 'SEGUIMIENTO'">
+              Esta sección muestra el estado GAS actual de cada objetivo y el historial de evaluaciones del período.
+            </span>
+          </div>
+
+          <!-- Sin datos -->
+          <div *ngIf="snapshotGAS().length === 0" class="text-center py-4">
+            <i class="bi bi-inbox text-muted d-block mb-2 fs-3"></i>
+            <p class="text-muted small">
+              No hay objetivos GAS en el snapshot de este informe.
+              <span *ngIf="!esFinalizado()">
+                Guarda el informe para capturar el estado actual.
+              </span>
+            </p>
+          </div>
+
+          <!-- Tabla GAS por objetivo -->
+          <div *ngFor="let obj of snapshotGAS()" class="mb-4">
+
+            <!-- Cabecera del objetivo -->
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <span class="badge bg-secondary" style="font-size: 0.72rem;">{{ obj.area }}</span>
+              <span class="fw-semibold small">{{ obj.objetivo }}</span>
+              <!-- Nivel actual -->
+              <span *ngIf="obj.nivelActual !== null" class="badge bg-primary ms-auto" style="font-size: 0.72rem;">
+                Nivel {{ getNivelShort(obj.nivelActual) }}
+              </span>
+              <span *ngIf="obj.nivelActual === null" class="badge bg-secondary bg-opacity-25 text-secondary ms-auto" style="font-size: 0.72rem;">
+                Sin evaluar
+              </span>
+            </div>
+
+            <!-- Tabla de niveles si están definidos -->
+            <div *ngIf="obj.niveles && obj.niveles.length === 5" class="table-responsive mb-2">
+              <table class="table table-sm table-bordered text-center align-middle mb-0" style="font-size: 0.78rem;">
+                <thead>
+                  <tr>
+                    <th *ngFor="let n of obj.niveles" style="width: 20%; padding: 4px; font-weight: 600;">
+                      {{ getNivelShort(n.nivel) }}
+                      <i *ngIf="obj.nivelActual === n.nivel" class="bi bi-arrow-down-circle-fill ms-1 text-primary"></i>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td
+                      *ngFor="let n of obj.niveles"
+                      class="text-start p-2 small"
+                      [class.fw-semibold]="obj.nivelActual === n.nivel"
+                      [class.bg-primary]="obj.nivelActual === n.nivel"
+                      [class.bg-opacity-10]="obj.nivelActual === n.nivel"
+                    >
+                      {{ n.descripcion || '—' }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <p *ngIf="!obj.niveles || obj.niveles.length < 5" class="text-muted small fst-italic">
+              Niveles GAS no definidos para este objetivo.
+            </p>
+
+            <!-- Notas del objetivo -->
+            <p *ngIf="obj.notas" class="text-muted small mb-0">
+              <i class="bi bi-chat-text me-1"></i>{{ obj.notas }}
+            </p>
+
+          </div>
+          <!-- /por objetivo -->
+
+        </div>
+        <!-- /sección GAS -->
+
+      </div>
+      <!-- /columna derecha -->
+
+    </div>
+    <!-- /vista editor -->
+
+  </div>
+</div>

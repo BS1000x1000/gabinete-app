@@ -394,7 +394,7 @@
 // Tabs de trabajo activo (3 tabs grandes y claras)
 .work-tabs {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   border-bottom: 2px solid $gray-100;
   flex-shrink: 0;
 }

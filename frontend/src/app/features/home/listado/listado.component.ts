@@ -1,4 +1,11 @@
-import { Component, OnInit, OnDestroy, inject, signal, ViewChild } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  inject,
+  signal,
+  ViewChild,
+} from '@angular/core';
 import {
   ActivatedRoute,
   RouterLink,
@@ -44,14 +51,15 @@ export class ListadoComponent implements OnInit, OnDestroy {
 
   // Solo 3 tabs de trabajo activo en el right panel
   readonly workTabs: WorkTab[] = [
-    { label: 'Seguimiento', icon: 'bi-journal-text',   target: 'registro' },
-    { label: 'Objetivos',   icon: 'bi-bullseye',        target: 'objetivos' },
-    { label: 'Informes',    icon: 'bi-file-earmark-text', target: 'informes' },
+    { label: 'Seguimiento', icon: 'bi-journal-text', target: 'registro' },
+    { label: 'Sesiones', icon: 'bi-calendar2-week', target: 'sesiones' },
+    { label: 'Objetivos', icon: 'bi-bullseye', target: 'objetivos' },
+    { label: 'Informes', icon: 'bi-file-earmark-text', target: 'informes' },
   ];
 
   // Estado de secciones colapsables del aside
   readonly seccionesAbiertas = signal<Record<string, boolean>>({
-    personal: true,   // abierto por defecto
+    personal: true, // abierto por defecto
     sanitario: false,
     contactos: false,
     colegio: false,
@@ -62,13 +70,13 @@ export class ListadoComponent implements OnInit, OnDestroy {
   readonly error = signal<string | null>(null);
 
   // ClienteData (frontend) — nombre, apellidos, edad, domicilio, fechas...
-  readonly cliente     = this.clientesSvc.cliente;
+  readonly cliente = this.clientesSvc.cliente;
   // ClienteDataBackend completo — activo, curso, trabajadoresAsignados...
-  readonly clienteRaw  = this.clientesSvc.clienteRaw;
+  readonly clienteRaw = this.clientesSvc.clienteRaw;
   // Array de familiares del backend (iterable)
-  readonly familiares  = this.clientesSvc.contactosFamiliares;
-  readonly colegio     = this.clientesSvc.colegio;
-  readonly sanitario   = this.clientesSvc.sanitario;
+  readonly familiares = this.clientesSvc.contactosFamiliares;
+  readonly colegio = this.clientesSvc.colegio;
+  readonly sanitario = this.clientesSvc.sanitario;
 
   ngOnInit(): void {
     this.getDetalleCliente();
@@ -80,7 +88,7 @@ export class ListadoComponent implements OnInit, OnDestroy {
   }
 
   toggleSeccion(seccion: string): void {
-    this.seccionesAbiertas.update(prev => ({
+    this.seccionesAbiertas.update((prev) => ({
       ...prev,
       [seccion]: !prev[seccion],
     }));
@@ -106,17 +114,19 @@ export class ListadoComponent implements OnInit, OnDestroy {
             catchError((err) => {
               this.handleError(err?.message || 'Error al cargar el cliente.');
               return EMPTY;
-            })
+            }),
           );
         }),
-        takeUntil(this.destroy$)
+        takeUntil(this.destroy$),
       )
       .subscribe(() => {
         this.isLoading.set(false);
       });
   }
 
-  openDrawer(section: 'personal' | 'sanitario' | 'contactos' | 'colegio'): void {
+  openDrawer(
+    section: 'personal' | 'sanitario' | 'contactos' | 'colegio',
+  ): void {
     this.drawerSvc.open(section, this.clienteId());
     // Prellenar el formulario en el siguiente tick, una vez el drawer está montado
     setTimeout(() => this.drawer?.onDrawerOpened(section), 0);

@@ -13,6 +13,8 @@ import { ObjetivosGeneralesModule } from './objetivos-generales/objetivos-genera
 import { AreasDesarrolloModule } from './areas-desarrollo/areas-desarrollo.module';
 import { HealthModule } from './health/health.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { GasModule } from './gas/gas.module';
+import { InformesModule } from './informes/informes.module';
 
 @Module({
   imports: [
@@ -27,7 +29,9 @@ import { DashboardModule } from './dashboard/dashboard.module';
     ObjetivosGeneralesModule,
     AreasDesarrolloModule,
     HealthModule,
-    DashboardModule
+    DashboardModule,
+    InformesModule,
+    GasModule,
     // NO VA N8nModule
   ],
   controllers: [AppController],

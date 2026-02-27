@@ -3,9 +3,9 @@
  */
 export interface AreaDesarrollo {
   id: string;
-  nombre: string; // "Comprensión Lectora", "Atención", etc.
+  nombre: string;
   descripcion?: string;
-  color?: string; // "#3B82F6"
+  color?: string;
   orden: number;
   activo: boolean;
 }
@@ -15,13 +15,12 @@ export interface AreaDesarrollo {
  */
 export interface ObjetivoGeneral {
   id: string;
-  titulo: string; // "Comprensión Inferencial"
+  titulo: string;
   descripcion?: string;
   activo: boolean;
   areaDesarrolloId: string;
   areaDesarrollo: AreaDesarrollo;
-  
-  // Estadísticas (cuando viene desde endpoint con stats)
+
   _count?: {
     clientesQueLoTienen: number;
     registrosDondeSeTrabajo: number;
@@ -35,13 +34,9 @@ export interface ObjetivoCliente {
   id: string;
   fechaAsignacion: string;
   activo: boolean;
-  
-  // Relaciones
   clienteId: string;
   objetivoGeneralId: string;
   objetivoGeneral: ObjetivoGeneral;
-  
-  // Estadísticas de uso (cuando vienen del endpoint)
   vecesTrabajado?: number;
   ultimaVez?: string | null;
 }
@@ -54,12 +49,13 @@ export interface AsignarObjetivosDto {
 }
 
 /**
- * Respuesta del endpoint de objetivos del cliente
+ * Respuesta del endpoint GET /clientes/:id/objetivos-generales
+ * Cada objetivo incluye los campos GAS para mostrar el estado actual
  */
 export interface ClienteObjetivosResponse {
   cliente: string;
   objetivos: {
-    id: string;
+    id: string;                      // clienteObjetivoId
     objetivoGeneralId: string;
     area: string;
     titulo: string;
@@ -68,6 +64,10 @@ export interface ClienteObjetivosResponse {
     fechaAsignacion: string;
     vecesTrabajado: number;
     ultimaVez: string | null;
+    // ── Campos GAS ──────────────────────────────────────────
+    nivelGASActual: number | null;          // -2, -1, 0, 1, 2 — null si aún no evaluado
+    fechaUltimaEvaluacion: string | null;   // ISO string de la última evaluación
+    nivelesDefinidos: boolean;              // true si ya tiene los 5 niveles descritos
   }[];
 }
 

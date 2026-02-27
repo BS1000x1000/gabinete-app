@@ -234,6 +234,8 @@ export class ClientesService {
                 areaDesarrollo: true,
               },
             },
+            // ── NUEVO: incluir datos GAS ──────────────────────────
+            descripcionesNiveles: true,
           },
           orderBy: {
             objetivoGeneral: {
@@ -250,33 +252,25 @@ export class ClientesService {
       throw new NotFoundException(`Cliente con ID ${clienteId} no encontrado`);
     }
 
-    // Obtener estadísticas de uso
     const objetivosConEstadisticas = await Promise.all(
       cliente.objetivosGeneralesAsignados.map(async (asignacion) => {
-        const estadisticas = await this.prisma.registroDiarioObjetivo.findMany({
-          where: {
-            objetivoGeneralId: asignacion.objetivoGeneralId,
-            registroDiario: {
-              clienteId: clienteId,
-            },
-          },
-          orderBy: {
-            createdAt: 'desc',
-          },
-          take: 1,
-        });
-
         const vecesTrabajado = await this.prisma.registroDiarioObjetivo.count({
           where: {
             objetivoGeneralId: asignacion.objetivoGeneralId,
-            registroDiario: {
-              clienteId: clienteId,
-            },
+            registroDiario: { clienteId },
           },
         });
 
+        const ultimoRegistro = await this.prisma.registroDiarioObjetivo.findFirst({
+          where: {
+            objetivoGeneralId: asignacion.objetivoGeneralId,
+            registroDiario: { clienteId },
+          },
+          orderBy: { createdAt: 'desc' },
+        });
+
         return {
-          id: asignacion.objetivoGeneral.id,
+          id: asignacion.id,                              // clienteObjetivoId
           objetivoGeneralId: asignacion.objetivoGeneralId,
           area: asignacion.objetivoGeneral.areaDesarrollo.nombre,
           titulo: asignacion.objetivoGeneral.titulo,
@@ -284,7 +278,11 @@ export class ClientesService {
           color: asignacion.objetivoGeneral.areaDesarrollo.color,
           fechaAsignacion: asignacion.fechaAsignacion,
           vecesTrabajado,
-          ultimaVez: estadisticas[0]?.createdAt || null,
+          ultimaVez: ultimoRegistro?.createdAt ?? null,
+          // ── Campos GAS ──────────────────────────────────────
+          nivelGASActual: asignacion.nivelGASActual ?? null,
+          fechaUltimaEvaluacion: asignacion.fechaUltimaEvaluacion ?? null,
+          nivelesDefinidos: asignacion.descripcionesNiveles.length === 5,
         };
       }),
     );

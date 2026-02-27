@@ -26,7 +26,12 @@ export default [
           import('./tabs/informes-tab/informes-tab.component'),
       },
 
-      // ── Rutas de gestión (accesibles desde el aside, sin tab en header) ──
+      {
+        path: 'sesiones',
+        loadComponent: () =>
+          import('./tabs/sesiones-tab/sesiones-tab.component'),
+      },
+
       {
         path: 'terapeutas',
         loadComponent: () =>
@@ -34,9 +39,9 @@ export default [
       },
 
       // ── Rutas legacy mantenidas para compatibilidad ──
-      { path: 'cliente',   redirectTo: 'registro', pathMatch: 'full' },
+      { path: 'cliente', redirectTo: 'registro', pathMatch: 'full' },
       { path: 'contactos', redirectTo: 'registro', pathMatch: 'full' },
-      { path: 'colegio',   redirectTo: 'registro', pathMatch: 'full' },
+      { path: 'colegio', redirectTo: 'registro', pathMatch: 'full' },
       { path: 'sanitario', redirectTo: 'registro', pathMatch: 'full' },
     ],
   },
