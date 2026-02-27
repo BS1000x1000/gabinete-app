@@ -36,6 +36,42 @@ export function calcularEdad(fechaNacimiento: Date | string): number {
 }
 
 /**
+ * Calcula la edad completa en años, meses y días
+ */
+export function calcularEdadTexto(fechaNacimiento: Date | string): { 
+  anios: number; meses: number; dias: number; texto: string 
+} {
+  console.log(fechaNacimiento);
+  const fecha = typeof fechaNacimiento === 'string' 
+    ? new Date(fechaNacimiento) 
+    : fechaNacimiento;
+  const hoy = new Date();
+  
+  let anios = hoy.getFullYear() - fecha.getFullYear();
+  let meses = hoy.getMonth() - fecha.getMonth();
+  let dias = hoy.getDate() - fecha.getDate();
+  
+  if (dias < 0) {
+    meses--;
+    const ultimoDiaMesAnterior = new Date(hoy.getFullYear(), hoy.getMonth(), 0).getDate();
+    dias += ultimoDiaMesAnterior;
+  }
+  if (meses < 0) {
+    anios--;
+    meses += 12;
+  }
+  console.log(anios);
+  console.log(meses);
+  console.log(dias);
+  const partes: string[] = [];
+  if (anios > 0) partes.push(anios === 1 ? '1 año' : `${anios} años`);
+  if (meses > 0) partes.push(meses === 1 ? '1 mes' : `${meses} meses`);
+  if (dias > 0) partes.push(dias === 1 ? '1 día' : `${dias} días`);
+  
+  return { anios, meses, dias, texto: partes.join(', ') || '0 días' };
+}
+
+/**
  * Formatea una fecha a formato legible en español
  * @param fecha - Date o string ISO
  * @returns Fecha formateada: "15 de febrero de 2026"

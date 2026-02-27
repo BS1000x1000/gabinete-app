@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, InternalServerErrorException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -27,7 +32,7 @@ export class InformesPdfService {
 
     // ── 2. Calcular edad ───────────────────────────────────────────────────
     const edad = informe.cliente.fechaNacimiento
-      ? this.calcularEdad(new Date(informe.cliente.fechaNacimiento))
+      ? this.calcularEdad(new Date(informe.cliente.fechaNacimiento)).texto
       : null;
 
     // ── 3. Parsear snapshot GAS ────────────────────────────────────────────
@@ -44,20 +49,24 @@ export class InformesPdfService {
       tipo: informe.tipoInforme,
       elaborado_por: `${informe.trabajador.nombre} ${informe.trabajador.apellidos}`,
       num_colegiada: (informe.trabajador as any).numColegiada ?? '',
-      fecha_elaboracion: new Date(informe.createdAt).toLocaleDateString('es-ES'),
+      fecha_elaboracion: new Date(informe.createdAt).toLocaleDateString(
+        'es-ES',
+      ),
       alumno: {
         nombre: `${informe.cliente.apellidos}, ${informe.cliente.nombre}`,
         nombre_pila: informe.cliente.nombre,
         fecha_nacimiento: informe.cliente.fechaNacimiento
-          ? new Date(informe.cliente.fechaNacimiento).toLocaleDateString('es-ES')
+          ? new Date(informe.cliente.fechaNacimiento).toLocaleDateString(
+              'es-ES',
+            )
           : '',
-        edad: edad ? `${edad} años` : '',
+        edad: edad ? `${edad}` : '',
         curso: informe.cliente.curso ?? '',
         colegio: informe.cliente.colegio?.nombre ?? '',
       },
-      motivoConsulta:          informe.motivoConsulta          ?? '',
-      analisisInformacion:     informe.analisisInformacion     ?? '',
-      evaluacionInicial:       informe.evaluacionInicial       ?? '',
+      motivoConsulta: informe.motivoConsulta ?? '',
+      analisisInformacion: informe.analisisInformacion ?? '',
+      evaluacionInicial: informe.evaluacionInicial ?? '',
       objetivosGeneralesTexto: informe.objetivosGeneralesTexto ?? '',
       snapshot,
     };
@@ -70,12 +79,14 @@ export class InformesPdfService {
       path.resolve(process.cwd(), 'src', 'scripts', 'generar_informe.py'),
     ];
 
-    const scriptPath = posiblesRutas.find(p => fs.existsSync(p));
+    const scriptPath = posiblesRutas.find((p) => fs.existsSync(p));
 
     if (!scriptPath) {
-      this.logger.error(`Script no encontrado. Rutas buscadas:\n${posiblesRutas.join('\n')}`);
+      this.logger.error(
+        `Script no encontrado. Rutas buscadas:\n${posiblesRutas.join('\n')}`,
+      );
       throw new InternalServerErrorException(
-        `Script generar_informe.py no encontrado. Colócalo en: ${posiblesRutas[1]}`
+        `Script generar_informe.py no encontrado. Colócalo en: ${posiblesRutas[1]}`,
       );
     }
 
@@ -84,13 +95,15 @@ export class InformesPdfService {
     // ── 6. Verificar que Python está disponible ────────────────────────────
     const pythonCheck = spawnSync('python3', ['--version']);
     if (pythonCheck.error) {
-      throw new InternalServerErrorException('python3 no está disponible en el sistema');
+      throw new InternalServerErrorException(
+        'python3 no está disponible en el sistema',
+      );
     }
 
     // ── 7. Ejecutar script ─────────────────────────────────────────────────
-    const tmpDir   = os.tmpdir();
+    const tmpDir = os.tmpdir();
     const jsonPath = path.join(tmpDir, `informe_${informeId}.json`);
-    const pdfPath  = path.join(tmpDir, `informe_${informeId}.pdf`);
+    const pdfPath = path.join(tmpDir, `informe_${informeId}.pdf`);
 
     try {
       fs.writeFileSync(jsonPath, JSON.stringify(datos, null, 2), 'utf8');
@@ -106,7 +119,7 @@ export class InformesPdfService {
 
       if (result.status !== 0) {
         throw new InternalServerErrorException(
-          `Error al generar PDF (código ${result.status}): ${result.stderr || 'sin mensaje'}`
+          `Error al generar PDF (código ${result.status}): ${result.stderr || 'sin mensaje'}`,
         );
       }
 
@@ -117,18 +130,47 @@ export class InformesPdfService {
       const buffer = fs.readFileSync(pdfPath);
       this.logger.log(`✅ PDF generado: ${buffer.length} bytes`);
       return buffer;
-
     } finally {
       if (fs.existsSync(jsonPath)) fs.unlinkSync(jsonPath);
-      if (fs.existsSync(pdfPath))  fs.unlinkSync(pdfPath);
+      if (fs.existsSync(pdfPath)) fs.unlinkSync(pdfPath);
     }
   }
 
-  private calcularEdad(fechaNac: Date): number {
+  calcularEdad(fechaNacimiento: Date | string): {
+    anios: number;
+    meses: number;
+    dias: number;
+    texto: string;
+  } {
+    const fecha =
+      typeof fechaNacimiento === 'string'
+        ? new Date(fechaNacimiento)
+        : fechaNacimiento;
     const hoy = new Date();
-    let edad = hoy.getFullYear() - fechaNac.getFullYear();
-    const m = hoy.getMonth() - fechaNac.getMonth();
-    if (m < 0 || (m === 0 && hoy.getDate() < fechaNac.getDate())) edad--;
-    return edad;
+
+    let anios = hoy.getFullYear() - fecha.getFullYear();
+    let meses = hoy.getMonth() - fecha.getMonth();
+    let dias = hoy.getDate() - fecha.getDate();
+
+    if (dias < 0) {
+      meses--;
+      const ultimoDiaMesAnterior = new Date(
+        hoy.getFullYear(),
+        hoy.getMonth(),
+        0,
+      ).getDate();
+      dias += ultimoDiaMesAnterior;
+    }
+    if (meses < 0) {
+      anios--;
+      meses += 12;
+    }
+
+    const partes: string[] = [];
+    if (anios > 0) partes.push(anios === 1 ? '1 año' : `${anios} años`);
+    if (meses > 0) partes.push(meses === 1 ? '1 mes' : `${meses} meses`);
+    if (dias > 0) partes.push(dias === 1 ? '1 día' : `${dias} días`);
+
+    return { anios, meses, dias, texto: partes.join(', ') || '0 días' };
   }
 }

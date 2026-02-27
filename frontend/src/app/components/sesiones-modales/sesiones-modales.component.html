@@ -1,0 +1,346 @@
+<!-- ══════════════════════════════════════════
+     MODAL: COMPLETAR
+     ══════════════════════════════════════════ -->
+<div
+  *ngIf="accionesSvc.sesionACompletar()"
+  class="modal-overlay"
+  (click)="accionesSvc.cerrarCompletar()"
+>
+  <div class="modal-card" (click)="$event.stopPropagation()">
+
+    <div class="modal-card-header">
+      <div class="modal-card-icon icon-completar">
+        <i class="bi bi-check-circle"></i>
+      </div>
+      <div>
+        <h5 class="mb-0">Completar sesión</h5>
+        <p class="text-muted small mb-0">Esta acción no se puede deshacer</p>
+      </div>
+      <button class="btn-close-modal" (click)="accionesSvc.cerrarCompletar()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <div class="modal-card-body">
+      <p class="text-muted mb-3">¿Confirmas que esta sesión se ha realizado?</p>
+      <div class="alert alert-warning d-flex align-items-start gap-2 py-2 mb-0">
+        <i class="bi bi-exclamation-triangle-fill mt-1 flex-shrink-0"></i>
+        <small>
+          Una vez completada, la sesión <strong>no podrá modificarse</strong> ni reprogramarse.
+        </small>
+      </div>
+    </div>
+
+    <div class="modal-card-footer">
+      <button
+        class="btn btn-outline-secondary"
+        (click)="accionesSvc.cerrarCompletar()"
+        [disabled]="accionesSvc.guardandoCompletar()"
+      >
+        Cancelar
+      </button>
+      <button
+        class="btn btn-success"
+        (click)="accionesSvc.confirmarCompletar()"
+        [disabled]="accionesSvc.guardandoCompletar()"
+      >
+        <span *ngIf="accionesSvc.guardandoCompletar()" class="spinner-border spinner-border-sm me-2"></span>
+        <i *ngIf="!accionesSvc.guardandoCompletar()" class="bi bi-check-circle me-2"></i>
+        {{ accionesSvc.guardandoCompletar() ? 'Completando...' : 'Sí, completar' }}
+      </button>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     MODAL: CANCELAR
+     ══════════════════════════════════════════ -->
+<div
+  *ngIf="accionesSvc.sesionACancelar()"
+  class="modal-overlay"
+  (click)="accionesSvc.cerrarCancelar()"
+>
+  <div class="modal-card modal-cancelar" (click)="$event.stopPropagation()">
+
+    <div class="modal-card-header">
+      <div class="modal-card-icon icon-cancelar">
+        <i class="bi bi-x-circle"></i>
+      </div>
+      <div>
+        <h5 class="mb-0">Cancelar sesión</h5>
+        <p class="text-muted small mb-0">Esto afectará al registro de asistencia</p>
+      </div>
+      <button class="btn-close-modal" (click)="accionesSvc.cerrarCancelar()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <div class="modal-card-body">
+      <p class="text-muted mb-3">¿Cómo fue la cancelación?</p>
+      <div class="cancelar-opciones">
+
+        <label
+          class="cancelar-opcion"
+          [class.selected]="accionesSvc.cancelarConAviso()"
+          (click)="accionesSvc.cancelarConAviso.set(true)"
+        >
+          <div class="cancelar-opcion-radio">
+            <i class="bi" [ngClass]="accionesSvc.cancelarConAviso() ? 'bi-record-circle-fill' : 'bi-circle'"></i>
+          </div>
+          <div>
+            <strong>Con aviso previo</strong>
+            <p class="text-muted small mb-0">La familia avisó con antelación.</p>
+          </div>
+        </label>
+
+        <label
+          class="cancelar-opcion"
+          [class.selected]="!accionesSvc.cancelarConAviso()"
+          (click)="accionesSvc.cancelarConAviso.set(false)"
+        >
+          <div class="cancelar-opcion-radio">
+            <i class="bi" [ngClass]="!accionesSvc.cancelarConAviso() ? 'bi-record-circle-fill' : 'bi-circle'"></i>
+          </div>
+          <div>
+            <strong>Sin aviso</strong>
+            <p class="text-muted small mb-0">No se presentaron y no avisaron.</p>
+          </div>
+        </label>
+
+      </div>
+    </div>
+
+    <div class="modal-card-footer">
+      <button
+        class="btn btn-outline-secondary"
+        (click)="accionesSvc.cerrarCancelar()"
+        [disabled]="accionesSvc.guardandoCancelacion()"
+      >
+        Volver
+      </button>
+      <button
+        class="btn btn-danger"
+        (click)="accionesSvc.confirmarCancelacion()"
+        [disabled]="accionesSvc.guardandoCancelacion()"
+      >
+        <span *ngIf="accionesSvc.guardandoCancelacion()" class="spinner-border spinner-border-sm me-2"></span>
+        <i *ngIf="!accionesSvc.guardandoCancelacion()" class="bi bi-x-lg me-2"></i>
+        {{ accionesSvc.guardandoCancelacion() ? 'Cancelando...' : 'Confirmar cancelación' }}
+      </button>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     MODAL: REPROGRAMAR
+     ══════════════════════════════════════════ -->
+<div
+  *ngIf="accionesSvc.sesionAReprogramar()"
+  class="modal-overlay"
+  (click)="accionesSvc.cerrarReprogramar()"
+>
+  <div class="modal-card modal-reprogramar" (click)="$event.stopPropagation()">
+
+    <div class="modal-card-header">
+      <div class="modal-card-icon icon-reprogramar">
+        <i class="bi bi-calendar-event"></i>
+      </div>
+      <div>
+        <h5 class="mb-0">Reprogramar sesión</h5>
+        <p class="text-muted small mb-0">
+          Sesión actual:
+          {{ accionesSvc.sesionAReprogramar()!.fechaHoraInicio | date:'dd/MM/yyyy' }},
+          {{ accionesSvc.sesionAReprogramar()!.fechaHoraInicio | date:'HH:mm' }} –
+          {{ accionesSvc.sesionAReprogramar()!.fechaHoraFin | date:'HH:mm' }}
+        </p>
+      </div>
+      <button class="btn-close-modal" (click)="accionesSvc.cerrarReprogramar()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <div class="modal-card-body">
+      <div class="reprogramar-form">
+
+        <div class="form-group-custom">
+          <label class="form-label-custom">
+            <i class="bi bi-calendar3 me-1"></i>Nueva fecha
+          </label>
+          <input
+            type="date"
+            class="form-control"
+            [ngModel]="accionesSvc.nuevaFecha()"
+            (ngModelChange)="accionesSvc.nuevaFecha.set($event)"
+          />
+        </div>
+
+        <div class="horas-row">
+          <div class="form-group-custom">
+            <label class="form-label-custom">
+              <i class="bi bi-clock me-1"></i>Hora inicio
+            </label>
+            <input
+              type="time"
+              class="form-control"
+              [ngModel]="accionesSvc.nuevaHoraInicio()"
+              (ngModelChange)="accionesSvc.nuevaHoraInicio.set($event)"
+            />
+          </div>
+          <div class="horas-separador">→</div>
+          <div class="form-group-custom">
+            <label class="form-label-custom">
+              <i class="bi bi-clock-history me-1"></i>Hora fin
+            </label>
+            <input
+              type="time"
+              class="form-control"
+              [ngModel]="accionesSvc.nuevaHoraFin()"
+              (ngModelChange)="accionesSvc.nuevaHoraFin.set($event)"
+            />
+          </div>
+        </div>
+
+        <div
+          *ngIf="accionesSvc.nuevaHoraInicio() && accionesSvc.nuevaHoraFin()"
+          class="duracion-preview"
+        >
+          <i class="bi bi-stopwatch me-1"></i>
+          Duración:
+          <strong>
+            {{ accionesSvc.getDuracion(
+              accionesSvc.nuevaFecha() + 'T' + accionesSvc.nuevaHoraInicio() + ':00',
+              accionesSvc.nuevaFecha() + 'T' + accionesSvc.nuevaHoraFin() + ':00'
+            ) }} minutos
+          </strong>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="modal-card-footer">
+      <button
+        class="btn btn-outline-secondary"
+        (click)="accionesSvc.cerrarReprogramar()"
+        [disabled]="accionesSvc.guardandoReprogramacion()"
+      >
+        Cancelar
+      </button>
+      <button
+        class="btn btn-primary"
+        (click)="accionesSvc.confirmarReprogramacion()"
+        [disabled]="!accionesSvc.nuevaFecha() || !accionesSvc.nuevaHoraInicio() || !accionesSvc.nuevaHoraFin() || accionesSvc.guardandoReprogramacion()"
+      >
+        <span *ngIf="accionesSvc.guardandoReprogramacion()" class="spinner-border spinner-border-sm me-2"></span>
+        <i *ngIf="!accionesSvc.guardandoReprogramacion()" class="bi bi-check-lg me-2"></i>
+        {{ accionesSvc.guardandoReprogramacion() ? 'Guardando...' : 'Confirmar reprogramación' }}
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MODAL: DETALLE
+     ══════════════════════════════════════════ -->
+<div
+  *ngIf="accionesSvc.sesionDetalle()"
+  class="modal-overlay"
+  (click)="accionesSvc.cerrarDetalle()"
+>
+  <div class="modal-card modal-detalle" (click)="$event.stopPropagation()">
+
+    <div class="modal-card-header">
+      <div class="modal-card-icon icon-detalle">
+        <i class="bi bi-calendar-check"></i>
+      </div>
+      <div>
+        <h5 class="mb-0">Detalle de sesión</h5>
+        <p class="text-muted small mb-0">
+          {{ accionesSvc.sesionDetalle()!.fechaHoraInicio | date:'dd/MM/yyyy' }}
+        </p>
+      </div>
+      <button class="btn-close-modal" (click)="accionesSvc.cerrarDetalle()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <div class="modal-card-body">
+      <div class="detalle-grid">
+
+        <div class="detalle-item">
+          <span class="detalle-label"><i class="bi bi-clock me-1"></i>Horario</span>
+          <span class="detalle-valor">
+            {{ accionesSvc.sesionDetalle()!.fechaHoraInicio | date:'HH:mm' }} –
+            {{ accionesSvc.sesionDetalle()!.fechaHoraFin | date:'HH:mm' }}
+            <small class="text-muted">
+              ({{ accionesSvc.getDuracion(
+                accionesSvc.sesionDetalle()!.fechaHoraInicio,
+                accionesSvc.sesionDetalle()!.fechaHoraFin
+              ) }} min)
+            </small>
+          </span>
+        </div>
+
+        <div class="detalle-item">
+          <span class="detalle-label"><i class="bi bi-tag me-1"></i>Tipo</span>
+          <span class="detalle-valor">{{ accionesSvc.sesionDetalle()!.tipoSesion }}</span>
+        </div>
+
+        <div class="detalle-item">
+          <span class="detalle-label"><i class="bi bi-person me-1"></i>Terapeuta</span>
+          <span class="detalle-valor">
+            {{ accionesSvc.sesionDetalle()!.trabajador?.nombre }}
+            {{ accionesSvc.sesionDetalle()!.trabajador?.apellidos }}
+          </span>
+        </div>
+
+        <div class="detalle-item">
+          <span class="detalle-label"><i class="bi bi-activity me-1"></i>Estado</span>
+          <span class="detalle-valor">{{ accionesSvc.sesionDetalle()!.estado }}</span>
+        </div>
+
+        <div class="detalle-item detalle-full" *ngIf="accionesSvc.sesionDetalle()!.notas">
+          <span class="detalle-label"><i class="bi bi-chat-text me-1"></i>Notas</span>
+          <div class="detalle-notas">{{ accionesSvc.sesionDetalle()!.notas }}</div>
+        </div>
+
+        <div class="detalle-item detalle-full" *ngIf="accionesSvc.sesionDetalle()!.objetivosTrabajados">
+          <span class="detalle-label"><i class="bi bi-bullseye me-1"></i>Objetivos trabajados</span>
+          <div class="detalle-notas">{{ accionesSvc.sesionDetalle()!.objetivosTrabajados }}</div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="modal-card-footer">
+      <ng-container *ngIf="accionesSvc.sesionDetalle()!.estado === 'PROGRAMADA'">
+        <button
+          class="btn btn-outline-success btn-sm"
+          (click)="accionesSvc.completarDesdeDetalle(onRefresh)"
+        >
+          <i class="bi bi-check-circle me-1"></i>Completar
+        </button>
+        <button
+          class="btn btn-outline-primary btn-sm"
+          (click)="accionesSvc.reprogramarDesdeDetalle(onRefresh)"
+        >
+          <i class="bi bi-calendar-event me-1"></i>Reprogramar
+        </button>
+        <button
+          class="btn btn-outline-danger btn-sm"
+          (click)="accionesSvc.cancelarDesdeDetalle(onRefresh)"
+        >
+          <i class="bi bi-x-lg me-1"></i>Cancelar
+        </button>
+      </ng-container>
+      <button class="btn btn-secondary ms-auto btn-sm" (click)="accionesSvc.cerrarDetalle()">
+        Cerrar
+      </button>
+    </div>
+
+  </div>
+</div>

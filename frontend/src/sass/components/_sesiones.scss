@@ -12,6 +12,7 @@
   display: flex;
   flex-direction: column;
   gap: $spacing-md;
+  min-width: 0;
 }
 
 // ==========================================
@@ -408,6 +409,16 @@
       color: $white;
     }
   }
+
+  &.btn-completar {
+    color: $success;
+    &:hover {
+      background: $success;
+      border-color: $success;
+      color: $white;
+    }
+  }
+
 }
 
 // ==========================================
@@ -470,6 +481,10 @@
     background: $secondary-light;
     color: $secondary-dark;
   }
+  &.icon-completar {
+  background: rgba(25, 135, 84, 0.1);
+  color: #198754;
+}
 }
 
 .btn-close-modal {

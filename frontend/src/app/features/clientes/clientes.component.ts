@@ -6,9 +6,12 @@ import { ClientesService } from '../../services/cliente.service';
 import { AuthService } from '../../services/auth.service';
 import { ClienteDataBackend } from '../../interface/cliente-backend.interface';
 import NuevoClienteWizardComponent from '../../components/nuevo-cliente-wizard/nuevo-cliente-wizard.component';
+import { calcularEdad, calcularEdadTexto } from '../../shared/utils/date';
+import { EdadPipe } from '../../shared/pipes/edad.pipe';
 
 interface ClienteExtendido extends ClienteDataBackend {
   edad?: number;
+  edadTexto: Date | string;
   horarioResumen?: string;
   proximaSesion?: string;
   totalSesiones?: number;
@@ -17,7 +20,7 @@ interface ClienteExtendido extends ClienteDataBackend {
 @Component({
   selector: 'app-clientes',
   standalone: true,
-  imports: [CommonModule, FormsModule, NuevoClienteWizardComponent],
+  imports: [CommonModule, FormsModule, NuevoClienteWizardComponent, EdadPipe],
   templateUrl: './clientes.component.html',
 })
 export class ClientesComponent implements OnInit {
@@ -94,7 +97,8 @@ export class ClientesComponent implements OnInit {
         // Enriquecer datos
         const clientesEnriquecidos = data.map(cliente => ({
           ...cliente,
-          edad: this.calcularEdad(cliente.fechaNacimiento),
+          edad: calcularEdad(cliente.fechaNacimiento),
+          edadTexto: calcularEdadTexto(cliente.fechaNacimiento).texto,
           horarioResumen: this.generarResumenHorario(cliente.disponibilidad!),
           // proximaSesion y totalSesiones requieren queries adicionales
         }));
@@ -138,20 +142,6 @@ export class ClientesComponent implements OnInit {
     
     // Opcional: navegar a la ficha del nuevo cliente
     this.router.navigate(['/home/listado', cliente.id, 'cliente']);
-  }
-
-  // Helpers
-  private calcularEdad(fechaNacimiento: string | Date): number {
-    const hoy = new Date();
-    const nacimiento = new Date(fechaNacimiento);
-    let edad = hoy.getFullYear() - nacimiento.getFullYear();
-    const mes = hoy.getMonth() - nacimiento.getMonth();
-    
-    if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) {
-      edad--;
-    }
-    
-    return edad;
   }
 
   private generarResumenHorario(disponibilidad: any[]): string {

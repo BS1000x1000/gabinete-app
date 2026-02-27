@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ClientesService } from '../../services/cliente.service';
 import Fuse from 'fuse.js';
+import { calcularEdad, calcularEdadTexto } from '../../shared/utils/date';
 
 interface ClienteSearch {
   id: string;
@@ -55,7 +56,8 @@ export class SearchBarComponent implements OnInit {
           apellidos: c.apellidos,
           dni: c.dni,
           curso: c.curso,
-          edad: this.calcularEdad(c.fechaNacimiento)
+          edad: calcularEdad(c.fechaNacimiento),
+          edadTexto: calcularEdadTexto(c.fechaNacimiento).texto
         }));
 
         this.clientes.set(clientesSearch);
@@ -127,16 +129,5 @@ export class SearchBarComponent implements OnInit {
   seleccionarCliente(cliente: ClienteSearch) {
     this.cerrarBusqueda();
     this.router.navigate(['/home/listado', cliente.id, 'cliente']);
-  }
-
-  private calcularEdad(fechaNacimiento: Date | string): number {
-    const fecha = new Date(fechaNacimiento);
-    const hoy = new Date();
-    let edad = hoy.getFullYear() - fecha.getFullYear();
-    const mes = hoy.getMonth() - fecha.getMonth();
-    if (mes < 0 || (mes === 0 && hoy.getDate() < fecha.getDate())) {
-      edad--;
-    }
-    return edad;
   }
 }

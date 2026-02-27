@@ -8,16 +8,19 @@ import {
   EstadoSesion,
   TipoSesion,
 } from '../../../../../interface/sesion.interface';
+import { SesionAccionesService } from '../../../../../services/sesiones-acciones.service';
+import { SesionModalesComponent } from '../../../../../components/sesiones-modales/sesiones-modales.component';
 
 @Component({
   selector: 'app-sesiones-tab',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SesionModalesComponent],
   templateUrl: './sesiones-tab.component.html',
 })
 export class SesionesTabComponent implements OnInit {
   private sesionesService = inject(SesionesService);
   private route = inject(ActivatedRoute);
+  private accionesSvc = inject(SesionAccionesService);
 
   // --- Estado ---
   clienteId = signal<string>('');
@@ -30,20 +33,8 @@ export class SesionesTabComponent implements OnInit {
   filtroMes = signal<string>('');
 
   // --- Modales ---
-  mostrarModalReprogramar = signal(false);
-  mostrarModalCancelar = signal(false);
   mostrarModalDetalle = signal(false);
   sesionSeleccionada = signal<SesionData | null>(null);
-
-  // --- Reprogramar form ---
-  nuevaFecha = signal<string>('');
-  nuevaHoraInicio = signal<string>('');
-  nuevaHoraFin = signal<string>('');
-  guardandoReprogramacion = signal(false);
-
-  // --- Cancelar form ---
-  cancelarConAviso = signal<boolean>(true);
-  guardandoCancelacion = signal(false);
 
   // --- Enums expuestos al template ---
   readonly EstadoSesion = EstadoSesion;
@@ -174,157 +165,51 @@ export class SesionesTabComponent implements OnInit {
     });
   }
 
-  // ==========================================
-  // MODAL DETALLE
-  // ==========================================
-  abrirDetalle(sesion: SesionData): void {
-    this.sesionSeleccionada.set(sesion);
-    this.mostrarModalDetalle.set(true);
+  // Wrappers que inyectan el callback de refresco
+  abrirCompletar(sesion: SesionData, event: Event) {
+    this.accionesSvc.abrirCompletar(sesion, event, () => this.cargarSesiones());
   }
 
-  cerrarDetalle(): void {
+  abrirCancelar(sesion: SesionData, event: Event) {
+    this.accionesSvc.abrirCancelar(sesion, event, () => this.cargarSesiones());
+  }
+
+  abrirReprogramar(sesion: SesionData, event: Event) {
+    this.accionesSvc.abrirReprogramar(sesion, event, () =>
+      this.cargarSesiones(),
+    );
+  }
+
+  abrirDetalle(sesion: SesionData, event?: Event) {
+    this.accionesSvc.abrirDetalle(sesion, event);
+  }
+
+  // Para abrir desde el modal de detalle (sin event)
+  abrirCompletarDesdeDetalle() {
+    const sesion = this.sesionSeleccionada();
+    if (!sesion) return;
     this.mostrarModalDetalle.set(false);
-    this.sesionSeleccionada.set(null);
+    this.accionesSvc.abrirCompletar(sesion, undefined, () =>
+      this.cargarSesiones(),
+    );
   }
 
-  // ==========================================
-  // MODAL REPROGRAMAR
-  // ==========================================
-  abrirReprogramar(sesion: SesionData, event: Event): void {
-    event.stopPropagation();
-    this.sesionSeleccionada.set(sesion);
-
-    const inicio = new Date(sesion.fechaHoraInicio);
-    const fin = new Date(sesion.fechaHoraFin);
-
-    // Precargar valores actuales
-    this.nuevaFecha.set(inicio.toISOString().split('T')[0]);
-    this.nuevaHoraInicio.set(
-      `${String(inicio.getHours()).padStart(2, '0')}:${String(inicio.getMinutes()).padStart(2, '0')}`,
-    );
-    this.nuevaHoraFin.set(
-      `${String(fin.getHours()).padStart(2, '0')}:${String(fin.getMinutes()).padStart(2, '0')}`,
-    );
-
-    this.mostrarModalReprogramar.set(true);
-  }
-
-  abrirReprogramarDesdeDetalle(): void {
+  abrirCancelarDesdeDetalle() {
     const sesion = this.sesionSeleccionada();
     if (!sesion) return;
-
-    const inicio = new Date(sesion.fechaHoraInicio);
-    const fin = new Date(sesion.fechaHoraFin);
-
-    this.nuevaFecha.set(inicio.toISOString().split('T')[0]);
-    this.nuevaHoraInicio.set(
-      `${String(inicio.getHours()).padStart(2, '0')}:${String(inicio.getMinutes()).padStart(2, '0')}`,
-    );
-    this.nuevaHoraFin.set(
-      `${String(fin.getHours()).padStart(2, '0')}:${String(fin.getMinutes()).padStart(2, '0')}`,
-    );
-
-    this.mostrarModalDetalle.set(false); // cierra detalle DESPUÉS de leer la sesión
-    this.mostrarModalReprogramar.set(true);
-  }
-
-  cerrarReprogramar(): void {
-    this.mostrarModalReprogramar.set(false);
-    this.sesionSeleccionada.set(null);
-    this.nuevaFecha.set('');
-    this.nuevaHoraInicio.set('');
-    this.nuevaHoraFin.set('');
-  }
-
-  confirmarReprogramacion(): void {
-    const sesion = this.sesionSeleccionada();
-    if (
-      !sesion ||
-      !this.nuevaFecha() ||
-      !this.nuevaHoraInicio() ||
-      !this.nuevaHoraFin()
-    )
-      return;
-
-    const fechaInicio = new Date(
-      `${this.nuevaFecha()}T${this.nuevaHoraInicio()}:00`,
-    );
-    const fechaFin = new Date(`${this.nuevaFecha()}T${this.nuevaHoraFin()}:00`);
-
-    if (fechaFin <= fechaInicio) {
-      alert('La hora de fin debe ser posterior a la hora de inicio.');
-      return;
-    }
-
-    this.guardandoReprogramacion.set(true);
-
-    this.sesionesService
-      .updateSesion(sesion.id, {
-        fechaHoraInicio: fechaInicio.toISOString(),
-        fechaHoraFin: fechaFin.toISOString(),
-      })
-      .subscribe({
-        next: (actualizada) => {
-          this.sesiones.update((prev) =>
-            prev.map((s) => (s.id === actualizada.id ? actualizada : s)),
-          );
-          this.guardandoReprogramacion.set(false);
-          this.cerrarReprogramar();
-        },
-        error: (err) => {
-          console.error('❌ Error al reprogramar sesión:', err);
-          this.guardandoReprogramacion.set(false);
-          alert('No se pudo reprogramar la sesión. Inténtalo de nuevo.');
-        },
-      });
-  }
-
-  // ==========================================
-  // MODAL CANCELAR
-  // ==========================================
-  abrirCancelar(sesion: SesionData, event: Event): void {
-    event.stopPropagation();
-    this.sesionSeleccionada.set(sesion);
-    this.cancelarConAviso.set(true);
-    this.mostrarModalCancelar.set(true);
-  }
-
-  abrirCancelarDesdeDetalle(): void {
-    const sesion = this.sesionSeleccionada();
-    if (!sesion) return;
-    this.cancelarConAviso.set(true);
     this.mostrarModalDetalle.set(false);
-    this.mostrarModalCancelar.set(true);
-    // sesionSeleccionada() se mantiene con el valor porque no llamamos a cerrarDetalle()
+    this.accionesSvc.abrirCancelar(sesion, undefined, () =>
+      this.cargarSesiones(),
+    );
   }
 
-  cerrarCancelar(): void {
-    this.mostrarModalCancelar.set(false);
-    this.sesionSeleccionada.set(null);
-  }
-
-  confirmarCancelacion(): void {
+  abrirReprogramarDesdeDetalle() {
     const sesion = this.sesionSeleccionada();
     if (!sesion) return;
-
-    this.guardandoCancelacion.set(true);
-
-    this.sesionesService
-      .cancelarSesion(sesion.id, this.cancelarConAviso())
-      .subscribe({
-        next: (actualizada) => {
-          this.sesiones.update((prev) =>
-            prev.map((s) => (s.id === actualizada.id ? actualizada : s)),
-          );
-          this.guardandoCancelacion.set(false);
-          this.cerrarCancelar();
-        },
-        error: (err) => {
-          console.error('❌ Error al cancelar sesión:', err);
-          this.guardandoCancelacion.set(false);
-          alert('No se pudo cancelar la sesión. Inténtalo de nuevo.');
-        },
-      });
+    this.mostrarModalDetalle.set(false);
+    this.accionesSvc.abrirReprogramar(sesion, undefined, () =>
+      this.cargarSesiones(),
+    );
   }
 
   // ==========================================

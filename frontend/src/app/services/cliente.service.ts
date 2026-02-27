@@ -14,7 +14,7 @@ import {
   EstadisticasObjetivos,
   AsignarObjetivosDto,
 } from '../interface/objetivo-general.interface';
-import { calcularEdad } from '../shared/utils/date';
+import { calcularEdad, calcularEdadTexto } from '../shared/utils/date';
 import { VerificacionDniResponse } from '../interface/verificacion-dni.interface';
 
 // ✅ NUEVO: Interface para respuestas envueltas
@@ -109,6 +109,7 @@ export class ClientesService {
             nombre: c.nombre,
             apellidos: c.apellidos,
             edad: calcularEdad(new Date(c.fechaNacimiento)),
+            edadTexto: calcularEdadTexto(new Date(c.fechaNacimiento)).texto,
             fechaNacimiento: new Date(c.fechaNacimiento),
             domicilio: c.domicilio,
             curso: c.curso,

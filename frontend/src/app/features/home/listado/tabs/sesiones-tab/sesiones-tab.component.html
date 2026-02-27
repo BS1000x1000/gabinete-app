@@ -1,11 +1,9 @@
 <div class="sesiones-tab">
-
   <!-- ==========================================
        CABECERA CON ESTADÍSTICAS
        ========================================== -->
   <div class="sesiones-header">
     <div class="sesiones-stats-row">
-
       <div class="stat-pill stat-total">
         <i class="bi bi-calendar3"></i>
         <div>
@@ -45,7 +43,6 @@
           <span class="stat-lbl">Asistencia</span>
         </div>
       </div>
-
     </div>
   </div>
 
@@ -53,7 +50,6 @@
        BARRA DE FILTROS
        ========================================== -->
   <div class="sesiones-filtros">
-
     <!-- Filtro por estado -->
     <div class="filtro-grupo">
       <label class="filtro-label">
@@ -96,7 +92,6 @@
     >
       <i class="bi bi-x-circle me-1"></i>Limpiar filtros
     </button>
-
   </div>
 
   <!-- ==========================================
@@ -112,16 +107,26 @@
   <!-- Error -->
   <div *ngIf="error() && !isLoading()" class="alert alert-danger m-3">
     <i class="bi bi-exclamation-triangle me-2"></i>{{ error() }}
-    <button class="btn btn-sm btn-outline-danger ms-3" (click)="cargarSesiones()">
+    <button
+      class="btn btn-sm btn-outline-danger ms-3"
+      (click)="cargarSesiones()"
+    >
       Reintentar
     </button>
   </div>
 
   <!-- Sin resultados -->
-  <div *ngIf="!isLoading() && !error() && sesionesFiltradas().length === 0" class="sesiones-empty">
+  <div
+    *ngIf="!isLoading() && !error() && sesionesFiltradas().length === 0"
+    class="sesiones-empty"
+  >
     <i class="bi bi-calendar-x"></i>
-    <p *ngIf="sesiones().length === 0">Este cliente no tiene sesiones registradas todavía.</p>
-    <p *ngIf="sesiones().length > 0">No hay sesiones que coincidan con los filtros aplicados.</p>
+    <p *ngIf="sesiones().length === 0">
+      Este cliente no tiene sesiones registradas todavía.
+    </p>
+    <p *ngIf="sesiones().length > 0">
+      No hay sesiones que coincidan con los filtros aplicados.
+    </p>
     <button
       *ngIf="sesiones().length > 0"
       class="btn btn-sm btn-outline-primary"
@@ -132,11 +137,13 @@
   </div>
 
   <!-- Tabla de sesiones -->
-  <div *ngIf="!isLoading() && !error() && sesionesFiltradas().length > 0" class="sesiones-table-wrapper">
-
+  <div
+    *ngIf="!isLoading() && !error() && sesionesFiltradas().length > 0"
+    class="sesiones-table-wrapper"
+  >
     <div class="sesiones-count text-muted small mb-2 px-1">
       Mostrando {{ sesionesFiltradas().length }}
-      {{ sesionesFiltradas().length === 1 ? 'sesión' : 'sesiones' }}
+      {{ sesionesFiltradas().length === 1 ? "sesión" : "sesiones" }}
       <span *ngIf="sesionesFiltradas().length !== sesiones().length">
         de {{ sesiones().length }} totales
       </span>
@@ -159,37 +166,56 @@
         <tr
           *ngFor="let sesion of sesionesFiltradas()"
           class="sesion-row"
-          [class.row-cancelada]="sesion.estado === EstadoSesion.CANCELADA_CON_AVISO || sesion.estado === EstadoSesion.CANCELADA_SIN_AVISO"
+          [class.row-cancelada]="
+            sesion.estado === EstadoSesion.CANCELADA_CON_AVISO ||
+            sesion.estado === EstadoSesion.CANCELADA_SIN_AVISO
+          "
           (click)="abrirDetalle(sesion)"
         >
           <!-- Fecha -->
           <td>
-            <span class="fecha-texto">{{ formatearFecha(sesion.fechaHoraInicio) }}</span>
+            <span class="fecha-texto">{{
+              formatearFecha(sesion.fechaHoraInicio)
+            }}</span>
           </td>
 
           <!-- Horario -->
           <td>
             <span class="horario-badge">
               <i class="bi bi-clock me-1"></i>
-              {{ formatearHora(sesion.fechaHoraInicio) }} – {{ formatearHora(sesion.fechaHoraFin) }}
+              {{ formatearHora(sesion.fechaHoraInicio) }} –
+              {{ formatearHora(sesion.fechaHoraFin) }}
             </span>
           </td>
 
           <!-- Duración -->
           <td>
-            <span class="text-muted small">{{ getDuracion(sesion.fechaHoraInicio, sesion.fechaHoraFin) }} min</span>
+            <span class="text-muted small"
+              >{{
+                getDuracion(sesion.fechaHoraInicio, sesion.fechaHoraFin)
+              }}
+              min</span
+            >
           </td>
 
           <!-- Tipo -->
           <td>
-            <span class="tipo-badge" [ngClass]="getTipoBadgeClase(sesion.tipoSesion)">
+            <span
+              class="tipo-badge"
+              [ngClass]="getTipoBadgeClase(sesion.tipoSesion)"
+            >
               {{ getTipoLabel(sesion.tipoSesion) }}
             </span>
           </td>
 
           <!-- Terapeuta -->
           <td>
-            <span class="terapeuta-nombre" [title]="sesion.trabajador?.nombre + ' ' + sesion.trabajador?.apellidos">
+            <span
+              class="terapeuta-nombre"
+              [title]="
+                sesion.trabajador?.nombre + ' ' + sesion.trabajador?.apellidos
+              "
+            >
               {{ sesion.trabajador?.nombre }} {{ sesion.trabajador?.apellidos }}
             </span>
           </td>
@@ -201,19 +227,18 @@
               {{ getEstadoLabel(sesion.estado) }}
             </span>
           </td>
-
-          <!-- Notas -->
-          <!-- <td>
-            <span *ngIf="sesion.notas" class="notas-preview" [title]="sesion.notas">
-              <i class="bi bi-chat-text text-muted"></i>
-            </span>
-            <span *ngIf="!sesion.notas" class="text-muted small">—</span>
-          </td> -->
-
           <!-- Acciones -->
           <td class="text-end" (click)="$event.stopPropagation()">
             <div class="acciones-grupo">
-
+              <!-- Completar (solo programadas) -->
+              <button
+                *ngIf="esCancelable(sesion.estado)"
+                class="btn-accion btn-completar"
+                (click)="abrirCompletar(sesion, $event)"
+                title="Completar sesión"
+              >
+                <i class="bi bi-check-lg"></i>
+              </button>
               <!-- Reprogramar (solo programadas) -->
               <button
                 *ngIf="esReprogramable(sesion.estado)"
@@ -233,326 +258,11 @@
               >
                 <i class="bi bi-x-lg"></i>
               </button>
-
-              <!-- Ver detalle -->
-              <button
-                class="btn-accion btn-detalle"
-                (click)="abrirDetalle(sesion)"
-                title="Ver detalle"
-              >
-                <i class="bi bi-eye"></i>
-              </button>
-
             </div>
           </td>
         </tr>
       </tbody>
     </table>
-
   </div>
 </div>
-
-
-<!-- ==========================================
-     MODAL: REPROGRAMAR SESIÓN
-     ========================================== -->
-<div
-  *ngIf="mostrarModalReprogramar()"
-  class="modal-overlay"
-  (click)="cerrarReprogramar()"
->
-  <div class="modal-card modal-reprogramar" (click)="$event.stopPropagation()">
-
-    <div class="modal-card-header">
-      <div class="modal-card-icon icon-reprogramar">
-        <i class="bi bi-calendar-event"></i>
-      </div>
-      <div>
-        <h5 class="mb-0">Reprogramar sesión</h5>
-        <p class="text-muted small mb-0">
-          Sesión actual:
-          {{ formatearFecha(sesionSeleccionada()!.fechaHoraInicio) }},
-          {{ formatearHora(sesionSeleccionada()!.fechaHoraInicio) }} –
-          {{ formatearHora(sesionSeleccionada()!.fechaHoraFin) }}
-        </p>
-      </div>
-      <button class="btn-close-modal" (click)="cerrarReprogramar()">
-        <i class="bi bi-x-lg"></i>
-      </button>
-    </div>
-
-    <div class="modal-card-body">
-
-      <div class="reprogramar-form">
-
-        <!-- Nueva fecha -->
-        <div class="form-group-custom">
-          <label class="form-label-custom">
-            <i class="bi bi-calendar3 me-1"></i>Nueva fecha
-          </label>
-          <input
-            type="date"
-            class="form-control"
-            [ngModel]="nuevaFecha()"
-            (ngModelChange)="nuevaFecha.set($event)"
-          />
-        </div>
-
-        <!-- Horas en fila -->
-        <div class="horas-row">
-          <div class="form-group-custom">
-            <label class="form-label-custom">
-              <i class="bi bi-clock me-1"></i>Hora inicio
-            </label>
-            <input
-              type="time"
-              class="form-control"
-              [ngModel]="nuevaHoraInicio()"
-              (ngModelChange)="nuevaHoraInicio.set($event)"
-            />
-          </div>
-          <div class="horas-separador">→</div>
-          <div class="form-group-custom">
-            <label class="form-label-custom">
-              <i class="bi bi-clock-history me-1"></i>Hora fin
-            </label>
-            <input
-              type="time"
-              class="form-control"
-              [ngModel]="nuevaHoraFin()"
-              (ngModelChange)="nuevaHoraFin.set($event)"
-            />
-          </div>
-        </div>
-
-        <!-- Duración calculada -->
-        <div
-          *ngIf="nuevaHoraInicio() && nuevaHoraFin()"
-          class="duracion-preview"
-        >
-          <i class="bi bi-stopwatch me-1"></i>
-          Duración:
-          <strong>
-            {{ getDuracion(
-              nuevaFecha() + 'T' + nuevaHoraInicio() + ':00',
-              nuevaFecha() + 'T' + nuevaHoraFin() + ':00'
-            ) }} minutos
-          </strong>
-        </div>
-
-      </div>
-
-    </div>
-
-    <div class="modal-card-footer">
-      <button
-        class="btn btn-outline-secondary"
-        (click)="cerrarReprogramar()"
-        [disabled]="guardandoReprogramacion()"
-      >
-        Cancelar
-      </button>
-      <button
-        class="btn btn-primary"
-        (click)="confirmarReprogramacion()"
-        [disabled]="!nuevaFecha() || !nuevaHoraInicio() || !nuevaHoraFin() || guardandoReprogramacion()"
-      >
-        <span *ngIf="guardandoReprogramacion()" class="spinner-border spinner-border-sm me-2"></span>
-        <i *ngIf="!guardandoReprogramacion()" class="bi bi-check-lg me-2"></i>
-        Confirmar reprogramación
-      </button>
-    </div>
-
-  </div>
-</div>
-
-
-<!-- ==========================================
-     MODAL: CANCELAR SESIÓN
-     ========================================== -->
-<div
-  *ngIf="mostrarModalCancelar()"
-  class="modal-overlay"
-  (click)="cerrarCancelar()"
->
-  <div class="modal-card modal-cancelar" (click)="$event.stopPropagation()">
-
-    <div class="modal-card-header">
-      <div class="modal-card-icon icon-cancelar">
-        <i class="bi bi-x-circle"></i>
-      </div>
-      <div>
-        <h5 class="mb-0">Cancelar sesión</h5>
-        <p class="text-muted small mb-0">
-          {{ formatearFecha(sesionSeleccionada()!.fechaHoraInicio) }},
-          {{ formatearHora(sesionSeleccionada()!.fechaHoraInicio) }}
-        </p>
-      </div>
-      <button class="btn-close-modal" (click)="cerrarCancelar()">
-        <i class="bi bi-x-lg"></i>
-      </button>
-    </div>
-
-    <div class="modal-card-body">
-      <p class="text-muted mb-3">¿Cómo fue la cancelación? Esto afectará al registro de asistencia.</p>
-
-      <!-- Opciones de cancelación -->
-      <div class="cancelar-opciones">
-
-        <label
-          class="cancelar-opcion"
-          [class.selected]="cancelarConAviso()"
-          (click)="cancelarConAviso.set(true)"
-        >
-          <div class="cancelar-opcion-radio">
-            <i class="bi" [ngClass]="cancelarConAviso() ? 'bi-record-circle-fill' : 'bi-circle'"></i>
-          </div>
-          <div>
-            <strong>Con aviso previo</strong>
-            <p class="text-muted small mb-0">La familia avisó con antelación.</p>
-          </div>
-        </label>
-
-        <label
-          class="cancelar-opcion"
-          [class.selected]="!cancelarConAviso()"
-          (click)="cancelarConAviso.set(false)"
-        >
-          <div class="cancelar-opcion-radio">
-            <i class="bi" [ngClass]="!cancelarConAviso() ? 'bi-record-circle-fill' : 'bi-circle'"></i>
-          </div>
-          <div>
-            <strong>Sin aviso</strong>
-            <p class="text-muted small mb-0">No se presentaron y no avisaron.</p>
-          </div>
-        </label>
-
-      </div>
-
-    </div>
-
-    <div class="modal-card-footer">
-      <button
-        class="btn btn-outline-secondary"
-        (click)="cerrarCancelar()"
-        [disabled]="guardandoCancelacion()"
-      >
-        Volver
-      </button>
-      <button
-        class="btn btn-danger"
-        (click)="confirmarCancelacion()"
-        [disabled]="guardandoCancelacion()"
-      >
-        <span *ngIf="guardandoCancelacion()" class="spinner-border spinner-border-sm me-2"></span>
-        <i *ngIf="!guardandoCancelacion()" class="bi bi-x-lg me-2"></i>
-        Confirmar cancelación
-      </button>
-    </div>
-
-  </div>
-</div>
-
-
-<!-- ==========================================
-     MODAL: DETALLE SESIÓN
-     ========================================== -->
-<div
-  *ngIf="mostrarModalDetalle() && sesionSeleccionada()"
-  class="modal-overlay"
-  (click)="cerrarDetalle()"
->
-  <div class="modal-card modal-detalle" (click)="$event.stopPropagation()">
-
-    <div class="modal-card-header">
-      <div class="modal-card-icon icon-detalle">
-        <i class="bi bi-calendar-check"></i>
-      </div>
-      <div>
-        <h5 class="mb-0">Detalle de sesión</h5>
-        <p class="text-muted small mb-0">
-          {{ formatearFecha(sesionSeleccionada()!.fechaHoraInicio) }}
-        </p>
-      </div>
-      <button class="btn-close-modal" (click)="cerrarDetalle()">
-        <i class="bi bi-x-lg"></i>
-      </button>
-    </div>
-
-    <div class="modal-card-body">
-      <div class="detalle-grid">
-
-        <div class="detalle-item">
-          <span class="detalle-label"><i class="bi bi-clock me-1"></i>Horario</span>
-          <span class="detalle-valor">
-            {{ formatearHora(sesionSeleccionada()!.fechaHoraInicio) }} –
-            {{ formatearHora(sesionSeleccionada()!.fechaHoraFin) }}
-            <small class="text-muted">
-              ({{ getDuracion(sesionSeleccionada()!.fechaHoraInicio, sesionSeleccionada()!.fechaHoraFin) }} min)
-            </small>
-          </span>
-        </div>
-
-        <div class="detalle-item">
-          <span class="detalle-label"><i class="bi bi-tag me-1"></i>Tipo</span>
-          <span class="detalle-valor">
-            <span class="tipo-badge" [ngClass]="getTipoBadgeClase(sesionSeleccionada()!.tipoSesion)">
-              {{ getTipoLabel(sesionSeleccionada()!.tipoSesion) }}
-            </span>
-          </span>
-        </div>
-
-        <div class="detalle-item">
-          <span class="detalle-label"><i class="bi bi-person me-1"></i>Terapeuta</span>
-          <span class="detalle-valor">
-            {{ sesionSeleccionada()!.trabajador?.nombre }}
-            {{ sesionSeleccionada()!.trabajador?.apellidos }}
-          </span>
-        </div>
-
-        <div class="detalle-item">
-          <span class="detalle-label"><i class="bi bi-activity me-1"></i>Estado</span>
-          <span class="detalle-valor">
-            <span class="estado-badge" [ngClass]="getBadgeClase(sesionSeleccionada()!.estado)">
-              <i class="bi me-1" [ngClass]="getBadgeIcono(sesionSeleccionada()!.estado)"></i>
-              {{ getEstadoLabel(sesionSeleccionada()!.estado) }}
-            </span>
-          </span>
-        </div>
-
-        <div class="detalle-item detalle-full" *ngIf="sesionSeleccionada()!.notas">
-          <span class="detalle-label"><i class="bi bi-chat-text me-1"></i>Notas</span>
-          <div class="detalle-notas">{{ sesionSeleccionada()!.notas }}</div>
-        </div>
-
-        <div class="detalle-item detalle-full" *ngIf="sesionSeleccionada()!.objetivosTrabajados">
-          <span class="detalle-label"><i class="bi bi-bullseye me-1"></i>Objetivos trabajados</span>
-          <div class="detalle-notas">{{ sesionSeleccionada()!.objetivosTrabajados }}</div>
-        </div>
-
-      </div>
-    </div>
-
-    <div class="modal-card-footer">
-      <!-- Acciones desde detalle para sesiones programadas -->
-      <ng-container *ngIf="esReprogramable(sesionSeleccionada()!.estado)">
-        <button
-          class="btn btn-outline-primary btn-sm"
-          (click)="abrirReprogramarDesdeDetalle()"
-        >
-          <i class="bi bi-calendar-event me-1"></i>Reprogramar
-        </button>
-        <button
-          class="btn btn-outline-danger btn-sm"
-          (click)="abrirCancelarDesdeDetalle()"
-        >
-          <i class="bi bi-x-lg me-1"></i>Cancelar
-        </button>
-      </ng-container>
-      <button class="btn btn-secondary ms-auto btn-sm" (click)="cerrarDetalle()">
-        Cerrar
-      </button>
-    </div>
-
-  </div>
-</div>
+<app-sesion-modales [onRefresh]="cargarSesiones.bind(this)" />

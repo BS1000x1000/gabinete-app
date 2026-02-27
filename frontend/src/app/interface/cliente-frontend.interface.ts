@@ -2,6 +2,7 @@ export interface ClienteData {
   nombre: string;
   apellidos: string;
   edad: number;
+  edadTexto?: string;
   curso: string;
   dni: string;
   movil?: string;

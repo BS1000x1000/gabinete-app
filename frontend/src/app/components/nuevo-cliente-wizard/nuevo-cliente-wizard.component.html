@@ -177,10 +177,7 @@
                 *ngIf="formDatosBasicos.get('fechaNacimiento')?.value"
               >
                 Edad:
-                {{
-                  calcularEdad(formDatosBasicos.get("fechaNacimiento")?.value)
-                }}
-                años
+                {{ formDatosBasicos.get("fechaNacimiento")?.value | edad }}
               </small>
             </div>
 
@@ -988,8 +985,9 @@
                 {{
                   getResumenDatosBasicos().fechaNacimiento | date: "dd/MM/yyyy"
                 }}
-                ({{ calcularEdad(getResumenDatosBasicos().fechaNacimiento) }}
-                años)
+                ({{
+                  getResumenDatosBasicos().fechaNacimiento | edad
+                }})
               </dd>
 
               <dt class="col-sm-4">Curso:</dt>

@@ -40,7 +40,7 @@
       <app-data-field label="Nombre" [value]="cliente()?.nombre" icon="bi-person"></app-data-field>
       <app-data-field label="Apellidos" [value]="cliente()?.apellidos" icon="bi-person"></app-data-field>
       <app-data-field label="Fecha de nacimiento" [value]="cliente()?.fechaNacimiento" type="date" icon="bi-calendar3"></app-data-field>
-      <app-data-field label="Edad" [value]="cliente()?.edad + ' años'" icon="bi-cake2"></app-data-field>
+      <app-data-field label="Edad" [value]="cliente()?.edadTexto || (cliente()?.edad + ' años')" icon="bi-cake2"></app-data-field>
       <app-data-field label="DNI" [value]="cliente()?.dni" icon="bi-card-text"></app-data-field>
       <app-data-field label="Curso" [value]="cliente()?.curso" icon="bi-mortarboard"></app-data-field>
     </div>
