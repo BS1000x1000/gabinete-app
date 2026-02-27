@@ -320,7 +320,7 @@
               <span class="badge bg-secondary" style="font-size: 0.72rem;">{{ obj.area }}</span>
               <span class="fw-semibold small">{{ obj.objetivo }}</span>
               <!-- Nivel actual -->
-              <span *ngIf="obj.nivelActual !== null" class="badge bg-primary ms-auto" style="font-size: 0.72rem;">
+              <span *ngIf="obj.nivelActual !== null" class="badge bg-secondary-dark ms-auto" style="font-size: 0.72rem;">
                 Nivel {{ getNivelShort(obj.nivelActual) }}
               </span>
               <span *ngIf="obj.nivelActual === null" class="badge bg-secondary bg-opacity-25 text-secondary ms-auto" style="font-size: 0.72rem;">
@@ -333,9 +333,9 @@
               <table class="table table-sm table-bordered text-center align-middle mb-0" style="font-size: 0.78rem;">
                 <thead>
                   <tr>
-                    <th *ngFor="let n of obj.niveles" style="width: 20%; padding: 4px; font-weight: 600;">
+                    <th *ngFor="let n of obj.niveles" class="bg-secondary-light" style="width: 20%; padding: 4px; font-weight: 600;">
                       {{ getNivelShort(n.nivel) }}
-                      <i *ngIf="obj.nivelActual === n.nivel" class="bi bi-arrow-down-circle-fill ms-1 text-primary"></i>
+                      <i *ngIf="obj.nivelActual === n.nivel" class="bi bi-arrow-down-circle-fill ms-1 text-secondary-dark"></i>
                     </th>
                   </tr>
                 </thead>
@@ -345,7 +345,7 @@
                       *ngFor="let n of obj.niveles"
                       class="text-start p-2 small"
                       [class.fw-semibold]="obj.nivelActual === n.nivel"
-                      [class.bg-primary]="obj.nivelActual === n.nivel"
+                      [class.bg-secondary-dark]="obj.nivelActual === n.nivel"
                       [class.bg-opacity-10]="obj.nivelActual === n.nivel"
                     >
                       {{ n.descripcion || '—' }}

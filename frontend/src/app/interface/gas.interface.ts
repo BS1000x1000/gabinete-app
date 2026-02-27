@@ -51,11 +51,11 @@ export interface CreateEvaluacionDto {
 
 // Labels para mostrar en la UI
 export const GAS_LABELS: Record<number, { texto: string; color: string; bg: string }> = {
-  [-2]: { texto: 'Nivel -2 · Desde donde partimos',    color: '#dc3545', bg: '#f8d7da' },
-  [-1]: { texto: 'Nivel -1 · Parcialmente alcanzado',  color: '#fd7e14', bg: '#ffe5d0' },
-  [0]:  { texto: 'Nivel  0 · Conseguido (lo esperado)', color: '#198754', bg: '#d1e7dd' },
-  [1]:  { texto: 'Nivel +1 · Un poco más de lo esperado', color: '#0d6efd', bg: '#cfe2ff' },
-  [2]:  { texto: 'Nivel +2 · Mucho más de lo esperado', color: '#6610f2', bg: '#e0cffc' },
+  [-2]: { texto: 'Nivel -2 · Desde donde partimos',    color: '#3d7bc4', bg: '#d9ebfc' },
+  [-1]: { texto: 'Nivel -1 · Parcialmente alcanzado',  color: '#3d7bc4', bg: '#d9ebfc' },
+  [0]:  { texto: 'Nivel  0 · Conseguido (lo esperado)', color: '#3d7bc4', bg: '#d9ebfc' },
+  [1]:  { texto: 'Nivel +1 · Un poco más de lo esperado', color: '#3d7bc4', bg: '#d9ebfc' },
+  [2]:  { texto: 'Nivel +2 · Mucho más de lo esperado', color: '#3d7bc4', bg: '#d9ebfc' },
 };
 
 export const GAS_NIVELES = [-2, -1, 0, 1, 2];

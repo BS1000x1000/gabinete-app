@@ -290,7 +290,7 @@ export class ObjetivosTabComponent implements OnInit {
 
   getNivelBg(nivel: number | null): string {
     if (nivel === null) return '#f8f9fa';
-    return GAS_LABELS[nivel]?.bg ?? '#f8f9fa';
+    return GAS_LABELS[nivel]?.bg ?? '#07090a';
   }
 
   getDescripcionDeNivel(nivel: number): string {
