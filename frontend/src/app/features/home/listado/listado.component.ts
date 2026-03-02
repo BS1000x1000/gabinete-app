@@ -51,10 +51,11 @@ export class ListadoComponent implements OnInit, OnDestroy {
 
   // Solo 3 tabs de trabajo activo en el right panel
   readonly workTabs: WorkTab[] = [
-    { label: 'Seguimiento', icon: 'bi-journal-text', target: 'registro' },
-    { label: 'Sesiones', icon: 'bi-calendar2-week', target: 'sesiones' },
-    { label: 'Objetivos', icon: 'bi-bullseye', target: 'objetivos' },
-    { label: 'Informes', icon: 'bi-file-earmark-text', target: 'informes' },
+    { label: 'Seguimiento', icon: 'bi-journal-text',        target: 'registro' },
+    { label: 'Sesiones',    icon: 'bi-calendar2-week',      target: 'sesiones' },
+    { label: 'Objetivos',   icon: 'bi-bullseye',            target: 'objetivos' },
+    { label: 'Bonos',       icon: 'bi-ticket-perforated',   target: 'bonos' },
+    { label: 'Informes',    icon: 'bi-file-earmark-text',   target: 'informes' },
   ];
 
   // Estado de secciones colapsables del aside

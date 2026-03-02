@@ -1,0 +1,93 @@
+<div class="modal-overlay" (click)="cerrar.emit()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+
+    <!-- Header -->
+    <div class="modal-card-header">
+      <div class="modal-card-icon icon-cobro">
+        <i class="bi bi-wallet2"></i>
+      </div>
+      <div>
+        <h5 class="mb-0">Registrar cobro</h5>
+        <p class="text-muted small mb-0">Indica cómo se realizó el pago</p>
+      </div>
+      <button class="btn-close-modal" (click)="cerrar.emit()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div class="modal-card-body">
+
+      <!-- Resumen del bono -->
+      <div class="bono-resumen-pago mb-4">
+        <div class="bono-resumen-icon">
+          <i class="bi bi-ticket-perforated"></i>
+        </div>
+        <div class="bono-resumen-info">
+          <span class="bono-resumen-title">
+            Bono {{ bono.totalSesiones }} sesiones
+          </span>
+          <span class="bono-resumen-sub">
+            {{ bono.sesionesConsumidas }}/{{ bono.totalSesiones }} consumidas
+            · {{ bono.fechaInicio | date:'dd/MM/yyyy' }}
+          </span>
+        </div>
+        <span class="bono-resumen-precio">{{ bono.precio | number:'1.2-2' }} €</span>
+      </div>
+
+      <!-- Método de pago -->
+      <div class="form-group-custom mb-3">
+        <label class="form-label-custom">
+          <i class="bi bi-credit-card me-1"></i>Método de pago
+        </label>
+        <div class="metodo-pago-grid">
+          <div
+            *ngFor="let m of metodos"
+            class="metodo-pago-card"
+            [class.selected]="metodoPago() === m.value"
+            (click)="metodoPago.set(m.value)"
+          >
+            <span class="metodo-icon">{{ m.icon }}</span>
+            <span class="metodo-label">{{ m.label }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fecha de pago -->
+      <div class="form-group-custom">
+        <label class="form-label-custom">
+          <i class="bi bi-calendar me-1"></i>Fecha de cobro
+        </label>
+        <input
+          type="date"
+          class="form-control"
+          [ngModel]="fechaPago()"
+          (ngModelChange)="fechaPago.set($event)"
+        />
+      </div>
+
+      <!-- Error -->
+      <div *ngIf="error()" class="alert alert-danger py-2 mt-3 mb-0 small">
+        <i class="bi bi-exclamation-triangle me-2"></i>{{ error() }}
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="modal-card-footer">
+      <button class="btn btn-outline-secondary" (click)="cerrar.emit()" [disabled]="isLoading()">
+        Cancelar
+      </button>
+      <button
+        class="btn btn-warning"
+        (click)="submit()"
+        [disabled]="isLoading() || !metodoPago()"
+      >
+        <span *ngIf="isLoading()" class="spinner-border spinner-border-sm me-2"></span>
+        <i *ngIf="!isLoading()" class="bi bi-check-circle me-2"></i>
+        {{ isLoading() ? 'Guardando...' : 'Confirmar cobro' }}
+      </button>
+    </div>
+
+  </div>
+</div>

@@ -1,0 +1,230 @@
+<div class="card border-0 shadow-sm rounded-3 tab-content bg-white py-2">
+
+  <!-- ── Loader ─────────────────────────────────────────── -->
+  <div *ngIf="isLoading()" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Cargando bonos...</span>
+    </div>
+    <p class="text-muted small mt-3">Cargando bonos...</p>
+  </div>
+
+  <div *ngIf="!isLoading()" class="bonos-tab">
+
+    <!-- ══════════════════════════════════════════════════════
+         BONO ACTIVO
+    ══════════════════════════════════════════════════════ -->
+
+    <!-- Sin bono activo → CTA -->
+    <div *ngIf="!bonoActivo()" class="bono-empty-state">
+      <div class="bono-empty-icon">
+        <i class="bi bi-ticket-perforated"></i>
+      </div>
+      <h6 class="bono-empty-title">Sin bono activo</h6>
+      <p class="bono-empty-desc">
+        Este cliente no tiene ningún bono en curso.<br>
+        Crea uno para controlar las sesiones y el cobro.
+      </p>
+      <button class="btn btn-primary" (click)="showCreateModal.set(true)">
+        <i class="bi bi-plus-circle me-2"></i>Crear primer bono
+      </button>
+    </div>
+
+    <!-- Con bono activo → Card destacado -->
+    <ng-container *ngIf="bonoActivo() as bono">
+      <div class="bono-activo-card">
+
+        <!-- Header -->
+        <div class="bono-activo-header">
+          <div class="bono-activo-badge">
+            <i class="bi bi-lightning-charge-fill"></i>
+            Bono activo
+          </div>
+          <button
+            class="btn btn-outline-secondary btn-sm"
+            disabled
+            title="Primero debe consumirse el bono activo"
+          >
+            <i class="bi bi-lock me-1"></i>Bono en curso
+          </button>
+        </div>
+
+        <!-- Progreso -->
+        <div class="bono-progreso-wrapper">
+          <div class="bono-progreso-info">
+            <span class="bono-sesiones-num" [style.color]="getProgreso(bono).color">
+              {{ bono.sesionesConsumidas }}
+            </span>
+            <span class="bono-sesiones-total">/ {{ bono.totalSesiones }} sesiones</span>
+          </div>
+
+          <div class="bono-progress-bar-track">
+            <div
+              class="bono-progress-bar-fill"
+              [style.width.%]="getProgreso(bono).porcentaje"
+              [style.background-color]="getProgreso(bono).color"
+            ></div>
+          </div>
+
+          <div class="bono-progreso-labels">
+            <span class="text-muted small">
+              <i class="bi bi-check-circle me-1"></i>
+              {{ bono.sesionesConsumidas }} realizadas
+            </span>
+            <span class="small fw-semibold" [style.color]="getProgreso(bono).color">
+              {{ bono.totalSesiones - bono.sesionesConsumidas }} restantes
+            </span>
+          </div>
+        </div>
+
+        <!-- Detalles -->
+        <div class="bono-detalles-grid">
+          <div class="bono-detalle-item">
+            <span class="bono-detalle-label">
+              <i class="bi bi-currency-euro me-1"></i>Precio
+            </span>
+            <span class="bono-detalle-valor">{{ bono.precio | number:'1.2-2' }} €</span>
+          </div>
+          <div class="bono-detalle-item">
+            <span class="bono-detalle-label">
+              <i class="bi bi-calendar me-1"></i>Inicio
+            </span>
+            <span class="bono-detalle-valor">{{ bono.fechaInicio | date:'dd/MM/yyyy' }}</span>
+          </div>
+          <div class="bono-detalle-item">
+            <span class="bono-detalle-label">
+              <i class="bi bi-credit-card me-1"></i>Cobro
+            </span>
+            <span class="bono-detalle-valor">
+              <span class="badge-pago pendiente">
+                <i class="bi bi-hourglass-split me-1"></i>Al completar
+              </span>
+            </span>
+          </div>
+          <div class="bono-detalle-item" *ngIf="bono.familiarPago">
+            <span class="bono-detalle-label">
+              <i class="bi bi-person me-1"></i>Responsable
+            </span>
+            <span class="bono-detalle-valor">
+              {{ bono.familiarPago.nombre }} {{ bono.familiarPago.apellidos }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Alerta: bono casi agotado (última sesión) -->
+        <div *ngIf="bono.totalSesiones - bono.sesionesConsumidas === 1" class="bono-cobro-alert bono-cobro-aviso">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+          <span>Queda <strong>1 sesión</strong>. Al completarla se generará el cobro.</span>
+        </div>
+
+        <!-- Notas -->
+        <div *ngIf="bono.notas" class="bono-notas">
+          <i class="bi bi-chat-text text-muted me-2"></i>
+          <span class="text-muted small">{{ bono.notas }}</span>
+        </div>
+
+      </div>
+    </ng-container>
+
+    <!-- ══════════════════════════════════════════════════════
+         HISTORIAL
+    ══════════════════════════════════════════════════════ -->
+    <div *ngIf="historialBonos().length > 0" class="bonos-historial">
+
+      <div class="bonos-historial-header">
+        <h6 class="bonos-historial-title">
+          <i class="bi bi-clock-history me-2"></i>Historial de bonos
+        </h6>
+        <span class="badge bg-light text-secondary border">{{ historialBonos().length }}</span>
+      </div>
+
+      <div class="bonos-historial-list">
+        <div
+          *ngFor="let bono of historialBonos()"
+          class="bono-historial-card"
+          [class.bono-consumido]="bono.estado === 'CONSUMIDO'"
+          [class.bono-cancelado]="bono.estado === 'CANCELADO'"
+        >
+
+          <!-- Estado -->
+          <div class="bono-hist-estado-col">
+            <span
+              class="badge-estado"
+              [style.color]="estadoConfig[bono.estado].color"
+              [style.background-color]="estadoConfig[bono.estado].bgColor"
+            >
+              <i class="bi me-1"
+                [class.bi-check-circle-fill]="bono.estado === 'CONSUMIDO'"
+                [class.bi-x-circle-fill]="bono.estado === 'CANCELADO'"
+              ></i>
+              {{ estadoConfig[bono.estado].label }}
+            </span>
+
+            <span *ngIf="bono.estado === 'CONSUMIDO' && !bono.pagado" class="badge-urgente">
+              <i class="bi bi-exclamation-circle-fill me-1"></i>Sin cobrar
+            </span>
+          </div>
+
+          <!-- Info -->
+          <div class="bono-hist-info">
+            <div class="bono-hist-sesiones">
+              <span class="fw-semibold">{{ bono.sesionesConsumidas }}/{{ bono.totalSesiones }}</span>
+              <span class="text-muted small ms-1">sesiones</span>
+            </div>
+
+            <div class="bono-hist-mini-bar">
+              <div
+                class="bono-hist-mini-fill"
+                [style.width.%]="getProgreso(bono).porcentaje"
+                [style.background-color]="estadoConfig[bono.estado].color"
+              ></div>
+            </div>
+
+            <div class="bono-hist-meta">
+              <small class="text-muted">
+                <i class="bi bi-calendar me-1"></i>
+                {{ bono.fechaInicio | date:'dd/MM/yy' }}
+                <span *ngIf="bono.fechaFin"> — {{ bono.fechaFin | date:'dd/MM/yy' }}</span>
+              </small>
+              <small class="text-muted">
+                <i class="bi bi-currency-euro me-1"></i>{{ bono.precio | number:'1.2-2' }} €
+              </small>
+            </div>
+          </div>
+
+          <!-- Acciones -->
+          <div class="bono-hist-acciones">
+            <span *ngIf="bono.pagado" class="text-success small fw-medium">
+              <i class="bi bi-check2-circle me-1"></i>Cobrado
+            </span>
+            <button
+              *ngIf="!bono.pagado && bono.estado === 'CONSUMIDO'"
+              class="btn btn-sm btn-outline-warning"
+              (click)="openPagoModal(bono)"
+            >
+              <i class="bi bi-wallet2 me-1"></i>Cobrar
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Modales ─────────────────────────────────────────── -->
+<app-create-bono-modal
+  *ngIf="showCreateModal()"
+  [clienteId]="clienteId"
+  [familiares]="familiares()"
+  (bonoCreado)="onBonoCreado()"
+  (cerrar)="showCreateModal.set(false)"
+></app-create-bono-modal>
+
+<app-registrar-pago-modal
+  *ngIf="showPagoModal() && bonoParaPago()"
+  [bono]="bonoParaPago()!"
+  (pagoRegistrado)="onPagoRegistrado()"
+  (cerrar)="onPagoRegistrado()"
+></app-registrar-pago-modal>

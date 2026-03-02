@@ -1,0 +1,507 @@
+// ============================================================
+// BONOS — Tab, modales y componentes relacionados
+// ============================================================
+
+// ── Contenedor principal del tab ────────────────────────
+.bonos-tab {
+  padding: $spacing-lg;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
+
+// ── Empty state ──────────────────────────────────────────
+.bono-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: $spacing-3xl $spacing-xl;
+  gap: $spacing-sm;
+}
+
+.bono-empty-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: $border-radius-xl;
+  background: $primary-ultra-light;
+  color: $primary;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  margin-bottom: $spacing-xs;
+}
+
+.bono-empty-title {
+  font-weight: $font-weight-semibold;
+  color: $gray-800;
+  margin: 0;
+}
+
+.bono-empty-desc {
+  color: $gray-500;
+  font-size: $font-size-sm;
+  line-height: $line-height-relaxed;
+  margin: 0;
+  max-width: 320px;
+}
+
+// ── Bono activo card ─────────────────────────────────────
+.bono-activo-card {
+  background: $white;
+  border: 1.5px solid rgba($primary, 0.2);
+  border-radius: $border-radius-xl;
+  padding: $spacing-lg;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+  box-shadow: 0 0 0 4px $primary-ultra-light, $shadow-md;
+}
+
+.bono-activo-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bono-activo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-xs;
+  background: $primary;
+  color: $white;
+  padding: 0.25rem 0.75rem;
+  border-radius: $border-radius-full;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+
+  i { font-size: 0.85rem; }
+}
+
+// ── Barra de progreso ────────────────────────────────────
+.bono-progreso-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.bono-progreso-info {
+  display: flex;
+  align-items: baseline;
+  gap: $spacing-xs;
+}
+
+.bono-sesiones-num {
+  font-size: 2.25rem;
+  font-weight: $font-weight-extrabold;
+  line-height: 1;
+  transition: color 0.3s ease;
+}
+
+.bono-sesiones-total {
+  font-size: $font-size-lg;
+  color: $gray-500;
+  font-weight: $font-weight-medium;
+}
+
+.bono-progress-bar-track {
+  width: 100%;
+  height: 10px;
+  background: $gray-100;
+  border-radius: $border-radius-full;
+  overflow: hidden;
+}
+
+.bono-progress-bar-fill {
+  height: 100%;
+  border-radius: $border-radius-full;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
+  min-width: 4px;
+}
+
+.bono-progreso-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+// ── Detalles del bono ────────────────────────────────────
+.bono-detalles-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $spacing-sm;
+  padding-top: $spacing-sm;
+  border-top: 1px solid $gray-100;
+}
+
+.bono-detalle-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bono-detalle-label {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: $gray-400;
+}
+
+.bono-detalle-valor {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $gray-800;
+}
+
+// ── Badges de pago ───────────────────────────────────────
+.badge-pago {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.5rem;
+  border-radius: $border-radius-full;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+
+  &.pagado   { background: $success-light; color: $success-dark; }
+  &.pendiente { background: $warning-light; color: $warning-dark; }
+}
+
+// ── Alerta cobro pendiente ───────────────────────────────
+.bono-cobro-alert {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  background: $warning-light;
+  border: 1px solid rgba($warning, 0.35);
+  border-radius: $border-radius-lg;
+  color: $warning-dark;
+  font-size: $font-size-sm;
+
+  i       { font-size: 1rem; flex-shrink: 0; }
+  span    { flex: 1; }
+  .btn    { flex-shrink: 0; }
+
+  // Variante informativa (bono casi agotado, sin urgencia de cobro)
+  &.bono-cobro-aviso {
+    background: $info-light;
+    border-color: rgba($info, 0.3);
+    color: $info-dark;
+  }
+}
+
+// ── Notas del bono ───────────────────────────────────────
+.bono-notas {
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-xs;
+  padding: $spacing-sm $spacing-md;
+  background: $gray-50;
+  border-radius: $border-radius;
+  border-left: 3px solid $primary-light;
+}
+
+// ── Historial ────────────────────────────────────────────
+.bonos-historial {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.bonos-historial-header {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding-bottom: $spacing-xs;
+  border-bottom: 1px solid $gray-100;
+}
+
+.bonos-historial-title {
+  margin: 0;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $gray-600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.bonos-historial-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.bono-historial-card {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-md;
+  border: 1px solid $gray-200;
+  border-radius: $border-radius-lg;
+  background: $white;
+  transition: $transition-fast;
+
+  &:hover {
+    background: $gray-50;
+    border-color: $gray-300;
+  }
+
+  &.bono-consumido { border-left: 3px solid $success; }
+  &.bono-cancelado { border-left: 3px solid $gray-300; opacity: 0.7; }
+}
+
+.bono-hist-estado-col {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+  flex-shrink: 0;
+  min-width: 90px;
+}
+
+.badge-estado {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: $border-radius-full;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  white-space: nowrap;
+}
+
+.badge-urgente {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.45rem;
+  border-radius: $border-radius-full;
+  font-size: 0.68rem;
+  font-weight: $font-weight-semibold;
+  background: $danger-light;
+  color: $danger-dark;
+  white-space: nowrap;
+}
+
+.bono-hist-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.bono-hist-sesiones {
+  font-size: $font-size-sm;
+  color: $gray-800;
+}
+
+.bono-hist-mini-bar {
+  width: 100%;
+  height: 4px;
+  background: $gray-100;
+  border-radius: $border-radius-full;
+  overflow: hidden;
+}
+
+.bono-hist-mini-fill {
+  height: 100%;
+  border-radius: $border-radius-full;
+  opacity: 0.7;
+}
+
+.bono-hist-meta {
+  display: flex;
+  gap: $spacing-md;
+  flex-wrap: wrap;
+}
+
+.bono-hist-acciones {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+// ── Modal: Crear bono ────────────────────────────────────
+.create-bono-form {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.sesiones-selector {
+  display: flex;
+  gap: $spacing-xs;
+  flex-wrap: wrap;
+}
+
+.sesiones-btn {
+  padding: 0.4rem 1rem;
+  border-radius: $border-radius-lg;
+  border: 1.5px solid $border-color;
+  background: $white;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  cursor: pointer;
+  transition: $transition-fast;
+  color: $gray-600;
+
+  &:hover {
+    border-color: $primary;
+    color: $primary;
+    background: $primary-ultra-light;
+  }
+
+  &.active {
+    background: $primary;
+    border-color: $primary;
+    color: $white;
+  }
+}
+
+.sesiones-custom-input {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+
+  input {
+    width: 72px;
+    text-align: center;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+.precio-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-sm $spacing-md;
+  background: $primary-ultra-light;
+  border-radius: $border-radius;
+  border: 1px solid rgba($primary, 0.2);
+  font-size: $font-size-sm;
+
+  strong {
+    font-size: $font-size-lg;
+    color: $primary-dark;
+    font-weight: $font-weight-bold;
+  }
+}
+
+// ── Modal: Registrar pago ────────────────────────────────
+.metodo-pago-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $spacing-sm;
+}
+
+.metodo-pago-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: $spacing-md $spacing-sm;
+  border: 2px solid $border-color;
+  border-radius: $border-radius-lg;
+  background: $white;
+  cursor: pointer;
+  transition: $transition-fast;
+  text-align: center;
+
+  .metodo-icon {
+    font-size: 1.5rem;
+  }
+
+  .metodo-label {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: $gray-700;
+  }
+
+  &:hover {
+    border-color: $primary;
+    background: $primary-ultra-light;
+  }
+
+  &.selected {
+    border-color: $primary;
+    background: $primary-light;
+    box-shadow: 0 0 0 3px rgba($primary, 0.15);
+
+    .metodo-label { color: $primary-dark; font-weight: $font-weight-semibold; }
+  }
+}
+
+.bono-resumen-pago {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-md;
+  background: $gray-50;
+  border-radius: $border-radius-lg;
+  border: 1px solid $gray-200;
+}
+
+.bono-resumen-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: $border-radius-lg;
+  background: $primary-light;
+  color: $primary;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.bono-resumen-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bono-resumen-title {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $gray-800;
+}
+
+.bono-resumen-sub {
+  font-size: $font-size-xs;
+  color: $gray-500;
+}
+
+.bono-resumen-precio {
+  margin-left: auto;
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $primary-dark;
+}
+
+// ── Modal icon específico de bonos ───────────────────────
+.icon-bono {
+  background: $primary-light;
+  color: $primary;
+}
+
+.icon-cobro {
+  background: $warning-light;
+  color: $warning-dark;
+}
+
+// ── Responsive ───────────────────────────────────────────
+@include respond-to('sm') {
+  .bonos-tab { padding: $spacing-md; }
+
+  .bono-detalles-grid { grid-template-columns: 1fr; }
+
+  .bono-historial-card {
+    flex-wrap: wrap;
+    .bono-hist-acciones {
+      width: 100%;
+      justify-content: flex-end;
+    }
+  }
+
+  .metodo-pago-grid { grid-template-columns: 1fr 1fr; }
+}

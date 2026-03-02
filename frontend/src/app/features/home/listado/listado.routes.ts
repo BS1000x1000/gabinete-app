@@ -33,6 +33,12 @@ export default [
       },
 
       {
+        path: 'bonos',
+        loadComponent: () =>
+          import('../../../components/bonos/bonos-tab/bonos-tab.component'),
+      },
+
+      {
         path: 'terapeutas',
         loadComponent: () =>
           import('./tabs/trabajador-tab/trabajador-tab.component'),

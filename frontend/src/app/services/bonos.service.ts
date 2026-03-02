@@ -1,9 +1,11 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { signal, computed } from '@angular/core';
-import { tap } from 'rxjs/operators';
-import { environment } from '../../environments/environment';
+import { map, tap } from 'rxjs/operators';
+import { environment } from '../../environments/environment.development';
 import { Bono, CreateBonoDto, RegistrarPagoDto } from '../interface/bono.interface';
+
+interface WrappedResponse<T> { data: T; }
 
 @Injectable({ providedIn: 'root' })
 export class BonosService {
@@ -22,31 +24,37 @@ export class BonosService {
 
   // ── API calls ─────────────────────────────────────────────────
   loadBonosCliente(clienteId: string) {
-    return this.http.get<Bono[]>(`${this.apiUrl}/cliente/${clienteId}`).pipe(
+    return this.http.get<WrappedResponse<Bono[]>>(`${this.apiUrl}/cliente/${clienteId}`).pipe(
+      map(res => res.data || res as any),
       tap(bonos => this._bonosCliente.set(bonos))
     );
   }
 
   createBono(dto: CreateBonoDto) {
-    return this.http.post<Bono>(this.apiUrl, dto).pipe(
+    return this.http.post<WrappedResponse<Bono>>(this.apiUrl, dto).pipe(
+      map(res => res.data || res as any),
       tap(nuevo => this._bonosCliente.update(bonos => [nuevo, ...bonos]))
     );
   }
 
   registrarPago(bonoId: string, dto: RegistrarPagoDto) {
-    return this.http.patch<Bono>(`${this.apiUrl}/${bonoId}/registrar-pago`, dto).pipe(
+    return this.http.patch<WrappedResponse<Bono>>(`${this.apiUrl}/${bonoId}/registrar-pago`, dto).pipe(
+      map(res => res.data || res as any),
       tap(actualizado => this._actualizarEnLista(actualizado))
     );
   }
 
   cancelarBono(bonoId: string) {
-    return this.http.patch<Bono>(`${this.apiUrl}/${bonoId}/cancelar`, {}).pipe(
+    return this.http.patch<WrappedResponse<Bono>>(`${this.apiUrl}/${bonoId}/cancelar`, {}).pipe(
+      map(res => res.data || res as any),
       tap(actualizado => this._actualizarEnLista(actualizado))
     );
   }
 
   getCobrosPendientes() {
-    return this.http.get<Bono[]>(`${this.apiUrl}/cobros-pendientes`);
+    return this.http.get<WrappedResponse<Bono[]>>(`${this.apiUrl}/cobros-pendientes`).pipe(
+      map(res => res.data || res as any)
+    );
   }
 
   private _actualizarEnLista(actualizado: Bono) {
