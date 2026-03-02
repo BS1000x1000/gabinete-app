@@ -1,6 +1,7 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
+import { startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 @Injectable()
 export class DashboardService {
@@ -356,6 +357,258 @@ export class DashboardService {
     } catch (err) {
       throw new InternalServerErrorException(
         `Error al obtener distribución de sesiones: ${err.message}`,
+      );
+    }
+  }
+
+  /**
+   * Vista operativa del día para el terapeuta autenticado
+   */
+  async getMiDia(trabajadorId: string, nombreTrabajador: string) {
+    try {
+      const hoy = new Date();
+      const inicioHoy = startOfDay(hoy);
+      const finHoy = endOfDay(hoy);
+      const inicioMes = startOfMonth(hoy);
+      const finMes = endOfMonth(hoy);
+      const hace30Dias = subDays(hoy, 30);
+
+      // Saludo según la hora
+      const hora = hoy.getHours();
+      const saludo =
+        hora < 13 ? 'Buenos días' : hora < 20 ? 'Buenas tardes' : 'Buenas noches';
+
+      const [
+        sesionesHoyRaw,
+        notifUrgenteCount,
+        alertasUrgenteRaw,
+        informesBorradorRaw,
+        bonosSinCobrarRaw,
+        objetivosSinEvaluarRaw,
+        registrosHoy,
+        sesionesEsteMesPorEstado,
+        totalSesionesEsteMes,
+        clientesAsignados,
+        registrosEsteMes,
+      ] = await Promise.all([
+        // 1. Sesiones de hoy con cliente y su bono activo
+        this.prisma.sesion.findMany({
+          where: {
+            trabajadorId,
+            fechaHoraInicio: { gte: inicioHoy, lte: finHoy },
+          },
+          include: {
+            cliente: {
+              select: {
+                id: true,
+                nombre: true,
+                apellidos: true,
+                bonos: {
+                  where: { estado: 'ACTIVO' },
+                  select: { id: true, sesionesConsumidas: true, totalSesiones: true },
+                  take: 1,
+                },
+              },
+            },
+          },
+          orderBy: { fechaHoraInicio: 'asc' },
+        }),
+
+        // 2. Conteo notificaciones urgentes no leídas
+        this.prisma.notificacion.count({
+          where: {
+            trabajadorId,
+            prioridad: 'URGENTE',
+            leida: false,
+            descartada: false,
+          },
+        }),
+
+        // 3. Top 5 alertas (URGENTE + ALTA) no leídas
+        this.prisma.notificacion.findMany({
+          where: {
+            trabajadorId,
+            prioridad: { in: ['URGENTE', 'ALTA'] },
+            leida: false,
+            descartada: false,
+          },
+          select: {
+            id: true,
+            tipo: true,
+            prioridad: true,
+            titulo: true,
+            mensaje: true,
+            accionUrl: true,
+            fechaCreacion: true,
+          },
+          orderBy: [{ prioridad: 'asc' }, { fechaCreacion: 'desc' }],
+          take: 5,
+        }),
+
+        // 4. Informes en borrador de este trabajador
+        this.prisma.informe.findMany({
+          where: { trabajadorId, estado: 'BORRADOR' },
+          select: {
+            id: true,
+            titulo: true,
+            tipoInforme: true,
+            updatedAt: true,
+            cliente: { select: { id: true, nombre: true, apellidos: true } },
+          },
+          orderBy: { updatedAt: 'desc' },
+        }),
+
+        // 5. Bonos consumidos sin cobrar de clientes asignados a este trabajador
+        this.prisma.bono.findMany({
+          where: {
+            estado: 'CONSUMIDO',
+            pagado: false,
+            cliente: {
+              trabajadoresAsignados: { some: { trabajadorId } },
+            },
+          },
+          select: {
+            id: true,
+            totalSesiones: true,
+            sesionesConsumidas: true,
+            fechaFin: true,
+            cliente: { select: { id: true, nombre: true, apellidos: true } },
+          },
+          orderBy: { fechaFin: 'desc' },
+        }),
+
+        // 6. Objetivos activos sin evaluar en 30+ días de clientes de este trabajador
+        this.prisma.clienteObjetivo.findMany({
+          where: {
+            activo: true,
+            OR: [
+              { fechaUltimaEvaluacion: null },
+              { fechaUltimaEvaluacion: { lt: hace30Dias } },
+            ],
+            cliente: {
+              trabajadoresAsignados: { some: { trabajadorId } },
+            },
+          },
+          include: {
+            objetivoGeneral: { select: { titulo: true } },
+            cliente: { select: { id: true, nombre: true, apellidos: true } },
+          },
+          orderBy: { fechaUltimaEvaluacion: 'asc' },
+          take: 5,
+        }),
+
+        // 7. Registros creados hoy por este trabajador
+        this.prisma.registroDiario.count({
+          where: {
+            trabajadorId,
+            fechaRegistro: { gte: inicioHoy, lte: finHoy },
+          },
+        }),
+
+        // 8. Sesiones este mes agrupadas por estado
+        this.prisma.sesion.groupBy({
+          by: ['estado'],
+          where: {
+            trabajadorId,
+            fechaHoraInicio: { gte: inicioMes, lte: finMes },
+          },
+          _count: { estado: true },
+        }),
+
+        // 9. Total sesiones este mes
+        this.prisma.sesion.count({
+          where: {
+            trabajadorId,
+            fechaHoraInicio: { gte: inicioMes, lte: finMes },
+          },
+        }),
+
+        // 10. Clientes asignados
+        this.prisma.clienteTrabajador.count({ where: { trabajadorId } }),
+
+        // 11. Registros este mes
+        this.prisma.registroDiario.count({
+          where: {
+            trabajadorId,
+            fechaRegistro: { gte: inicioMes, lte: finMes },
+          },
+        }),
+      ]);
+
+      // Formatear sesiones de hoy
+      const sesionesHoy = sesionesHoyRaw.map((s) => ({
+        id: s.id,
+        horaInicio: s.fechaHoraInicio,
+        horaFin: s.fechaHoraFin,
+        estado: s.estado,
+        tipoSesion: s.tipoSesion,
+        cliente: {
+          id: s.cliente.id,
+          nombre: s.cliente.nombre,
+          apellidos: s.cliente.apellidos,
+        },
+        bonoActivo: s.cliente.bonos[0]
+          ? {
+              id: s.cliente.bonos[0].id,
+              sesionesConsumidas: s.cliente.bonos[0].sesionesConsumidas,
+              totalSesiones: s.cliente.bonos[0].totalSesiones,
+            }
+          : null,
+      }));
+
+      // Contadores mini-cards
+      const bonosCriticosCount = bonosSinCobrarRaw.length;
+      const contadores = {
+        sesionesHoy: sesionesHoyRaw.length,
+        registrosHoy,
+        notificacionesUrgentes: notifUrgenteCount,
+        bonosCriticos: bonosCriticosCount,
+      };
+
+      // Resumen del mes
+      const estadoMap = sesionesEsteMesPorEstado.reduce(
+        (acc, item) => {
+          acc[item.estado] = item._count.estado;
+          return acc;
+        },
+        {} as Record<string, number>,
+      );
+
+      const resumenMes = {
+        clientesAsignados,
+        sesiones: {
+          esteMes: totalSesionesEsteMes,
+          porEstado: {
+            completadas: estadoMap['COMPLETADA'] || 0,
+            programadas: estadoMap['PROGRAMADA'] || 0,
+            canceladasConAviso: estadoMap['CANCELADA_CON_AVISO'] || 0,
+            canceladasSinAviso: estadoMap['CANCELADA_SIN_AVISO'] || 0,
+          },
+        },
+        registros: { esteMes: registrosEsteMes },
+      };
+
+      return {
+        saludo: `${saludo}, ${nombreTrabajador}`,
+        fecha: hoy.toISOString(),
+        contadores,
+        sesionesHoy,
+        alertasUrgentes: alertasUrgenteRaw,
+        accionesPendientes: {
+          informesEnBorrador: informesBorradorRaw,
+          bonosSinCobrar: bonosSinCobrarRaw,
+          objetivosSinEvaluar: objetivosSinEvaluarRaw.map((co) => ({
+            clienteObjetivoId: co.id,
+            fechaUltimaEvaluacion: co.fechaUltimaEvaluacion,
+            objetivo: co.objetivoGeneral.titulo,
+            cliente: co.cliente,
+          })),
+        },
+        resumenMes,
+      };
+    } catch (err) {
+      throw new InternalServerErrorException(
+        `Error al obtener la vista del día: ${err.message}`,
       );
     }
   }

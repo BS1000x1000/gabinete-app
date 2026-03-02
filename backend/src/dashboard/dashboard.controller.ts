@@ -88,4 +88,14 @@ export class DashboardController {
     this.logger.log(`Obteniendo resumen completo del dashboard para: ${trabajadorId}`);
     return this.dashboardService.getResumenCompleto(trabajadorId);
   }
+
+  /**
+   * Vista operativa del día — pantalla de inicio del terapeuta
+   */
+  @Get('mi-dia')
+  async getMiDia(@Req() req: any) {
+    const { userId, nombre } = req.user;
+    this.logger.log(`Obteniendo vista del día para: ${userId}`);
+    return this.dashboardService.getMiDia(userId, nombre);
+  }
 }

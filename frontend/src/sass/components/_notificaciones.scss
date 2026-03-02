@@ -13,6 +13,7 @@
   padding: 0.25rem;
   border-radius: 50%;
   transition: background 0.15s;
+  overflow: visible; // necesario para que el badge no quede recortado
 
   &:hover {
     background: var(--color-bg-hover, #f0f0f0);
