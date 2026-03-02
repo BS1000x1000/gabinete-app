@@ -48,6 +48,7 @@ model Trabajador {
   informes           Informe[]
   registrosCreados   RegistroDiario[]
   objetivosAsignados Objetivo[] @relation("ObjetivosAsignados")
+  notificaciones     Notificacion[]
 
   @@map("trabajadores")
 }
@@ -106,7 +107,8 @@ model Cliente {
   registrosDiarios            RegistroDiario[]
   objetivosGeneralesAsignados ClienteObjetivo[]
   objetivosEspecificos        Objetivo[]
-  bonos  Bono[]
+  bonos                       Bono[]
+  notificaciones              Notificacion[]
 
   @@map("clientes")
 }
@@ -493,4 +495,49 @@ enum EstadoBono {
   ACTIVO
   CONSUMIDO
   CANCELADO
+}
+
+// ============================================================
+// NOTIFICACIONES
+// ============================================================
+
+enum TipoNotificacion {
+  INFORME_INICIAL_PENDIENTE
+  INFORME_SEGUIMIENTO_PENDIENTE
+  BONO_AGOTADO
+  BONO_CASI_AGOTADO
+  BONO_PENDIENTE_PAGO
+  SIN_SESIONES_RECIENTES
+  OBJETIVO_SIN_EVALUAR
+  INFORME_EN_BORRADOR
+  SESION_SIN_BONO
+}
+
+enum PrioridadNotif {
+  URGENTE
+  ALTA
+  MEDIA
+  BAJA
+}
+
+model Notificacion {
+  id            String           @id @default(uuid())
+  tipo          TipoNotificacion
+  prioridad     PrioridadNotif
+  titulo        String
+  mensaje       String           @db.Text
+  leida         Boolean          @default(false)
+  descartada    Boolean          @default(false)
+  accionUrl     String?
+  reglaOrigen   String           @map("regla_origen")
+  referenciaId  String?          @map("referencia_id")
+  fechaCreacion DateTime         @default(now()) @map("fecha_creacion")
+  fechaLectura  DateTime?        @map("fecha_lectura")
+
+  trabajadorId String     @map("id_trabajador")
+  trabajador   Trabajador @relation(fields: [trabajadorId], references: [id])
+  clienteId    String?    @map("id_cliente")
+  cliente      Cliente?   @relation(fields: [clienteId], references: [id])
+
+  @@map("notificaciones")
 }

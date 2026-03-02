@@ -1,7 +1,10 @@
-import { Injectable, signal } from "@angular/core";
+import { Injectable, inject, signal, computed } from '@angular/core';
+import { NotificacionesService } from './notificaciones.service';
 
 @Injectable({ providedIn: 'root' })
 export class HeaderService {
+  private notificacionesSvc = inject(NotificacionesService);
+
   searchOpen = signal(false);
-  notifications = signal(10);          // tus “anuncios”
+  notifications = computed(() => this.notificacionesSvc.contadorNoLeidas());
 }

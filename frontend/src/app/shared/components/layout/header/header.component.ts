@@ -1,18 +1,17 @@
 /* header.component.ts */
 import { Component, inject, Input } from '@angular/core';
-import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { HeaderService } from '../../../../services/header.service';
 import { AuthService } from '../../../../services/auth.service';
+import { NotificationBellComponent } from '../../notification-bell/notification-bell.component';
 
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, NotificationBellComponent],
   templateUrl: './header.component.html',
 })
 export class HeaderComponent {
-  private router = inject(Router);
   header = inject(HeaderService);
   private auth = inject(AuthService);
 
@@ -23,6 +22,4 @@ export class HeaderComponent {
   logout() {
     this.auth.logout();
   }
-
-  openNotifications(){}
 }

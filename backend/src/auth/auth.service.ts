@@ -1,5 +1,5 @@
-import { 
-  Injectable, 
+import {
+  Injectable,
   UnauthorizedException,
   InternalServerErrorException,
   Logger,
@@ -8,6 +8,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { TrabajadorService } from '../trabajador/trabajador.service';
 import { LoginDto } from '../trabajador/dto/login.dto';
+import { MotorReglasService } from '../notificaciones/motor-reglas.service';
 
 @Injectable()
 export class AuthService {
@@ -16,6 +17,7 @@ export class AuthService {
   constructor(
     private readonly trabajadorService: TrabajadorService,
     private readonly jwtService: JwtService,
+    private readonly motorReglasService: MotorReglasService,
   ) {}
 
   /**
@@ -83,6 +85,11 @@ export class AuthService {
     const token = this.jwtService.sign(payload);
 
     this.logger.log(`Token generado para: ${user.username} (${user.id})`);
+
+    // Evaluar reglas de notificaciones en background — no bloquea el login
+    this.motorReglasService
+      .evaluarReglas(user.id, user.rol.codigo)
+      .catch((err) => this.logger.error('Error evaluando reglas:', err));
 
     // Respuesta más completa
     return {

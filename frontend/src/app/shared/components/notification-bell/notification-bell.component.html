@@ -1,0 +1,85 @@
+<!-- Botón campana -->
+<div class="notif-bell-wrapper position-relative" (click)="$event.stopPropagation()">
+  <button
+    class="btn btn-sm btn-icon position-relative notif-bell-btn"
+    (click)="togglePanel($event)"
+    title="Notificaciones"
+  >
+    <i class="bi bi-bell fs-5"></i>
+    <span
+      class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notif-badge"
+      *ngIf="notificacionesSvc.contadorNoLeidas() > 0"
+    >
+      {{ notificacionesSvc.contadorNoLeidas() > 99 ? '99+' : notificacionesSvc.contadorNoLeidas() }}
+      <span class="visually-hidden">notificaciones sin leer</span>
+    </span>
+  </button>
+
+  <!-- Panel dropdown -->
+  <div class="notif-dropdown" *ngIf="isOpen()">
+    <!-- Header -->
+    <div class="notif-dropdown-header d-flex align-items-center justify-content-between px-3 py-2">
+      <span class="fw-semibold">Notificaciones</span>
+      <button
+        class="btn btn-link btn-sm text-muted p-0 notif-marcar-todas"
+        *ngIf="notificacionesSvc.contadorNoLeidas() > 0"
+        (click)="onMarcarTodas($event)"
+      >
+        Marcar todas como leídas
+      </button>
+    </div>
+
+    <!-- Lista de notificaciones agrupadas por prioridad -->
+    <div class="notif-dropdown-body">
+      <ng-container *ngFor="let prioridad of prioridades">
+        <ng-container *ngIf="tieneGrupo(prioridad)">
+          <!-- Cabecera de grupo -->
+          <div class="notif-group-label px-3 pt-2 pb-1 d-flex align-items-center gap-1">
+            <i class="bi {{ prioridadConfig[prioridad].icon }} small" [style.color]="prioridadConfig[prioridad].color"></i>
+            <span class="small fw-semibold text-uppercase" [style.color]="prioridadConfig[prioridad].color">
+              {{ prioridadConfig[prioridad].label }}
+            </span>
+          </div>
+
+          <!-- Items -->
+          <div
+            *ngFor="let notif of notificacionesPorPrioridad(prioridad)"
+            class="notif-item"
+            [class.notif-item--no-leida]="!notif.leida"
+            [class.notif-item--urgente]="notif.prioridad === 'URGENTE'"
+            [class.notif-item--alta]="notif.prioridad === 'ALTA'"
+            [class.notif-item--media]="notif.prioridad === 'MEDIA'"
+            [class.notif-item--baja]="notif.prioridad === 'BAJA'"
+            (click)="onNotifClick(notif, $event)"
+          >
+            <div class="d-flex align-items-start justify-content-between gap-2">
+              <div class="flex-grow-1 overflow-hidden">
+                <div class="notif-titulo fw-semibold text-truncate">{{ notif.titulo }}</div>
+                <div class="notif-mensaje text-muted small">{{ notif.mensaje }}</div>
+                <div class="notif-fecha text-muted" style="font-size: 0.7rem;">
+                  {{ notif.fechaCreacion | date:'d MMM, HH:mm' }}
+                </div>
+              </div>
+              <button
+                class="btn btn-link btn-sm p-0 notif-descartar"
+                title="Descartar"
+                (click)="onDescartar(notif.id, $event)"
+              >
+                <i class="bi bi-x text-muted"></i>
+              </button>
+            </div>
+          </div>
+        </ng-container>
+      </ng-container>
+
+      <!-- Empty state -->
+      <div
+        class="notif-empty text-center py-4 text-muted"
+        *ngIf="notificacionesSvc.notificaciones().length === 0"
+      >
+        <i class="bi bi-bell-slash fs-3 d-block mb-2"></i>
+        <span class="small">Sin notificaciones pendientes</span>
+      </div>
+    </div>
+  </div>
+</div>

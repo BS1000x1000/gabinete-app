@@ -3,6 +3,7 @@ import { Injectable, signal, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { map, Observable, tap } from 'rxjs';
 import { environment } from '../../environments/environment.development';
+import { NotificacionesService } from './notificaciones.service';
 
 interface LoginResponse {
   access_token: string;
@@ -31,6 +32,7 @@ interface LoginCredentials {
 export class AuthService {
   private http = inject(HttpClient);
   private router = inject(Router);
+  private notificacionesSvc = inject(NotificacionesService);
   
   // ✅ USAR ENVIRONMENT
   private readonly api = environment.apiUrl;
@@ -85,10 +87,14 @@ export class AuthService {
 
           console.log('✅ Token guardado en localStorage');
           console.log('✅ User guardado:', responseData.user);
-          
+
           // Verificar que se guardó correctamente
           const tokenGuardado = localStorage.getItem(this.TOKEN_KEY);
           console.log('🔍 Token en localStorage:', tokenGuardado ? 'SÍ ✅' : 'NO ❌');
+
+          // Cargar notificaciones y arrancar polling
+          this.notificacionesSvc.cargar().subscribe();
+          this.notificacionesSvc.iniciarPolling();
         } else {
           console.error('❌ No se recibió access_token del backend');
         }
@@ -106,7 +112,8 @@ export class AuthService {
     this._token.set(null);
     this._currentUser.set(null);
     this._currentTrabajadorId.set(null);
-    
+    this.notificacionesSvc.detenerPolling();
+
     console.log('👋 Sesión cerrada');
     this.router.navigate(['/login']);
   }

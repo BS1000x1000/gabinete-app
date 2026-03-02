@@ -16,10 +16,11 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { GasModule } from './gas/gas.module';
 import { InformesModule } from './informes/informes.module';
 import { BonosModule } from './bonos/bonos.module';
+import { NotificacionesModule } from './notificaciones/notificaciones.module';
 
 @Module({
   imports: [
-    PrismaModule, 
+    PrismaModule,
     ClientesModule,
     DisponibilidadModule,
     SesionesModule,
@@ -33,7 +34,8 @@ import { BonosModule } from './bonos/bonos.module';
     DashboardModule,
     InformesModule,
     GasModule,
-    BonosModule
+    BonosModule,
+    NotificacionesModule,
     // NO VA N8nModule
   ],
   controllers: [AppController],

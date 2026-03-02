@@ -1,5 +1,4 @@
 import { Module } from "@nestjs/common";
-// import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
 import { TrabajadorService } from "src/trabajador/trabajador.service";
 import { LocalStrategy } from "./strategies/local.strategy";
@@ -8,6 +7,7 @@ import { JwtModule } from "@nestjs/jwt";
 import { JwtStrategy } from "./strategies/jwt.strategy";
 import { AuthController } from "./auth.controller";
 import { TrabajadorModule } from "src/trabajador/trabajador.module";
+import { NotificacionesModule } from "src/notificaciones/notificaciones.module";
 
 @Module({
     imports: [
@@ -15,11 +15,11 @@ import { TrabajadorModule } from "src/trabajador/trabajador.module";
         JwtModule.register({
             secret: process.env.SECRET,
             signOptions: { expiresIn: '8hrs'}
-        }), 
-        TrabajadorModule
+        }),
+        TrabajadorModule,
+        NotificacionesModule,
     ],
-    // controllers: [AuthController],
-    providers: [AuthService, TrabajadorService, LocalStrategy, JwtStrategy], 
+    providers: [AuthService, TrabajadorService, LocalStrategy, JwtStrategy],
     controllers: [AuthController]
 })
 export class AuthModule {}
