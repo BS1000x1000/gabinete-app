@@ -48,7 +48,7 @@ export class MotorReglasService {
     cliente: any,
     now: Date,
   ) {
-    const baseUrl = `/home/clientes/${cliente.id}`;
+    const baseUrl = `/home/listado/${cliente.id}`;
 
     await Promise.all([
       this._reglaInformeInicialPendiente(trabajadorId, cliente, now, baseUrl),

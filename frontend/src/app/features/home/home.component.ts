@@ -5,6 +5,7 @@ import { AuthService } from '../../services/auth.service';
 import { SidebarComponent } from '../../shared/components/layout/sidebar/sidebar.component';
 import { AgendaCompactComponent } from '../../components/agenda-compact/agenda-compact.component';
 import { SearchBarComponent } from '../../components/search-bar/search-bar.component';
+import { NotificationBellComponent } from '../../shared/components/notification-bell/notification-bell.component';
 
 @Component({
   selector: 'app-home',
@@ -15,6 +16,7 @@ import { SearchBarComponent } from '../../components/search-bar/search-bar.compo
     SidebarComponent,
     AgendaCompactComponent,
     SearchBarComponent,
+    NotificationBellComponent
   ],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
