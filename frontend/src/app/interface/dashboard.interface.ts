@@ -92,6 +92,84 @@ export interface DistribucionSesiones {
   cantidad: number;
 }
 
+// ============================================================
+// HITO 3 — Dashboard operativo del día
+// ============================================================
+
+export interface SesionDashboard {
+  id: string;
+  horaInicio: string;
+  horaFin: string;
+  estado: string;
+  tipoSesion: string;
+  cliente: { id: string; nombre: string; apellidos: string };
+  bonoActivo: { id: string; sesionesConsumidas: number; totalSesiones: number } | null;
+}
+
+export interface AlertaDashboard {
+  id: string;
+  tipo: string;
+  prioridad: 'URGENTE' | 'ALTA' | 'MEDIA' | 'BAJA';
+  titulo: string;
+  mensaje: string;
+  accionUrl: string | null;
+  fechaCreacion: string;
+}
+
+export interface InformeBorrador {
+  id: string;
+  titulo: string;
+  tipoInforme: string;
+  updatedAt: string;
+  cliente: { id: string; nombre: string; apellidos: string };
+}
+
+export interface BonoSinCobrar {
+  id: string;
+  totalSesiones: number;
+  sesionesConsumidas: number;
+  fechaFin: string | null;
+  cliente: { id: string; nombre: string; apellidos: string };
+}
+
+export interface ObjetivoSinEvaluar {
+  clienteObjetivoId: string;
+  fechaUltimaEvaluacion: string | null;
+  objetivo: string;
+  cliente: { id: string; nombre: string; apellidos: string };
+}
+
+export interface MiDiaResponse {
+  saludo: string;
+  fecha: string;
+  contadores: {
+    sesionesHoy: number;
+    registrosHoy: number;
+    notificacionesUrgentes: number;
+    bonosCriticos: number;
+  };
+  sesionesHoy: SesionDashboard[];
+  alertasUrgentes: AlertaDashboard[];
+  accionesPendientes: {
+    informesEnBorrador: InformeBorrador[];
+    bonosSinCobrar: BonoSinCobrar[];
+    objetivosSinEvaluar: ObjetivoSinEvaluar[];
+  };
+  resumenMes: {
+    clientesAsignados: number;
+    sesiones: {
+      esteMes: number;
+      porEstado: {
+        completadas: number;
+        programadas: number;
+        canceladasConAviso: number;
+        canceladasSinAviso: number;
+      };
+    };
+    registros: { esteMes: number };
+  };
+}
+
 /**
  * Resumen completo del dashboard
  */

@@ -20,7 +20,7 @@ export class SidebarComponent {
   collapsed = signal(false);
 
   menuItems: MenuItem[] = [
-    { label: 'Inicio', icon: 'bi-house-fill', route: '/home/agenda' },
+    { label: 'Inicio', icon: 'bi-house-fill', route: '/home/dashboard' },
     { label: 'Agenda', icon: 'bi-calendar-check-fill', route: '/home/agenda' },
     { label: 'Clientes', icon: 'bi-people-fill', route: '/home/clientes' },
     // Agrega más items según necesites

@@ -1,0 +1,228 @@
+<div class="dash-home">
+
+  <!-- ── SKELETON ── -->
+  @if (isLoading()) {
+    <div class="dash-skeleton">
+      <div class="sk-topbar">
+        <div class="skeleton-line sk-greeting"></div>
+        <div class="sk-minicards">
+          <div class="skeleton-line sk-card"></div>
+          <div class="skeleton-line sk-card"></div>
+          <div class="skeleton-line sk-card"></div>
+          <div class="skeleton-line sk-card"></div>
+        </div>
+      </div>
+      <div class="sk-grid">
+        <div class="skeleton-line sk-main"></div>
+        <div class="skeleton-line sk-side"></div>
+      </div>
+      <div class="skeleton-line sk-footer"></div>
+    </div>
+  }
+
+  <!-- ── CONTENIDO ── -->
+  @else if (miDia()) {
+
+    <!-- ZONA 1: saludo + minicards -->
+    <div class="dash-topbar">
+      <div class="dash-greeting">
+        <h1 class="greeting-text">{{ miDia()!.saludo }}</h1>
+        <p class="greeting-date">{{ fechaFormateada() }}</p>
+      </div>
+      <div class="dash-minicards">
+        <div class="minicard mc-sesiones">
+          <i class="bi bi-calendar2-check minicard-icon"></i>
+          <span class="minicard-num">{{ miDia()!.contadores.sesionesHoy }}</span>
+          <span class="minicard-label">Sesiones hoy</span>
+        </div>
+        <div class="minicard mc-registros">
+          <i class="bi bi-journal-text minicard-icon"></i>
+          <span class="minicard-num">{{ miDia()!.contadores.registrosHoy }}</span>
+          <span class="minicard-label">Registros escritos</span>
+        </div>
+        <div class="minicard mc-alertas" [class.mc-zero]="miDia()!.contadores.notificacionesUrgentes === 0">
+          <i class="bi bi-bell minicard-icon"></i>
+          <span class="minicard-num">{{ miDia()!.contadores.notificacionesUrgentes }}</span>
+          <span class="minicard-label">Alertas urgentes</span>
+        </div>
+        <div class="minicard mc-bonos" [class.mc-zero]="miDia()!.contadores.bonosCriticos === 0">
+          <i class="bi bi-credit-card minicard-icon"></i>
+          <span class="minicard-num">{{ miDia()!.contadores.bonosCriticos }}</span>
+          <span class="minicard-label">Bonos sin cobrar</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ZONA 2: grid sesiones + aside -->
+    <div class="dash-grid">
+
+      <!-- Sesiones de hoy -->
+      <section class="dash-card dash-sesiones">
+        <div class="card-header">
+          <i class="bi bi-clock"></i>
+          <h2>Tus sesiones de hoy</h2>
+          @if (miDia()!.sesionesHoy.length > 0) {
+            <span class="section-badge">{{ miDia()!.sesionesHoy.length }}</span>
+          }
+        </div>
+
+        @if (miDia()!.sesionesHoy.length === 0) {
+          <div class="timeline-empty">
+            <i class="bi bi-sun"></i>
+            <p>No tienes sesiones hoy</p>
+          </div>
+        } @else {
+          <div class="dash-timeline">
+            @for (sesion of miDia()!.sesionesHoy; track sesion.id; let last = $last) {
+              <div class="timeline-item" [ngClass]="estadoClass(sesion.estado)" [class.is-last]="last">
+                <span class="sesion-hora">{{ formatHora(sesion.horaInicio) }}</span>
+                <div class="timeline-track">
+                  <div class="timeline-dot"></div>
+                </div>
+                <div class="sesion-info">
+                  <span class="sesion-cliente" (click)="irAlCliente(sesion.cliente.id)">
+                    {{ sesion.cliente.nombre }} {{ sesion.cliente.apellidos }}
+                  </span>
+                  <span class="sesion-tipo">{{ tipoLabel(sesion.tipoSesion) }}</span>
+                </div>
+                @if (sesion.bonoActivo) {
+                  <div class="sesion-bono" [ngClass]="bonoClass(sesion.bonoActivo)"
+                       [title]="'Sesión ' + sesion.bonoActivo.sesionesConsumidas + ' de ' + sesion.bonoActivo.totalSesiones">
+                    {{ sesion.bonoActivo.sesionesConsumidas }}/{{ sesion.bonoActivo.totalSesiones }}
+                  </div>
+                } @else {
+                  <div class="sesion-bono bono-sin" title="Sin bono activo">
+                    Sin bono
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      </section>
+
+      <!-- Aside: alertas + pendientes -->
+      <aside class="dash-aside">
+
+        @if (hayAlertas()) {
+          <section class="dash-card dash-alertas">
+            <div class="card-header">
+              <i class="bi bi-exclamation-triangle-fill"></i>
+              <h2>Requieren tu atención</h2>
+            </div>
+            <div class="alertas-list">
+              @for (alerta of miDia()!.alertasUrgentes; track alerta.id) {
+                <div class="alerta-item" [ngClass]="'prio-' + alerta.prioridad.toLowerCase()"
+                     (click)="navegarAlerta(alerta)">
+                  <div class="alerta-prio-dot"></div>
+                  <div class="alerta-body">
+                    <span class="alerta-titulo">{{ alerta.titulo }}</span>
+                    <span class="alerta-msg">{{ alerta.mensaje }}</span>
+                  </div>
+                  @if (alerta.accionUrl) {
+                    <i class="bi bi-chevron-right alerta-arrow"></i>
+                  }
+                </div>
+              }
+            </div>
+          </section>
+        }
+
+        @if (hayPendientes()) {
+          <section class="dash-card dash-pendientes">
+            <div class="card-header">
+              <i class="bi bi-list-check"></i>
+              <h2>Tienes pendiente</h2>
+              <span class="section-badge section-badge--warning">{{ totalPendientes() }}</span>
+            </div>
+
+            @if (miDia()!.accionesPendientes.informesEnBorrador.length > 0) {
+              <div class="pendiente-grupo">
+                <div class="pendiente-label">
+                  <i class="bi bi-file-earmark-text"></i>
+                  Informes en borrador
+                </div>
+                @for (informe of miDia()!.accionesPendientes.informesEnBorrador; track informe.id) {
+                  <div class="pendiente-item" (click)="irAlInforme(informe)">
+                    <span>{{ informe.cliente.nombre }} {{ informe.cliente.apellidos }}</span>
+                    <span class="pendiente-meta">{{ informe.tipoInforme }}</span>
+                  </div>
+                }
+              </div>
+            }
+
+            @if (miDia()!.accionesPendientes.bonosSinCobrar.length > 0) {
+              <div class="pendiente-grupo">
+                <div class="pendiente-label">
+                  <i class="bi bi-credit-card"></i>
+                  Bonos sin cobrar
+                </div>
+                @for (bono of miDia()!.accionesPendientes.bonosSinCobrar; track bono.id) {
+                  <div class="pendiente-item" (click)="irAlBono(bono)">
+                    <span>{{ bono.cliente.nombre }} {{ bono.cliente.apellidos }}</span>
+                    <span class="pendiente-meta">{{ bono.totalSesiones }} ses.</span>
+                  </div>
+                }
+              </div>
+            }
+
+            @if (miDia()!.accionesPendientes.objetivosSinEvaluar.length > 0) {
+              <div class="pendiente-grupo">
+                <div class="pendiente-label">
+                  <i class="bi bi-bullseye"></i>
+                  Objetivos sin evaluar
+                </div>
+                @for (obj of miDia()!.accionesPendientes.objetivosSinEvaluar; track obj.clienteObjetivoId) {
+                  <div class="pendiente-item" (click)="irAlObjetivo(obj)">
+                    <span>{{ obj.cliente.nombre }} — {{ obj.objetivo }}</span>
+                  </div>
+                }
+              </div>
+            }
+          </section>
+        }
+
+        @if (!hayAlertas() && !hayPendientes()) {
+          <div class="dash-card all-good">
+            <i class="bi bi-check-circle-fill"></i>
+            <p>Todo en orden</p>
+            <span>Sin alertas ni pendientes</span>
+          </div>
+        }
+
+      </aside>
+    </div>
+
+    <!-- ZONA 3: resumen del mes -->
+    <div class="dash-resumen-mes">
+      <span class="resumen-label">Este mes</span>
+      <div class="resumen-stats">
+        <div class="resumen-stat stat-completadas">
+          <span class="stat-num">{{ miDia()!.resumenMes.sesiones.porEstado.completadas }}</span>
+          <span class="stat-txt">completadas</span>
+        </div>
+        <span class="resumen-divider">·</span>
+        <div class="resumen-stat">
+          <span class="stat-num">{{ miDia()!.resumenMes.sesiones.porEstado.programadas }}</span>
+          <span class="stat-txt">programadas</span>
+        </div>
+        <span class="resumen-divider">·</span>
+        <div class="resumen-stat stat-canceladas">
+          <span class="stat-num">{{ canceladasTotal() }}</span>
+          <span class="stat-txt">canceladas</span>
+        </div>
+        <span class="resumen-divider">·</span>
+        <div class="resumen-stat stat-registros">
+          <span class="stat-num">{{ miDia()!.resumenMes.registros.esteMes }}</span>
+          <span class="stat-txt">registros</span>
+        </div>
+        <span class="resumen-divider">·</span>
+        <div class="resumen-stat">
+          <span class="stat-num">{{ miDia()!.resumenMes.clientesAsignados }}</span>
+          <span class="stat-txt">alumnos</span>
+        </div>
+      </div>
+    </div>
+
+  }
+</div>

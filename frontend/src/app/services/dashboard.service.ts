@@ -9,6 +9,7 @@ import {
   ObjetivoMasTrabajado,
   ActividadReciente,
   ResumenDashboard,
+  MiDiaResponse,
 } from '../interface/dashboard.interface';
 
 // ✅ NUEVO: Interface para respuestas envueltas
@@ -28,6 +29,7 @@ export class DashboardService {
   // Estado reactivo
   estadisticas = signal<EstadisticasTrabajador | EstadisticasGenerales | null>(null);
   resumenCompleto = signal<ResumenDashboard | null>(null);
+  miDia = signal<MiDiaResponse | null>(null);
   isLoading = signal(false);
 
   // ========================================
@@ -130,6 +132,25 @@ export class DashboardService {
             this.estadisticas.set(resumen.estadisticas);
             this.isLoading.set(false);
             console.log('📊 Resumen completo del dashboard cargado');
+          },
+          error: () => this.isLoading.set(false),
+        })
+      );
+  }
+
+  /**
+   * Vista operativa del día para el terapeuta autenticado
+   */
+  getMiDia(): Observable<MiDiaResponse> {
+    this.isLoading.set(true);
+    return this.http
+      .get<WrappedResponse<MiDiaResponse>>(`${this.api}/mi-dia`)
+      .pipe(
+        map((res) => res.data || res),
+        tap({
+          next: (data) => {
+            this.miDia.set(data);
+            this.isLoading.set(false);
           },
           error: () => this.isLoading.set(false),
         })

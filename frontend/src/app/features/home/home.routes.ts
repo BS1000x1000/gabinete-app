@@ -8,13 +8,15 @@ export default [
     path: '',
     component: HomeComponent, // HomeComponent es el contenedor con el <router-outlet>
     children: [
-      // ✅ AGREGAR: Ruta por defecto que redirige a agenda
       {
         path: '',
-        redirectTo: 'agenda',
+        redirectTo: 'dashboard',
         pathMatch: 'full'
       },
-      // ✅ AGREGAR: Ruta de agenda
+      {
+        path: 'dashboard',
+        loadComponent: () => import('./dashboard/dashboard-home.component').then(m => m.DashboardHomeComponent)
+      },
       {
         path: 'agenda',
         loadComponent: () => import('./agenda/agenda.component').then(m => m.AgendaComponent)
