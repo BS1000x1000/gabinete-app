@@ -106,6 +106,7 @@ model Cliente {
   registrosDiarios            RegistroDiario[]
   objetivosGeneralesAsignados ClienteObjetivo[]
   objetivosEspecificos        Objetivo[]
+  bonos  Bono[]
 
   @@map("clientes")
 }
@@ -174,6 +175,8 @@ model Sesion {
   cliente      Cliente    @relation(fields: [clienteId], references: [id])
   trabajadorId String     @map("id_trabajador")
   trabajador   Trabajador @relation(fields: [trabajadorId], references: [id])
+  bonoId  String?  @map("id_bono")
+  bono    Bono?    @relation(fields: [bonoId], references: [id])
 
   @@map("sesiones")
 }
@@ -196,6 +199,7 @@ model Familiar {
 
   clienteId String  @map("id_cliente")
   cliente   Cliente @relation(fields: [clienteId], references: [id])
+  bonos  Bono[]
 
   createdAt DateTime @default(now()) @map("fecha_creacion")
   updatedAt DateTime @updatedAt @map("ultima_actualizacion")
@@ -422,6 +426,32 @@ model RegistroDiarioObjetivo {
   @@map("registros_diarios_objetivos")
 }
 
+model Bono {
+  id                 String      @id @default(uuid())
+  totalSesiones      Int         @map("total_sesiones")
+  sesionesConsumidas Int         @default(0) @map("sesiones_consumidas")
+  precio             Decimal     @db.Decimal(10, 2)
+  estado             EstadoBono  @default(ACTIVO)
+  pagado             Boolean     @default(false)
+  metodoPago         String?     @map("metodo_pago")
+  fechaPago          DateTime?   @map("fecha_pago")
+  fechaInicio        DateTime    @default(now()) @map("fecha_inicio")
+  fechaFin           DateTime?   @map("fecha_fin")
+  notas              String?     @db.Text
+  createdAt          DateTime    @default(now()) @map("fecha_creacion")
+  updatedAt          DateTime    @updatedAt @map("ultima_actualizacion")
+
+  clienteId       String    @map("id_cliente")
+  cliente         Cliente   @relation(fields: [clienteId], references: [id])
+
+  familiarPagoId  String?   @map("id_familiar_pago")
+  familiarPago    Familiar? @relation(fields: [familiarPagoId], references: [id])
+
+  sesiones        Sesion[]
+
+  @@map("bonos")
+}
+
 // ============================================================
 // ENUMS
 // ============================================================
@@ -456,5 +486,11 @@ enum EstadoObjetivo {
   PENDIENTE
   EN_PROGRESO
   COMPLETADO
+  CANCELADO
+}
+
+enum EstadoBono {
+  ACTIVO
+  CONSUMIDO
   CANCELADO
 }

@@ -74,5 +74,4 @@ export interface CreateSesionDto {
 export interface CompletarSesionDto {
   notas?: string;
   objetivosTrabajados?: string;
-  contenidoRegistroDiario?: string; // Para crear registro automáticamente
 }

@@ -9,7 +9,4 @@ export class CompletarSesionDto {
   @IsString()
   objetivosTrabajados?: string;
 
-  @IsOptional()
-  @IsString()
-  contenidoRegistroDiario?: string; // Para crear el registro diario automáticamente
 }

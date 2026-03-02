@@ -18,10 +18,14 @@ import {
   parseISO,
 } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { BonosService } from 'src/bonos/bonos.service';
 
 @Injectable()
 export class SesionesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly bonosService: BonosService,
+  ) {}
 
   /**
    * Generar sesiones automáticamente desde la disponibilidad del cliente
@@ -197,64 +201,47 @@ export class SesionesService {
    * Completar una sesión (y opcionalmente crear registro diario)
    */
   async completarSesion(id: string, dto: CompletarSesionDto) {
-    const sesion = await this.prisma.sesion.findUnique({
-      where: { id },
-    });
+    // ── 1. Validaciones previas ──────────────────────────────────────────
+    const sesion = await this.prisma.sesion.findUnique({ where: { id } });
 
     if (!sesion) {
       throw new NotFoundException(`Sesión con ID ${id} no encontrada`);
     }
-
     if (sesion.estado === EstadoSesion.COMPLETADA) {
       throw new BadRequestException('La sesión ya está completada');
     }
 
-    // Si se proporciona contenido para registro diario, usar transacción
-    if (dto.contenidoRegistroDiario) {
-      const [sesionActualizada, registroCreado] =
-        await this.prisma.$transaction([
-          // Actualizar sesión
-          this.prisma.sesion.update({
-            where: { id },
-            data: {
-              estado: EstadoSesion.COMPLETADA,
-              notas: dto.notas,
-              objetivosTrabajados: dto.objetivosTrabajados,
-            },
-            include: sesionInclude,
-          }),
-          // Crear registro diario
-          this.prisma.registroDiario.create({
-            data: {
-              contenido: dto.contenidoRegistroDiario,
-              clienteId: sesion.clienteId,
-              trabajadorId: sesion.trabajadorId,
-              fechaRegistro: new Date(),
-            },
-          }),
-        ]);
+    // ── 2. Transacción atómica: sesión + bono ────────────────────────────
+    const { sesionActualizada, bono } = await this.prisma.$transaction(
+      async (tx) => {
+        const sesionActualizada = await tx.sesion.update({
+          where: { id },
+          data: {
+            estado: EstadoSesion.COMPLETADA,
+            notas: dto.notas,
+            objetivosTrabajados: dto.objetivosTrabajados,
+          },
+          include: sesionInclude,
+        });
 
-      return {
-        sesion: sesionActualizada,
-        registroDiario: registroCreado,
-        message: 'Sesión completada y registro diario creado',
-      };
-    }
+        const bono = await this.bonosService.descontarSesion(
+          sesion.clienteId,
+          id,
+          tx,
+        );
 
-    // Solo actualizar sesión
-    const sesionActualizada = await this.prisma.sesion.update({
-      where: { id },
-      data: {
-        estado: EstadoSesion.COMPLETADA,
-        notas: dto.notas,
-        objetivosTrabajados: dto.objetivosTrabajados,
+        return { sesionActualizada, bono };
       },
-      include: sesionInclude,
-    });
+    );
 
+    // ── 3. Respuesta ─────────────────────────────────────────────────────
     return {
       sesion: sesionActualizada,
-      message: 'Sesión completada',
+      bono: bono ?? null,
+      sinBonoActivo: !bono,
+      message: bono
+        ? `Sesión completada · Bono: ${bono.sesionesConsumidas}/${bono.totalSesiones}${bono.estado === 'CONSUMIDO' ? ' · ⚠️ Bono agotado' : ''}`
+        : 'Sesión completada · Sin bono activo',
     };
   }
 

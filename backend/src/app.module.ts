@@ -15,6 +15,7 @@ import { HealthModule } from './health/health.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { GasModule } from './gas/gas.module';
 import { InformesModule } from './informes/informes.module';
+import { BonosModule } from './bonos/bonos.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { InformesModule } from './informes/informes.module';
     DashboardModule,
     InformesModule,
     GasModule,
+    BonosModule
     // NO VA N8nModule
   ],
   controllers: [AppController],
