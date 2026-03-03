@@ -28,6 +28,14 @@
     border-left: 4px solid $warning !important;
   }
 
+  &.border-success {
+    border-left: 4px solid $success !important;
+  }
+
+  &.border-danger {
+    border-left: 4px solid $danger !important;
+  }
+
   &.border-secondary {
     border-left: 4px solid $secondary !important;
   }

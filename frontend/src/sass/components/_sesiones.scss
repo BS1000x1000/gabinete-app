@@ -354,10 +354,12 @@
   font-weight: $font-weight-medium;
   white-space: nowrap;
 
-  &.tipo-pedagogia    { background: $secondary-light; color: $secondary-dark; }
-  &.tipo-neuro        { background: $info-light; color: $info-dark; }
-  &.tipo-evaluacion   { background: $accent-light; color: $accent-dark; }
-  &.tipo-reunion      { background: $primary-light; color: $primary-dark; }
+  &.tipo-pedagogia    { background: $secondary-light;  color: $secondary-dark; }
+  &.tipo-neuro        { background: $info-light;       color: $info-dark; }
+  &.tipo-logopedia    { background: $success-light;    color: $success-dark; }
+  &.tipo-to           { background: $danger-light;     color: $danger-dark; }
+  &.tipo-evaluacion   { background: $accent-light;     color: $accent-dark; }
+  &.tipo-reunion      { background: $primary-light;    color: $primary-dark; }
 }
 
 // ==========================================

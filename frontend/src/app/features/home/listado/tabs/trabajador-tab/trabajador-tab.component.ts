@@ -58,12 +58,16 @@ export class TrabajadorTabComponent implements OnInit {
   readonly TIPOS_TERAPIA = [
     'Pedagogía',
     'Neuropsicología',
+    'Logopedia',
+    'Terapia Ocupacional',
     'Evaluación',
     'Reunión Colegio',
   ];
   readonly TIPOS_SESION = [
     { value: 'PEDAGOGIA', label: 'Pedagogía' },
     { value: 'NEUROPSICOLOGIA', label: 'Neuropsicología' },
+    { value: 'LOGOPEDIA', label: 'Logopedia' },
+    { value: 'TERAPIA_OCUPACIONAL', label: 'Terapia Ocupacional' },
     { value: 'EVALUACION', label: 'Evaluación' },
     { value: 'REUNION_COLEGIO', label: 'Reunión Colegio' },
   ];

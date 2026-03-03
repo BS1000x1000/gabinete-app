@@ -154,14 +154,32 @@
 
 .timeline-item {
   display: grid;
-  grid-template-columns: 52px 14px 1fr auto;
-  align-items: start;
+  grid-template-columns: 52px 14px 1fr auto auto;
+  align-items: center;
   gap: $spacing-sm;
   padding: 10px $spacing-lg;
   position: relative;
   transition: background 0.15s;
 
-  &:hover { background: $gray-50; }
+  &:hover {
+    background: $gray-50;
+    .sesion-acciones { opacity: 1; }
+  }
+
+  &.es-actual {
+    background: $primary-ultra-light;
+    border-left: 3px solid $primary;
+    padding-left: calc(#{$spacing-lg} - 3px);
+
+    .timeline-dot {
+      background: $primary !important;
+      box-shadow: 0 0 0 4px rgba($primary, 0.2);
+    }
+  }
+
+  &.es-proxima .timeline-dot {
+    animation: pulse-dot 1.5s ease-in-out infinite;
+  }
 
   // Línea vertical conectando dots
   &:not(.is-last) .timeline-track::after {
@@ -173,6 +191,11 @@
     background: $gray-100;
     left: calc(#{$spacing-lg} + 52px + #{$spacing-sm} + 6px);
   }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { box-shadow: 0 0 0 0 rgba($primary, 0.4); }
+  50%       { box-shadow: 0 0 0 5px rgba($primary, 0); }
 }
 
 .sesion-hora {
@@ -224,6 +247,108 @@
 .sesion-tipo {
   font-size: 0.73rem;
   color: $gray-400;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.badge-proxima {
+  font-size: 0.63rem;
+  font-weight: 700;
+  background: $primary-ultra-light;
+  color: $primary;
+  padding: 1px 6px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.badge-actual {
+  font-size: 0.63rem;
+  font-weight: 700;
+  background: rgba($primary, 0.12);
+  color: $primary-dark;
+  padding: 1px 6px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+// ── Acciones rápidas del timeline ────────────────────────────
+.sesion-acciones {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.15s;
+  min-width: 0;
+
+  &--confirmar {
+    opacity: 1;
+    gap: 3px;
+  }
+}
+
+.accion-btn {
+  border: none;
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+  transition: background 0.12s, color 0.12s;
+  white-space: nowrap;
+
+  // Icono solo
+  &.accion-completar {
+    padding: 5px 7px;
+    background: $success-light;
+    color: $success-dark;
+    &:hover { background: $success; color: white; }
+  }
+
+  &.accion-cancelar {
+    padding: 5px 7px;
+    background: $gray-100;
+    color: $gray-500;
+    &:hover { background: $danger-light; color: $danger-dark; }
+  }
+
+  // Texto: con/sin aviso
+  &.accion-con-aviso {
+    padding: 4px 8px;
+    background: $warning-light;
+    color: $warning-dark;
+    &:hover { background: $warning; color: white; }
+  }
+
+  &.accion-sin-aviso {
+    padding: 4px 8px;
+    background: $danger-light;
+    color: $danger-dark;
+    &:hover { background: $danger; color: white; }
+  }
+
+  &.accion-volver {
+    padding: 4px 6px;
+    background: $gray-100;
+    color: $gray-400;
+    &:hover { background: $gray-200; }
+  }
+}
+
+.accion-procesando {
+  font-size: 0.85rem;
+  color: $primary;
+  padding: 4px 6px;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }
 
 // Estado — dot y texto

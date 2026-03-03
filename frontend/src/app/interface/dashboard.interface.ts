@@ -1,3 +1,5 @@
+import { EstadoSesion, TipoSesion } from './sesion.interface';
+
 /**
  * Estadísticas generales del sistema
  */
@@ -100,8 +102,8 @@ export interface SesionDashboard {
   id: string;
   horaInicio: string;
   horaFin: string;
-  estado: string;
-  tipoSesion: string;
+  estado: EstadoSesion;
+  tipoSesion: TipoSesion;
   cliente: { id: string; nombre: string; apellidos: string };
   bonoActivo: { id: string; sesionesConsumidas: number; totalSesiones: number } | null;
 }

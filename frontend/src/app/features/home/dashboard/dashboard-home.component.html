@@ -74,7 +74,12 @@
         } @else {
           <div class="dash-timeline">
             @for (sesion of miDia()!.sesionesHoy; track sesion.id; let last = $last) {
-              <div class="timeline-item" [ngClass]="estadoClass(sesion.estado)" [class.is-last]="last">
+              @let st = sesionStates().get(sesion.id);
+              <div class="timeline-item"
+                   [ngClass]="estadoClass(sesion.estado)"
+                   [class.is-last]="last"
+                   [class.es-actual]="st?.esActual"
+                   [class.es-proxima]="st?.esProxima">
                 <span class="sesion-hora">{{ formatHora(sesion.horaInicio) }}</span>
                 <div class="timeline-track">
                   <div class="timeline-dot"></div>
@@ -83,7 +88,15 @@
                   <span class="sesion-cliente" (click)="irAlCliente(sesion.cliente.id)">
                     {{ sesion.cliente.nombre }} {{ sesion.cliente.apellidos }}
                   </span>
-                  <span class="sesion-tipo">{{ tipoLabel(sesion.tipoSesion) }}</span>
+                  <span class="sesion-tipo">
+                    {{ tipoLabel(sesion.tipoSesion) }}
+                    @if (st?.esProxima) {
+                      <span class="badge-proxima">Próxima</span>
+                    }
+                    @if (st?.esActual) {
+                      <span class="badge-actual">En curso</span>
+                    }
+                  </span>
                 </div>
                 @if (sesion.bonoActivo) {
                   <div class="sesion-bono" [ngClass]="bonoClass(sesion.bonoActivo)"
@@ -94,6 +107,30 @@
                   <div class="sesion-bono bono-sin" title="Sin bono activo">
                     Sin bono
                   </div>
+                }
+                @if (st?.esProgramada) {
+                  @if (procesandoId() === sesion.id) {
+                    <div class="sesion-acciones">
+                      <span class="accion-procesando"><i class="bi bi-arrow-clockwise"></i></span>
+                    </div>
+                  } @else if (cancelandoId() === sesion.id) {
+                    <div class="sesion-acciones sesion-acciones--confirmar">
+                      <button class="accion-btn accion-con-aviso" (click)="confirmarCancelar(sesion, true, $event)" title="Cancelada con aviso del paciente">Con aviso</button>
+                      <button class="accion-btn accion-sin-aviso" (click)="confirmarCancelar(sesion, false, $event)" title="Paciente no se presentó">Sin aviso</button>
+                      <button class="accion-btn accion-volver" (click)="cancelarCancelacion($event)"><i class="bi bi-x"></i></button>
+                    </div>
+                  } @else {
+                    <div class="sesion-acciones">
+                      <button class="accion-btn accion-completar" (click)="completar(sesion, $event)" title="Marcar como completada">
+                        <i class="bi bi-check-lg"></i>
+                      </button>
+                      <button class="accion-btn accion-cancelar" (click)="iniciarCancelar(sesion, $event)" title="Cancelar sesión">
+                        <i class="bi bi-x-lg"></i>
+                      </button>
+                    </div>
+                  }
+                } @else {
+                  <div class="sesion-acciones"></div>
                 }
               </div>
             }

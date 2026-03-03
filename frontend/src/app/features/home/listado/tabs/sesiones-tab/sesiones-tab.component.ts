@@ -7,6 +7,7 @@ import {
   SesionData,
   EstadoSesion,
   TipoSesion,
+  TIPO_SESION_LABELS,
 } from '../../../../../interface/sesion.interface';
 import { SesionAccionesService } from '../../../../../services/sesiones-acciones.service';
 import { SesionModalesComponent } from '../../../../../components/sesiones-modales/sesiones-modales.component';
@@ -246,19 +247,15 @@ export class SesionesTabComponent implements OnInit {
   }
 
   getTipoLabel(tipo: TipoSesion): string {
-    const map: Record<TipoSesion, string> = {
-      [TipoSesion.PEDAGOGIA]: 'Pedagogía',
-      [TipoSesion.NEUROPSICOLOGIA]: 'Neuropsicología',
-      [TipoSesion.EVALUACION]: 'Evaluación',
-      [TipoSesion.REUNION_COLEGIO]: 'Reunión Colegio',
-    };
-    return map[tipo] || tipo;
+    return TIPO_SESION_LABELS[tipo] ?? tipo;
   }
 
   getTipoBadgeClase(tipo: TipoSesion): string {
     const map: Record<TipoSesion, string> = {
       [TipoSesion.PEDAGOGIA]: 'tipo-pedagogia',
       [TipoSesion.NEUROPSICOLOGIA]: 'tipo-neuro',
+      [TipoSesion.LOGOPEDIA]: 'tipo-logopedia',
+      [TipoSesion.TERAPIA_OCUPACIONAL]: 'tipo-to',
       [TipoSesion.EVALUACION]: 'tipo-evaluacion',
       [TipoSesion.REUNION_COLEGIO]: 'tipo-reunion',
     };

@@ -1,12 +1,16 @@
-import { Component, inject, computed, OnInit } from '@angular/core';
+import { Component, inject, computed, OnInit, signal, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NgClass } from '@angular/common';
 import { Router } from '@angular/router';
 import { DashboardService } from '../../../services/dashboard.service';
+import { SesionesService } from '../../../services/sesiones.service';
+import { EstadoSesion, TIPO_SESION_LABELS } from '../../../interface/sesion.interface';
 import {
   AlertaDashboard,
   InformeBorrador,
   BonoSinCobrar,
   ObjetivoSinEvaluar,
+  SesionDashboard,
 } from '../../../interface/dashboard.interface';
 
 @Component({
@@ -17,7 +21,12 @@ import {
 })
 export class DashboardHomeComponent implements OnInit {
   private dashboardService = inject(DashboardService);
+  private sesionesSvc = inject(SesionesService);
   private router = inject(Router);
+  private destroyRef = inject(DestroyRef);
+
+  procesandoId = signal<string | null>(null);
+  cancelandoId = signal<string | null>(null);
 
   miDia = this.dashboardService.miDia;
   isLoading = this.dashboardService.isLoading;
@@ -61,8 +70,26 @@ export class DashboardHomeComponent implements OnInit {
     return (s.canceladasConAviso ?? 0) + (s.canceladasSinAviso ?? 0);
   });
 
+  sesionStates = computed(() => {
+    const estados = new Map<string, { esActual: boolean; esProxima: boolean; esProgramada: boolean }>();
+    const now = Date.now();
+    this.miDia()?.sesionesHoy.forEach(s => {
+      const inicio = new Date(s.horaInicio).getTime();
+      const fin = new Date(s.horaFin).getTime();
+      const diffMin = (inicio - now) / 60000;
+      estados.set(s.id, {
+        esActual:      s.estado === EstadoSesion.PROGRAMADA && inicio <= now && now <= fin,
+        esProxima:     s.estado === EstadoSesion.PROGRAMADA && diffMin > 0 && diffMin <= 15,
+        esProgramada:  s.estado === EstadoSesion.PROGRAMADA,
+      });
+    });
+    return estados;
+  });
+
   ngOnInit() {
-    this.dashboardService.getMiDia().subscribe();
+    this.dashboardService.getMiDia()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe();
   }
 
   formatHora(iso: string): string {
@@ -77,13 +104,7 @@ export class DashboardHomeComponent implements OnInit {
   }
 
   tipoLabel(tipo: string): string {
-    const labels: Record<string, string> = {
-      PEDAGOGIA: 'Pedagogía',
-      NEUROPSICOLOGIA: 'Neuropsicología',
-      EVALUACION: 'Evaluación',
-      REUNION_COLEGIO: 'Reunión colegio',
-    };
-    return labels[tipo] ?? tipo;
+    return TIPO_SESION_LABELS[tipo as keyof typeof TIPO_SESION_LABELS] ?? tipo;
   }
 
   bonoClass(bono: { sesionesConsumidas: number; totalSesiones: number }): string {
@@ -111,5 +132,48 @@ export class DashboardHomeComponent implements OnInit {
 
   irAlObjetivo(obj: ObjetivoSinEvaluar) {
     this.router.navigate(['/home/listado', obj.cliente.id, 'objetivos']);
+  }
+
+  completar(sesion: SesionDashboard, $event: Event) {
+    $event.stopPropagation();
+    this.procesandoId.set(sesion.id);
+    this.sesionesSvc.completarSesion(sesion.id, {})
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.procesandoId.set(null);
+          this.dashboardService.getMiDia()
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe();
+        },
+        error: () => this.procesandoId.set(null),
+      });
+  }
+
+  iniciarCancelar(sesion: SesionDashboard, $event: Event) {
+    $event.stopPropagation();
+    this.cancelandoId.set(sesion.id);
+  }
+
+  confirmarCancelar(sesion: SesionDashboard, conAviso: boolean, $event: Event) {
+    $event.stopPropagation();
+    this.cancelandoId.set(null);
+    this.procesandoId.set(sesion.id);
+    this.sesionesSvc.cancelarSesion(sesion.id, conAviso)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.procesandoId.set(null);
+          this.dashboardService.getMiDia()
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe();
+        },
+        error: () => this.procesandoId.set(null),
+      });
+  }
+
+  cancelarCancelacion($event: Event) {
+    $event.stopPropagation();
+    this.cancelandoId.set(null);
   }
 }

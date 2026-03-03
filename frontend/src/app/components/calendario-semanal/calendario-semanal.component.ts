@@ -90,6 +90,8 @@ export class CalendarioSemanalComponent implements OnInit {
     const clases: Record<string, string> = {
       'PEDAGOGIA': 'border-primary',
       'NEUROPSICOLOGIA': 'border-info',
+      'LOGOPEDIA': 'border-success',
+      'TERAPIA_OCUPACIONAL': 'border-danger',
       'EVALUACION': 'border-warning',
       'REUNION_COLEGIO': 'border-secondary'
     };

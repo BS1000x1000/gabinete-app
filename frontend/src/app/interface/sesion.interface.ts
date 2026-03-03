@@ -52,9 +52,20 @@ export enum EstadoSesion {
 export enum TipoSesion {
   PEDAGOGIA = 'PEDAGOGIA',
   NEUROPSICOLOGIA = 'NEUROPSICOLOGIA',
+  LOGOPEDIA = 'LOGOPEDIA',
+  TERAPIA_OCUPACIONAL = 'TERAPIA_OCUPACIONAL',
   EVALUACION = 'EVALUACION',
   REUNION_COLEGIO = 'REUNION_COLEGIO'
 }
+
+export const TIPO_SESION_LABELS: Record<TipoSesion, string> = {
+  [TipoSesion.PEDAGOGIA]:          'Pedagogía',
+  [TipoSesion.NEUROPSICOLOGIA]:    'Neuropsicología',
+  [TipoSesion.LOGOPEDIA]:          'Logopedia',
+  [TipoSesion.TERAPIA_OCUPACIONAL]:'Ter. Ocupacional',
+  [TipoSesion.EVALUACION]:         'Evaluación',
+  [TipoSesion.REUNION_COLEGIO]:    'Reunión Colegio',
+};
 
 /**
  * DTO para crear una sesión
