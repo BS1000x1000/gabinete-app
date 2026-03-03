@@ -1,5 +1,6 @@
 import {
   Component,
+  DestroyRef,
   Input,
   Output,
   EventEmitter,
@@ -10,6 +11,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ExportService } from '../../../services/export.service';
 
 @Component({
@@ -23,6 +25,7 @@ export class HistorialModalComponent {
   @Output() cerrar = new EventEmitter<void>();
 
   private exportService = inject(ExportService);
+  private readonly destroyRef = inject(DestroyRef);
 
   tipo          = signal<'sesiones' | 'bonos'>('sesiones');
   fechaDesde    = signal('');
@@ -52,7 +55,10 @@ export class HistorialModalComponent {
         );
 
     obs$
-      .pipe(finalize(() => this.isLoading.set(false)))
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.isLoading.set(false)),
+      )
       .subscribe({
         next: () => this.cerrar.emit(),
         error: () => this.error.set('Error al generar el archivo. Inténtalo de nuevo.'),

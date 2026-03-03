@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { ExportService } from './export.service';
+import { ExportService, ExportResult } from './export.service';
 import { ExportQueryDto } from './dto/export-query.dto';
 
 @Controller('export')
@@ -26,13 +26,7 @@ export class ExportController {
     @Res() res: Response,
   ) {
     this.logger.log(`GET /export/sesiones/${clienteId} formato=${query.formato}`);
-    const result = await this.exportService.exportSesiones(clienteId, query);
-    res.set({
-      'Content-Type': result.contentType,
-      'Content-Disposition': `attachment; filename="${result.filename}"`,
-      'Content-Length': String(result.buffer.length),
-    });
-    res.end(result.buffer);
+    this.sendFile(res, await this.exportService.exportSesiones(clienteId, query));
   }
 
   @Get('bonos/:clienteId')
@@ -42,13 +36,7 @@ export class ExportController {
     @Res() res: Response,
   ) {
     this.logger.log(`GET /export/bonos/${clienteId} formato=${query.formato}`);
-    const result = await this.exportService.exportBonos(clienteId, query);
-    res.set({
-      'Content-Type': result.contentType,
-      'Content-Disposition': `attachment; filename="${result.filename}"`,
-      'Content-Length': String(result.buffer.length),
-    });
-    res.end(result.buffer);
+    this.sendFile(res, await this.exportService.exportBonos(clienteId, query));
   }
 
   @Get('bonos')
@@ -57,7 +45,10 @@ export class ExportController {
     @Res() res: Response,
   ) {
     this.logger.log(`GET /export/bonos (todos) formato=${query.formato}`);
-    const result = await this.exportService.exportBonos(null, query);
+    this.sendFile(res, await this.exportService.exportBonos(null, query));
+  }
+
+  private sendFile(res: Response, result: ExportResult): void {
     res.set({
       'Content-Type': result.contentType,
       'Content-Disposition': `attachment; filename="${result.filename}"`,

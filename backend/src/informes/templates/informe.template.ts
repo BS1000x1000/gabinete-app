@@ -2,6 +2,8 @@
 // informe.template.ts — HTML autocontenido para Puppeteer
 // ──────────────────────────────────────────────────────────────
 
+import { escapeHtml } from '../../common/utils/html.utils';
+
 export interface GasNivel {
   nivel: number;
   descripcion: string;
@@ -45,16 +47,6 @@ const GAS_LABELS: Record<number, string> = {
   [1]: 'Un poco más de lo esperado',
   [2]: 'Mucho más de lo esperado',
 };
-
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-    .replace(/\n/g, '<br>');
-}
 
 function buildGasTableHtml(niveles: GasNivel[], nivelActual: number): string {
   const cols = [-2, -1, 0, 1, 2];

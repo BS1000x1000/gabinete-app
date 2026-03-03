@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, tap, map } from 'rxjs';
 import { environment } from '../../environments/environment.development';
+import { triggerDownload } from '../shared/utils/download.utils';
 
 export interface ExportParams {
   formato: 'pdf' | 'excel';
@@ -20,7 +21,7 @@ export class ExportService {
     return this.http
       .get(`${this.api}/sesiones/${clienteId}`, { params: q, responseType: 'blob' })
       .pipe(
-        tap((blob) => this.triggerDownload(blob, `sesiones_${clienteId}.${ext}`)),
+        tap((blob) => triggerDownload(blob, `sesiones_${clienteId}.${ext}`)),
         map(() => void 0),
       );
   }
@@ -35,7 +36,7 @@ export class ExportService {
     return this.http
       .get(url, { params: q, responseType: 'blob' })
       .pipe(
-        tap((blob) => this.triggerDownload(blob, filename)),
+        tap((blob) => triggerDownload(blob, filename)),
         map(() => void 0),
       );
   }
@@ -47,12 +48,5 @@ export class ExportService {
     return q;
   }
 
-  private triggerDownload(blob: Blob, filename: string): void {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
+
 }

@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PdfGeneratorService } from '../common/pdf/pdf-generator.service';
 import { ExportFormato, ExportQueryDto } from './dto/export-query.dto';
+import { escapeHtml } from '../common/utils/html.utils';
 import * as ExcelJS from 'exceljs';
 
 export interface ExportResult {
@@ -22,11 +23,17 @@ function fmtHora(d: Date | null | undefined): string {
   return new Date(d).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
 }
 
-function escapeHtml(str: string): string {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+function buildDateRange(desde?: string, hasta?: string) {
+  const range: { gte?: Date; lte?: Date } = {};
+  if (desde) range.gte = new Date(desde);
+  if (hasta) range.lte = new Date(hasta + 'T23:59:59');
+  return Object.keys(range).length > 0 ? range : null;
+}
+
+function buildPeriodo(desde?: string, hasta?: string, todosFallback = 'Todos los registros'): string {
+  return desde || hasta
+    ? `Período: ${desde ?? '—'} / ${hasta ?? '—'}`
+    : todosFallback;
 }
 
 // ─── HTML genérico para tablas ───────────────────────────────
@@ -93,7 +100,6 @@ async function buildExcel(opts: {
     width: Math.max(h.length + 4, 16),
   }));
 
-  // Header row style
   const headerRow = ws.getRow(1);
   headerRow.eachCell((cell) => {
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF7C6FD6' } };
@@ -141,21 +147,22 @@ export class ExportService {
 
   async exportSesiones(clienteId: string, query: ExportQueryDto): Promise<ExportResult> {
     const where: any = { clienteId };
-    if (query.desde || query.hasta) {
-      where.fechaHoraInicio = {};
-      if (query.desde) where.fechaHoraInicio.gte = new Date(query.desde);
-      if (query.hasta) where.fechaHoraInicio.lte = new Date(query.hasta + 'T23:59:59');
-    }
+    const dateRange = buildDateRange(query.desde, query.hasta);
+    if (dateRange) where.fechaHoraInicio = dateRange;
 
-    const sesiones = await this.prisma.sesion.findMany({
-      where,
-      orderBy: { fechaHoraInicio: 'asc' },
-      include: { bono: { select: { id: true, sesionesConsumidas: true, totalSesiones: true } } },
-    });
+    const [sesiones, cliente] = await Promise.all([
+      this.prisma.sesion.findMany({
+        where,
+        orderBy: { fechaHoraInicio: 'asc' },
+        include: { bono: { select: { sesionesConsumidas: true, totalSesiones: true } } },
+      }),
+      this.prisma.cliente.findUnique({
+        where: { id: clienteId },
+        select: { nombre: true, apellidos: true },
+      }),
+    ]);
 
-    const cliente = await this.prisma.cliente.findUnique({ where: { id: clienteId } });
     const nombreCliente = cliente ? `${cliente.apellidos}, ${cliente.nombre}` : clienteId;
-
     const headers = ['Fecha', 'Hora inicio', 'Hora fin', 'Estado', 'Tipo', 'Bono'];
     const rows = sesiones.map((s) => [
       fmtFecha(s.fechaHoraInicio),
@@ -166,21 +173,16 @@ export class ExportService {
       s.bono ? `${s.bono.sesionesConsumidas}/${s.bono.totalSesiones}` : '—',
     ]);
 
-    const fmt = query.formato ?? ExportFormato.PDF;
-    this.logger.log(`Exportando ${sesiones.length} sesiones de ${nombreCliente} (${fmt})`);
+    this.logger.log(`Exportando ${sesiones.length} sesiones de ${nombreCliente} (${query.formato})`);
 
-    if (fmt === ExportFormato.EXCEL) {
+    if (query.formato === ExportFormato.EXCEL) {
       const buffer = await buildExcel({ sheetName: 'Sesiones', headers, rows });
       return { buffer, contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', filename: `sesiones_${clienteId}.xlsx` };
     }
 
-    const periodo = query.desde || query.hasta
-      ? `Período: ${query.desde ?? '—'} / ${query.hasta ?? '—'}`
-      : 'Todas las sesiones';
-
     const html = buildTableHtml({
       titulo: `Historial de Sesiones — ${nombreCliente}`,
-      subtitulo: periodo,
+      subtitulo: buildPeriodo(query.desde, query.hasta, 'Todas las sesiones'),
       headers,
       rows,
     });
@@ -193,11 +195,8 @@ export class ExportService {
   async exportBonos(clienteId: string | null, query: ExportQueryDto): Promise<ExportResult> {
     const where: any = {};
     if (clienteId) where.clienteId = clienteId;
-    if (query.desde || query.hasta) {
-      where.fechaInicio = {};
-      if (query.desde) where.fechaInicio.gte = new Date(query.desde);
-      if (query.hasta) where.fechaInicio.lte = new Date(query.hasta + 'T23:59:59');
-    }
+    const dateRange = buildDateRange(query.desde, query.hasta);
+    if (dateRange) where.fechaInicio = dateRange;
 
     const bonos = await this.prisma.bono.findMany({
       where,
@@ -205,6 +204,9 @@ export class ExportService {
       include: { cliente: { select: { nombre: true, apellidos: true } } },
     });
 
+    const titulo = clienteId
+      ? 'Historial de Bonos — cliente'
+      : 'Historial de Bonos — Todos los clientes';
     const headers = ['Cliente', 'Fecha inicio', 'Fecha fin', 'Sesiones', 'Precio (€)', 'Estado', 'Pagado'];
     const rows = bonos.map((b) => [
       `${b.cliente.apellidos}, ${b.cliente.nombre}`,
@@ -216,20 +218,19 @@ export class ExportService {
       b.pagado ? 'Sí' : 'No',
     ]);
 
-    const fmt = query.formato ?? ExportFormato.PDF;
-    const titulo = clienteId ? `Historial de Bonos — cliente` : 'Historial de Bonos — Todos los clientes';
-    this.logger.log(`Exportando ${bonos.length} bonos (${fmt})`);
+    this.logger.log(`Exportando ${bonos.length} bonos (${query.formato})`);
 
-    if (fmt === ExportFormato.EXCEL) {
+    if (query.formato === ExportFormato.EXCEL) {
       const buffer = await buildExcel({ sheetName: 'Bonos', headers, rows });
       return { buffer, contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', filename: `bonos${clienteId ? '_' + clienteId : ''}.xlsx` };
     }
 
-    const periodo = query.desde || query.hasta
-      ? `Período: ${query.desde ?? '—'} / ${query.hasta ?? '—'}`
-      : 'Todos los registros';
-
-    const html = buildTableHtml({ titulo, subtitulo: periodo, headers, rows });
+    const html = buildTableHtml({
+      titulo,
+      subtitulo: buildPeriodo(query.desde, query.hasta),
+      headers,
+      rows,
+    });
     const buffer = await this.pdfGenerator.generatePdf(html);
     return { buffer, contentType: 'application/pdf', filename: `bonos${clienteId ? '_' + clienteId : ''}.pdf` };
   }

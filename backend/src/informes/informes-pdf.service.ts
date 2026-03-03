@@ -36,7 +36,9 @@ export class InformesPdfService {
     if (informe.objetivosSnapshotJson) {
       try {
         snapshot = JSON.parse(informe.objetivosSnapshotJson as string);
-      } catch {}
+      } catch (e) {
+        this.logger.warn(`No se pudo parsear objetivosSnapshotJson para informe ${informeId}: ${e}`);
+      }
     }
 
     // ── 4. Construir objeto de datos para el template ──────────────────────

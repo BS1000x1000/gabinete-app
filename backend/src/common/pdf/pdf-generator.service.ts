@@ -18,7 +18,7 @@ export class PdfGeneratorService {
     });
     try {
       const page = await browser.newPage();
-      await page.setContent(html, { waitUntil: 'networkidle0' });
+      await page.setContent(html, { waitUntil: 'networkidle0', timeout: 30_000 });
       const buffer = await page.pdf({
         format: 'A4',
         printBackground: true,

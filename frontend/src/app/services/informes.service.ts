@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, tap, map } from 'rxjs';
 import { environment } from '../../environments/environment.development';
 import { Informe, CreateInformeDto, UpdateInformeDto } from '../interface/informes.interface';
+import { triggerDownload } from '../shared/utils/download.utils';
 
 
 interface WrappedResponse<T> {
@@ -111,14 +112,7 @@ export class InformesService {
   descargarPdf(informeId: string, titulo: string): void {
     this.http
       .get(`${this.api}/${informeId}/pdf`, { responseType: 'blob' })
-      .subscribe((blob) => {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${titulo.replace(/[^a-z0-9]/gi, '_')}.pdf`;
-        a.click();
-        URL.revokeObjectURL(url);
-      });
+      .subscribe((blob) => triggerDownload(blob, `${titulo.replace(/[^a-z0-9]/gi, '_')}.pdf`));
   }
 
   delete(id: string): Observable<{ message: string }> {
