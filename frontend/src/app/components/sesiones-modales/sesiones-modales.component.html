@@ -287,7 +287,7 @@
 
         <div class="detalle-item">
           <span class="detalle-label"><i class="bi bi-tag me-1"></i>Tipo</span>
-          <span class="detalle-valor">{{ accionesSvc.sesionDetalle()!.tipoSesion }}</span>
+          <span class="detalle-valor">{{ TIPO_SESION_LABELS[accionesSvc.sesionDetalle()!.tipoSesion] ?? accionesSvc.sesionDetalle()!.tipoSesion }}</span>
         </div>
 
         <div class="detalle-item">
@@ -300,7 +300,7 @@
 
         <div class="detalle-item">
           <span class="detalle-label"><i class="bi bi-activity me-1"></i>Estado</span>
-          <span class="detalle-valor">{{ accionesSvc.sesionDetalle()!.estado }}</span>
+          <span class="detalle-valor">{{ ESTADO_SESION_LABELS[accionesSvc.sesionDetalle()!.estado] ?? accionesSvc.sesionDetalle()!.estado }}</span>
         </div>
 
         <div class="detalle-item detalle-full" *ngIf="accionesSvc.sesionDetalle()!.notas">

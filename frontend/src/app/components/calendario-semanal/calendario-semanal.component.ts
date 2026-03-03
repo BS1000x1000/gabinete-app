@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { SesionesService } from '../../services/sesiones.service';
 import { AuthService } from '../../services/auth.service';
 import { CalendarioSemanal, DiaSemana, SesionCalendario } from '../../interface/calendario.interface';
+import { TIPO_SESION_LABELS, ESTADO_SESION_LABELS } from '../../interface/sesion.interface';
 
 @Component({
   selector: 'app-calendario-semanal',
@@ -74,6 +75,14 @@ export class CalendarioSemanalComponent implements OnInit {
 
   private formatearFecha(fecha: Date): string {
     return fecha.toISOString().split('T')[0];
+  }
+
+  getEstadoLabel(estado: string): string {
+    return ESTADO_SESION_LABELS[estado as keyof typeof ESTADO_SESION_LABELS] ?? estado;
+  }
+
+  getTipoLabel(tipo: string): string {
+    return TIPO_SESION_LABELS[tipo as keyof typeof TIPO_SESION_LABELS] ?? tipo;
   }
 
   getEstadoClass(estado: string): string {

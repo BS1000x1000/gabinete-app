@@ -67,6 +67,13 @@ export const TIPO_SESION_LABELS: Record<TipoSesion, string> = {
   [TipoSesion.REUNION_COLEGIO]:    'Reunión Colegio',
 };
 
+export const ESTADO_SESION_LABELS: Record<EstadoSesion, string> = {
+  [EstadoSesion.PROGRAMADA]:          'Programada',
+  [EstadoSesion.COMPLETADA]:          'Completada',
+  [EstadoSesion.CANCELADA_CON_AVISO]: 'Cancelada con aviso',
+  [EstadoSesion.CANCELADA_SIN_AVISO]: 'Cancelada sin aviso',
+};
+
 /**
  * DTO para crear una sesión
  */

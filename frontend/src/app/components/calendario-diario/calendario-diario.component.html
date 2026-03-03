@@ -149,14 +149,14 @@
                         class="badge ms-2"
                         [ngClass]="getEstadoClass(sesion.estado)"
                       >
-                        {{ sesion.estado }}
+                        {{ getEstadoLabel(sesion.estado) }}
                       </span>
                     </div>
 
                     <div class="sesion-detalles">
                       <p class="mb-1">
                         <i class="bi bi-tag me-1 text-muted"></i>
-                        <strong>Tipo:</strong> {{ sesion.tipoSesion }}
+                        <strong>Tipo:</strong> {{ getTipoLabel(sesion.tipoSesion) }}
                       </p>
                       <p class="mb-1" *ngIf="sesion.cliente.curso">
                         <i class="bi bi-book me-1 text-muted"></i>

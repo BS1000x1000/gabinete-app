@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { SesionesService } from '../../services/sesiones.service';
 import { AuthService } from '../../services/auth.service';
-import { SesionData } from '../../interface/sesion.interface';
+import { SesionData, EstadoSesion, TIPO_SESION_LABELS, ESTADO_SESION_LABELS } from '../../interface/sesion.interface';
 
 @Component({
   selector: 'app-agenda-compact',
@@ -15,6 +15,10 @@ export class AgendaCompactComponent implements OnInit {
   private sesionesSvc = inject(SesionesService);
   private auth = inject(AuthService);
   private router = inject(Router);
+
+  readonly EstadoSesion = EstadoSesion;
+  readonly TIPO_SESION_LABELS = TIPO_SESION_LABELS;
+  readonly ESTADO_SESION_LABELS = ESTADO_SESION_LABELS;
 
   sesiones = this.sesionesSvc.sesiones;
   isLoading = this.sesionesSvc.isLoading;
@@ -33,16 +37,16 @@ export class AgendaCompactComponent implements OnInit {
     const ahora = new Date().getTime();
     return this.sesionesHoy().find(s => {
       const inicio = new Date(s.fechaHoraInicio).getTime();
-      return inicio > ahora && s.estado === 'PROGRAMADA';
+      return inicio > ahora && s.estado === EstadoSesion.PROGRAMADA;
     });
   });
 
-  sesionesCompletadas = computed(() => 
-    this.sesionesHoy().filter(s => s.estado === 'COMPLETADA').length
+  sesionesCompletadas = computed(() =>
+    this.sesionesHoy().filter(s => s.estado === EstadoSesion.COMPLETADA).length
   );
 
-  sesionesProgramadas = computed(() => 
-    this.sesionesHoy().filter(s => s.estado === 'PROGRAMADA').length
+  sesionesProgramadas = computed(() =>
+    this.sesionesHoy().filter(s => s.estado === EstadoSesion.PROGRAMADA).length
   );
 
   ngOnInit() {

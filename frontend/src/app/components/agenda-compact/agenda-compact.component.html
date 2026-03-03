@@ -56,7 +56,7 @@
         <div 
           *ngFor="let sesion of sesionesHoy()" 
           class="sesion-item"
-          [class.completada]="sesion.estado === 'COMPLETADA'"
+          [class.completada]="sesion.estado === EstadoSesion.COMPLETADA"
           (click)="verCliente(sesion)"
         >
           <div class="sesion-hora">
@@ -64,19 +64,19 @@
           </div>
           <div class="sesion-info">
             <strong>{{ sesion.cliente.nombre }} {{ sesion.cliente.apellidos }}</strong>
-            <small class="text-muted">{{ sesion.tipoSesion }}</small>
+            <small class="text-muted">{{ TIPO_SESION_LABELS[sesion.tipoSesion] ?? sesion.tipoSesion }}</small>
           </div>
           <div class="sesion-estado">
             <span 
               class="badge"
-              [class.bg-success]="sesion.estado === 'COMPLETADA'"
-              [class.bg-primary]="sesion.estado === 'PROGRAMADA'"
-              [class.bg-warning]="sesion.estado === 'CANCELADA_CON_AVISO'"
+              [class.bg-success]="sesion.estado === EstadoSesion.COMPLETADA"
+              [class.bg-primary]="sesion.estado === EstadoSesion.PROGRAMADA"
+              [class.bg-warning]="sesion.estado === EstadoSesion.CANCELADA_CON_AVISO"
             >
-              {{ sesion.estado }}
+              {{ ESTADO_SESION_LABELS[sesion.estado] ?? sesion.estado }}
             </span>
           </div>
-          <div class="sesion-actions" *ngIf="sesion.estado === 'PROGRAMADA'">
+          <div class="sesion-actions" *ngIf="sesion.estado === EstadoSesion.PROGRAMADA">
             <button 
               class="btn btn-sm btn-success"
               (click)="completarSesion(sesion.id, $event)"

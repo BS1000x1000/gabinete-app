@@ -8,7 +8,7 @@ import {
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../services/auth.service';
-import { SesionData, EstadoSesion } from '../../../interface/sesion.interface';
+import { SesionData, EstadoSesion, TipoSesion, TIPO_SESION_LABELS, ESTADO_SESION_LABELS } from '../../../interface/sesion.interface';
 import { SesionesService } from '../../../services/sesiones.service';
 import { CalendarioFullComponent } from '../../../components/calendario-full/calendario-full.component';
 
@@ -22,6 +22,9 @@ export class AgendaComponent implements OnInit {
   private router = inject(Router);
   private auth = inject(AuthService);
   private sesionesSvc = inject(SesionesService);
+
+  readonly TIPO_SESION_LABELS = TIPO_SESION_LABELS;
+  readonly ESTADO_SESION_LABELS = ESTADO_SESION_LABELS;
 
   // Estado
   sesiones = signal<any[]>([]);

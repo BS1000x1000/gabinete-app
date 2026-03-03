@@ -112,13 +112,13 @@
                 [class.bg-warning]="sesion.estado === 'CANCELADA_CON_AVISO'"
                 [class.bg-danger]="sesion.estado === 'CANCELADA_SIN_AVISO'"
               >
-                {{ sesion.estado }}
+                {{ ESTADO_SESION_LABELS[sesion.estado] ?? sesion.estado }}
               </span>
             </td>
 
             <!-- Tipo -->
             <td>
-              <small class="text-muted">{{ sesion.tipoSesion }}</small>
+              <small class="text-muted">{{ TIPO_SESION_LABELS[sesion.tipoSesion] ?? sesion.tipoSesion }}</small>
             </td>
 
             <!-- Cliente -->
