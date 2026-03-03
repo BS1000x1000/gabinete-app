@@ -1,0 +1,24 @@
+// ============================================================
+// HISTORIAL MODAL — Exportación de sesiones y bonos
+// ============================================================
+
+.historial-form {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.historial-fechas-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $spacing-md;
+
+  @include respond-to('sm') {
+    grid-template-columns: 1fr;
+  }
+}
+
+.icon-historial {
+  background: $secondary-light;
+  color: $secondary-dark;
+}

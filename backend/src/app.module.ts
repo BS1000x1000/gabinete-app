@@ -17,6 +17,7 @@ import { GasModule } from './gas/gas.module';
 import { InformesModule } from './informes/informes.module';
 import { BonosModule } from './bonos/bonos.module';
 import { NotificacionesModule } from './notificaciones/notificaciones.module';
+import { ExportModule } from './export/export.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { NotificacionesModule } from './notificaciones/notificaciones.module';
     GasModule,
     BonosModule,
     NotificacionesModule,
+    ExportModule,
     // NO VA N8nModule
   ],
   controllers: [AppController],

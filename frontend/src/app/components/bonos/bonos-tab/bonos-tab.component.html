@@ -134,7 +134,16 @@
         <h6 class="bonos-historial-title">
           <i class="bi bi-clock-history me-2"></i>Historial de bonos
         </h6>
-        <span class="badge bg-light text-secondary border">{{ historialBonos().length }}</span>
+        <div class="d-flex align-items-center gap-2">
+          <span class="badge bg-light text-secondary border">{{ historialBonos().length }}</span>
+          <button
+            class="btn btn-sm btn-outline-secondary"
+            title="Exportar historial"
+            (click)="showHistorialModal.set(true)"
+          >
+            <i class="bi bi-download me-1"></i>Exportar
+          </button>
+        </div>
       </div>
 
       <div class="bonos-historial-list">
@@ -228,3 +237,9 @@
   (pagoRegistrado)="onPagoRegistrado()"
   (cerrar)="onPagoRegistrado()"
 ></app-registrar-pago-modal>
+
+<app-historial-modal
+  *ngIf="showHistorialModal()"
+  [clienteId]="clienteId"
+  (cerrar)="showHistorialModal.set(false)"
+></app-historial-modal>

@@ -1,20 +1,16 @@
-import {
-  Injectable,
-  NotFoundException,
-  InternalServerErrorException,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import * as path from 'path';
-import * as fs from 'fs';
-import * as os from 'os';
-import { execFileSync, spawnSync } from 'child_process';
+import { PdfGeneratorService } from '../common/pdf/pdf-generator.service';
+import { buildInformeHtml } from './templates/informe.template';
 
 @Injectable()
 export class InformesPdfService {
   private readonly logger = new Logger(InformesPdfService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly pdfGenerator: PdfGeneratorService,
+  ) {}
 
   async generarPdf(informeId: string): Promise<Buffer> {
     // ── 1. Cargar el informe con todas las relaciones ──────────────────────
@@ -43,24 +39,20 @@ export class InformesPdfService {
       } catch {}
     }
 
-    // ── 4. Construir datos para el script Python ───────────────────────────
+    // ── 4. Construir objeto de datos para el template ──────────────────────
     const datos = {
       titulo: informe.titulo,
       tipo: informe.tipoInforme,
       elaborado_por: `${informe.trabajador.nombre} ${informe.trabajador.apellidos}`,
       num_colegiada: (informe.trabajador as any).numColegiada ?? '',
-      fecha_elaboracion: new Date(informe.createdAt).toLocaleDateString(
-        'es-ES',
-      ),
+      fecha_elaboracion: new Date(informe.createdAt).toLocaleDateString('es-ES'),
       alumno: {
         nombre: `${informe.cliente.apellidos}, ${informe.cliente.nombre}`,
         nombre_pila: informe.cliente.nombre,
         fecha_nacimiento: informe.cliente.fechaNacimiento
-          ? new Date(informe.cliente.fechaNacimiento).toLocaleDateString(
-              'es-ES',
-            )
+          ? new Date(informe.cliente.fechaNacimiento).toLocaleDateString('es-ES')
           : '',
-        edad: edad ? `${edad}` : '',
+        edad: edad ?? '',
         curso: informe.cliente.curso ?? '',
         colegio: informe.cliente.colegio?.nombre ?? '',
       },
@@ -68,72 +60,16 @@ export class InformesPdfService {
       analisisInformacion: informe.analisisInformacion ?? '',
       evaluacionInicial: informe.evaluacionInicial ?? '',
       objetivosGeneralesTexto: informe.objetivosGeneralesTexto ?? '',
+      evolucionObservada: (informe as any).evolucionObservada ?? '',
+      objetivosProximoCurso: (informe as any).objetivosProximoCurso ?? '',
+      recomendaciones: (informe as any).recomendaciones ?? '',
       snapshot,
     };
 
-    // ── 5. Resolver ruta del script ────────────────────────────────────────
-    // Buscar el script en varias ubicaciones posibles
-    const posiblesRutas = [
-      path.resolve(__dirname, '..', '..', 'scripts', 'generar_informe.py'),
-      path.resolve(process.cwd(), 'scripts', 'generar_informe.py'),
-      path.resolve(process.cwd(), 'src', 'scripts', 'generar_informe.py'),
-    ];
-
-    const scriptPath = posiblesRutas.find((p) => fs.existsSync(p));
-
-    if (!scriptPath) {
-      this.logger.error(
-        `Script no encontrado. Rutas buscadas:\n${posiblesRutas.join('\n')}`,
-      );
-      throw new InternalServerErrorException(
-        `Script generar_informe.py no encontrado. Colócalo en: ${posiblesRutas[1]}`,
-      );
-    }
-
-    this.logger.log(`📄 Usando script: ${scriptPath}`);
-
-    // ── 6. Verificar que Python está disponible ────────────────────────────
-    const pythonCheck = spawnSync('python3', ['--version']);
-    if (pythonCheck.error) {
-      throw new InternalServerErrorException(
-        'python3 no está disponible en el sistema',
-      );
-    }
-
-    // ── 7. Ejecutar script ─────────────────────────────────────────────────
-    const tmpDir = os.tmpdir();
-    const jsonPath = path.join(tmpDir, `informe_${informeId}.json`);
-    const pdfPath = path.join(tmpDir, `informe_${informeId}.pdf`);
-
-    try {
-      fs.writeFileSync(jsonPath, JSON.stringify(datos, null, 2), 'utf8');
-
-      const result = spawnSync('python3', [scriptPath, jsonPath, pdfPath], {
-        timeout: 30_000,
-        encoding: 'utf8',
-      });
-
-      // Mostrar siempre stdout/stderr para debugging
-      if (result.stdout) this.logger.log(`Python stdout: ${result.stdout}`);
-      if (result.stderr) this.logger.error(`Python stderr: ${result.stderr}`);
-
-      if (result.status !== 0) {
-        throw new InternalServerErrorException(
-          `Error al generar PDF (código ${result.status}): ${result.stderr || 'sin mensaje'}`,
-        );
-      }
-
-      if (!fs.existsSync(pdfPath)) {
-        throw new InternalServerErrorException('El script no generó el PDF');
-      }
-
-      const buffer = fs.readFileSync(pdfPath);
-      this.logger.log(`✅ PDF generado: ${buffer.length} bytes`);
-      return buffer;
-    } finally {
-      if (fs.existsSync(jsonPath)) fs.unlinkSync(jsonPath);
-      if (fs.existsSync(pdfPath)) fs.unlinkSync(pdfPath);
-    }
+    // ── 5. Generar PDF con Puppeteer ───────────────────────────────────────
+    this.logger.log(`📄 Generando PDF para informe ${informeId}`);
+    const html = buildInformeHtml(datos);
+    return this.pdfGenerator.generatePdf(html);
   }
 
   calcularEdad(fechaNacimiento: Date | string): {
