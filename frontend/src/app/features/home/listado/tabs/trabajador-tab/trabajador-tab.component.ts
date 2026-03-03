@@ -10,6 +10,7 @@ import { ActivatedRoute } from '@angular/router';
 import { ClientesService } from '../../../../../services/cliente.service';
 import { SesionesService } from '../../../../../services/sesiones.service';
 import { TrabajadorService } from '../../../../../services/trabajadores.service';
+import { TipoSesion, TIPO_SESION_LABELS } from '../../../../../interface/sesion.interface';
 
 interface Horario {
   id: string;
@@ -21,7 +22,7 @@ interface Horario {
 interface Asignacion {
   id: string;
   trabajador: { id: string; nombre: string; apellidos: string; email: string };
-  tipoTerapia: string;
+  tipoTerapia: TipoSesion;
   activo: boolean;
   horarios: Horario[];
   createdAt: Date;
@@ -55,14 +56,7 @@ export class TrabajadorTabComponent implements OnInit {
     { valor: 0, nombre: 'Domingo' },
   ];
   readonly DIAS_CORTO = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-  readonly TIPOS_TERAPIA = [
-    'Pedagogía',
-    'Neuropsicología',
-    'Logopedia',
-    'Terapia Ocupacional',
-    'Evaluación',
-    'Reunión Colegio',
-  ];
+  readonly TIPO_SESION_LABELS = TIPO_SESION_LABELS;
   readonly TIPOS_SESION = [
     { value: 'PEDAGOGIA', label: 'Pedagogía' },
     { value: 'NEUROPSICOLOGIA', label: 'Neuropsicología' },
@@ -318,7 +312,7 @@ export class TrabajadorTabComponent implements OnInit {
     this.resultadoGeneracion.set(null);
     this.errorGeneracion.set(null);
     this.formGenerar.patchValue({
-      tipoSesion: this.mapTerapiaATipo(asignacion.tipoTerapia),
+      tipoSesion: asignacion.tipoTerapia,
       fechaInicio: this.fechaHoy,
       fechaFin: this.fechaUnAnio,
     });
@@ -392,22 +386,14 @@ export class TrabajadorTabComponent implements OnInit {
 
   getBadgeClass(tipo: string): string {
     const m: Record<string, string> = {
-      Pedagogía: 'bg-primary',
-      Neuropsicología: 'bg-info',
-      Evaluación: 'bg-warning text-dark',
-      'Reunión Colegio': 'bg-secondary',
+      PEDAGOGIA:          'bg-primary',
+      NEUROPSICOLOGIA:    'bg-info',
+      LOGOPEDIA:          'bg-success',
+      TERAPIA_OCUPACIONAL:'bg-danger',
+      EVALUACION:         'bg-warning text-dark',
+      REUNION_COLEGIO:    'bg-secondary',
     };
     return m[tipo] || 'bg-secondary';
-  }
-
-  private mapTerapiaATipo(t: string): string {
-    const m: Record<string, string> = {
-      Pedagogía: 'PEDAGOGIA',
-      Neuropsicología: 'NEUROPSICOLOGIA',
-      Evaluación: 'EVALUACION',
-      'Reunión Colegio': 'REUNION_COLEGIO',
-    };
-    return m[t] || 'PEDAGOGIA';
   }
 
   // Trabajadores que aún no están asignados con el mismo tipo de terapia

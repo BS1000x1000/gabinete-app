@@ -36,7 +36,6 @@ export class ClientesService {
 
       if (colegioExistente) {
         colegioId = colegioExistente.id;
-        console.log(`✅ Usando colegio existente: ${colegioExistente.nombre}`);
       } else {
         const nuevoColegio = await this.prisma.colegio.create({
           data: {
@@ -55,7 +54,6 @@ export class ClientesService {
           },
         });
         colegioId = nuevoColegio.id;
-        console.log(`✅ Colegio creado: ${nuevoColegio.nombre}`);
       }
     }
 
@@ -143,8 +141,6 @@ export class ClientesService {
       include: clienteInclude,
     });
 
-    console.log(`✅ Cliente creado: ${cliente.nombre} ${cliente.apellidos}`);
-
     // ✅ NUEVO: Si viene asignación, crear relación con trabajador y horarios específicos
     if (
       createClienteDto.asignaciones &&
@@ -166,9 +162,6 @@ export class ClientesService {
           },
         });
 
-        console.log(
-          `✅ Asignación creada: ${asignacion.tipoTerapia} con trabajador ${asignacion.trabajadorId}`,
-        );
       }
     }
     // Retornar cliente con todas las relaciones
@@ -475,10 +468,6 @@ export class ClientesService {
         horarios: true,
       },
     });
-
-    console.log(
-      `✅ Cliente ${clienteId} asignado a trabajador ${trabajadorId} para ${tipoTerapia}`,
-    );
 
     return {
       message: 'Trabajador asignado correctamente',

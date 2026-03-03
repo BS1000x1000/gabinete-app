@@ -1,4 +1,5 @@
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { SesionesService } from '../../services/sesiones.service';
@@ -14,6 +15,7 @@ import { TIPO_SESION_LABELS, ESTADO_SESION_LABELS } from '../../interface/sesion
 export class CalendarioDiarioComponent implements OnInit {
   private sesionesSvc = inject(SesionesService);
   private router = inject(Router);
+  private destroyRef = inject(DestroyRef);
 
   // Estado
   calendario = signal<CalendarioDiario | null>(null);
@@ -29,20 +31,18 @@ export class CalendarioDiarioComponent implements OnInit {
 
   cargarCalendario(fecha?: string) {
     this.isLoading.set(true);
-    
-    console.log('📅 Cargando calendario para fecha:', fecha || 'hoy');
-    
-    this.sesionesSvc.getCalendarioDiario(fecha).subscribe({
-      next: (cal) => {
-        console.log('✅ Calendario recibido:', cal);
-        this.calendario.set(cal);
-        this.isLoading.set(false);
-      },
-      error: (err) => {
-        console.error('❌ Error al cargar calendario:', err);
-        this.isLoading.set(false);
-      }
-    });
+    this.sesionesSvc.getCalendarioDiario(fecha)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (cal) => {
+          this.calendario.set(cal);
+          this.isLoading.set(false);
+        },
+        error: (err) => {
+          console.error('❌ Error al cargar calendario:', err);
+          this.isLoading.set(false);
+        }
+      });
   }
 
   diaAnterior() {
@@ -71,12 +71,9 @@ export class CalendarioDiarioComponent implements OnInit {
 
   completarSesion(id: string, event: Event) {
     event.stopPropagation();
-    this.sesionesSvc.completarSesion(id, { notas: 'Completada' }).subscribe({
-      next: () => {
-        console.log('✅ Sesión completada');
-        this.cargarCalendario(this.formatearFecha(this.fechaSeleccionada()));
-      }
-    });
+    this.sesionesSvc.completarSesion(id, { notas: 'Completada' })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({ next: () => this.cargarCalendario(this.formatearFecha(this.fechaSeleccionada())) });
   }
 
   private formatearFecha(fecha: Date): string {

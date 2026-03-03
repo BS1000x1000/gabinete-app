@@ -9,10 +9,6 @@ import { ResponseInterceptor } from './common/interceptors/response.interceptor'
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
-  // Debug: verifica que SECRET se cargó
-  console.log('🔑 SECRET cargado:', process.env.SECRET ? 'SÍ ✅' : 'NO ❌');
-  console.log('💾 DATABASE_URL cargado:', process.env.DATABASE_URL ? 'SÍ ✅' : 'NO ❌');
-
   const app = await NestFactory.create(AppModule);
 
   app.setGlobalPrefix('api');

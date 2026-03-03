@@ -117,7 +117,7 @@ model ClienteTrabajador {
   id           String   @id @default(uuid())
   clienteId    String   @map("id_cliente")
   trabajadorId String   @map("id_trabajador")
-  tipoTerapia  String   @map("tipo_terapia")
+  tipoTerapia  TipoSesion @map("tipo_terapia")
   activo       Boolean  @default(true)
   createdAt    DateTime @default(now()) @map("fecha_asignacion")
   updatedAt    DateTime @updatedAt @map("fecha_actualizacion")

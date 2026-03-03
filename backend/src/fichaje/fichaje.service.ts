@@ -51,7 +51,6 @@ export class FichajeService {
           );
         }
 
-        console.log('✅ Objetivos validados:', objetivosExistentes.map(o => o.titulo));
       }
 
       // 3. Si viene sesionId, verificar y marcarla como completada
@@ -114,14 +113,9 @@ export class FichajeService {
         },
       });
 
-      console.log('✅ Registro creado:', nuevoRegistro.id);
-      console.log(`✅ Con ${nuevoRegistro.objetivosGeneralesTrabajados.length} objetivos`);
-
       return nuevoRegistro;
 
     } catch (err) {
-      console.error('❌ Error completo:', err);
-      
       if (err instanceof NotFoundException || err instanceof BadRequestException) {
         throw err;
       }
@@ -349,8 +343,6 @@ export class FichajeService {
 
       // Las relaciones se eliminan automáticamente por el onDelete: Cascade
       await this.prisma.registroDiario.delete({ where: { id } });
-      
-      console.log('🗑️ Registro eliminado:', id);
     } catch (err) {
       if (err instanceof NotFoundException) throw err;
       throw new InternalServerErrorException(

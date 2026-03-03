@@ -1,4 +1,5 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { SesionesService } from '../../services/sesiones.service';
@@ -15,6 +16,8 @@ export class AgendaCompactComponent implements OnInit {
   private sesionesSvc = inject(SesionesService);
   private auth = inject(AuthService);
   private router = inject(Router);
+
+  private destroyRef = inject(DestroyRef);
 
   readonly EstadoSesion = EstadoSesion;
   readonly TIPO_SESION_LABELS = TIPO_SESION_LABELS;
@@ -58,7 +61,9 @@ export class AgendaCompactComponent implements OnInit {
     if (!trabajadorId) return;
 
     const hoy = new Date().toISOString().split('T')[0];
-    this.sesionesSvc.getSesionesByTrabajador(hoy, hoy).subscribe();
+    this.sesionesSvc.getSesionesByTrabajador(hoy, hoy)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe();
   }
 
   toggleExpand() {
@@ -75,8 +80,8 @@ export class AgendaCompactComponent implements OnInit {
 
   completarSesion(id: string, event: Event) {
     event.stopPropagation();
-    this.sesionesSvc.completarSesion(id, { notas: 'Completada' }).subscribe({
-      next: () => this.cargarSesiones()
-    });
+    this.sesionesSvc.completarSesion(id, { notas: 'Completada' })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({ next: () => this.cargarSesiones() });
   }
 }

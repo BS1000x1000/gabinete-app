@@ -89,7 +89,7 @@
                     {{ sesion.cliente.nombre }} {{ sesion.cliente.apellidos }}
                   </span>
                   <span class="sesion-tipo">
-                    {{ tipoLabel(sesion.tipoSesion) }}
+                    <span class="tipo-badge" [ngClass]="tipoClass(sesion.tipoSesion)">{{ tipoLabel(sesion.tipoSesion) }}</span>
                     @if (st?.esProxima) {
                       <span class="badge-proxima">Próxima</span>
                     }

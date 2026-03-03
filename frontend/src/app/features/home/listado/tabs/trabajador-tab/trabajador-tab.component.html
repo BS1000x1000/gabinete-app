@@ -57,7 +57,7 @@
               </div>
             </td>
             <td>
-              <span class="badge" [ngClass]="getBadgeClass(asignacion.tipoTerapia)">{{ asignacion.tipoTerapia }}</span>
+              <span class="badge" [ngClass]="getBadgeClass(asignacion.tipoTerapia)">{{ TIPO_SESION_LABELS[asignacion.tipoTerapia] ?? asignacion.tipoTerapia }}</span>
             </td>
             <td>
               <span *ngIf="asignacion.horarios.length === 0" class="text-muted small fst-italic">Sin horarios</span>
@@ -134,7 +134,7 @@
               <select class="form-select" formControlName="tipoTerapia"
                       [class.is-invalid]="formAniadir.get('tipoTerapia')?.invalid && formAniadir.get('tipoTerapia')?.touched">
                 <option value="">-- Selecciona tipo --</option>
-                <option *ngFor="let tipo of TIPOS_TERAPIA" [value]="tipo">{{ tipo }}</option>
+                <option *ngFor="let tipo of TIPOS_SESION" [value]="tipo.value">{{ tipo.label }}</option>
               </select>
               <div class="invalid-feedback">Selecciona el tipo de terapia</div>
             </div>
@@ -209,95 +209,6 @@
 
 
 <!-- ═══════════════════════════════════════════════════════
-     MODAL: EDITAR HORARIOS
-═══════════════════════════════════════════════════════ -->
-<div *ngIf="mostrarModalHorarios()" class="modal d-block" tabindex="-1" style="background:rgba(0,0,0,.5)">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-
-      <div class="modal-header">
-        <div>
-          <h5 class="modal-title mb-0"><i class="bi bi-clock-history me-2 text-primary"></i>Editar Horarios</h5>
-          <small class="text-muted" *ngIf="asignacionEditando()">
-            {{ asignacionEditando()!.trabajador.nombre }} {{ asignacionEditando()!.trabajador.apellidos }}
-            · {{ asignacionEditando()!.tipoTerapia }}
-          </small>
-        </div>
-        <button type="button" class="btn-close" (click)="cerrarModalHorarios()"></button>
-      </div>
-
-      <div class="modal-body">
-        <form [formGroup]="formHorarios">
-
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <p class="text-muted small mb-0">Modifica, añade o elimina los horarios de esta asignación.</p>
-            <button type="button" class="btn btn-sm btn-outline-primary" (click)="agregarHorarioEditar()">
-              <i class="bi bi-plus-lg me-1"></i>Añadir
-            </button>
-          </div>
-
-          <div formArrayName="horarios">
-            <div *ngFor="let horario of horariosEditar.controls; let i = index"
-                 [formGroupName]="i"
-                 class="row g-2 align-items-end mb-2 p-2 rounded border bg-light">
-
-              <div class="col-5">
-                <label class="form-label small mb-1">Día</label>
-                <select class="form-select form-select-sm" formControlName="diaSemana"
-                        [class.is-invalid]="horario.get('diaSemana')?.invalid && horario.get('diaSemana')?.touched">
-                  <option value="">Día...</option>
-                  <option *ngFor="let d of DIAS_SEMANA" [value]="d.valor">{{ d.nombre }}</option>
-                </select>
-              </div>
-
-              <div class="col-3">
-                <label class="form-label small mb-1">Inicio</label>
-                <input type="time" class="form-control form-control-sm" formControlName="horaInicio"
-                       [class.is-invalid]="horario.get('horaInicio')?.invalid && horario.get('horaInicio')?.touched">
-              </div>
-
-              <div class="col-3">
-                <label class="form-label small mb-1">Fin</label>
-                <input type="time" class="form-control form-control-sm" formControlName="horaFin"
-                       [class.is-invalid]="horario.get('horaFin')?.invalid && horario.get('horaFin')?.touched">
-              </div>
-
-              <div class="col-1 text-end">
-                <button type="button" class="btn btn-sm btn-outline-danger"
-                        [disabled]="horariosEditar.length === 1"
-                        (click)="quitarHorarioEditar(i)">
-                  <i class="bi bi-trash"></i>
-                </button>
-              </div>
-
-            </div>
-          </div>
-
-          <!-- Error -->
-          <div *ngIf="errorHorarios()" class="alert alert-danger mt-3 mb-0 py-2 small">
-            <i class="bi bi-exclamation-triangle me-2"></i>{{ errorHorarios() }}
-          </div>
-
-        </form>
-      </div>
-
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary btn-sm" (click)="cerrarModalHorarios()">Cancelar</button>
-        <button type="button" class="btn btn-primary btn-sm"
-                [disabled]="guardandoHorarios()"
-                (click)="guardarHorarios()">
-          <span *ngIf="guardandoHorarios()" class="spinner-border spinner-border-sm me-2"></span>
-          <i *ngIf="!guardandoHorarios()" class="bi bi-check-lg me-2"></i>
-          {{ guardandoHorarios() ? 'Guardando...' : 'Guardar horarios' }}
-        </button>
-      </div>
-
-    </div>
-  </div>
-</div>
-
-
-<!-- ═══════════════════════════════════════════════════════
      MODAL: GENERAR SESIONES
 ═══════════════════════════════════════════════════════ -->
 <div *ngIf="mostrarModalGenerar()" class="modal d-block" tabindex="-1" style="background:rgba(0,0,0,.5)">
@@ -309,7 +220,7 @@
           <h5 class="modal-title mb-0"><i class="bi bi-calendar-plus me-2 text-primary"></i>Generar Sesiones</h5>
           <small class="text-muted" *ngIf="asignacionSeleccionada()">
             {{ asignacionSeleccionada()!.trabajador.nombre }} {{ asignacionSeleccionada()!.trabajador.apellidos }}
-            · {{ asignacionSeleccionada()!.tipoTerapia }}
+            · {{ TIPO_SESION_LABELS[asignacionSeleccionada()!.tipoTerapia] ?? asignacionSeleccionada()!.tipoTerapia }}
           </small>
         </div>
         <button type="button" class="btn-close" (click)="cerrarModalGenerar()"></button>
@@ -396,7 +307,7 @@
           </h5>
           <small class="text-muted" *ngIf="asignacionEditando()">
             {{ asignacionEditando()!.trabajador.nombre }} {{ asignacionEditando()!.trabajador.apellidos }}
-            · {{ asignacionEditando()!.tipoTerapia }}
+            · {{ TIPO_SESION_LABELS[asignacionEditando()!.tipoTerapia] ?? asignacionEditando()!.tipoTerapia }}
           </small>
         </div>
         <button type="button" class="btn-close" (click)="cerrarModalHorarios()"></button>

@@ -1,4 +1,5 @@
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { SesionesService } from '../../services/sesiones.service';
@@ -16,6 +17,7 @@ export class CalendarioSemanalComponent implements OnInit {
   private sesionesSvc = inject(SesionesService);
   private auth = inject(AuthService);
   private router = inject(Router);
+  private destroyRef = inject(DestroyRef);
 
   // Estado
   calendario = signal<CalendarioSemanal | null>(null);
@@ -36,17 +38,18 @@ export class CalendarioSemanalComponent implements OnInit {
   cargarCalendario(fecha?: string) {
     this.isLoading.set(true);
     
-    this.sesionesSvc.getCalendarioSemanal(fecha).subscribe({
-      next: (cal) => {
-        this.calendario.set(cal);
-        this.isLoading.set(false);
-        console.log('📅 Calendario cargado:', cal);
-      },
-      error: (err) => {
-        console.error('❌ Error al cargar calendario:', err);
-        this.isLoading.set(false);
-      }
-    });
+    this.sesionesSvc.getCalendarioSemanal(fecha)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (cal) => {
+          this.calendario.set(cal);
+          this.isLoading.set(false);
+        },
+        error: (err) => {
+          console.error('❌ Error al cargar calendario:', err);
+          this.isLoading.set(false);
+        }
+      });
   }
 
   semanaAnterior() {

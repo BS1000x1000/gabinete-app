@@ -159,7 +159,7 @@
                   *ngIf="sesion.estado === 'PROGRAMADA'"
                   class="btn btn-sm btn-outline-success"
                   title="Completar sesión"
-                  (click)="completarSesion(sesion.id); $event.stopPropagation()"
+                  (click)="abrirCompletar(sesion, $event)"
                 >
                   <i class="bi bi-check-circle"></i>
                 </button>
@@ -167,7 +167,7 @@
                   *ngIf="sesion.estado === 'PROGRAMADA'"
                   class="btn btn-sm btn-outline-danger"
                   title="Cancelar sesión"
-                  (click)="cancelarSesion(sesion.id); $event.stopPropagation()"
+                  (click)="abrirCancelar(sesion, $event)"
                 >
                   <i class="bi bi-x-circle"></i>
                 </button>
@@ -237,3 +237,5 @@
     <app-calendario-full></app-calendario-full>
   </div>
 </div>
+
+<app-sesion-modales [onRefresh]="loadSesiones.bind(this)"></app-sesion-modales>

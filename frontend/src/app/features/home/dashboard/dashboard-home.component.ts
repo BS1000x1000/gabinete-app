@@ -4,7 +4,7 @@ import { NgClass } from '@angular/common';
 import { Router } from '@angular/router';
 import { DashboardService } from '../../../services/dashboard.service';
 import { SesionesService } from '../../../services/sesiones.service';
-import { EstadoSesion, TIPO_SESION_LABELS } from '../../../interface/sesion.interface';
+import { EstadoSesion, TipoSesion, TIPO_SESION_LABELS } from '../../../interface/sesion.interface';
 import {
   AlertaDashboard,
   InformeBorrador,
@@ -105,6 +105,18 @@ export class DashboardHomeComponent implements OnInit {
 
   tipoLabel(tipo: string): string {
     return TIPO_SESION_LABELS[tipo as keyof typeof TIPO_SESION_LABELS] ?? tipo;
+  }
+
+  tipoClass(tipo: TipoSesion): string {
+    const map: Record<TipoSesion, string> = {
+      [TipoSesion.PEDAGOGIA]:          'tipo-pedagogia',
+      [TipoSesion.NEUROPSICOLOGIA]:    'tipo-neuro',
+      [TipoSesion.LOGOPEDIA]:          'tipo-logopedia',
+      [TipoSesion.TERAPIA_OCUPACIONAL]:'tipo-to',
+      [TipoSesion.EVALUACION]:         'tipo-evaluacion',
+      [TipoSesion.REUNION_COLEGIO]:    'tipo-reunion',
+    };
+    return map[tipo] ?? '';
   }
 
   bonoClass(bono: { sesionesConsumidas: number; totalSesiones: number }): string {

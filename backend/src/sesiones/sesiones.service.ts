@@ -462,11 +462,6 @@ export class SesionesService {
         999,
       );
 
-      console.log('📅 Calendario diario solicitado:');
-      console.log('   Fecha:', format(fecha, 'yyyy-MM-dd'));
-      console.log('   Inicio:', inicioDia);
-      console.log('   Fin:', finDia);
-
       const sesiones = await this.prisma.sesion.findMany({
         where: {
           trabajadorId,
@@ -494,8 +489,6 @@ export class SesionesService {
           fechaHoraInicio: 'asc',
         },
       });
-
-      console.log(`   Sesiones encontradas: ${sesiones.length}`);
 
       const ahora = new Date();
 

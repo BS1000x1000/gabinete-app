@@ -4,24 +4,30 @@ import {
   inject,
   signal,
   type OnInit,
+  DestroyRef,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../services/auth.service';
 import { SesionData, EstadoSesion, TipoSesion, TIPO_SESION_LABELS, ESTADO_SESION_LABELS } from '../../../interface/sesion.interface';
 import { SesionesService } from '../../../services/sesiones.service';
+import { SesionAccionesService } from '../../../services/sesiones-acciones.service';
 import { CalendarioFullComponent } from '../../../components/calendario-full/calendario-full.component';
+import { SesionModalesComponent } from '../../../components/sesiones-modales/sesiones-modales.component';
 
 @Component({
   selector: 'app-agenda',
   standalone: true,
-  imports: [CommonModule, CalendarioFullComponent],
+  imports: [CommonModule, CalendarioFullComponent, SesionModalesComponent],
   templateUrl: './agenda.component.html',
 })
 export class AgendaComponent implements OnInit {
   private router = inject(Router);
   private auth = inject(AuthService);
   private sesionesSvc = inject(SesionesService);
+  private accionesSvc = inject(SesionAccionesService);
+  private destroyRef = inject(DestroyRef);
 
   readonly TIPO_SESION_LABELS = TIPO_SESION_LABELS;
   readonly ESTADO_SESION_LABELS = ESTADO_SESION_LABELS;
@@ -79,7 +85,9 @@ export class AgendaComponent implements OnInit {
     this.isLoading.set(true);
     const fechaISO = this.formatearFechaISO(this.fechaSeleccionada());
 
-    this.sesionesSvc.getCalendarioDiario(fechaISO).subscribe({
+    this.sesionesSvc.getCalendarioDiario(fechaISO)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
       next: (calendario) => {
         // ✅ Mapeo simple sin preocuparnos por tipos estrictos
         const sesionesFormateadas = calendario.sesiones.map((s) => ({
@@ -149,16 +157,8 @@ export class AgendaComponent implements OnInit {
     );
   }
 
-  completarSesion(id: string) {
-    this.sesionesSvc
-      .completarSesion(id, { notas: 'Sesión completada desde agenda' })
-      .subscribe({
-        next: () => {
-          console.log('✅ Sesión completada');
-          this.loadSesiones();
-        },
-        error: (err) => console.error('❌ Error:', err),
-      });
+  abrirCompletar(sesion: SesionData, event: Event) {
+    this.accionesSvc.abrirCompletar(sesion, event, () => this.loadSesiones());
   }
 
   onFilaClick(sesion: SesionData) {
@@ -166,13 +166,8 @@ export class AgendaComponent implements OnInit {
     this.router.navigate(['/home/listado', sesion.clienteId, 'cliente']);
   }
 
-  cancelarSesion(id: string, conAviso: boolean = true) {
-    if (!confirm('¿Estás seguro de cancelar esta sesión?')) return;
-
-    this.sesionesSvc.cancelarSesion(id, conAviso).subscribe({
-      next: () => this.loadSesiones(),
-      error: (err) => console.error('❌ Error:', err),
-    });
+  abrirCancelar(sesion: SesionData, event: Event) {
+    this.accionesSvc.abrirCancelar(sesion, event, () => this.loadSesiones());
   }
 
   refrescar() {
