@@ -12,6 +12,7 @@ import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../services/auth.service';
 import {
   EstadoSesion,
+  TipoSesion,
   SesionData,
   TIPO_SESION_LABELS,
   ESTADO_SESION_LABELS,
@@ -48,8 +49,8 @@ export class AgendaComponent implements OnInit {
   private notifSvc = inject(NotificacionesService);
   private destroyRef = inject(DestroyRef);
 
-  readonly TIPO_SESION_LABELS = TIPO_SESION_LABELS;
-  readonly ESTADO_SESION_LABELS = ESTADO_SESION_LABELS;
+  readonly TIPO_SESION_LABELS: any = TIPO_SESION_LABELS;
+  readonly ESTADO_SESION_LABELS: any = ESTADO_SESION_LABELS;
   readonly EstadoSesion = EstadoSesion;
 
   // Estado principal
@@ -83,8 +84,8 @@ export class AgendaComponent implements OnInit {
         s.horaInicio,
       ).toISOString(),
       fechaHoraFin: this.parseHoraToDate(cal.fecha, s.horaFin).toISOString(),
-      estado: s.estado,
-      tipoSesion: s.tipoSesion,
+      estado: s.estado as EstadoSesion,
+      tipoSesion: s.tipoSesion as TipoSesion,
       cliente: s.cliente,
       clienteId: s.cliente.id,
       trabajadorId: this.auth.currentTrabajadorId() ?? '',

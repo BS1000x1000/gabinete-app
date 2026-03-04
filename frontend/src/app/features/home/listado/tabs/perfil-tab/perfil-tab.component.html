@@ -1,0 +1,265 @@
+<div class="perfil-tab">
+  <div class="perfil-grid">
+
+    <!-- ══════════════════════════════
+         DATOS PERSONALES
+    ══════════════════════════════ -->
+    <div class="perfil-card">
+      <div class="perfil-card-hdr">
+        <span class="perfil-card-icon" style="background: #ede9fc; color: #7c6fd6;">
+          <i class="bi bi-person-fill"></i>
+        </span>
+        <h3 class="perfil-card-title">Datos personales</h3>
+        <button class="perfil-edit-btn" (click)="openDrawer('personal')" type="button">
+          <i class="bi bi-pencil"></i> Editar
+        </button>
+      </div>
+      <div class="perfil-card-body">
+        <div class="dato-row">
+          <span class="dato-label">Fecha nac.</span>
+          <span class="dato-valor">{{ cliente()?.fechaNacimiento | date: 'dd/MM/yyyy' }}</span>
+        </div>
+        <div class="dato-row" *ngIf="cliente()?.dni">
+          <span class="dato-label">DNI</span>
+          <span class="dato-valor">{{ cliente()?.dni }}</span>
+        </div>
+        <div class="dato-row" *ngIf="cliente()?.domicilio">
+          <span class="dato-label">Domicilio</span>
+          <span class="dato-valor">{{ cliente()?.domicilio }}</span>
+        </div>
+        <div class="dato-row" *ngIf="cliente()?.ciudad">
+          <span class="dato-label">Ciudad</span>
+          <span class="dato-valor">
+            {{ cliente()?.ciudad }}<span *ngIf="cliente()?.provincia">, {{ cliente()?.provincia }}</span>
+          </span>
+        </div>
+        <div class="dato-row">
+          <span class="dato-label">Alta en gabinete</span>
+          <span class="dato-valor">{{ cliente()?.fechaInicio | date: 'dd/MM/yyyy' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════
+         INFORMACIÓN MÉDICA
+    ══════════════════════════════ -->
+    <div class="perfil-card">
+      <div class="perfil-card-hdr">
+        <span class="perfil-card-icon" style="background: #fee2e2; color: #ef4444;">
+          <i class="bi bi-heart-pulse-fill"></i>
+        </span>
+        <h3 class="perfil-card-title">Información médica</h3>
+        <button class="perfil-edit-btn" (click)="openDrawer('sanitario')" type="button">
+          <i class="bi bi-pencil"></i> Editar
+        </button>
+      </div>
+      <div class="perfil-card-body">
+        <div *ngIf="!sanitario()" class="perfil-empty">
+          <i class="bi bi-clipboard-x mb-2 d-block fs-4 opacity-25"></i>
+          Sin datos médicos registrados
+        </div>
+        <ng-container *ngIf="sanitario()">
+          <div *ngIf="sanitario()?.alergias" class="perfil-alert-chip chip-danger mb-2">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+            <strong>Alergias: </strong>{{ sanitario()?.alergias }}
+          </div>
+          <div *ngIf="sanitario()?.medicacion" class="perfil-alert-chip chip-info mb-2">
+            <i class="bi bi-capsule me-1"></i>
+            <strong>Medicación: </strong>{{ sanitario()?.medicacion }}
+          </div>
+          <div class="dato-row" *ngIf="sanitario()?.diagnostico">
+            <span class="dato-label">Diagnóstico</span>
+            <span class="dato-valor">{{ sanitario()?.diagnostico }}</span>
+          </div>
+          <div class="dato-row" *ngIf="sanitario()?.centroSalud">
+            <span class="dato-label">Centro salud</span>
+            <span class="dato-valor">{{ sanitario()?.centroSalud }}</span>
+          </div>
+          <div class="dato-row" *ngIf="sanitario()?.tratamientos">
+            <span class="dato-label">Tratamientos</span>
+            <span class="dato-valor">{{ sanitario()?.tratamientos }}</span>
+          </div>
+          <div class="dato-row" *ngIf="sanitario()?.especialistas?.length">
+            <span class="dato-label">Especialistas</span>
+            <span class="dato-valor">{{ sanitario()?.especialistas?.join(', ') }}</span>
+          </div>
+          <div class="dato-row">
+            <span class="dato-label">Adaptaciones</span>
+            <span class="dato-valor">
+              <span class="mini-badge" [class.badge-yes]="sanitario()?.adaptaciones" [class.badge-no]="!sanitario()?.adaptaciones">
+                {{ sanitario()?.adaptaciones ? 'Sí' : 'No' }}
+              </span>
+              <span *ngIf="sanitario()?.adaptaciones && sanitario()?.tipoAdaptaciones" class="ms-1 text-muted small">
+                — {{ sanitario()?.tipoAdaptaciones }}
+              </span>
+            </span>
+          </div>
+          <div class="dato-row">
+            <span class="dato-label">Apoyos</span>
+            <span class="dato-valor">
+              <span class="mini-badge" [class.badge-yes]="sanitario()?.apoyos" [class.badge-no]="!sanitario()?.apoyos">
+                {{ sanitario()?.apoyos ? 'Sí' : 'No' }}
+              </span>
+            </span>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════
+         FAMILIA
+    ══════════════════════════════ -->
+    <div class="perfil-card">
+      <div class="perfil-card-hdr">
+        <span class="perfil-card-icon" style="background: #dbeafe; color: #3b82f6;">
+          <i class="bi bi-people-fill"></i>
+        </span>
+        <h3 class="perfil-card-title">
+          Familia
+          <span *ngIf="familiares().length" class="count-badge ms-2">{{ familiares().length }}</span>
+        </h3>
+        <button class="perfil-edit-btn" (click)="openDrawer('contactos')" type="button">
+          <i class="bi bi-pencil"></i> Editar
+        </button>
+      </div>
+      <div class="perfil-card-body">
+        <div *ngIf="!familiares()?.length" class="perfil-empty">
+          <i class="bi bi-person-x mb-2 d-block fs-4 opacity-25"></i>
+          Sin contactos familiares
+        </div>
+        <div *ngFor="let c of familiares(); let last = last" class="contacto-card" [class.mb-0]="last">
+          <div class="contacto-header">
+            <span class="contacto-nombre">{{ c.nombre }} {{ c.apellidos }}</span>
+            <span class="contacto-rol">{{ c.parentesco }}</span>
+          </div>
+          <div class="info-rows mt-1">
+            <div class="info-row" *ngIf="c.telefono">
+              <span class="info-label"><i class="bi bi-phone"></i></span>
+              <span class="info-value">{{ c.telefono }}</span>
+            </div>
+            <div class="info-row" *ngIf="c.email">
+              <span class="info-label"><i class="bi bi-envelope"></i></span>
+              <span class="info-value small">{{ c.email }}</span>
+            </div>
+            <div class="info-row" *ngIf="c.dni">
+              <span class="info-label"><i class="bi bi-card-text"></i></span>
+              <span class="info-value">{{ c.dni }}</span>
+            </div>
+          </div>
+          <div class="contacto-badges mt-1">
+            <span *ngIf="c.esContactoPrincipal" class="mini-badge badge-primary">Principal</span>
+            <span *ngIf="c.esResponsablePago" class="mini-badge badge-success">Pago</span>
+            <span *ngIf="c.whatsapp" class="mini-badge badge-whatsapp">
+              <i class="bi bi-whatsapp me-1"></i>WA
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════
+         COLEGIO
+    ══════════════════════════════ -->
+    <div class="perfil-card">
+      <div class="perfil-card-hdr">
+        <span class="perfil-card-icon" style="background: #d1fae5; color: #10b981;">
+          <i class="bi bi-building"></i>
+        </span>
+        <h3 class="perfil-card-title">Colegio</h3>
+        <button class="perfil-edit-btn" (click)="openDrawer('colegio')" type="button">
+          <i class="bi bi-pencil"></i> Editar
+        </button>
+      </div>
+      <div class="perfil-card-body">
+        <div *ngIf="!colegio()" class="perfil-empty">
+          <i class="bi bi-building-x mb-2 d-block fs-4 opacity-25"></i>
+          Sin colegio registrado
+        </div>
+        <ng-container *ngIf="colegio()">
+          <div class="dato-row">
+            <span class="dato-label">Centro</span>
+            <span class="dato-valor fw-semibold">{{ colegio()?.nombreDelCentro }}</span>
+          </div>
+          <div class="dato-row" *ngIf="colegio()?.cursoEscolar">
+            <span class="dato-label">Curso</span>
+            <span class="dato-valor">{{ colegio()?.cursoEscolar }}</span>
+          </div>
+          <div class="dato-row" *ngIf="colegio()?.direccionColegio">
+            <span class="dato-label">Dirección</span>
+            <span class="dato-valor">{{ colegio()?.direccionColegio }}</span>
+          </div>
+          <div *ngIf="colegio()?.ctoColegioUno" class="perfil-subsection">
+            <div class="perfil-subsection-title">Contacto principal</div>
+            <div class="dato-row">
+              <span class="dato-label">Nombre</span>
+              <span class="dato-valor">
+                {{ colegio()?.ctoColegioUno }}
+                <span *ngIf="colegio()?.ctoRelacionColegioUno" class="text-muted ms-1 small">({{ colegio()?.ctoRelacionColegioUno }})</span>
+              </span>
+            </div>
+            <div class="dato-row" *ngIf="colegio()?.ctoTelefonoUno">
+              <span class="dato-label"><i class="bi bi-phone"></i></span>
+              <span class="dato-valor">{{ colegio()?.ctoTelefonoUno }}</span>
+            </div>
+            <div class="dato-row" *ngIf="colegio()?.ctoEmailColegioUno">
+              <span class="dato-label"><i class="bi bi-envelope"></i></span>
+              <span class="dato-valor small">{{ colegio()?.ctoEmailColegioUno }}</span>
+            </div>
+          </div>
+          <div *ngIf="colegio()?.ctoColegioDos" class="perfil-subsection">
+            <div class="perfil-subsection-title">Contacto secundario</div>
+            <div class="dato-row">
+              <span class="dato-label">Nombre</span>
+              <span class="dato-valor">
+                {{ colegio()?.ctoColegioDos }}
+                <span *ngIf="colegio()?.ctoRelacionColegioDos" class="text-muted ms-1 small">({{ colegio()?.ctoRelacionColegioDos }})</span>
+              </span>
+            </div>
+            <div class="dato-row" *ngIf="colegio()?.ctoTelefonoDos">
+              <span class="dato-label"><i class="bi bi-phone"></i></span>
+              <span class="dato-valor">{{ colegio()?.ctoTelefonoDos }}</span>
+            </div>
+            <div class="dato-row" *ngIf="colegio()?.ctoEmailColegioDos">
+              <span class="dato-label"><i class="bi bi-envelope"></i></span>
+              <span class="dato-valor small">{{ colegio()?.ctoEmailColegioDos }}</span>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════
+         PROFESIONALES (full width)
+    ══════════════════════════════ -->
+    <div class="perfil-card perfil-card-full">
+      <div class="perfil-card-hdr">
+        <span class="perfil-card-icon" style="background: #fef3c7; color: #f59e0b;">
+          <i class="bi bi-person-badge-fill"></i>
+        </span>
+        <h3 class="perfil-card-title">Profesionales asignados</h3>
+      </div>
+      <div class="perfil-card-body">
+        <div *ngIf="!clienteRaw()?.trabajadoresAsignados?.length" class="perfil-empty">
+          <i class="bi bi-person-slash mb-2 d-block fs-4 opacity-25"></i>
+          Sin profesionales asignados
+        </div>
+        <div class="perfil-terapeutas-grid">
+          <div *ngFor="let ta of clienteRaw()?.trabajadoresAsignados" class="terapeuta-card">
+            <div class="terapeuta-avatar">
+              {{ ta.trabajador.nombre.charAt(0) }}{{ ta.trabajador.apellidos.charAt(0) }}
+            </div>
+            <div class="terapeuta-info">
+              <div class="terapeuta-nombre">{{ ta.trabajador.nombre }} {{ ta.trabajador.apellidos }}</div>
+              <div *ngIf="ta.tipoTerapia" class="terapeuta-tipo">{{ ta.tipoTerapia }}</div>
+              <div class="terapeuta-email">{{ ta.trabajador.email }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Drawer de edición — posición fija, fuera del flujo -->
+<app-cliente-drawer></app-cliente-drawer>

@@ -1,4 +1,4 @@
-<div class="listado-wrapper position-relative">
+<div class="ficha-wrapper">
 
   <!-- Loader -->
   <div *ngIf="isLoading()" class="loader-overlay">
@@ -11,373 +11,96 @@
   <!-- Error -->
   <div
     *ngIf="error()"
-    class="alert alert-danger alert-dismissible fade show position-absolute top-0 start-0 end-0 m-3"
+    class="alert alert-danger alert-dismissible fade show m-3"
     role="alert"
-    style="z-index: 100;"
   >
     <i class="bi bi-exclamation-triangle-fill me-2"></i>
     <strong>Error:</strong> {{ error() }}
     <button type="button" class="btn-close" (click)="error.set(null)"></button>
   </div>
 
-  <!-- ============================================================
-       ASIDE IZQUIERDO — Ficha completa del alumno
-  ============================================================ -->
-  <aside
-    class="left-panel bg-white rounded-3 shadow-sm"
-    [class.opacity-50]="isLoading()"
-    *ngIf="cliente()"
-  >
+  <ng-container *ngIf="!isLoading() && cliente()">
 
-    <!-- ── Cabecera: avatar + nombre + badges críticos ── -->
-    <div class="aside-header">
-      <div class="avatar-wrapper">
-        <div class="avatar-lg rounded-circle text-white d-flex align-items-center justify-content-center fw-bold fs-3">
-          {{ cliente()?.nombre?.charAt(0) || '' }}{{ cliente()?.apellidos?.charAt(0) || '' }}
-        </div>
-        <span class="age-badge">{{ cliente()?.edadTexto || "?" }}</span>
+    <!-- ══════════════════════════════════════════════════
+         CABECERA DEL CLIENTE
+    ══════════════════════════════════════════════════ -->
+    <div class="ficha-header bg-white rounded-3 shadow-sm">
+
+      <!-- Avatar -->
+      <div class="ficha-avatar-wrap">
+        <div class="ficha-avatar-circle">{{ initials() }}</div>
+        <span class="age-badge">{{ cliente()?.edadTexto || '?' }}</span>
       </div>
 
-      <h5 class="aside-name">
-        {{ cliente()?.apellidos ? cliente()?.apellidos + ', ' + cliente()?.nombre : cliente()?.nombre }}
-      </h5>
-
-      <div class="aside-meta">
-        <span *ngIf="clienteRaw()?.curso" class="meta-chip">
-          <i class="bi bi-mortarboard me-1"></i>{{ clienteRaw()?.curso }}
-        </span>
-        <span class="meta-chip" [class.chip-active]="clienteRaw()?.activo" [class.chip-inactive]="!clienteRaw()?.activo">
-          <i class="bi bi-circle-fill me-1" style="font-size: 0.55rem;"></i>
-          {{ clienteRaw()?.activo ? 'Activo' : 'Inactivo' }}
-        </span>
-      </div>
-
-      <!-- Alertas críticas siempre visibles -->
-      <div *ngIf="sanitario()?.alergias" class="critical-alert alert-alergias">
-        <i class="bi bi-exclamation-triangle-fill me-1"></i>
-        <strong>Alergias: </strong>{{ sanitario()?.alergias }}
-      </div>
-      <div *ngIf="sanitario()?.medicacion" class="critical-alert alert-medicacion">
-        <i class="bi bi-capsule me-1"></i>
-        <strong>Medicación: </strong>{{ sanitario()?.medicacion }}
-      </div>
-    </div>
-
-    <!-- ── Secciones colapsables ── -->
-    <div class="aside-sections">
-
-      <!-- 1. Datos personales -->
-      <div class="aside-section">
-        <div class="section-toggle-row">
-          <button
-            class="section-toggle"
-            (click)="toggleSeccion('personal')"
-            [class.open]="isOpen('personal')"
-            type="button"
+      <!-- Nombre + chips -->
+      <div class="ficha-info">
+        <h1 class="ficha-nombre">{{ fullName() }}</h1>
+        <div class="ficha-chips">
+          <span
+            class="fchip"
+            [class.fchip-active]="clienteRaw()?.activo"
+            [class.fchip-inactive]="!clienteRaw()?.activo"
           >
-            <span class="toggle-left">
-              <i class="bi bi-person-fill"></i>
-              Datos personales
-            </span>
-            <i class="bi bi-chevron-down toggle-chevron"></i>
-          </button>
-          <button class="section-edit-btn" type="button" (click)="openDrawer('personal')" title="Editar">
-            <i class="bi bi-pencil"></i>
-          </button>
-        </div>
-        <div class="section-body" [class.expanded]="isOpen('personal')">
-          <div class="info-rows">
-            <div class="info-row">
-              <span class="info-label">Fecha nac.</span>
-              <span class="info-value">{{ cliente()?.fechaNacimiento | date: 'dd/MM/yyyy' }}</span>
-            </div>
-            <div class="info-row" *ngIf="cliente()?.dni">
-              <span class="info-label">DNI</span>
-              <span class="info-value">{{ cliente()?.dni }}</span>
-            </div>
-            <div class="info-row" *ngIf="cliente()?.domicilio">
-              <span class="info-label">Domicilio</span>
-              <span class="info-value">{{ cliente()?.domicilio }}</span>
-            </div>
-            <div class="info-row" *ngIf="cliente()?.ciudad">
-              <span class="info-label">Ciudad</span>
-              <span class="info-value">{{ cliente()?.ciudad }}<span *ngIf="cliente()?.provincia">, {{ cliente()?.provincia }}</span></span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Inicio</span>
-              <span class="info-value">{{ cliente()?.fechaInicio | date: 'dd/MM/yyyy' }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 2. Sanitario -->
-      <div class="aside-section">
-        <div class="section-toggle-row">
-          <button
-            class="section-toggle"
-            (click)="toggleSeccion('sanitario')"
-            [class.open]="isOpen('sanitario')"
-            type="button"
-          >
-            <span class="toggle-left">
-              <i class="bi bi-heart-pulse-fill"></i>
-              Información médica
-            </span>
-            <i class="bi bi-chevron-down toggle-chevron"></i>
-          </button>
-          <button class="section-edit-btn" type="button" (click)="openDrawer('sanitario')" title="Editar">
-            <i class="bi bi-pencil"></i>
-          </button>
-        </div>
-        <div class="section-body" [class.expanded]="isOpen('sanitario')">
-          <div *ngIf="!sanitario()" class="empty-section">Sin datos registrados</div>
-          <div *ngIf="sanitario()" class="info-rows">
-            <div class="info-row" *ngIf="sanitario()?.diagnostico">
-              <span class="info-label">Diagnóstico</span>
-              <span class="info-value">{{ sanitario()?.diagnostico }}</span>
-            </div>
-            <div class="info-row" *ngIf="sanitario()?.centroSalud">
-              <span class="info-label">Centro salud</span>
-              <span class="info-value">{{ sanitario()?.centroSalud }}</span>
-            </div>
-            <div class="info-row" *ngIf="sanitario()?.tratamientos">
-              <span class="info-label">Tratamientos</span>
-              <span class="info-value">{{ sanitario()?.tratamientos }}</span>
-            </div>
-            <div class="info-row" *ngIf="sanitario()?.especialistas?.length">
-              <span class="info-label">Especialistas</span>
-              <span class="info-value">{{ sanitario()?.especialistas?.join(', ') }}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Adaptaciones</span>
-              <span class="info-value">
-                <span class="mini-badge" [class.badge-yes]="sanitario()?.adaptaciones" [class.badge-no]="!sanitario()?.adaptaciones">
-                  {{ sanitario()?.adaptaciones ? 'Sí' : 'No' }}
-                </span>
-                <span *ngIf="sanitario()?.adaptaciones && sanitario()?.tipoAdaptaciones" class="ms-1 text-muted small">
-                  — {{ sanitario()?.tipoAdaptaciones }}
-                </span>
-              </span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Apoyos</span>
-              <span class="info-value">
-                <span class="mini-badge" [class.badge-yes]="sanitario()?.apoyos" [class.badge-no]="!sanitario()?.apoyos">
-                  {{ sanitario()?.apoyos ? 'Sí' : 'No' }}
-                </span>
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 3. Contactos familiares -->
-      <div class="aside-section">
-        <div class="section-toggle-row">
-          <button
-            class="section-toggle"
-            (click)="toggleSeccion('contactos')"
-            [class.open]="isOpen('contactos')"
-            type="button"
-          >
-            <span class="toggle-left">
-              <i class="bi bi-people-fill"></i>
-              Familia
-              <span *ngIf="familiares()?.length" class="count-badge">{{ familiares()?.length }}</span>
-            </span>
-            <i class="bi bi-chevron-down toggle-chevron"></i>
-          </button>
-          <button class="section-edit-btn" type="button" (click)="openDrawer('contactos')" title="Editar">
-            <i class="bi bi-pencil"></i>
-          </button>
-        </div>
-        <div class="section-body" [class.expanded]="isOpen('contactos')">
-          <div *ngIf="!familiares()?.length" class="empty-section">Sin contactos registrados</div>
-          <div *ngFor="let c of familiares(); let last = last" class="contacto-card" [class.mb-0]="last">
-            <div class="contacto-header">
-              <span class="contacto-nombre">{{ c.nombre }} {{ c.apellidos }}</span>
-              <span class="contacto-rol">{{ c.parentesco }}</span>
-            </div>
-            <div class="info-rows mt-1">
-              <div class="info-row" *ngIf="c.telefono">
-                <span class="info-label"><i class="bi bi-phone"></i></span>
-                <span class="info-value">{{ c.telefono }}</span>
-              </div>
-              <div class="info-row" *ngIf="c.email">
-                <span class="info-label"><i class="bi bi-envelope"></i></span>
-                <span class="info-value small">{{ c.email }}</span>
-              </div>
-              <div class="info-row" *ngIf="c.dni">
-                <span class="info-label"><i class="bi bi-card-text"></i></span>
-                <span class="info-value">{{ c.dni }}</span>
-              </div>
-            </div>
-            <div class="contacto-badges mt-1">
-              <span *ngIf="c.esContactoPrincipal" class="mini-badge badge-primary">Principal</span>
-              <span *ngIf="c.esResponsablePago" class="mini-badge badge-success">Pago</span>
-              <span *ngIf="c.whatsapp" class="mini-badge badge-whatsapp"><i class="bi bi-whatsapp me-1"></i>WA</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 4. Colegio -->
-      <div class="aside-section">
-        <div class="section-toggle-row">
-          <button
-            class="section-toggle"
-            (click)="toggleSeccion('colegio')"
-            [class.open]="isOpen('colegio')"
-            type="button"
-          >
-            <span class="toggle-left">
-              <i class="bi bi-building"></i>
-              Colegio
-            </span>
-            <i class="bi bi-chevron-down toggle-chevron"></i>
-          </button>
-          <button class="section-edit-btn" type="button" (click)="openDrawer('colegio')" title="Editar">
-            <i class="bi bi-pencil"></i>
-          </button>
-        </div>
-        <div class="section-body" [class.expanded]="isOpen('colegio')">
-          <div *ngIf="!colegio()" class="empty-section">Sin colegio registrado</div>
-          <div *ngIf="colegio()" class="info-rows">
-            <div class="info-row">
-              <span class="info-label">Centro</span>
-              <span class="info-value fw-medium">{{ colegio()?.nombreDelCentro }}</span>
-            </div>
-            <div class="info-row" *ngIf="colegio()?.cursoEscolar">
-              <span class="info-label">Curso</span>
-              <span class="info-value">{{ colegio()?.cursoEscolar }}</span>
-            </div>
-            <div class="info-row" *ngIf="colegio()?.direccionColegio">
-              <span class="info-label">Dirección</span>
-              <span class="info-value">{{ colegio()?.direccionColegio }}</span>
-            </div>
-            <div *ngIf="colegio()?.ctoColegioUno" class="mt-2">
-              <div class="info-sublabel">Contacto principal</div>
-              <div class="info-rows">
-                <div class="info-row">
-                  <span class="info-label">Nombre</span>
-                  <span class="info-value">{{ colegio()?.ctoColegioUno }}</span>
-                </div>
-                <div class="info-row" *ngIf="colegio()?.ctoRelacionColegioUno">
-                  <span class="info-label">Cargo</span>
-                  <span class="info-value">{{ colegio()?.ctoRelacionColegioUno }}</span>
-                </div>
-                <div class="info-row" *ngIf="colegio()?.ctoTelefonoUno">
-                  <span class="info-label"><i class="bi bi-phone"></i></span>
-                  <span class="info-value">{{ colegio()?.ctoTelefonoUno }}</span>
-                </div>
-                <div class="info-row" *ngIf="colegio()?.ctoEmailColegioUno">
-                  <span class="info-label"><i class="bi bi-envelope"></i></span>
-                  <span class="info-value small">{{ colegio()?.ctoEmailColegioUno }}</span>
-                </div>
-              </div>
-            </div>
-            <div *ngIf="colegio()?.ctoColegioDos" class="mt-2">
-              <div class="info-sublabel">Contacto secundario</div>
-              <div class="info-rows">
-                <div class="info-row">
-                  <span class="info-label">Nombre</span>
-                  <span class="info-value">{{ colegio()?.ctoColegioDos }}</span>
-                </div>
-                <div class="info-row" *ngIf="colegio()?.ctoRelacionColegioDos">
-                  <span class="info-label">Cargo</span>
-                  <span class="info-value">{{ colegio()?.ctoRelacionColegioDos }}</span>
-                </div>
-                <div class="info-row" *ngIf="colegio()?.ctoTelefonoDos">
-                  <span class="info-label"><i class="bi bi-phone"></i></span>
-                  <span class="info-value">{{ colegio()?.ctoTelefonoDos }}</span>
-                </div>
-                <div class="info-row" *ngIf="colegio()?.ctoEmailColegioDos">
-                  <span class="info-label"><i class="bi bi-envelope"></i></span>
-                  <span class="info-value small">{{ colegio()?.ctoEmailColegioDos }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 5. Terapeutas -->
-      <div class="aside-section">
-        <button
-          class="section-toggle"
-          (click)="toggleSeccion('terapeutas')"
-          [class.open]="isOpen('terapeutas')"
-          type="button"
-        >
-          <span class="toggle-left">
-            <i class="bi bi-person-badge-fill"></i>
-            Profesionales
+            <i class="bi bi-circle-fill me-1" style="font-size: 0.45rem;"></i>
+            {{ clienteRaw()?.activo ? 'Activo' : 'Inactivo' }}
           </span>
-          <i class="bi bi-chevron-down toggle-chevron"></i>
-        </button>
-        <div class="section-body" [class.expanded]="isOpen('terapeutas')">
-          <div *ngIf="!clienteRaw()?.trabajadoresAsignados?.length" class="empty-section">
-            Sin profesionales asignados
-          </div>
-          <div *ngFor="let ta of clienteRaw()?.trabajadoresAsignados; let last = last" class="contacto-card" [class.mb-0]="last">
-            <div class="contacto-header">
-              <span class="contacto-nombre">{{ ta.trabajador.nombre }} {{ ta.trabajador.apellidos }}</span>
-              <span class="contacto-rol" *ngIf="ta.tipoTerapia">{{ ta.tipoTerapia }}</span>
-            </div>
-            <div class="info-row mt-1">
-              <span class="info-label"><i class="bi bi-envelope"></i></span>
-              <span class="info-value small">{{ ta.trabajador.email }}</span>
-            </div>
-          </div>
-          <!-- Botón para ir a gestión completa en el panel derecho -->
-          <a
-            class="btn-manage-section"
-            [routerLink]="['./terapeutas']"
-            routerLinkActive="btn-manage-active"
-          >
-            <i class="bi bi-gear-fill me-1"></i>Gestionar profesionales
-          </a>
+          <span *ngIf="clienteRaw()?.curso" class="fchip">
+            <i class="bi bi-mortarboard me-1"></i>{{ clienteRaw()?.curso }}
+          </span>
+          <span *ngIf="cliente()?.fechaInicio" class="fchip">
+            <i class="bi bi-calendar3 me-1"></i>Desde {{ cliente()?.fechaInicio | date: 'MMM yyyy' }}
+          </span>
         </div>
       </div>
 
-    </div><!-- /aside-sections -->
-
-    <!-- ── Acciones rápidas ── -->
-    <div class="aside-actions">
-      <button class="btn btn-sm btn-outline-secondary w-100" type="button">
-        <i class="bi bi-printer me-2"></i>Imprimir ficha
-      </button>
-    </div>
-
-  </aside>
-
-  <!-- ============================================================
-       PANEL DERECHO — Trabajo activo (3 tabs)
-  ============================================================ -->
-  <section class="right-panel bg-white rounded-3 shadow-sm" *ngIf="!isLoading()">
-
-    <!-- Tabs -->
-    <div class="work-tabs">
-      <a
-        *ngFor="let tab of workTabs"
-        class="work-tab"
-        [routerLink]="['./', tab.target]"
-        routerLinkActive="active"
+      <!-- Alertas críticas -->
+      <div
+        class="ficha-alerts-zone"
+        *ngIf="sanitario()?.alergias || sanitario()?.medicacion"
       >
-        <i class="bi" [ngClass]="tab.icon"></i>
-        <span>{{ tab.label }}</span>
-      </a>
+        <div *ngIf="sanitario()?.alergias" class="ficha-alert ficha-alert-danger">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+          <div>
+            <strong>Alergias</strong>
+            <span>{{ sanitario()?.alergias }}</span>
+          </div>
+        </div>
+        <div *ngIf="sanitario()?.medicacion" class="ficha-alert ficha-alert-info">
+          <i class="bi bi-capsule"></i>
+          <div>
+            <strong>Medicación</strong>
+            <span>{{ sanitario()?.medicacion }}</span>
+          </div>
+        </div>
+      </div>
+
     </div>
 
-    <!-- Contenido -->
-    <div class="tab-content-wrapper">
-      <router-outlet></router-outlet>
+    <!-- ══════════════════════════════════════════════════
+         PANEL PRINCIPAL — 5 TABS
+    ══════════════════════════════════════════════════ -->
+    <div class="ficha-panel bg-white rounded-3 shadow-sm">
+
+      <!-- Tab nav -->
+      <nav class="ficha-tabs">
+        <a
+          *ngFor="let tab of workTabs"
+          class="ficha-tab"
+          [routerLink]="['./', tab.target]"
+          routerLinkActive="active"
+        >
+          <i class="bi" [ngClass]="tab.icon"></i>
+          <span>{{ tab.label }}</span>
+        </a>
+      </nav>
+
+      <!-- Contenido -->
+      <div class="ficha-tab-body">
+        <router-outlet></router-outlet>
+      </div>
+
     </div>
 
-  </section>
+  </ng-container>
 
 </div>
-
-<!-- Drawer de edición — fuera del grid, a nivel de página -->
-<app-cliente-drawer></app-cliente-drawer>

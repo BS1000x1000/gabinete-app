@@ -6,19 +6,29 @@ export default [
     path: '',
     component: ListadoComponent,
     children: [
-      // Redirige por defecto a registro (uso más frecuente del día a día)
-      { path: '', redirectTo: 'registro', pathMatch: 'full' },
+      // Por defecto: sesiones (tarea más frecuente del día a día)
+      { path: '', redirectTo: 'sesiones', pathMatch: 'full' },
 
-      // ── 3 tabs de trabajo activo ──
+      // ── 5 tabs de la ficha ──
       {
-        path: 'registro',
+        path: 'perfil',
         loadComponent: () =>
-          import('./tabs/registro-tab/registro-tab.component'),
+          import('./tabs/perfil-tab/perfil-tab.component'),
       },
       {
-        path: 'objetivos',
+        path: 'sesiones',
         loadComponent: () =>
-          import('./tabs/objetivos-tab/objetivos-tab.component'),
+          import('./tabs/sesiones-tab/sesiones-tab.component'),
+      },
+      {
+        path: 'bonos',
+        loadComponent: () =>
+          import('../../../components/bonos/bonos-tab/bonos-tab.component'),
+      },
+      {
+        path: 'progreso',
+        loadComponent: () =>
+          import('./tabs/progreso-tab/progreso-tab.component'),
       },
       {
         path: 'informes',
@@ -26,29 +36,20 @@ export default [
           import('./tabs/informes-tab/informes-tab.component'),
       },
 
-      {
-        path: 'sesiones',
-        loadComponent: () =>
-          import('./tabs/sesiones-tab/sesiones-tab.component'),
-      },
-
-      {
-        path: 'bonos',
-        loadComponent: () =>
-          import('../../../components/bonos/bonos-tab/bonos-tab.component'),
-      },
-
+      // ── Rutas de soporte (no aparecen en el tab bar) ──
       {
         path: 'terapeutas',
         loadComponent: () =>
           import('./tabs/trabajador-tab/trabajador-tab.component'),
       },
 
-      // ── Rutas legacy mantenidas para compatibilidad ──
-      { path: 'cliente', redirectTo: 'registro', pathMatch: 'full' },
-      { path: 'contactos', redirectTo: 'registro', pathMatch: 'full' },
-      { path: 'colegio', redirectTo: 'registro', pathMatch: 'full' },
-      { path: 'sanitario', redirectTo: 'registro', pathMatch: 'full' },
+      // ── Redirects de rutas legacy ──
+      { path: 'registro',   redirectTo: 'progreso', pathMatch: 'full' },
+      { path: 'objetivos',  redirectTo: 'progreso', pathMatch: 'full' },
+      { path: 'cliente',    redirectTo: 'perfil',   pathMatch: 'full' },
+      { path: 'contactos',  redirectTo: 'perfil',   pathMatch: 'full' },
+      { path: 'colegio',    redirectTo: 'perfil',   pathMatch: 'full' },
+      { path: 'sanitario',  redirectTo: 'perfil',   pathMatch: 'full' },
     ],
   },
 ] as Route[];

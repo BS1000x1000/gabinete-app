@@ -1,0 +1,31 @@
+<div class="progreso-tab">
+
+  <!-- Sub-navegación -->
+  <div class="progreso-subnav">
+    <button
+      class="progreso-subbtn"
+      [class.active]="vista() === 'registro'"
+      (click)="vista.set('registro')"
+      type="button"
+    >
+      <i class="bi bi-journal-text"></i>
+      Seguimiento diario
+    </button>
+    <button
+      class="progreso-subbtn"
+      [class.active]="vista() === 'objetivos'"
+      (click)="vista.set('objetivos')"
+      type="button"
+    >
+      <i class="bi bi-bullseye"></i>
+      Objetivos GAS
+    </button>
+  </div>
+
+  <!-- Contenido -->
+  <div class="progreso-body">
+    <app-registro-tab *ngIf="vista() === 'registro'"></app-registro-tab>
+    <app-objetivos-tab *ngIf="vista() === 'objetivos'"></app-objetivos-tab>
+  </div>
+
+</div>
