@@ -1,159 +1,273 @@
 <div class="clientes-container">
-  
+
   <!-- Header -->
   <div class="clientes-header">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <div>
-        <h2 class="mb-1">
-          <i class="bi bi-people me-2"></i>
-          Mis Clientes
-        </h2>
-        <p class="text-muted mb-0">
-          {{ estadisticas().total }} clientes totales
-          · {{ estadisticas().activos }} activos
-        </p>
+    <div class="header-top">
+      <div class="header-info">
+        <h2>Clientes</h2>
+        <div class="header-stats">
+          <span class="stat-chip stat-total">
+            <i class="bi bi-people"></i>
+            {{ estadisticas().total }} totales
+          </span>
+          <span class="stat-chip stat-activos">
+            <i class="bi bi-check-circle"></i>
+            {{ estadisticas().activos }} activos
+          </span>
+          <span class="stat-chip stat-pausados" *ngIf="estadisticas().pausados > 0">
+            <i class="bi bi-pause-circle"></i>
+            {{ estadisticas().pausados }} pausados
+          </span>
+        </div>
       </div>
-      <button class="btn btn-primary" (click)="nuevoCliente()">
-        <i class="bi bi-plus-lg me-2"></i>
-        Nuevo Cliente
+      <button class="btn-nuevo-cliente" (click)="nuevoCliente()">
+        <i class="bi bi-plus-lg"></i>
+        Nuevo cliente
       </button>
     </div>
 
     <!-- Filtros -->
-    <div class="filtros-row row g-3 mb-4">
-      <div class="col-md-4">
-        <div class="search-box">
-          <i class="bi bi-search"></i>
-          <input 
-            type="text"
-            class="form-control"
-            placeholder="Buscar por nombre, apellidos o DNI..."
-            [(ngModel)]="busqueda"
-            (ngModelChange)="busqueda.set($event)"
-          >
-        </div>
-      </div>
-
-      <div class="col-md-3">
-        <select 
-          class="form-select"
-          [(ngModel)]="filtroEstado"
-          (ngModelChange)="filtroEstado.set($event)"
+    <div class="filtros-bar">
+      <div class="search-box">
+        <i class="bi bi-search"></i>
+        <input
+          type="text"
+          placeholder="Buscar por nombre, apellidos o DNI..."
+          [value]="busqueda()"
+          (input)="onBusquedaChange($any($event.target).value)"
         >
-          <option value="todos">Todos los estados</option>
-          <option value="activos">✅ Activos</option>
-          <option value="pausados">⏸️ Pausados</option>
-        </select>
       </div>
 
-      <div class="col-md-3">
-        <select 
-          class="form-control"
-          [(ngModel)]="filtroCurso"
-          (ngModelChange)="filtroCurso.set($event)"
-        >
-          <option value="todos">Todos los cursos</option>
-          <option *ngFor="let curso of cursosDisponibles()" [value]="curso">
-            {{ curso }}
-          </option>
-        </select>
-      </div>
+      <select [value]="filtroEstado()" (change)="onFiltroEstadoChange($any($event.target).value)">
+        <option value="todos">Todos los estados</option>
+        <option value="activos">Activos</option>
+        <option value="pausados">Pausados</option>
+      </select>
 
-      <div class="col-md-2">
-        <button class="btn btn-outline-secondary w-100" (click)="exportarCSV()">
-          <i class="bi bi-download me-2"></i>
-          Exportar
-        </button>
-      </div>
+      <select [value]="filtroCurso()" (change)="onFiltroCursoChange($any($event.target).value)">
+        <option value="todos">Todos los cursos</option>
+        <option *ngFor="let curso of cursosDisponibles()" [value]="curso">{{ curso }}</option>
+      </select>
     </div>
   </div>
 
-  <!-- Loader -->
-  <div *ngIf="isLoading()" class="text-center py-5">
+  <!-- Loading -->
+  <div *ngIf="isLoading()" class="loading-state">
     <div class="spinner-border text-primary"></div>
-    <p class="text-muted mt-3">Cargando clientes...</p>
+    <p>Cargando clientes...</p>
   </div>
 
-  <!-- Tabla -->
-  <div *ngIf="!isLoading()" class="table-responsive">
-    <table class="table table-hover clientes-table">
-      <thead>
-        <tr>
-          <th>Cliente</th>
-          <th>Edad</th>
-          <th>Curso</th>
-          <th>Horario</th>
-          <th>Estado</th>
-          <th class="text-end">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr 
-          *ngFor="let cliente of clientesFiltrados()"
-          (click)="verFicha(cliente.id)"
-          style="cursor: pointer;"
-        >
-          <td>
-            <div class="d-flex align-items-center">
-              <div class="avatar-circle me-3">
-                {{ cliente.nombre.charAt(0) }}{{ cliente.apellidos.charAt(0) }}
-              </div>
-              <div>
-                <strong>{{ cliente.apellidos }}, {{ cliente.nombre }}</strong>
-                <br>
-                <small class="text-muted">{{ cliente.dni }}</small>
-              </div>
-            </div>
-          </td>
-          <td>{{ cliente.edadTexto }}</td>
-          <td>
-            <span class="badge bg-light text-dark">
-              {{ cliente.curso }}
-            </span>
-          </td>
-          <td>
-            <small class="text-muted" style="white-space: pre-line;">
-              {{ cliente.horarioResumen }}
-            </small>
-          </td>
-          <td>
-            <span class="badge bg-success">
-              <i class="bi bi-check-circle me-1"></i>
-              Activo
-            </span>
-          </td>
-          <td class="text-end">
-            <div class="btn-group btn-group-sm">
-              <button 
-                class="btn btn-outline-primary"
-                (click)="verFicha(cliente.id); $event.stopPropagation()"
-                title="Ver ficha"
-              >
-                <i class="bi bi-eye"></i>
-              </button>
-              <button 
-                class="btn btn-outline-secondary"
-                (click)="editarCliente(cliente.id); $event.stopPropagation()"
-                title="Editar"
-              >
-                <i class="bi bi-pencil"></i>
-              </button>
-            </div>
-          </td>
-        </tr>
+  <!-- Contenido -->
+  <ng-container *ngIf="!isLoading()">
 
-        <tr *ngIf="clientesFiltrados().length === 0">
-          <td colspan="6" class="text-center py-5">
-            <i class="bi bi-inbox display-4 text-muted d-block mb-3"></i>
-            <p class="text-muted">No se encontraron clientes</p>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+    <!-- Estado vacío -->
+    <div *ngIf="clientesFiltrados().length === 0" class="empty-state">
+      <div class="empty-icon">
+        <i class="bi bi-person-x"></i>
+      </div>
+      <ng-container *ngIf="busqueda() || filtroEstado() !== 'todos' || filtroCurso() !== 'todos'">
+        <h3>Sin resultados</h3>
+        <p *ngIf="busqueda()">No se encontraron clientes con "{{ busqueda() }}"</p>
+        <p *ngIf="!busqueda()">No hay clientes con los filtros seleccionados</p>
+      </ng-container>
+      <ng-container *ngIf="!busqueda() && filtroEstado() === 'todos' && filtroCurso() === 'todos'">
+        <h3>Aún no hay clientes</h3>
+        <p>Comienza añadiendo el primer cliente al gabinete</p>
+      </ng-container>
+    </div>
 
+    <!-- Tabla -->
+    <div *ngIf="clientesFiltrados().length > 0" class="clientes-tabla-wrapper">
+      <table class="clientes-table">
+        <thead>
+          <tr>
+            <th>Cliente</th>
+            <th>Edad · Curso</th>
+            <th>Tipo de terapia</th>
+            <th>Horario</th>
+            <th>Estado</th>
+            <th class="th-acciones">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="let cliente of clientesPaginados()"
+            class="cliente-row"
+            (click)="verFicha(cliente.id)"
+          >
+            <td>
+              <div class="td-cliente">
+                <div class="avatar-circle">
+                  {{ cliente.nombre.charAt(0) }}{{ cliente.apellidos.charAt(0) }}
+                </div>
+                <div class="cliente-info">
+                  <strong>{{ cliente.apellidos }}, {{ cliente.nombre }}</strong>
+                  <span class="cliente-dni">{{ cliente.dni }}</span>
+                </div>
+              </div>
+            </td>
+
+            <td>
+              <div class="td-edad">
+                <span>{{ cliente.edadTexto }}</span>
+                <span class="badge-curso" *ngIf="cliente.curso">{{ cliente.curso }}</span>
+              </div>
+            </td>
+
+            <td class="td-terapia">
+              <ng-container *ngIf="getTipoTerapia(cliente) as terapia; else sinTerapia">
+                <span class="badge-terapia">{{ terapia }}</span>
+              </ng-container>
+              <ng-template #sinTerapia><span class="sin-dato">—</span></ng-template>
+            </td>
+
+            <td class="td-horario">
+              <span class="horario-text">{{ cliente.horarioResumen }}</span>
+            </td>
+
+            <td>
+              <span
+                class="badge-estado"
+                [class.activo]="cliente.activo"
+                [class.pausado]="!cliente.activo"
+              >
+                <i
+                  class="bi"
+                  [class.bi-check-circle-fill]="cliente.activo"
+                  [class.bi-pause-circle-fill]="!cliente.activo"
+                ></i>
+                {{ cliente.activo ? 'Activo' : 'Pausado' }}
+              </span>
+            </td>
+
+            <td class="td-acciones">
+              <div class="acciones-grupo">
+                <button
+                  class="accion-btn accion-ficha"
+                  (click)="verFicha(cliente.id); $event.stopPropagation()"
+                  title="Ver ficha"
+                >
+                  <i class="bi bi-person-lines-fill"></i>
+                </button>
+                <button
+                  class="accion-btn accion-editar"
+                  (click)="editarCliente(cliente, $event)"
+                  title="Editar datos básicos"
+                >
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button
+                  class="accion-btn accion-registro"
+                  (click)="nuevoRegistro(cliente.id, $event)"
+                  title="Nuevo registro"
+                >
+                  <i class="bi bi-journal-plus"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Paginación -->
+      <div class="paginacion">
+        <span class="paginacion-rango">{{ rangoMostrado() }}</span>
+        <div class="paginacion-controles" *ngIf="totalPaginas() > 1">
+          <button
+            class="paginacion-btn"
+            [disabled]="paginaActual() === 1"
+            (click)="paginaAnterior()"
+          >
+            <i class="bi bi-chevron-left"></i>
+          </button>
+          <span class="paginacion-pagina">{{ paginaActual() }} / {{ totalPaginas() }}</span>
+          <button
+            class="paginacion-btn"
+            [disabled]="paginaActual() === totalPaginas()"
+            (click)="paginaSiguiente()"
+          >
+            <i class="bi bi-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </ng-container>
 </div>
 
+<!-- Modal edición rápida -->
+<div class="modal-overlay" *ngIf="mostrarModalEdicion()" (click)="cerrarModal()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <div class="modal-title">
+        <i class="bi bi-pencil-square"></i>
+        <h3>Editar cliente</h3>
+      </div>
+      <button class="modal-close" (click)="cerrarModal()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Nombre</label>
+        <input
+          type="text"
+          [value]="formEdicion().nombre"
+          (input)="updateFormField('nombre', $any($event.target).value)"
+          placeholder="Nombre"
+        >
+      </div>
+      <div class="form-group">
+        <label>Apellidos</label>
+        <input
+          type="text"
+          [value]="formEdicion().apellidos"
+          (input)="updateFormField('apellidos', $any($event.target).value)"
+          placeholder="Apellidos"
+        >
+      </div>
+      <div class="form-group">
+        <label>Curso</label>
+        <input
+          type="text"
+          [value]="formEdicion().curso"
+          (input)="updateFormField('curso', $any($event.target).value)"
+          placeholder="Ej: 3º Primaria"
+        >
+      </div>
+      <div class="form-group-toggle">
+        <label>Estado</label>
+        <div class="toggle-wrapper">
+          <button
+            class="toggle-btn"
+            [class.activo]="formEdicion().activo"
+            (click)="updateFormField('activo', !formEdicion().activo)"
+            type="button"
+          >
+            <span class="toggle-pill"></span>
+          </button>
+          <span class="toggle-label">{{ formEdicion().activo ? 'Activo' : 'Pausado' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancelar" (click)="cerrarModal()" [disabled]="guardando()">
+        Cancelar
+      </button>
+      <button class="btn-guardar" (click)="guardarEdicion()" [disabled]="guardando()">
+        <span class="spinner-border spinner-border-sm me-1" *ngIf="guardando()"></span>
+        <i class="bi bi-check-lg me-1" *ngIf="!guardando()"></i>
+        {{ guardando() ? 'Guardando...' : 'Guardar cambios' }}
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Wizard nuevo cliente -->
 <app-nuevo-cliente-wizard
   *ngIf="mostrarWizard()"
   (cerrar)="cerrarWizard()"

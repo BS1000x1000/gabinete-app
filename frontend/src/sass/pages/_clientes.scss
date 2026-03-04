@@ -1,3 +1,7 @@
+// ============================================================
+// LISTADO DE CLIENTES — Fase 5 rediseño UX
+// ============================================================
+
 .clientes-container {
   max-width: 1400px;
   margin: 0 auto;
@@ -8,15 +12,109 @@
   }
 }
 
+// ── Header ────────────────────────────────────────────────
+
 .clientes-header {
+  margin-bottom: $spacing-xl;
+}
+
+.header-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: $spacing-lg;
+  gap: $spacing-md;
+
+  @media (max-width: $breakpoint-md) {
+    flex-direction: column;
+  }
+}
+
+.header-info {
   h2 {
+    font-size: 1.75rem;
     font-weight: $font-weight-bold;
     color: $gray-900;
+    margin: 0 0 $spacing-sm;
+    letter-spacing: -0.02em;
+  }
+}
+
+.header-stats {
+  display: flex;
+  gap: $spacing-sm;
+  flex-wrap: wrap;
+}
+
+.stat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: $border-radius-full;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+
+  i { font-size: 0.85rem; }
+
+  &.stat-total {
+    background: $gray-100;
+    color: $gray-600;
+  }
+
+  &.stat-activos {
+    background: rgba(#22c55e, 0.1);
+    color: #16a34a;
+  }
+
+  &.stat-pausados {
+    background: rgba($warning, 0.1);
+    color: $warning-dark;
+  }
+}
+
+.btn-nuevo-cliente {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.25rem;
+  background: $gradient-primary;
+  color: $white;
+  border: none;
+  border-radius: $border-radius-lg;
+  font-weight: $font-weight-semibold;
+  font-size: $font-size-sm;
+  cursor: pointer;
+  transition: $transition-base;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba($primary, 0.3);
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba($primary, 0.4);
+  }
+
+  &:active { transform: translateY(0); }
+
+  i { font-size: 1rem; }
+}
+
+// ── Filtros ───────────────────────────────────────────────
+
+.filtros-bar {
+  display: flex;
+  gap: $spacing-sm;
+  flex-wrap: wrap;
+
+  @media (max-width: $breakpoint-md) {
+    flex-direction: column;
   }
 }
 
 .search-box {
   position: relative;
+  flex: 1;
+  min-width: 220px;
 
   i {
     position: absolute;
@@ -24,39 +122,144 @@
     top: 50%;
     transform: translateY(-50%);
     color: $gray-400;
+    pointer-events: none;
   }
 
   input {
-    padding-left: 2.5rem;
+    width: 100%;
+    padding: 0.6rem 1rem 0.6rem 2.5rem;
+    border: 1.5px solid $border-color;
+    border-radius: $border-radius-lg;
+    font-size: $font-size-sm;
+    background: $white;
+    transition: $transition-base;
+    outline: none;
+
+    &:focus {
+      border-color: $primary;
+      box-shadow: 0 0 0 3px rgba($primary, 0.1);
+    }
+
+    &::placeholder { color: $gray-400; }
   }
 }
 
-.clientes-table {
+.filtros-bar select {
+  padding: 0.6rem 2rem 0.6rem 0.875rem;
+  border: 1.5px solid $border-color;
+  border-radius: $border-radius-lg;
+  font-size: $font-size-sm;
+  background: $white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16'%3E%3Cpath fill='%236b7280' d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E") no-repeat right 0.75rem center;
+  appearance: none;
+  cursor: pointer;
+  outline: none;
+  transition: $transition-base;
+
+  &:focus {
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba($primary, 0.1);
+  }
+}
+
+// ── Loading ───────────────────────────────────────────────
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-xl * 2;
+  color: $gray-500;
+
+  p {
+    margin-top: $spacing-md;
+    font-size: $font-size-sm;
+  }
+}
+
+// ── Estado vacío ──────────────────────────────────────────
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-xl * 2 $spacing-xl;
+  text-align: center;
+
+  .empty-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: $border-radius-full;
+    background: $primary-ultra-light;
+    @include flex-center;
+    margin-bottom: $spacing-lg;
+
+    i {
+      font-size: 2rem;
+      color: $primary;
+      opacity: 0.6;
+    }
+  }
+
+  h3 {
+    font-size: 1.2rem;
+    font-weight: $font-weight-semibold;
+    color: $gray-700;
+    margin: 0 0 $spacing-sm;
+  }
+
+  p {
+    font-size: $font-size-sm;
+    color: $gray-400;
+    max-width: 320px;
+    margin: 0;
+  }
+}
+
+// ── Tabla ─────────────────────────────────────────────────
+
+.clientes-tabla-wrapper {
   background: $white;
   border-radius: $border-radius-lg;
-  overflow: hidden;
   box-shadow: $shadow-card;
+  overflow: hidden;
+}
+
+.clientes-table {
+  width: 100%;
+  border-collapse: collapse;
 
   thead {
     background: $gray-50;
-    
+    border-bottom: 2px solid $border-color;
+
     th {
-      font-weight: $font-weight-semibold;
-      color: $gray-700;
-      font-size: $font-size-sm;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
       padding: $spacing-md;
-      border-bottom: 2px solid $border-color;
+      font-size: $font-size-sm;
+      font-weight: $font-weight-semibold;
+      color: $gray-500;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      text-align: left;
+      white-space: nowrap;
+
+      &.th-acciones { text-align: right; }
     }
   }
 
   tbody {
-    tr {
-      transition: $transition-base;
-      
+    .cliente-row {
+      cursor: pointer;
+      border-bottom: 1px solid $border-color;
+      transition: background $transition-base;
+
+      &:last-child { border-bottom: none; }
+
       &:hover {
         background: $primary-ultra-light;
+
+        .acciones-grupo { opacity: 1; }
       }
 
       td {
@@ -67,13 +270,442 @@
   }
 }
 
+// ── Celdas ────────────────────────────────────────────────
+
+.td-cliente {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+
+  .cliente-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+
+    strong {
+      font-weight: $font-weight-semibold;
+      color: $gray-900;
+      font-size: 0.9rem;
+      white-space: nowrap;
+    }
+  }
+
+  .cliente-dni {
+    font-size: 0.78rem;
+    color: $gray-400;
+  }
+}
+
+.td-edad {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: $font-size-sm;
+  color: $gray-600;
+  white-space: nowrap;
+}
+
+.badge-curso {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  background: $gray-100;
+  color: $gray-600;
+  border-radius: $border-radius-full;
+  font-size: 0.72rem;
+  font-weight: $font-weight-semibold;
+  white-space: nowrap;
+}
+
+.td-terapia {
+  white-space: nowrap;
+}
+
+.badge-terapia {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  background: rgba($primary, 0.08);
+  color: $primary;
+  border-radius: $border-radius-full;
+  font-size: 0.75rem;
+  font-weight: $font-weight-semibold;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.sin-dato {
+  color: $gray-300;
+  font-size: $font-size-sm;
+}
+
+.td-horario {
+  .horario-text {
+    font-size: 0.78rem;
+    color: $gray-500;
+    line-height: 1.6;
+  }
+}
+
+.badge-estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: $border-radius-full;
+  font-size: 0.78rem;
+  font-weight: $font-weight-semibold;
+  white-space: nowrap;
+
+  i { font-size: 0.75rem; }
+
+  &.activo {
+    background: rgba(#22c55e, 0.1);
+    color: #16a34a;
+  }
+
+  &.pausado {
+    background: rgba($warning, 0.1);
+    color: $warning-dark;
+  }
+}
+
+.td-acciones {
+  text-align: right;
+}
+
+.acciones-grupo {
+  display: flex;
+  gap: 0.35rem;
+  justify-content: flex-end;
+  opacity: 0.35;
+  transition: opacity $transition-base;
+}
+
+.accion-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1.5px solid $border-color;
+  border-radius: $border-radius-lg;
+  background: $white;
+  color: $gray-500;
+  cursor: pointer;
+  transition: $transition-base;
+  font-size: 0.85rem;
+
+  &:hover { transform: translateY(-1px); }
+
+  &.accion-ficha:hover {
+    border-color: $primary;
+    color: $primary;
+    background: $primary-ultra-light;
+  }
+
+  &.accion-editar:hover {
+    border-color: $gray-500;
+    color: $gray-700;
+    background: $gray-100;
+  }
+
+  &.accion-registro:hover {
+    border-color: #5a9de8;
+    color: #5a9de8;
+    background: rgba(#5a9de8, 0.08);
+  }
+}
+
+// ── Paginación ────────────────────────────────────────────
+
+.paginacion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-md $spacing-lg;
+  border-top: 1px solid $border-color;
+  background: $gray-50;
+
+  @media (max-width: $breakpoint-md) {
+    flex-direction: column;
+    gap: $spacing-sm;
+  }
+}
+
+.paginacion-rango {
+  font-size: $font-size-sm;
+  color: $gray-500;
+}
+
+.paginacion-controles {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.paginacion-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1.5px solid $border-color;
+  border-radius: $border-radius-lg;
+  background: $white;
+  color: $gray-600;
+  cursor: pointer;
+  transition: $transition-base;
+  font-size: 0.85rem;
+
+  &:hover:not(:disabled) {
+    border-color: $primary;
+    color: $primary;
+    background: $primary-ultra-light;
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+}
+
+.paginacion-pagina {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $gray-700;
+  min-width: 60px;
+  text-align: center;
+}
+
+// ── Avatar ────────────────────────────────────────────────
+
 .avatar-circle {
   width: 40px;
   height: 40px;
+  min-width: 40px;
   border-radius: $border-radius-full;
   background: $gradient-primary;
   color: $white;
   @include flex-center;
   font-weight: $font-weight-bold;
   font-size: $font-size-sm;
+}
+
+// ── Modal de edición ──────────────────────────────────────
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(#1a1a2e, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-md;
+  animation: fadeIn 0.2s ease;
+}
+
+.modal-card {
+  background: $white;
+  border-radius: $border-radius-lg;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  animation: slideUp 0.25s ease;
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-lg $spacing-xl;
+  border-bottom: 1px solid $border-color;
+}
+
+.modal-title {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+
+  i {
+    color: $primary;
+    font-size: 1.1rem;
+  }
+
+  h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: $font-weight-semibold;
+    color: $gray-900;
+  }
+}
+
+.modal-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: $gray-400;
+  cursor: pointer;
+  border-radius: $border-radius-lg;
+  transition: $transition-base;
+  font-size: 0.9rem;
+
+  &:hover {
+    background: $gray-100;
+    color: $gray-700;
+  }
+}
+
+.modal-body {
+  padding: $spacing-xl;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+
+  label {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $gray-700;
+  }
+
+  input {
+    padding: 0.6rem 0.875rem;
+    border: 1.5px solid $border-color;
+    border-radius: $border-radius-lg;
+    font-size: $font-size-sm;
+    outline: none;
+    transition: $transition-base;
+    background: $white;
+
+    &:focus {
+      border-color: $primary;
+      box-shadow: 0 0 0 3px rgba($primary, 0.1);
+    }
+  }
+}
+
+.form-group-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  label {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $gray-700;
+  }
+}
+
+.toggle-wrapper {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.toggle-btn {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  border-radius: $border-radius-full;
+  background: $gray-300;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  padding: 0;
+
+  .toggle-pill {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    border-radius: $border-radius-full;
+    background: $white;
+    transition: transform 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  }
+
+  &.activo {
+    background: #22c55e;
+    .toggle-pill { transform: translateX(20px); }
+  }
+}
+
+.toggle-label {
+  font-size: $font-size-sm;
+  color: $gray-600;
+  min-width: 55px;
+}
+
+.modal-footer {
+  display: flex;
+  gap: $spacing-sm;
+  justify-content: flex-end;
+  padding: $spacing-md $spacing-xl $spacing-xl;
+  border-top: 1px solid $border-color;
+}
+
+.btn-cancelar {
+  padding: 0.6rem 1.25rem;
+  border: 1.5px solid $border-color;
+  border-radius: $border-radius-lg;
+  background: $white;
+  color: $gray-600;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  cursor: pointer;
+  transition: $transition-base;
+
+  &:hover:not(:disabled) {
+    background: $gray-100;
+    border-color: $gray-300;
+  }
+
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.btn-guardar {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.6rem 1.25rem;
+  background: $gradient-primary;
+  color: $white;
+  border: none;
+  border-radius: $border-radius-lg;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  cursor: pointer;
+  transition: $transition-base;
+  box-shadow: 0 2px 8px rgba($primary, 0.3);
+
+  &:hover:not(:disabled) {
+    box-shadow: 0 4px 16px rgba($primary, 0.4);
+    transform: translateY(-1px);
+  }
+
+  &:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+}
+
+// ── Animaciones ───────────────────────────────────────────
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
 }
