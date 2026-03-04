@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../../services/auth.service';
+import { RegistroDrawerService } from '../../../../services/registro-drawer.service';
 
 interface NavItem {
   label: string;
@@ -22,8 +23,9 @@ interface QuickAction {
   templateUrl: './sidebar.component.html',
 })
 export class SidebarComponent {
-  private auth   = inject(AuthService);
-  private router = inject(Router);
+  private auth              = inject(AuthService);
+  private router            = inject(Router);
+  private registroDrawerSvc = inject(RegistroDrawerService);
 
   userInitials = this.auth.userInitials;
   userName     = this.auth.userName;
@@ -47,7 +49,7 @@ export class SidebarComponent {
         this.router.navigate(['/home/clientes'], { queryParams: { nuevo: true } });
         break;
       case 'nuevo-registro':
-        // Fase 3: abrirá el DrawerRegistroComponent
+        this.registroDrawerSvc.openVacio();
         break;
       case 'nueva-sesion':
         // Fase 2: abrirá el modal de nueva sesión desde la Agenda

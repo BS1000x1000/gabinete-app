@@ -4,6 +4,7 @@ import { NotificacionesService } from '../../services/notificaciones.service';
 import { SidebarComponent } from '../../shared/components/layout/sidebar/sidebar.component';
 import { SearchBarComponent } from '../../components/search-bar/search-bar.component';
 import { NotificationBellComponent } from '../../shared/components/notification-bell/notification-bell.component';
+import { DrawerRegistroComponent } from '../../shared/components/drawer-registro/drawer-registro.component';
 
 @Component({
   selector: 'app-home',
@@ -13,6 +14,7 @@ import { NotificationBellComponent } from '../../shared/components/notification-
     SidebarComponent,
     SearchBarComponent,
     NotificationBellComponent,
+    DrawerRegistroComponent,
   ],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',

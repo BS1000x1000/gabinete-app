@@ -1,0 +1,184 @@
+<!-- Overlay -->
+<div
+  class="dr-overlay"
+  [class.dr-overlay--visible]="state().isOpen"
+  (click)="close()"
+  aria-hidden="true">
+</div>
+
+<!-- Panel lateral -->
+<aside
+  class="dr-panel"
+  [class.dr-panel--open]="state().isOpen"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Nuevo registro diario">
+
+  <!-- Cabecera -->
+  <div class="dr-header">
+    <div class="dr-header-icon">
+      <i class="bi bi-journal-text"></i>
+    </div>
+    <div class="dr-header-meta">
+      <span class="dr-header-label">Registro diario</span>
+      <span class="dr-header-sub" *ngIf="state().clienteNombre">
+        {{ state().clienteNombre }}
+      </span>
+      <span class="dr-header-sub dr-header-sub--empty" *ngIf="!state().clienteNombre">
+        Selecciona un cliente
+      </span>
+    </div>
+    <button class="dr-close" type="button" (click)="close()" aria-label="Cerrar">
+      <i class="bi bi-x-lg"></i>
+    </button>
+  </div>
+
+  <!-- Formulario -->
+  <div class="dr-body" [formGroup]="form">
+
+    <!-- ─── SECCIÓN 1: Cliente (solo si no viene con contexto) ─── -->
+    <div class="dr-section" *ngIf="!tieneContexto()">
+      <div class="dr-section-label">
+        <i class="bi bi-person-fill"></i>
+        <span>¿Para quién?</span>
+      </div>
+      <div class="dr-field">
+        <select
+          formControlName="clienteId"
+          class="dr-select"
+          (change)="onClienteChange($event)"
+          [class.dr-select--error]="clienteIdCtrl.invalid && clienteIdCtrl.touched">
+          <option value="">— Selecciona cliente —</option>
+          <option *ngFor="let c of clientes()" [value]="c.id">
+            {{ c.nombre }} {{ c.apellidos }}
+          </option>
+        </select>
+      </div>
+    </div>
+
+    <!-- ─── SECCIÓN 2: Fecha ─── -->
+    <div class="dr-section dr-section--inline">
+      <div class="dr-section-label">
+        <i class="bi bi-calendar3"></i>
+        <span>Fecha de sesión</span>
+      </div>
+      <input
+        type="date"
+        formControlName="fechaRegistro"
+        class="dr-input-date">
+    </div>
+
+    <!-- ─── SECCIÓN 3: Contenido ─── -->
+    <div class="dr-section dr-section--grow">
+      <div class="dr-section-label">
+        <i class="bi bi-pencil-fill"></i>
+        <span>Notas de la sesión</span>
+        <span class="dr-badge-required">*</span>
+      </div>
+      <textarea
+        formControlName="contenido"
+        class="dr-textarea"
+        [class.dr-textarea--error]="contenidoCtrl.invalid && contenidoCtrl.touched"
+        placeholder="Describe lo trabajado en la sesión, observaciones, comportamiento, avances..."
+        rows="6">
+      </textarea>
+      <span class="dr-field-hint" *ngIf="contenidoCtrl.invalid && contenidoCtrl.touched">
+        El registro debe tener al menos 10 caracteres.
+      </span>
+    </div>
+
+    <!-- ─── SECCIÓN 4: Objetivos trabajados ─── -->
+    <div class="dr-section">
+      <div class="dr-section-label">
+        <i class="bi bi-bullseye"></i>
+        <span>Objetivos trabajados</span>
+        <span class="dr-badge-count" *ngIf="totalObjetivosSeleccionados() > 0">
+          {{ totalObjetivosSeleccionados() }}
+        </span>
+      </div>
+
+      <!-- Estado: cargando -->
+      <div class="dr-objetivos-loading" *ngIf="isLoadingObjetivos()">
+        <span class="dr-spinner"></span>
+        <span>Cargando objetivos...</span>
+      </div>
+
+      <!-- Estado: sin cliente seleccionado -->
+      <div class="dr-objetivos-empty"
+        *ngIf="!isLoadingObjetivos() && areaConObjetivos().length === 0 && !tieneContexto() && !clienteIdCtrl.value">
+        <i class="bi bi-arrow-up-circle"></i>
+        <span>Selecciona un cliente para ver sus objetivos</span>
+      </div>
+
+      <!-- Estado: cliente sin objetivos asignados -->
+      <div class="dr-objetivos-empty"
+        *ngIf="!isLoadingObjetivos() && areaConObjetivos().length === 0 && (tieneContexto() || clienteIdCtrl.value)">
+        <i class="bi bi-clipboard-x"></i>
+        <span>Este cliente no tiene objetivos asignados</span>
+      </div>
+
+      <!-- Chips por área -->
+      <div class="dr-areas" *ngIf="!isLoadingObjetivos() && areaConObjetivos().length > 0">
+        <div class="dr-area" *ngFor="let area of areaConObjetivos()">
+          <div class="dr-area-header" [style.--area-color]="area.color">
+            <span class="dr-area-dot"></span>
+            <span class="dr-area-nombre">{{ area.nombre }}</span>
+          </div>
+          <div class="dr-chips">
+            <button
+              *ngFor="let obj of area.objetivos"
+              type="button"
+              class="dr-chip"
+              [class.dr-chip--selected]="isObjetivoSelected(obj.id)"
+              [style.--chip-color]="area.color"
+              (click)="toggleObjetivo(obj.id)">
+              <i class="bi"
+                [class.bi-check2]="isObjetivoSelected(obj.id)"
+                [class.bi-plus]="!isObjetivoSelected(obj.id)"></i>
+              {{ obj.titulo }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /dr-body -->
+
+  <!-- Footer -->
+  <div class="dr-footer">
+
+    <!-- Estado de éxito -->
+    <div class="dr-success" *ngIf="saveSuccess()">
+      <i class="bi bi-check-circle-fill"></i>
+      <span>Registro guardado correctamente</span>
+    </div>
+
+    <!-- Error -->
+    <div class="dr-error" *ngIf="saveError()">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <span>{{ saveError() }}</span>
+    </div>
+
+    <div class="dr-footer-actions">
+      <button
+        type="button"
+        class="dr-btn dr-btn--ghost"
+        (click)="close()"
+        [disabled]="isSaving()">
+        Cancelar
+      </button>
+      <button
+        type="button"
+        class="dr-btn dr-btn--primary"
+        (click)="save()"
+        [disabled]="form.invalid || isSaving() || saveSuccess()">
+        <span class="dr-spinner dr-spinner--sm" *ngIf="isSaving()"></span>
+        <i class="bi bi-floppy-fill" *ngIf="!isSaving() && !saveSuccess()"></i>
+        <i class="bi bi-check-lg" *ngIf="saveSuccess()"></i>
+        <span>{{ isSaving() ? 'Guardando...' : saveSuccess() ? 'Guardado' : 'Guardar registro' }}</span>
+      </button>
+    </div>
+
+  </div><!-- /dr-footer -->
+
+</aside>
