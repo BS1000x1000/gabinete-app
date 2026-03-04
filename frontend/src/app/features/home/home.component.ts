@@ -5,6 +5,7 @@ import { SidebarComponent } from '../../shared/components/layout/sidebar/sidebar
 import { SearchBarComponent } from '../../components/search-bar/search-bar.component';
 import { NotificationBellComponent } from '../../shared/components/notification-bell/notification-bell.component';
 import { DrawerRegistroComponent } from '../../shared/components/drawer-registro/drawer-registro.component';
+import { NuevaSesionModalComponent } from '../../shared/components/nueva-sesion-modal/nueva-sesion-modal.component';
 
 @Component({
   selector: 'app-home',
@@ -15,6 +16,7 @@ import { DrawerRegistroComponent } from '../../shared/components/drawer-registro
     SearchBarComponent,
     NotificationBellComponent,
     DrawerRegistroComponent,
+    NuevaSesionModalComponent,
   ],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',

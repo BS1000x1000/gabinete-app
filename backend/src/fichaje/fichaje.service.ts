@@ -27,7 +27,7 @@ export class FichajeService {
       }
 
       // 2. ✅ Verificar que los objetivos existan (si se enviaron)
-      if (dto.objetivosGeneralesTrabajados!.length > 0) {
+      if (dto.objetivosGeneralesTrabajados?.length) {
         const objetivosExistentes = await this.prisma.objetivoGeneral.findMany({
           where: {
             id: {
@@ -142,7 +142,7 @@ export class FichajeService {
       }
 
       // ✅ Validar objetivos si se envían
-      if (objetivosGeneralesTrabajados!.length > 0) {
+      if (objetivosGeneralesTrabajados?.length) {
         const objetivosExistentes = await this.prisma.objetivoGeneral.findMany({
           where: {
             id: { in: objetivosGeneralesTrabajados },

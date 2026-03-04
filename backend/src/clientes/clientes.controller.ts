@@ -11,12 +11,15 @@ import {
   Patch,
   NotFoundException,
   Query,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import { ClientesService } from './clientes.service';
 import { CreateClienteDto } from './dto/create-cliente.dto';
 import { clienteInclude, ClienteWithRelations } from './clientes.types';
 import { PaginationDto } from './dto/pagination.dto';
 import { TipoSesion } from '@prisma/client';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
 @Controller('clientes')
 export class ClientesController {
@@ -59,6 +62,18 @@ export class ClientesController {
   async search(@Query('q') query: string) {
     this.logger.log(`🔍 GET /api/clientes/search?q=${query}`);
     return this.clientesService.search(query);
+  }
+
+  /**
+   * GET /api/clientes/mis-clientes
+   * Devuelve solo los clientes asignados al terapeuta autenticado
+   */
+  @Get('mis-clientes')
+  @UseGuards(JwtAuthGuard)
+  async getMisClientes(@Req() req: any) {
+    const trabajadorId = req.user.userId;
+    this.logger.log(`👤 GET /api/clientes/mis-clientes - Trabajador: ${trabajadorId}`);
+    return this.clientesService.findByTrabajador(trabajadorId);
   }
 
   /**

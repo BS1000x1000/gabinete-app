@@ -3,6 +3,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../../services/auth.service';
 import { RegistroDrawerService } from '../../../../services/registro-drawer.service';
+import { NuevaSesionModalService } from '../../../../services/nueva-sesion-modal.service';
 
 interface NavItem {
   label: string;
@@ -26,6 +27,7 @@ export class SidebarComponent {
   private auth              = inject(AuthService);
   private router            = inject(Router);
   private registroDrawerSvc = inject(RegistroDrawerService);
+  private nuevaSesionSvc    = inject(NuevaSesionModalService);
 
   userInitials = this.auth.userInitials;
   userName     = this.auth.userName;
@@ -52,7 +54,7 @@ export class SidebarComponent {
         this.registroDrawerSvc.openVacio();
         break;
       case 'nueva-sesion':
-        // Fase 2: abrirá el modal de nueva sesión desde la Agenda
+        this.nuevaSesionSvc.open();
         break;
     }
   }

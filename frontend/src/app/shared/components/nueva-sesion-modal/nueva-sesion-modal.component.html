@@ -1,0 +1,157 @@
+@if (isOpen()) {
+  <!-- Overlay -->
+  <div class="nsm-overlay" (click)="close()"></div>
+
+  <!-- Modal -->
+  <div class="nsm-modal" role="dialog" aria-modal="true" aria-label="Nueva sesión">
+
+    <!-- Cabecera -->
+    <div class="nsm-header">
+      <div class="nsm-header__icon">
+        <i class="bi bi-calendar-plus"></i>
+      </div>
+      <div class="nsm-header__meta">
+        <span class="nsm-header__title">Nueva sesión</span>
+        <span class="nsm-header__sub">Sesión individual puntual</span>
+      </div>
+      <button class="nsm-close" (click)="close()" title="Cerrar">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <!-- Cuerpo -->
+    <form [formGroup]="form" (ngSubmit)="save()" class="nsm-body">
+
+      <!-- Fila: Cliente + Tipo -->
+      <div class="nsm-row">
+        <div class="nsm-field">
+          <label class="nsm-label">
+            <i class="bi bi-person"></i> Cliente
+            <span class="nsm-required">*</span>
+          </label>
+          <select formControlName="clienteId" class="nsm-select"
+            [class.nsm-select--error]="form.get('clienteId')?.invalid && form.get('clienteId')?.touched">
+            <option value="">— Seleccionar cliente —</option>
+            @for (c of clientes(); track c.id) {
+              <option [value]="c.id">{{ c.apellidos }}, {{ c.nombre }}</option>
+            }
+          </select>
+          @if (form.get('clienteId')?.invalid && form.get('clienteId')?.touched) {
+            <span class="nsm-hint">Campo obligatorio</span>
+          }
+        </div>
+
+        <div class="nsm-field">
+          <label class="nsm-label">
+            <i class="bi bi-tag"></i> Tipo de sesión
+            <span class="nsm-required">*</span>
+          </label>
+          <select formControlName="tipoSesion" class="nsm-select">
+            @for (t of TIPOS_SESION; track t.value) {
+              <option [value]="t.value">{{ t.label }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <!-- Terapeuta -->
+      <div class="nsm-field">
+        <label class="nsm-label">
+          <i class="bi bi-person-badge"></i> Terapeuta
+          <span class="nsm-required">*</span>
+        </label>
+        <select formControlName="trabajadorId" class="nsm-select"
+          [class.nsm-select--error]="form.get('trabajadorId')?.invalid && form.get('trabajadorId')?.touched">
+          <option value="">— Seleccionar terapeuta —</option>
+          @for (t of trabajadores(); track t.id) {
+            <option [value]="t.id">{{ t.nombre }} {{ t.apellidos }}</option>
+          }
+        </select>
+        @if (form.get('trabajadorId')?.invalid && form.get('trabajadorId')?.touched) {
+          <span class="nsm-hint">Campo obligatorio</span>
+        }
+      </div>
+
+      <!-- Fila: Fecha + Horas -->
+      <div class="nsm-row nsm-row--three">
+        <div class="nsm-field">
+          <label class="nsm-label">
+            <i class="bi bi-calendar3"></i> Fecha
+            <span class="nsm-required">*</span>
+          </label>
+          <input type="date" formControlName="fecha" class="nsm-input"
+            [class.nsm-input--error]="form.get('fecha')?.invalid && form.get('fecha')?.touched">
+          @if (form.get('fecha')?.invalid && form.get('fecha')?.touched) {
+            <span class="nsm-hint">Campo obligatorio</span>
+          }
+        </div>
+
+        <div class="nsm-field">
+          <label class="nsm-label">
+            <i class="bi bi-clock"></i> Hora inicio
+            <span class="nsm-required">*</span>
+          </label>
+          <input type="time" formControlName="horaInicio" class="nsm-input"
+            [class.nsm-input--error]="form.get('horaInicio')?.invalid && form.get('horaInicio')?.touched">
+          @if (form.get('horaInicio')?.invalid && form.get('horaInicio')?.touched) {
+            <span class="nsm-hint">Campo obligatorio</span>
+          }
+        </div>
+
+        <div class="nsm-field">
+          <label class="nsm-label">
+            <i class="bi bi-clock-history"></i> Hora fin
+            <span class="nsm-required">*</span>
+          </label>
+          <input type="time" formControlName="horaFin" class="nsm-input"
+            [class.nsm-input--error]="form.get('horaFin')?.invalid && form.get('horaFin')?.touched">
+          @if (form.get('horaFin')?.invalid && form.get('horaFin')?.touched) {
+            <span class="nsm-hint">Campo obligatorio</span>
+          }
+        </div>
+      </div>
+
+      <!-- Notas (opcional) -->
+      <div class="nsm-field">
+        <label class="nsm-label">
+          <i class="bi bi-chat-left-text"></i> Notas
+          <span class="nsm-optional">(opcional)</span>
+        </label>
+        <textarea formControlName="notas" class="nsm-textarea"
+          rows="3" placeholder="Observaciones sobre la sesión..."></textarea>
+      </div>
+
+    </form>
+
+    <!-- Footer -->
+    <div class="nsm-footer">
+      @if (saveSuccess()) {
+        <div class="nsm-feedback nsm-feedback--success">
+          <i class="bi bi-check-circle-fill"></i>
+          Sesión creada correctamente
+        </div>
+      }
+      @if (saveError()) {
+        <div class="nsm-feedback nsm-feedback--error">
+          <i class="bi bi-exclamation-circle-fill"></i>
+          {{ saveError() }}
+        </div>
+      }
+      <div class="nsm-footer__actions">
+        <button type="button" class="nsm-btn nsm-btn--ghost" (click)="close()" [disabled]="isSaving()">
+          Cancelar
+        </button>
+        <button type="button" class="nsm-btn nsm-btn--primary" (click)="save()" [disabled]="isSaving()">
+          @if (isSaving()) {
+            <span class="nsm-spinner"></span>
+            Guardando...
+          } @else {
+            <i class="bi bi-calendar-plus"></i>
+            Crear sesión
+          }
+        </button>
+      </div>
+    </div>
+
+  </div>
+}

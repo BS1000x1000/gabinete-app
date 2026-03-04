@@ -78,6 +78,12 @@ export class ClientesService {
       .pipe(map((res) => res.data || res));
   }
 
+  getMisClientes(): Observable<ClienteDataBackend[]> {
+    return this.http
+      .get<WrappedResponse<ClienteDataBackend[]>>(`${this.api}/mis-clientes`)
+      .pipe(map((res) => res.data || res));
+  }
+
   /**
    * Obtener un cliente por ID
    */

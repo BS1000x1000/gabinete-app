@@ -184,6 +184,18 @@ export class ClientesService {
     });
   }
 
+  async findByTrabajador(trabajadorId: string): Promise<ClienteWithRelations[]> {
+    return await this.prisma.cliente.findMany({
+      where: {
+        trabajadoresAsignados: {
+          some: { trabajadorId, activo: true },
+        },
+      },
+      include: clienteInclude,
+      orderBy: { apellidos: 'asc' },
+    });
+  }
+
   async findAllPaginated(paginationDto: PaginationDto) {
     const { page = 1, limit = 10 } = paginationDto;
     const skip = (page - 1) * limit;

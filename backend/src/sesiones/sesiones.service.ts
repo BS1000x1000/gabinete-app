@@ -307,7 +307,7 @@ export class SesionesService {
 
       // Calcular inicio y fin de semana (lunes a domingo)
       const inicioSemana = startOfWeek(fecha, { weekStartsOn: 1 }); // 1 = Lunes
-      const finSemana = endOfWeek(fecha + 'T23:59:59', { weekStartsOn: 1 });
+      const finSemana = endOfWeek(fecha, { weekStartsOn: 1 });
 
       // Obtener sesiones de la semana
       const sesiones = await this.prisma.sesion.findMany({

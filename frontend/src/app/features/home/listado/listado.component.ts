@@ -36,11 +36,12 @@ export class ListadoComponent implements OnInit, OnDestroy {
   readonly clienteId = signal<string>('');
 
   readonly workTabs: WorkTab[] = [
-    { label: 'Perfil',     icon: 'bi-person-vcard',      target: 'perfil'   },
-    { label: 'Sesiones',   icon: 'bi-calendar2-week',    target: 'sesiones' },
-    { label: 'Bonos',      icon: 'bi-ticket-perforated', target: 'bonos'    },
-    { label: 'Progreso',   icon: 'bi-graph-up',          target: 'progreso' },
-    { label: 'Documentos', icon: 'bi-file-earmark-text', target: 'informes' },
+    { label: 'Perfil',      icon: 'bi-person-vcard',      target: 'perfil'     },
+    { label: 'Sesiones',    icon: 'bi-calendar2-week',    target: 'sesiones'   },
+    { label: 'Bonos',       icon: 'bi-ticket-perforated', target: 'bonos'      },
+    { label: 'Progreso',    icon: 'bi-graph-up',          target: 'progreso'   },
+    { label: 'Terapeutas',  icon: 'bi-people',            target: 'terapeutas' },
+    { label: 'Documentos',  icon: 'bi-file-earmark-text', target: 'informes'   },
   ];
 
   readonly isLoading = signal(true);
