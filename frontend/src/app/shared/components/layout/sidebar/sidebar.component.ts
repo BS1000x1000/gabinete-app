@@ -1,4 +1,4 @@
-import { Component, inject, computed } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../../services/auth.service';
@@ -25,21 +25,9 @@ export class SidebarComponent {
   private auth   = inject(AuthService);
   private router = inject(Router);
 
-  currentUser = this.auth.currentUser;
-
-  userInitials = computed(() => {
-    const u = this.currentUser();
-    if (!u) return '?';
-    return `${u.nombre?.charAt(0) ?? ''}${u.apellidos?.charAt(0) ?? ''}`.toUpperCase();
-  });
-
-  userName = computed(() => {
-    const u = this.currentUser();
-    if (!u) return '';
-    return `${u.nombre} ${u.apellidos}`;
-  });
-
-  userRole = computed(() => this.currentUser()?.rol?.nombre ?? '');
+  userInitials = this.auth.userInitials;
+  userName     = this.auth.userName;
+  userRole     = this.auth.userRole;
 
   navItems: NavItem[] = [
     { label: 'Agenda',   icon: 'bi-calendar-week',  route: '/home/agenda'   },

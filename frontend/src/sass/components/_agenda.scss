@@ -1,56 +1,787 @@
-// ==========================================
-// AGENDA COMPONENT - USANDO PALETA
-// ==========================================
+// ============================================================
+// AGENDA — Vista operativa principal (Fase 2 rediseño UX)
+// Dos paneles: sesiones del día | calendario semanal
+// ============================================================
 
-.agenda-wrapper {
-  padding: $spacing-lg;
-  max-width: 1400px;
-  margin: 0 auto;
+// ── Página contenedora ───────────────────────────────────────
 
-  @media (max-width: $breakpoint-md) {
-    padding: $spacing-md;
+.ag-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+// ── Banner de alertas ────────────────────────────────────────
+
+.ag-banner {
+  background: $warning-light;
+  border-bottom: 1px solid rgba($warning, 0.35);
+  animation: ag-slide-down 0.25s ease;
+  flex-shrink: 0;
+
+  &__inner {
+    display: flex;
+    align-items: center;
+    gap: $spacing-md;
+    padding: 10px $spacing-lg;
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  &__icon {
+    color: $warning-dark;
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+
+  &__body {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: $spacing-md;
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+
+  &__count {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $warning-dark;
+    white-space: nowrap;
+  }
+
+  &__list {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    flex-wrap: wrap;
+  }
+
+  &__item {
+    font-size: $font-size-sm;
+    color: darken($warning-dark, 10%);
+  }
+
+  &__more {
+    font-size: $font-size-xs;
+    color: $warning-dark;
+    background: rgba($warning, 0.2);
+    padding: 2px 8px;
+    border-radius: $border-radius-full;
+  }
+
+  &__close {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    color: $warning-dark;
+    cursor: pointer;
+    border-radius: $border-radius-sm;
+    flex-shrink: 0;
+    transition: $transition-fast;
+    font-size: 0.8rem;
+
+    &:hover {
+      background: rgba($warning, 0.25);
+    }
   }
 }
 
-.table-agenda {
+@keyframes ag-slide-down {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+// ── Layout de dos paneles ─────────────────────────────────────
+
+.ag-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: $spacing-lg;
+  padding: $spacing-lg $spacing-lg;
+  flex: 1;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  align-items: start;
+
+  @media (max-width: $breakpoint-xl) {
+    grid-template-columns: 1fr 280px;
+  }
+
+  @media (max-width: $breakpoint-lg) {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+  }
+}
+
+// ── Paneles base ──────────────────────────────────────────────
+
+.ag-panel {
   background: $white;
+  border-radius: $border-radius-xl;
+  box-shadow: $shadow-card;
+  overflow: hidden;
+
+  &--sessions {
+    display: flex;
+    flex-direction: column;
+    min-height: 480px;
+  }
+
+  &--calendar {
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: calc(#{$header-height} + #{$spacing-lg});
+  }
+}
+
+// ── Cabecera del día (panel izquierdo) ───────────────────────
+
+.ag-day-header {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-md $spacing-lg;
+  border-bottom: 1px solid $border-color-light;
+  flex-shrink: 0;
+}
+
+.ag-day-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  min-width: 0;
+}
+
+.ag-day-title {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $gray-900;
+  margin: 0;
+  text-transform: capitalize;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  @media (max-width: $breakpoint-md) {
+    font-size: $font-size-base;
+  }
+}
+
+.ag-hoy-badge {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $primary;
+  background: $primary-light;
+  padding: 3px 10px;
+  border-radius: $border-radius-full;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.ag-hoy-link {
+  font-size: $font-size-xs;
+  color: $gray-400;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 3px 8px;
+  border-radius: $border-radius-full;
+  transition: $transition-fast;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  &:hover {
+    background: $primary-ultra-light;
+    color: $primary;
+  }
+}
+
+.ag-nav-btn {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: $white;
+  border: 1px solid $border-color;
+  border-radius: $border-radius;
+  color: $gray-500;
+  cursor: pointer;
+  transition: $transition-fast;
+
+  &:hover:not(:disabled) {
+    border-color: $primary;
+    color: $primary;
+    background: $primary-ultra-light;
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+}
+
+.ag-refresh-btn {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: $gray-400;
+  cursor: pointer;
+  border-radius: $border-radius;
+  transition: $transition-fast;
+
+  &:hover:not(:disabled) {
+    color: $primary;
+    background: $primary-ultra-light;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  &--spinning i {
+    animation: ag-spin 0.8s linear infinite;
+  }
+}
+
+@keyframes ag-spin {
+  to { transform: rotate(360deg); }
+}
+
+// ── Strip de estadísticas ─────────────────────────────────────
+
+.ag-stats-strip {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: 8px $spacing-lg;
+  background: $gray-50;
+  border-bottom: 1px solid $border-color-light;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.ag-stat {
+  font-size: $font-size-xs;
+  color: $gray-500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  strong {
+    color: $gray-800;
+    font-weight: $font-weight-semibold;
+  }
+
+  i { font-size: 0.75rem; }
+
+  &--success { color: $success; }
+  &--primary  { color: $primary; }
+  &--danger   { color: $danger; }
+}
+
+.ag-stat-sep {
+  color: $gray-300;
+  font-size: $font-size-xs;
+}
+
+// ── Lista de sesiones ─────────────────────────────────────────
+
+.ag-sessions-list {
+  flex: 1;
+  padding: $spacing-md;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+}
+
+// ── Tarjeta de sesión ─────────────────────────────────────────
+
+.ag-card {
+  display: flex;
+  align-items: stretch;
+  background: $white;
+  border: 1px solid $border-color-light;
   border-radius: $border-radius-lg;
   overflow: hidden;
-  box-shadow: $shadow-card;
+  transition: $transition-base;
 
-  tbody tr {
-    transition: $transition-base;
-    border-bottom: 1px solid $border-color-light;
-    
-    &:hover {
-      background-color: $primary-ultra-light;
-    }
-    
-    &.table-active {
-      background-color: $primary-light;
-    }
+  &:hover {
+    border-color: rgba(var(--tipo-color-rgb, 124, 111, 214), 0.35);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 
-    &:last-child {
-      border-bottom: none;
+    .ag-card-actions {
+      opacity: 1;
     }
   }
 
-  th {
-    background-color: $gray-50;
+  // Sesión pasada (programada pero hora ya pasó)
+  &--pasada {
+    opacity: 0.65;
+  }
+
+  // Skeleton de carga
+  &--skeleton {
+    border-color: $border-color-light;
+    pointer-events: none;
+    animation: ag-pulse 1.6s ease-in-out infinite;
+
+    .ag-card-indicator {
+      background: $gray-200;
+    }
+  }
+}
+
+@keyframes ag-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.55; }
+}
+
+// Columna de hora
+.ag-card-time {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 14px;
+  min-width: 72px;
+  background: $gray-50;
+  border-right: 1px solid $border-color-light;
+  gap: 1px;
+  flex-shrink: 0;
+}
+
+.ag-time-start {
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  color: $gray-800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.3px;
+}
+
+.ag-time-sep {
+  font-size: $font-size-xs;
+  color: $gray-300;
+}
+
+.ag-time-end {
+  font-size: $font-size-xs;
+  color: $gray-400;
+  font-variant-numeric: tabular-nums;
+}
+
+// Indicador de color por tipo
+.ag-card-indicator {
+  width: 3px;
+  flex-shrink: 0;
+  background: var(--tipo-color, #{$primary});
+  opacity: 0.85;
+}
+
+// Cuerpo de la tarjeta
+.ag-card-body {
+  flex: 1;
+  padding: 12px $spacing-md;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.ag-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-sm;
+}
+
+.ag-card-sub {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  flex-wrap: wrap;
+}
+
+.ag-client-name {
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  color: $gray-900;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.ag-tipo {
+  font-size: 0.7rem;
+  font-weight: $font-weight-semibold;
+  padding: 2px 8px;
+  border-radius: $border-radius-full;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+
+.ag-curso {
+  font-size: $font-size-xs;
+  color: $gray-400;
+}
+
+// Badges de estado
+.ag-estado {
+  font-size: 0.68rem;
+  font-weight: $font-weight-semibold;
+  padding: 2px 9px;
+  border-radius: $border-radius-full;
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: 0.1px;
+
+  &--programada {
+    background: $primary-light;
+    color: $primary-dark;
+  }
+  &--completada {
+    background: $success-light;
+    color: $success-dark;
+  }
+  &--cancelada-aviso {
+    background: $warning-light;
+    color: $warning-dark;
+  }
+  &--cancelada-sin {
+    background: $danger-light;
+    color: $danger-dark;
+  }
+  &--default {
+    background: $gray-100;
+    color: $gray-600;
+  }
+}
+
+// Columna de acciones (visible en hover)
+.ag-card-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 10px;
+  opacity: 0;
+  transition: opacity $animation-duration-base $animation-timing;
+  flex-shrink: 0;
+}
+
+.ag-action {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: $border-radius;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: $transition-fast;
+
+  &--success {
+    background: $success-light;
+    color: $success-dark;
+    &:hover { background: $success; color: $white; }
+  }
+  &--danger {
+    background: $danger-light;
+    color: $danger-dark;
+    &:hover { background: $danger; color: $white; }
+  }
+  &--neutral {
+    background: $gray-100;
+    color: $gray-600;
+    &:hover { background: $primary-light; color: $primary; }
+  }
+}
+
+// Skeletons
+.ag-skel {
+  background: $gray-100;
+  border-radius: $border-radius-sm;
+
+  &--xs { height: 10px; width: 40px; }
+  &--sm { height: 12px; width: 52px; }
+  &--md { height: 14px; width: 120px; }
+  &--lg { height: 16px; width: 180px; }
+}
+
+// ── Estado vacío ──────────────────────────────────────────────
+
+.ag-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-4xl $spacing-lg;
+  gap: $spacing-sm;
+  flex: 1;
+  text-align: center;
+}
+
+.ag-empty__icon {
+  width: 56px;
+  height: 56px;
+  border-radius: $border-radius-xl;
+  background: $primary-ultra-light;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: $spacing-sm;
+
+  i {
+    font-size: 1.5rem;
+    color: $lila-suave;
+  }
+}
+
+.ag-empty__title {
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  color: $gray-700;
+  margin: 0;
+}
+
+.ag-empty__sub {
+  font-size: $font-size-sm;
+  color: $gray-400;
+  margin: 0;
+  text-transform: capitalize;
+}
+
+// ── Panel derecho: Calendario semanal ─────────────────────────
+
+.ag-cal-header {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: $spacing-md $spacing-md 12px;
+  border-bottom: 1px solid $border-color-light;
+  flex-shrink: 0;
+}
+
+.ag-cal-title {
+  flex: 1;
+  text-align: center;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $gray-600;
+  text-transform: capitalize;
+}
+
+.ag-cal-nav {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid $border-color;
+  border-radius: $border-radius-sm;
+  color: $gray-400;
+  cursor: pointer;
+  transition: $transition-fast;
+  font-size: 0.7rem;
+
+  &:hover {
+    border-color: $primary;
+    color: $primary;
+    background: $primary-ultra-light;
+  }
+}
+
+// Fila de chips de días
+.ag-week-chips {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+  padding: 12px $spacing-sm;
+  flex-shrink: 0;
+}
+
+.ag-day-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 2px;
+  border-radius: $border-radius;
+  border: 1px solid transparent;
+  background: none;
+  cursor: pointer;
+  transition: $transition-fast;
+
+  &:hover:not(&--selected) {
+    background: $gray-50;
+    border-color: $border-color;
+  }
+
+  // Día seleccionado
+  &--selected {
+    background: $primary;
+    border-color: $primary;
+
+    .ag-day-chip__label { color: rgba($white, 0.8); }
+    .ag-day-chip__num   { color: $white; }
+  }
+
+  // Día de hoy (no seleccionado)
+  &--today:not(&--selected) {
+    border-color: $primary;
+
+    .ag-day-chip__label { color: $primary; }
+    .ag-day-chip__num   { color: $primary; font-weight: $font-weight-bold; }
+  }
+
+  // Skeleton
+  &--skeleton {
+    height: 58px;
+    background: $gray-100;
+    animation: ag-pulse 1.6s ease-in-out infinite;
+    border-radius: $border-radius;
+  }
+
+  &__label {
+    font-size: 0.6rem;
+    font-weight: $font-weight-semibold;
+    color: $gray-400;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  &__num {
+    font-size: $font-size-sm;
     font-weight: $font-weight-semibold;
     color: $gray-700;
-    border-bottom: 2px solid $border-color;
-    font-size: $font-size-sm;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    line-height: 1;
   }
 
-  td {
+  &__dots {
+    display: flex;
+    gap: 2px;
+    min-height: 6px;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+.ag-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+// Sesiones compactas del día en el panel derecho
+.ag-cal-sessions-wrap {
+  padding: 0 $spacing-md $spacing-sm;
+}
+
+.ag-cal-sessions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ag-cal-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: $border-radius-sm;
+  background: $gray-50;
+
+  &__hora {
+    font-size: 0.7rem;
+    font-weight: $font-weight-semibold;
+    color: $gray-500;
+    font-variant-numeric: tabular-nums;
+    min-width: 38px;
+  }
+
+  &__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--tipo-color, #{$primary});
+    flex-shrink: 0;
+  }
+
+  &__nombre {
+    font-size: $font-size-xs;
+    color: $gray-700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.ag-cal-empty {
+  text-align: center;
+  font-size: $font-size-xs;
+  color: $gray-300;
+  padding: $spacing-md;
+  margin: 0;
+}
+
+// Resumen semanal
+.ag-cal-resumen {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  margin-top: $spacing-md;
+  border-top: 1px solid $border-color-light;
+  background: $border-color-light;
+}
+
+.ag-cal-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: $spacing-md $spacing-xs;
+  background: $white;
+
+  &__num {
+    font-size: $font-size-xl;
+    font-weight: $font-weight-bold;
     color: $gray-800;
-    vertical-align: middle;
+    line-height: 1;
+
+    &--success { color: $success; }
   }
 
-  .badge {
+  &__label {
+    font-size: 0.65rem;
+    color: $gray-400;
+    text-align: center;
     font-weight: $font-weight-medium;
   }
 }

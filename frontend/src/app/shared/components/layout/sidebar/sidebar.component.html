@@ -17,7 +17,7 @@
         routerLinkActive="is-active"
         [title]="item.label"
       >
-        <i class="bi" [class]="'bi ' + item.icon"></i>
+        <i [class]="'bi ' + item.icon"></i>
         <span>{{ item.label }}</span>
       </a>
     }
@@ -35,14 +35,11 @@
         (click)="handleQuickAction(action.action)"
         type="button"
       >
-        <i class="bi" [class]="'bi ' + action.icon"></i>
+        <i [class]="'bi ' + action.icon"></i>
         <span>{{ action.label }}</span>
       </button>
     }
   </div>
-
-  <!-- ── Espaciador ───────────────────────────── -->
-  <div class="sidebar-spacer"></div>
 
   <!-- ── Perfil de usuario ─────────────────── -->
   <div class="sidebar-profile">

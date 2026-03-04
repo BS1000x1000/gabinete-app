@@ -1,241 +1,286 @@
-<div class="container-fluid mt-2">
-  <!-- Controles superiores -->
-  <div class="d-flex mb-3 justify-content-between align-items-center flex-wrap gap-2">
-    
-    <!-- Tabs de vista -->
-    <ul class="nav nav-pills">
-      <li class="nav-item">
-        <button
-          class="nav-link"
-          [class.active]="modoFijo() === 'agenda'"
-          (click)="modoFijo.set('agenda')"
-        >
-          <i class="bi bi-list-ul me-2"></i>Lista
-        </button>
-      </li>
-      <li class="nav-item">
-        <button
-          class="nav-link"
-          [class.active]="modoFijo() === 'calendario'"
-          (click)="modoFijo.set('calendario')"
-        >
-          <i class="bi bi-calendar-day me-2"></i>Calendario
-        </button>
-      </li>
-    </ul>
+<div class="ag-page">
 
-    <!-- ✅ Navegación de días (solo en vista Agenda) -->
-    <div *ngIf="modoFijo() === 'agenda'" class="d-flex align-items-center gap-2">
-      <button
-        class="btn btn-sm btn-outline-secondary"
-        (click)="diaAnterior()"
-        [disabled]="isLoading()"
-      >
-        <i class="bi bi-chevron-left"></i>
-        Anterior
-      </button>
+  <!-- ── Banner de alertas ──────────────────────────────── -->
+  @if (hayAlertas()) {
+    <div class="ag-banner">
+      <div class="ag-banner__inner">
+        <i class="bi bi-exclamation-triangle-fill ag-banner__icon"></i>
+        <div class="ag-banner__body">
+          <strong class="ag-banner__count">
+            {{ alertasUrgentes().length }} alerta{{ alertasUrgentes().length !== 1 ? 's' : '' }} pendiente{{ alertasUrgentes().length !== 1 ? 's' : '' }}
+          </strong>
+          <span class="ag-banner__list">
+            @for (alerta of alertasUrgentes().slice(0, 3); track alerta.id) {
+              <span class="ag-banner__item">· {{ alerta.titulo }}</span>
+            }
+            @if (alertasUrgentes().length > 3) {
+              <span class="ag-banner__more">+{{ alertasUrgentes().length - 3 }} más</span>
+            }
+          </span>
+        </div>
+        <button class="ag-banner__close" (click)="bannerColapsado.set(true)" title="Cerrar">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+    </div>
+  }
 
-      <div class="text-center px-3">
-        <div class="fw-bold small text-capitalize">{{ fechaFormateada() }}</div>
+  <!-- ── Layout principal: dos paneles ─────────────────── -->
+  <div class="ag-layout">
+
+    <!-- ╔══ PANEL IZQUIERDO: Sesiones del día ═══════════╗ -->
+    <div class="ag-panel ag-panel--sessions">
+
+      <!-- Cabecera: navegación por día -->
+      <div class="ag-day-header">
+        <button class="ag-nav-btn" (click)="diaAnterior()" [disabled]="isLoadingDia()">
+          <i class="bi bi-chevron-left"></i>
+        </button>
+
+        <div class="ag-day-info">
+          <h1 class="ag-day-title">{{ fechaFormateada() }}</h1>
+          @if (esHoy()) {
+            <span class="ag-hoy-badge">Hoy</span>
+          } @else {
+            <button class="ag-hoy-link" (click)="irAHoy()">
+              <i class="bi bi-arrow-counterclockwise"></i> Ir a hoy
+            </button>
+          }
+        </div>
+
+        <button class="ag-nav-btn" (click)="diaSiguiente()" [disabled]="isLoadingDia()">
+          <i class="bi bi-chevron-right"></i>
+        </button>
         <button
-          *ngIf="!esHoy()"
-          class="btn btn-link btn-sm text-decoration-none p-0"
-          (click)="irAHoy()"
+          class="ag-refresh-btn"
+          [class.ag-refresh-btn--spinning]="isLoadingDia()"
+          (click)="refrescar()"
+          [disabled]="isLoadingDia()"
+          title="Refrescar"
         >
-          Ir a hoy
+          <i class="bi bi-arrow-clockwise"></i>
         </button>
       </div>
 
-      <button
-        class="btn btn-sm btn-outline-secondary"
-        (click)="diaSiguiente()"
-        [disabled]="isLoading()"
-      >
-        Siguiente
-        <i class="bi bi-chevron-right"></i>
-      </button>
-    </div>
+      <!-- Strip de estadísticas del día -->
+      @if (totalSesiones() > 0 && !isLoadingDia()) {
+        <div class="ag-stats-strip">
+          <span class="ag-stat">
+            <strong>{{ totalSesiones() }}</strong> sesiones
+          </span>
+          <span class="ag-stat-sep">·</span>
+          <span class="ag-stat ag-stat--success">
+            <i class="bi bi-check-circle-fill"></i>{{ sesionesCompletadas() }}
+          </span>
+          <span class="ag-stat-sep">·</span>
+          <span class="ag-stat ag-stat--primary">
+            <i class="bi bi-clock-fill"></i>{{ sesionesProgramadas() }}
+          </span>
+          @if (sesionesCanceladas() > 0) {
+            <span class="ag-stat-sep">·</span>
+            <span class="ag-stat ag-stat--danger">
+              <i class="bi bi-x-circle-fill"></i>{{ sesionesCanceladas() }}
+            </span>
+          }
+        </div>
+      }
 
-    <!-- Botón refrescar -->
-    <button
-      class="btn btn-sm btn-outline-primary"
-      (click)="refrescar()"
-      [disabled]="isLoading()"
-    >
-      <i class="bi bi-arrow-clockwise"></i>
-      <span class="d-none d-md-inline">Refrescar</span>
-    </button>
-  </div>
+      <!-- Lista de tarjetas de sesión -->
+      <div class="ag-sessions-list">
 
-  <!-- Loader -->
-  <div *ngIf="isLoading()" class="text-center py-5">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Cargando sesiones...</span>
-    </div>
-    <p class="text-muted mt-2 small">Cargando sesiones...</p>
-  </div>
+        <!-- Skeletons mientras carga -->
+        @if (isLoadingDia()) {
+          @for (i of [1, 2, 3]; track i) {
+            <div class="ag-card ag-card--skeleton">
+              <div class="ag-card-time">
+                <div class="ag-skel ag-skel--sm"></div>
+                <div class="ag-skel ag-skel--xs"></div>
+              </div>
+              <div class="ag-card-indicator"></div>
+              <div class="ag-card-body">
+                <div class="ag-skel ag-skel--lg" style="margin-bottom: 8px"></div>
+                <div class="ag-skel ag-skel--md"></div>
+              </div>
+            </div>
+          }
 
-  <!-- Vista de Agenda (tabla) -->
-  <div *ngIf="modoFijo() === 'agenda' && !isLoading()">
+        <!-- Estado vacío -->
+        } @else if (sesiones().length === 0) {
+          <div class="ag-empty">
+            <div class="ag-empty__icon">
+              <i class="bi bi-calendar-week"></i>
+            </div>
+            <p class="ag-empty__title">Sin sesiones este día</p>
+            <p class="ag-empty__sub">{{ fechaFormateada() }}</p>
+          </div>
 
-    <div class="table-responsive">
-      <table class="table table-sm align-middle table-hover table-agenda">
-        <thead class="table-light">
-          <tr>
-            <th>Hora</th>
-            <th>Estado</th>
-            <th>Tipo</th>
-            <th>Cliente</th>
-            <th>Asistencia</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            *ngFor="let sesion of sesiones()"
-            style="cursor: pointer"
-            [class.table-active]="selectedRowId() === sesion.id"
-            (click)="onFilaClick(sesion)"
-          >
-            <!-- Hora -->
-            <td class="fw-semibold">
-              {{ sesion.fechaHoraInicio | date: "HH:mm" }} -
-              {{ sesion.fechaHoraFin | date: "HH:mm" }}
-            </td>
+        <!-- Tarjetas de sesión -->
+        } @else {
+          @for (sesion of sesiones(); track sesion.id) {
+            <div
+              class="ag-card"
+              [class.ag-card--pasada]="sesion.temporal?.esPasada && sesion.estado === 'PROGRAMADA'"
+              [style.--tipo-color]="getTipoColor(sesion.tipoSesion)"
+            >
+              <!-- Columna de hora -->
+              <div class="ag-card-time">
+                <span class="ag-time-start">{{ sesion.horaInicio }}</span>
+                <span class="ag-time-sep">–</span>
+                <span class="ag-time-end">{{ sesion.horaFin }}</span>
+              </div>
 
-            <!-- Estado -->
-            <td>
-              <span
-                class="badge"
-                [class.bg-success]="sesion.estado === 'COMPLETADA'"
-                [class.bg-primary]="sesion.estado === 'PROGRAMADA'"
-                [class.bg-warning]="sesion.estado === 'CANCELADA_CON_AVISO'"
-                [class.bg-danger]="sesion.estado === 'CANCELADA_SIN_AVISO'"
-              >
-                {{ ESTADO_SESION_LABELS[sesion.estado] ?? sesion.estado }}
-              </span>
-            </td>
+              <!-- Franja de color por tipo -->
+              <div class="ag-card-indicator"></div>
 
-            <!-- Tipo -->
-            <td>
-              <small class="text-muted">{{ TIPO_SESION_LABELS[sesion.tipoSesion] ?? sesion.tipoSesion }}</small>
-            </td>
+              <!-- Contenido principal -->
+              <div class="ag-card-body">
+                <div class="ag-card-top">
+                  <span class="ag-client-name">
+                    {{ sesion.cliente.nombreCompleto || (sesion.cliente.nombre + ' ' + sesion.cliente.apellidos) }}
+                  </span>
+                  <span class="ag-estado ag-estado--{{ getEstadoClass(sesion.estado) }}">
+                    {{ ESTADO_SESION_LABELS[sesion.estado] ?? sesion.estado }}
+                  </span>
+                </div>
+                <div class="ag-card-sub">
+                  <span
+                    class="ag-tipo"
+                    [style.color]="getTipoColor(sesion.tipoSesion)"
+                    [style.background-color]="getTipoColor(sesion.tipoSesion) + '18'"
+                  >
+                    {{ TIPO_SESION_LABELS[sesion.tipoSesion] ?? sesion.tipoSesion }}
+                  </span>
+                  @if (sesion.cliente.curso) {
+                    <span class="ag-curso">{{ sesion.cliente.curso }}</span>
+                  }
+                </div>
+              </div>
 
-            <!-- Cliente -->
-            <td>
-              <span class="badge bg-secondary">
-                {{ sesion.cliente.nombre }} {{ sesion.cliente.apellidos }}
-              </span>
-            </td>
-
-            <!-- Asistencia -->
-            <td>
-              <div class="btn-group btn-group-sm" role="group">
+              <!-- Acciones -->
+              <div class="ag-card-actions">
+                @if (sesion.estado === 'PROGRAMADA') {
+                  <button
+                    class="ag-action ag-action--success"
+                    title="Completar sesión"
+                    (click)="abrirCompletar(sesion, $event)"
+                  >
+                    <i class="bi bi-check-circle"></i>
+                  </button>
+                  <button
+                    class="ag-action ag-action--danger"
+                    title="Cancelar sesión"
+                    (click)="abrirCancelar(sesion, $event)"
+                  >
+                    <i class="bi bi-x-circle"></i>
+                  </button>
+                }
                 <button
-                  type="button"
-                  class="btn"
-                  [class.btn-success]="sesion.asistio === true"
-                  [class.btn-outline-success]="sesion.asistio !== true"
-                  (click)="marcarAsistencia(sesion.id!, true); $event.stopPropagation()"
+                  class="ag-action ag-action--neutral"
+                  title="Ver ficha del cliente"
+                  (click)="verCliente(sesion.clienteId, $event)"
                 >
-                  Sí
-                </button>
-                <button
-                  type="button"
-                  class="btn"
-                  [class.btn-danger]="sesion.asistio === false"
-                  [class.btn-outline-danger]="sesion.asistio !== false"
-                  (click)="marcarAsistencia(sesion.id!, false); $event.stopPropagation()"
-                >
-                  No
+                  <i class="bi bi-person"></i>
                 </button>
               </div>
-            </td>
+            </div>
+          }
+        }
 
-            <!-- Acciones -->
-            <td>
-              <div class="btn-group btn-group-sm">
-                <button
-                  *ngIf="sesion.estado === 'PROGRAMADA'"
-                  class="btn btn-sm btn-outline-success"
-                  title="Completar sesión"
-                  (click)="abrirCompletar(sesion, $event)"
-                >
-                  <i class="bi bi-check-circle"></i>
-                </button>
-                <button
-                  *ngIf="sesion.estado === 'PROGRAMADA'"
-                  class="btn btn-sm btn-outline-danger"
-                  title="Cancelar sesión"
-                  (click)="abrirCancelar(sesion, $event)"
-                >
-                  <i class="bi bi-x-circle"></i>
-                </button>
-                <button
-                  class="btn btn-sm btn-outline-primary"
-                  title="Ver cliente"
-                  (click)="verDetalle(sesion); $event.stopPropagation()"
-                >
-                  <i class="bi bi-eye"></i>
-                </button>
+      </div>
+    </div>
+    <!-- ╚═══════════════════════════════════════════════════╝ -->
+
+
+    <!-- ╔══ PANEL DERECHO: Calendario semanal ═══════════╗ -->
+    <div class="ag-panel ag-panel--calendar">
+
+      <!-- Cabecera de la semana -->
+      <div class="ag-cal-header">
+        <button class="ag-cal-nav" (click)="semanaAnterior()" title="Semana anterior">
+          <i class="bi bi-chevron-left"></i>
+        </button>
+        <span class="ag-cal-title">{{ semanaTitulo() }}</span>
+        <button class="ag-cal-nav" (click)="semanaSiguiente()" title="Semana siguiente">
+          <i class="bi bi-chevron-right"></i>
+        </button>
+      </div>
+
+      <!-- Chips de los 7 días -->
+      <div class="ag-week-chips">
+        @if (isLoadingSemana()) {
+          @for (i of [1, 2, 3, 4, 5, 6, 7]; track i) {
+            <div class="ag-day-chip ag-day-chip--skeleton"></div>
+          }
+        } @else {
+          @for (dia of diasSemana(); track dia.fecha) {
+            <button
+              class="ag-day-chip"
+              [class.ag-day-chip--selected]="esDiaSeleccionado(dia.fecha)"
+              [class.ag-day-chip--today]="dia.esHoy"
+              (click)="irADia(dia.fecha)"
+            >
+              <span class="ag-day-chip__label">{{ dia.diaSemana.slice(0, 2) }}</span>
+              <span class="ag-day-chip__num">{{ dia.dia }}</span>
+              <div class="ag-day-chip__dots">
+                @for (sesion of dia.sesiones.slice(0, 4); track sesion.id) {
+                  <span
+                    class="ag-dot"
+                    [style.background-color]="getTipoColor(sesion.tipoSesion)"
+                  ></span>
+                }
               </div>
-            </td>
-          </tr>
+            </button>
+          }
+        }
+      </div>
 
-          <tr *ngIf="sesiones().length === 0">
-            <td colspan="6" class="text-center text-muted py-5">
-              <i class="bi bi-calendar-x fs-3 d-block mb-2"></i>
-              <p class="mb-1">No hay sesiones en este día</p>
-              <small class="text-muted text-capitalize">
-                {{ fechaFormateada() }}
-              </small>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <!-- Sesiones del día seleccionado (lista compacta) -->
+      @if (!isLoadingSemana()) {
+        <div class="ag-cal-sessions-wrap">
+          @for (dia of diasSemana(); track dia.fecha) {
+            @if (esDiaSeleccionado(dia.fecha)) {
+              @if (dia.sesiones.length === 0) {
+                <p class="ag-cal-empty">Sin sesiones este día</p>
+              } @else {
+                <div class="ag-cal-sessions">
+                  @for (s of dia.sesiones; track s.id) {
+                    <div class="ag-cal-row" [style.--tipo-color]="getTipoColor(s.tipoSesion)">
+                      <span class="ag-cal-row__hora">{{ s.horaInicio }}</span>
+                      <span class="ag-cal-row__dot"></span>
+                      <span class="ag-cal-row__nombre">
+                        {{ s.cliente.nombreCompleto || s.cliente.nombre }}
+                      </span>
+                    </div>
+                  }
+                </div>
+              }
+            }
+          }
+        </div>
+      }
+
+      <!-- Resumen estadístico de la semana -->
+      @if (resumenSemana()) {
+        <div class="ag-cal-resumen">
+          <div class="ag-cal-stat">
+            <span class="ag-cal-stat__num">{{ resumenSemana()!.totalSesiones }}</span>
+            <span class="ag-cal-stat__label">esta semana</span>
+          </div>
+          <div class="ag-cal-stat">
+            <span class="ag-cal-stat__num ag-cal-stat__num--success">{{ resumenSemana()!.completadas }}</span>
+            <span class="ag-cal-stat__label">completadas</span>
+          </div>
+          <div class="ag-cal-stat">
+            <span class="ag-cal-stat__num">{{ resumenSemana()!.clientesUnicos }}</span>
+            <span class="ag-cal-stat__label">clientes únicos</span>
+          </div>
+        </div>
+      }
+
     </div>
+    <!-- ╚═══════════════════════════════════════════════════╝ -->
 
-    <!-- Resumen de sesiones -->
-    <div *ngIf="totalSesiones() > 0" class="row g-2 mt-3">
-      <div class="col-md-3">
-        <div class="card border-0 shadow-sm">
-          <div class="card-body text-center py-2">
-            <h5 class="mb-0">{{ totalSesiones() }}</h5>
-            <small class="text-muted">Total</small>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="card border-0 shadow-sm">
-          <div class="card-body text-center py-2">
-            <h5 class="mb-0 text-success">{{ sesionesCompletadas() }}</h5>
-            <small class="text-muted">Completadas</small>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="card border-0 shadow-sm">
-          <div class="card-body text-center py-2">
-            <h5 class="mb-0 text-primary">{{ sesionesProgramadas() }}</h5>
-            <small class="text-muted">Programadas</small>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="card border-0 shadow-sm">
-          <div class="card-body text-center py-2">
-            <h5 class="mb-0 text-danger">{{ sesionesCanceladas() }}</h5>
-            <small class="text-muted">Canceladas</small>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Vista de Calendario -->
-  <div *ngIf="modoFijo() === 'calendario'">
-    <app-calendario-full></app-calendario-full>
   </div>
 </div>
 
-<app-sesion-modales [onRefresh]="loadSesiones.bind(this)"></app-sesion-modales>
+<app-sesion-modales [onRefresh]="loadDia.bind(this)"></app-sesion-modales>

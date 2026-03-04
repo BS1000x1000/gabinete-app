@@ -63,6 +63,20 @@ export class AuthService {
   public currentUser = computed(() => this._currentUser());
   public isAuthenticated = computed(() => !!this._token());
 
+  public userInitials = computed(() => {
+    const u = this._currentUser();
+    if (!u) return '?';
+    return `${u.nombre?.charAt(0) ?? ''}${u.apellidos?.charAt(0) ?? ''}`.toUpperCase();
+  });
+
+  public userName = computed(() => {
+    const u = this._currentUser();
+    if (!u) return '';
+    return `${u.nombre} ${u.apellidos}`;
+  });
+
+  public userRole = computed(() => this._currentUser()?.rol?.nombre ?? '');
+
 
   /*
    * Login del trabajador

@@ -10,7 +10,7 @@ export default [
     children: [
       {
         path: '',
-        redirectTo: 'dashboard',
+        redirectTo: 'agenda',
         pathMatch: 'full'
       },
       {
