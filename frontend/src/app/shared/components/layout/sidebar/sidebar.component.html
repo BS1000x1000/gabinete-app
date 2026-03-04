@@ -1,49 +1,64 @@
-<aside class="sidebar" [class.collapsed]="collapsed()">
-  
-  <!-- Header del sidebar -->
-  <div class="sidebar-header">
-    <div class="brand" *ngIf="!collapsed()">
-      <i class="bi bi-grid-3x3-gap-fill text-primary me-2"></i>
-      <span class="brand-text fw-bold">Gabinete</span>
+<aside class="sidebar">
+
+  <!-- ── Marca ─────────────────────────────── -->
+  <div class="sidebar-brand">
+    <div class="sidebar-brand-icon">
+      <i class="bi bi-grid-3x3-gap-fill"></i>
     </div>
-    <button 
-      class="btn btn-link text-dark p-0" 
-      (click)="toggleSidebar()"
-      [title]="collapsed() ? 'Expandir' : 'Contraer'"
-    >
-      <i class="bi" [ngClass]="collapsed() ? 'bi-chevron-right' : 'bi-chevron-left'"></i>
-    </button>
+    <span class="sidebar-brand-name">Gabinete</span>
   </div>
 
-  <!-- Navegación -->
+  <!-- ── Navegación principal ──────────────── -->
   <nav class="sidebar-nav">
-    <ul class="nav flex-column">
-      <li class="nav-item" *ngFor="let item of menuItems">
-        <a 
-          class="nav-link"
-          [routerLink]="item.route"
-          routerLinkActive="active"
-          [title]="collapsed() ? item.label : ''"
-        >
-          <i class="bi" [ngClass]="item.icon"></i>
-          <span *ngIf="!collapsed()" class="ms-2">{{ item.label }}</span>
-          <span 
-            *ngIf="item.badge && !collapsed()" 
-            class="badge bg-danger ms-auto"
-          >
-            {{ item.badge }}
-          </span>
-        </a>
-      </li>
-    </ul>
+    @for (item of navItems; track item.route) {
+      <a
+        class="sidebar-nav-item"
+        [routerLink]="item.route"
+        routerLinkActive="is-active"
+        [title]="item.label"
+      >
+        <i class="bi" [class]="'bi ' + item.icon"></i>
+        <span>{{ item.label }}</span>
+      </a>
+    }
   </nav>
 
-  <!-- Footer del sidebar (opcional) -->
-  <div class="sidebar-footer" *ngIf="!collapsed()">
-    <small class="text-muted">
-      <i class="bi bi-info-circle me-1"></i>
-      v1.0.0
-    </small>
+  <!-- ── Separador ────────────────────────────── -->
+  <div class="sidebar-divider"></div>
+
+  <!-- ── Acciones rápidas ───────────────────── -->
+  <div class="sidebar-actions">
+    <p class="sidebar-actions-label">Acciones rápidas</p>
+    @for (action of quickActions; track action.action) {
+      <button
+        class="sidebar-action-btn"
+        (click)="handleQuickAction(action.action)"
+        type="button"
+      >
+        <i class="bi" [class]="'bi ' + action.icon"></i>
+        <span>{{ action.label }}</span>
+      </button>
+    }
+  </div>
+
+  <!-- ── Espaciador ───────────────────────────── -->
+  <div class="sidebar-spacer"></div>
+
+  <!-- ── Perfil de usuario ─────────────────── -->
+  <div class="sidebar-profile">
+    <div class="sidebar-profile-avatar">{{ userInitials() }}</div>
+    <div class="sidebar-profile-info">
+      <span class="sidebar-profile-name">{{ userName() }}</span>
+      <span class="sidebar-profile-role">{{ userRole() }}</span>
+    </div>
+    <button
+      class="sidebar-profile-logout"
+      (click)="logout()"
+      title="Cerrar sesión"
+      type="button"
+    >
+      <i class="bi bi-box-arrow-right"></i>
+    </button>
   </div>
 
 </aside>

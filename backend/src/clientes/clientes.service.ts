@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, TipoSesion } from '@prisma/client';
 import { ClienteWithRelations, clienteInclude } from './clientes.types';
 import { CreateClienteDto } from './dto/create-cliente.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -399,7 +399,7 @@ export class ClientesService {
   async asignarTrabajador(
     clienteId: string,
     trabajadorId: string,
-    tipoTerapia: string,
+    tipoTerapia: TipoSesion,
     horarios: { diaSemana: number; horaInicio: string; horaFin: string }[],
   ) {
     // ✅ MOVER ESTA VALIDACIÓN AL PRINCIPIO

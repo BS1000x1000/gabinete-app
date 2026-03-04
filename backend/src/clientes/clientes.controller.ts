@@ -16,6 +16,7 @@ import { ClientesService } from './clientes.service';
 import { CreateClienteDto } from './dto/create-cliente.dto';
 import { clienteInclude, ClienteWithRelations } from './clientes.types';
 import { PaginationDto } from './dto/pagination.dto';
+import { TipoSesion } from '@prisma/client';
 
 @Controller('clientes')
 export class ClientesController {
@@ -136,7 +137,7 @@ export class ClientesController {
     @Body()
     body: {
       trabajadorId: string;
-      tipoTerapia: string;
+      tipoTerapia: TipoSesion;
       horarios: { diaSemana: number; horaInicio: string; horaFin: string }[];
     },
   ) {

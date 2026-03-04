@@ -29,8 +29,8 @@ export class AgendaComponent implements OnInit {
   private accionesSvc = inject(SesionAccionesService);
   private destroyRef = inject(DestroyRef);
 
-  readonly TIPO_SESION_LABELS = TIPO_SESION_LABELS;
-  readonly ESTADO_SESION_LABELS = ESTADO_SESION_LABELS;
+  readonly TIPO_SESION_LABELS: any = TIPO_SESION_LABELS;
+  readonly ESTADO_SESION_LABELS: any = ESTADO_SESION_LABELS;
 
   // Estado
   sesiones = signal<any[]>([]);

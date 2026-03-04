@@ -1,48 +1,30 @@
 <div class="app-layout">
-  
+
   <!-- Sidebar de navegación -->
   <app-sidebar></app-sidebar>
 
   <!-- Contenedor principal -->
   <div class="app-content">
-    
+
     <!-- Header -->
     <header class="app-header">
-      <div class="container-fluid">
-        <div class="d-flex justify-content-between align-items-center py-3 px-3">
-          
-          <!-- Botón menú móvil -->
-          <button class="btn btn-link text-dark p-0 d-lg-none">
-            <i class="bi bi-list fs-3"></i>
-          </button>
+      <div class="app-header-inner">
 
-          <!-- Título -->
-          <h5 class="mb-0 fw-bold">Gabinete Psicopedagógico</h5>
+        <!-- Botón menú móvil -->
+        <button class="btn btn-link text-dark p-0 d-lg-none" (click)="toggleMobileSidebar()">
+          <i class="bi bi-list fs-4"></i>
+        </button>
 
-          <!-- Barra de búsqueda -->
-          <app-search-bar></app-search-bar>
+        <!-- Barra de búsqueda -->
+        <app-search-bar></app-search-bar>
+
+        <!-- Acciones de cabecera -->
+        <div class="app-header-actions">
           <app-notification-bell></app-notification-bell>
-          <!-- Usuario -->
-          <div class="d-flex align-items-center gap-3">
-            <div class="text-end d-md-block">
-              <small class="d-block text-muted">Bienvenido/a</small>
-              <strong>{{ currentUser()?.nombre }} {{ currentUser()?.apellidos }}</strong>
-            </div>
-            <div class="avatar-sm rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-semibold">
-              {{ currentUser()?.nombre?.charAt(0) }}{{ currentUser()?.apellidos?.charAt(0) }}
-            </div>
-            <button class="btn btn-sm btn-outline-danger" (click)="logout()">
-              <i class="bi bi-box-arrow-right"></i>
-            </button>
-          </div>
         </div>
+
       </div>
     </header>
-
-    <!-- Agenda compacta fija -->
-    <div class="agenda-sticky">
-      <app-agenda-compact></app-agenda-compact>
-    </div>
 
     <!-- Contenido de las rutas -->
     <main class="app-main">

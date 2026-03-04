@@ -287,7 +287,6 @@ export class TrabajadorTabComponent implements OnInit {
             return;
           }
 
-          // Todo OK → cerrar y recargar
           this.cerrarModalHorarios();
           this.cargarAsignaciones();
         },

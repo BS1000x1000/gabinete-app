@@ -9,6 +9,7 @@ import * as bcrypt from 'bcrypt';
 import { CreateTrabajadorDto, UpdateTrabajadorDto } from './dto/trabajador.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { trabajadorInclude, TrabajadorSafe } from './trabajador.types';
+import { TipoSesion } from '@prisma/client';
 
 @Injectable()
 export class TrabajadorService {
@@ -217,7 +218,7 @@ export class TrabajadorService {
   async asignarCliente(
     trabajadorId: string,
     clienteId: string,
-    tipoTerapia: string, // ✅ Ahora obligatorio (sin ?)
+    tipoTerapia: TipoSesion, // ✅ Ahora obligatorio (sin ?)
   ) {
     try {
       // ✅ Validar tipoTerapia al principio

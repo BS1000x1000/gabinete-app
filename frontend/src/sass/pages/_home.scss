@@ -1,45 +1,57 @@
+// ============================================================
+// HOME — Layout principal de la aplicación
+// ============================================================
+
 .app-layout {
   display: flex;
   min-height: 100vh;
-  background-color: #f5f7fa;
+  background-color: $bg-body;
 }
 
 .app-content {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-width: 0; // Importante para evitar overflow
+  min-width: 0; // Evita overflow en flex
 }
+
+// ── Header ────────────────────────────────────────────────
 
 .app-header {
-  background: white;
-  border-bottom: 1px solid #e9ecef;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  background: $white;
+  border-bottom: 1px solid rgba($primary, 0.08);
+  box-shadow: 0 1px 0 rgba($primary, 0.05);
   position: sticky;
   top: 0;
-  z-index: 1020;
-
-  .avatar-sm {
-    width: 2.5rem;
-    height: 2.5rem;
-    font-size: 0.9rem;
-  }
+  z-index: $z-sticky;
+  flex-shrink: 0;
 }
+
+.app-header-inner {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: 0 $spacing-lg;
+  height: $header-height;
+}
+
+.app-header-actions {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-left: auto;
+}
+
+// ── Main content ──────────────────────────────────────────
 
 .app-main {
   flex: 1;
-  padding: 0;
   overflow-x: hidden;
 }
 
-.agenda-sticky {
-  position: sticky;
-  top: 73px; // Altura del header
-  z-index: 1010;
-}
+// ── Responsive ────────────────────────────────────────────
 
-// Responsive
-@media (max-width: 992px) {
+@media (max-width: $breakpoint-lg) {
   .app-layout {
     flex-direction: column;
   }

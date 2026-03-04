@@ -12,6 +12,7 @@ import {
   Min
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
+import { TipoSesion } from '@prisma/client';
 
 // ===== DTOs ANIDADOS =====
 
@@ -139,7 +140,7 @@ export class AsignacionTrabajadorDto {
   trabajadorId: string;
 
   @IsString()
-  tipoTerapia: string;
+  tipoTerapia: TipoSesion;
 
   @IsArray()
   @ValidateNested({ each: true })
