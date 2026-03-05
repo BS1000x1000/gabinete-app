@@ -140,3 +140,78 @@ Backend requires a `.env` file in `backend/`:
 DATABASE_URL=postgresql://...
 SECRET=<jwt-secret>
 ```
+
+---
+
+## Patrones y lecciones aprendidas
+
+### Bootstrap: overflow horizontal por márgenes negativos de `.row`
+
+Las clases `.row.g-*` de Bootstrap aplican `margin-left` y `margin-right` negativos (`-0.5 * gutter`). Cuando se usan dentro de un contenedor flex/scroll sin `overflow-x: hidden`, generan un scrollbar horizontal no deseado.
+
+**Fix estándar:**
+1. Añadir `overflow-x: hidden; min-width: 0;` al contenedor padre (scroll o flex).
+2. Dar padding al wrapper que contiene la `.row` para absorber el gutter negativo (ej: `px-3` cuando se usa `g-4`).
+
+```scss
+// En el contenedor padre del scroll
+.mi-body {
+  overflow-y: auto;
+  overflow-x: hidden; // ← corta el gutter bleed de Bootstrap
+  min-width: 0;       // ← evita que el flex-child ignore su límite
+}
+```
+
+```html
+<!-- En la template, añadir padding al wrapper de la row -->
+<div class="container-fluid px-3 py-3">  <!-- NO p-0 -->
+  <div class="row g-4">...</div>
+</div>
+```
+
+### Patrón: descargas de archivos con estado de carga
+
+Los métodos de servicio que generan y descargan archivos (PDF, Excel) **DEBEN** devolver `Observable<void>`, nunca `void`. Esto permite que el componente gestione `isLoading` con `finalize()`.
+
+```typescript
+// ❌ Incorrecto — el componente no puede controlar el estado
+descargarPdf(id: string): void {
+  this.http.get(..., { responseType: 'blob' })
+    .subscribe(blob => triggerDownload(blob, 'file.pdf'));
+}
+
+// ✅ Correcto
+descargarPdf(id: string): Observable<void> {
+  return this.http.get(..., { responseType: 'blob' }).pipe(
+    tap(blob => triggerDownload(blob, 'file.pdf')),
+    map(() => void 0),
+  );
+}
+```
+
+En el componente, gestionar el estado así:
+
+```typescript
+descargando = signal(false);
+
+descargar(): void {
+  if (this.descargando()) return; // bloquea doble-click
+  this.descargando.set(true);
+  this.service.descargarPdf(id)
+    .pipe(finalize(() => this.descargando.set(false)))
+    .subscribe();
+}
+```
+
+En el template:
+```html
+<button [disabled]="descargando()" (click)="descargar()">
+  <span *ngIf="descargando()" class="spinner-border spinner-border-sm me-1"></span>
+  <i *ngIf="!descargando()" class="bi bi-file-earmark-pdf me-1"></i>
+  {{ descargando() ? 'Generando...' : 'Descargar PDF' }}
+</button>
+```
+
+### Convención de tabs dentro de la ficha de cliente
+
+Los sub-componentes de tabs (`registro-tab`, `objetivos-tab`, etc.) deben seguir el sistema de diseño del proyecto (clases propias del SASS, no Bootstrap puro) para mantener consistencia visual. Las tabs que aún usan `card`, `container-fluid`, `btn-group` de Bootstrap directamente son deuda técnica pendiente de migrar.
