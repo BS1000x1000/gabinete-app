@@ -133,9 +133,52 @@ export class AgendaComponent implements OnInit {
   });
   readonly resumenSemana = computed(() => this.calendarioSemanal()?.resumen);
 
+  // ── Grid semanal tipo Teams ──────────────────────────────────
+  readonly HORA_INICIO = 8;
+  readonly HORA_FIN = 20;
+  readonly PX_POR_HORA = 64;
+  readonly alturaGrid = (this.HORA_FIN - this.HORA_INICIO) * this.PX_POR_HORA;
+  readonly horasCount = this.HORA_FIN - this.HORA_INICIO;
+
+  readonly horasGrid: string[] = Array.from(
+    { length: this.horasCount + 1 },
+    (_, i) => `${String(this.HORA_INICIO + i).padStart(2, '0')}:00`,
+  );
+
+  minutosActualesEnGrid = signal<number | null>(null);
+
+  calcularTop(horaInicio: string): number {
+    const [h, m] = horaInicio.split(':').map(Number);
+    return Math.max(0, (this.minutosDesdeInicio(h, m) / 60) * this.PX_POR_HORA);
+  }
+
+  calcularAltura(duracion: number): number {
+    return Math.max(18, (duracion / 60) * this.PX_POR_HORA);
+  }
+
+  getEventoBg(tipo: string): string {
+    return this.getTipoColor(tipo) + '1a';
+  }
+
+  private minutosDesdeInicio(h: number, m: number): number {
+    return h * 60 + m - this.HORA_INICIO * 60;
+  }
+
+  private actualizarHoraActual(): void {
+    const ahora = new Date();
+    const minutos = this.minutosDesdeInicio(ahora.getHours(), ahora.getMinutes());
+    const maxMin = this.horasCount * 60;
+    this.minutosActualesEnGrid.set(
+      minutos >= 0 && minutos <= maxMin ? (minutos / 60) * this.PX_POR_HORA : null,
+    );
+  }
+
   ngOnInit() {
     this.loadDia();
     this.loadSemana();
+    this.actualizarHoraActual();
+    const timer = setInterval(() => this.actualizarHoraActual(), 60_000);
+    this.destroyRef.onDestroy(() => clearInterval(timer));
   }
 
   loadDia() {

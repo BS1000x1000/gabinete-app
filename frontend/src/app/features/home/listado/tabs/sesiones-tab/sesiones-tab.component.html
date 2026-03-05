@@ -224,7 +224,7 @@
           <td>
             <span class="estado-badge" [ngClass]="getBadgeClase(sesion.estado)">
               <i class="bi me-1" [ngClass]="getBadgeIcono(sesion.estado)"></i>
-              {{ getEstadoLabel(sesion.estado) }}
+              {{ ESTADO_SESION_LABELS[sesion.estado] ?? sesion.estado }}
             </span>
           </td>
           <!-- Acciones -->

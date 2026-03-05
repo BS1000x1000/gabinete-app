@@ -1,99 +1,88 @@
-<div class="card border-0 shadow-sm rounded-3 tab-content bg-white py-2 mx-3 my-3">
+<div class="objetivos-tab">
 
   <!-- Loader principal -->
-  <div *ngIf="cargando()" class="text-center py-5">
+  <div *ngIf="cargando()" class="objetivos-loading">
     <div class="spinner-border text-primary" role="status">
       <span class="visually-hidden">Cargando objetivos...</span>
     </div>
   </div>
 
-  <div *ngIf="!cargando()" class="data-view px-4 py-2">
+  <div *ngIf="!cargando()">
 
-    <!-- ── Header con estadísticas y botones ─────────────────── -->
-    <div class="row g-2 mb-4">
-      <div class="col-md-8">
-        <div class="d-flex gap-3">
-          <div class="stat-card">
-            <small class="text-muted d-block">Objetivos Asignados</small>
-            <h4 class="mb-0 text-primary">{{ estadisticas()?.totalObjetivosAsignados || 0 }}</h4>
-          </div>
-          <div class="stat-card">
-            <small class="text-muted d-block">Total Sesiones</small>
-            <h4 class="mb-0 text-secondary">{{ estadisticas()?.totalSesiones || 0 }}</h4>
-          </div>
+    <!-- Header con estadísticas y botones -->
+    <div class="objetivos-header">
+      <div class="objetivos-stats">
+        <div class="stat-card">
+          <small>Objetivos Asignados</small>
+          <h4 class="text-primary">{{ estadisticas()?.totalObjetivosAsignados || 0 }}</h4>
+        </div>
+        <div class="stat-card">
+          <small>Total Sesiones</small>
+          <h4 class="text-secondary">{{ estadisticas()?.totalSesiones || 0 }}</h4>
         </div>
       </div>
-      <div class="col-md-4 text-end">
+      <div class="objetivos-toolbar">
         <button *ngIf="!modoEdicion()" class="btn btn-primary btn-sm" (click)="activarModoEdicion()">
           <i class="bi bi-pencil me-2"></i>Editar Objetivos
         </button>
-        <div *ngIf="modoEdicion()" class="btn-group btn-group-sm">
-          <button class="btn btn-success" (click)="guardarCambios()" [disabled]="cargando()">
+        <ng-container *ngIf="modoEdicion()">
+          <button class="btn btn-success btn-sm" (click)="guardarCambios()" [disabled]="cargando()">
             <i class="bi bi-check2 me-1"></i>Guardar
           </button>
-          <button class="btn btn-outline-secondary" (click)="cancelarEdicion()">
+          <button class="btn btn-outline-secondary btn-sm" (click)="cancelarEdicion()">
             <i class="bi bi-x me-1"></i>Cancelar
           </button>
-        </div>
+        </ng-container>
       </div>
     </div>
 
-    <hr>
+    <hr class="objetivos-divider">
 
-    <!-- ══════════════════════════════════════════════════════════
-         MODO VISUALIZACIÓN + REVISIÓN GAS
-    ══════════════════════════════════════════════════════════ -->
+    <!-- ══ MODO VISUALIZACIÓN ════════════════════════════════════ -->
     <div *ngIf="!modoEdicion()">
 
-      <div *ngIf="objetivosAgrupados().length === 0" class="text-center py-5">
-        <i class="bi bi-inbox display-4 text-muted"></i>
-        <p class="text-muted mt-3">Este cliente no tiene objetivos asignados aún.</p>
-        <button class="btn btn-primary btn-sm" (click)="activarModoEdicion()">
+      <div *ngIf="objetivosAgrupados().length === 0" class="objetivos-empty">
+        <i class="bi bi-inbox"></i>
+        <p>Este cliente no tiene objetivos asignados aún.</p>
+        <button class="btn btn-primary btn-sm mt-2" (click)="activarModoEdicion()">
           <i class="bi bi-plus-circle me-2"></i>Asignar Objetivos
         </button>
       </div>
 
       <!-- Objetivos agrupados por área -->
-      <div *ngFor="let grupo of objetivosAgrupados()" class="mb-4">
+      <div *ngFor="let grupo of objetivosAgrupados()" class="area-grupo">
 
-        <!-- Badge de área -->
-        <div class="d-flex align-items-center mb-2">
-          <span class="badge me-2" [style.background-color]="grupo.color">{{ grupo.area }}</span>
-          <small class="text-muted">({{ grupo.objetivos.length }} objetivos)</small>
+        <div class="area-grupo__header">
+          <span class="badge" [style.background-color]="grupo.color">{{ grupo.area }}</span>
+          <small>({{ grupo.objetivos.length }} objetivos)</small>
         </div>
 
-        <!-- Tarjetas de objetivo -->
-        <div *ngFor="let objetivo of grupo.objetivos" class="mb-2">
+        <div *ngFor="let objetivo of grupo.objetivos" class="objetivo-row">
 
-          <!-- ── Cabecera del objetivo ────────────────────────── -->
+          <!-- Cabecera del objetivo -->
           <div
-            class="p-3 border rounded"
-            [class.rounded-bottom-0]="objetivoGasActivoId() === objetivo.id"
-            [class.border-bottom-0]="objetivoGasActivoId() === objetivo.id"
-            [class.bg-light]="objetivoGasActivoId() !== objetivo.id"
-            [class.bg-white]="objetivoGasActivoId() === objetivo.id"
+            class="objetivo-row__header"
+            [class.gas-activo]="objetivoGasActivoId() === objetivo.id"
           >
-            <div class="d-flex justify-content-between align-items-start">
+            <div class="objetivo-row__content">
 
-              <!-- Info del objetivo -->
-              <div class="flex-grow-1 me-3">
-                <h6 class="mb-1 fw-semibold">{{ objetivo.titulo }}</h6>
-                <div class="d-flex gap-3 flex-wrap align-items-center">
-                  <small class="text-muted">
-                    <i class="bi bi-calendar-check me-1"></i>
+              <!-- Info -->
+              <div class="objetivo-row__info">
+                <p class="objetivo-titulo-view">{{ objetivo.titulo }}</p>
+                <div class="objetivo-meta">
+                  <span class="objetivo-meta-item">
+                    <i class="bi bi-calendar-check"></i>
                     {{ objetivo.fechaAsignacion | date:'dd/MM/yyyy' }}
-                  </small>
-                  <small class="text-primary">
-                    <i class="bi bi-graph-up me-1"></i>
+                  </span>
+                  <span class="objetivo-meta-item meta-sesiones">
+                    <i class="bi bi-graph-up"></i>
                     {{ objetivo.vecesTrabajado }} sesiones
-                  </small>
-                  <!-- Badge nivel GAS actual -->
+                  </span>
                   <span
                     *ngIf="objetivo.nivelGASActual !== null && objetivo.nivelGASActual !== undefined"
-                    class="badge"
+                    class="objetivo-nivel-badge"
                     [style.background-color]="getNivelBg(objetivo.nivelGASActual)"
                     [style.color]="getNivelColor(objetivo.nivelGASActual)"
-                    style="border: 1px solid currentColor; font-size: 0.72rem;"
                   >
                     Nivel {{ getNivelShort(objetivo.nivelGASActual) }}
                   </span>
@@ -109,18 +98,15 @@
 
               <!-- Botón revisar GAS -->
               <button
-                class="btn btn-sm"
-                [class.btn-outline-primary]="objetivoGasActivoId() !== objetivo.id"
-                [class.btn-primary]="objetivoGasActivoId() === objetivo.id"
+                class="btn-revisar-gas"
+                [class.activo]="objetivoGasActivoId() === objetivo.id"
                 (click)="abrirPanelGas(objetivo.id)"
                 title="Revisar GAS"
               >
-                <i class="bi bi-clipboard2-check me-1"></i>
-                <span class="d-none d-md-inline">
-                  {{ objetivoGasActivoId() === objetivo.id ? 'Cerrar' : 'Revisar' }}
-                </span>
+                <i class="bi bi-clipboard2-check"></i>
+                <span>{{ objetivoGasActivoId() === objetivo.id ? 'Cerrar' : 'Revisar' }}</span>
                 <i
-                  class="bi ms-1"
+                  class="bi"
                   [class.bi-chevron-down]="objetivoGasActivoId() !== objetivo.id"
                   [class.bi-chevron-up]="objetivoGasActivoId() === objetivo.id"
                 ></i>
@@ -129,43 +115,35 @@
             </div>
           </div>
 
-          <!-- ── Panel GAS expandible ───────────────────────────── -->
-          <div
-            *ngIf="objetivoGasActivoId() === objetivo.id"
-            class="border border-top-0 rounded-bottom p-3 bg-white"
-          >
+          <!-- Panel GAS expandible -->
+          <div *ngIf="objetivoGasActivoId() === objetivo.id" class="gas-panel">
 
-            <!-- Loader GAS -->
-            <div *ngIf="cargandoGas()" class="text-center py-3">
+            <div *ngIf="cargandoGas()" class="gas-loading">
               <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
             </div>
 
-            <!-- Contenido del panel GAS -->
             <div *ngIf="!cargandoGas() && resumenGas()">
 
               <!-- Nivel actual + botones de acción -->
-              <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
-
-                <!-- Indicador de nivel actual -->
+              <div class="gas-actions-row">
                 <div
-                  class="px-3 py-2 rounded-3 d-flex align-items-center gap-2"
+                  class="gas-nivel-actual"
                   [style.background-color]="getNivelBg(resumenGas()!.nivelActual)"
                 >
-                  <span class="fs-5 fw-bold" [style.color]="getNivelColor(resumenGas()!.nivelActual)">
+                  <span class="gas-nivel-valor" [style.color]="getNivelColor(resumenGas()!.nivelActual)">
                     {{ getNivelShort(resumenGas()!.nivelActual) }}
                   </span>
                   <div>
-                    <div class="small fw-semibold" [style.color]="getNivelColor(resumenGas()!.nivelActual)">
+                    <div class="gas-nivel-texto" [style.color]="getNivelColor(resumenGas()!.nivelActual)">
                       {{ resumenGas()!.nivelActual !== null ? GAS_LABELS[resumenGas()!.nivelActual!].texto : 'Sin evaluar' }}
                     </div>
-                    <small *ngIf="resumenGas()!.fechaUltimaEvaluacion" class="text-muted">
+                    <small *ngIf="resumenGas()!.fechaUltimaEvaluacion" class="gas-nivel-fecha">
                       {{ resumenGas()!.fechaUltimaEvaluacion | date:'dd/MM/yyyy' }}
                     </small>
                   </div>
                 </div>
 
-                <!-- Botones de acción -->
-                <div *ngIf="modoGas() === 'ver'" class="d-flex gap-2">
+                <div *ngIf="modoGas() === 'ver'" class="gas-action-btns">
                   <button class="btn btn-primary btn-sm" (click)="activarModoEvaluar()">
                     <i class="bi bi-clipboard2-check me-1"></i>Nueva evaluación
                   </button>
@@ -174,42 +152,40 @@
                     {{ resumenGas()!.nivelesDefinidos ? 'Editar tabla' : 'Definir tabla' }}
                   </button>
                 </div>
-
               </div>
 
-              <!-- ╔══════════════════════════════════════╗
-                   ║  MODO: DEFINIR TABLA GAS             ║
-                   ╚══════════════════════════════════════╝ -->
+              <!-- ╔═══════════════════════════════╗
+                   ║  DEFINIR TABLA GAS            ║
+                   ╚═══════════════════════════════╝ -->
               <div *ngIf="modoGas() === 'definir'">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                  <p class="small text-muted mb-0">
-                    Define qué significa cada nivel para este objetivo con este alumno.
-                    El <strong>nivel -2</strong> es la situación de partida; el <strong>nivel 0</strong> es el logro esperado.
+                <div class="d-flex justify-content-between align-items-start mb-3 gap-2">
+                  <p class="gas-definir-hint">
+                    Define qué significa cada nivel para este objetivo.
+                    El <strong>nivel -2</strong> es la situación de partida;
+                    el <strong>nivel 0</strong> es el logro esperado.
                   </p>
-                  <button class="btn btn-sm btn-link text-muted" (click)="modoGas.set('ver')">Cancelar</button>
+                  <button class="btn btn-sm btn-link text-muted flex-shrink-0" (click)="modoGas.set('ver')">Cancelar</button>
                 </div>
 
-                <div class="row g-2 mb-3">
-                  <div *ngFor="let nivel of GAS_NIVELES" class="col-12">
-                    <div
-                      class="p-2 rounded border d-flex gap-2 align-items-start"
-                      [style.border-color]="GAS_LABELS[nivel].color + '66'"
-                      [style.background-color]="GAS_LABELS[nivel].bg + '55'"
-                    >
-                      <span
-                        class="badge flex-shrink-0 mt-1"
-                        [style.background-color]="GAS_LABELS[nivel].bg"
-                        [style.color]="GAS_LABELS[nivel].color"
-                        style="border: 1px solid currentColor; width: 32px; font-size: 0.75rem;"
-                      >{{ getNivelShort(nivel) }}</span>
-                      <textarea
-                        class="form-control form-control-sm border-0 bg-transparent p-0"
-                        rows="2"
-                        [placeholder]="nivel === -2 ? 'Situación de partida (dónde está ahora)...' : nivel === 0 ? 'Objetivo esperado al final del curso...' : 'Describe este nivel...'"
-                        [value]="formNiveles()[nivel]"
-                        (input)="setDescripcionNivel(nivel, $any($event.target).value)"
-                      ></textarea>
-                    </div>
+                <div class="mb-3">
+                  <div
+                    *ngFor="let nivel of GAS_NIVELES"
+                    class="gas-nivel-row"
+                    [style.border]="'1px solid ' + GAS_LABELS[nivel].color + '66'"
+                    [style.background-color]="GAS_LABELS[nivel].bg + '55'"
+                  >
+                    <span
+                      class="gas-nivel-badge-sm"
+                      [style.background-color]="GAS_LABELS[nivel].bg"
+                      [style.color]="GAS_LABELS[nivel].color"
+                    >{{ getNivelShort(nivel) }}</span>
+                    <textarea
+                      class="form-control form-control-sm border-0 bg-transparent p-0 flex-grow-1"
+                      rows="2"
+                      [placeholder]="nivel === -2 ? 'Situación de partida (dónde está ahora)...' : nivel === 0 ? 'Objetivo esperado al final del curso...' : 'Describe este nivel...'"
+                      [value]="formNiveles()[nivel]"
+                      (input)="setDescripcionNivel(nivel, $any($event.target).value)"
+                    ></textarea>
                   </div>
                 </div>
 
@@ -222,40 +198,33 @@
                 </div>
               </div>
 
-              <!-- ╔══════════════════════════════════════╗
-                   ║  MODO: NUEVA EVALUACIÓN              ║
-                   ╚══════════════════════════════════════╝ -->
+              <!-- ╔═══════════════════════════════╗
+                   ║  NUEVA EVALUACION             ║
+                   ╚═══════════════════════════════╝ -->
               <div *ngIf="modoGas() === 'evaluar'">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                  <p class="small fw-semibold mb-0">Selecciona el nivel actual del alumno:</p>
+                <div class="d-flex justify-content-between align-items-center mb-2 gap-2">
+                  <p class="gas-evaluar-hint">Selecciona el nivel actual del alumno:</p>
                   <button class="btn btn-sm btn-link text-muted" (click)="modoGas.set('ver')">Cancelar</button>
                 </div>
 
-                <!-- Selector de nivel como tarjetas clicables -->
-                <div class="row g-2 mb-3">
-                  <div *ngFor="let nivel of GAS_NIVELES" class="col">
-                    <div
-                      class="p-2 rounded border text-center"
-                      [class.border-2]="nuevaEval().nivel === nivel"
-                      [style.border-color]="nuevaEval().nivel === nivel ? GAS_LABELS[nivel].color : '#dee2e6'"
-                      [style.background-color]="nuevaEval().nivel === nivel ? GAS_LABELS[nivel].bg : ''"
-                      style="cursor: pointer; min-width: 52px; transition: all 0.15s;"
-                      (click)="setNivelEval(nivel)"
-                    >
-                      <div class="fw-bold" [style.color]="GAS_LABELS[nivel].color">{{ getNivelShort(nivel) }}</div>
-                      <!-- Descripción si existe -->
-                      <small
-                        *ngIf="getDescripcionDeNivel(nivel)"
-                        class="text-muted d-block mt-1"
-                        style="font-size: 0.65rem; line-height: 1.2;"
-                      >
-                        {{ getDescripcionDeNivel(nivel) | slice:0:40 }}{{ getDescripcionDeNivel(nivel).length > 40 ? '…' : '' }}
-                      </small>
+                <div class="gas-niveles-grid">
+                  <div
+                    *ngFor="let nivel of GAS_NIVELES"
+                    class="gas-nivel-card"
+                    [class.selected]="nuevaEval().nivel === nivel"
+                    [style.border-color]="nuevaEval().nivel === nivel ? GAS_LABELS[nivel].color : null"
+                    [style.background-color]="nuevaEval().nivel === nivel ? GAS_LABELS[nivel].bg : null"
+                    (click)="setNivelEval(nivel)"
+                  >
+                    <div class="gas-nivel-num" [style.color]="GAS_LABELS[nivel].color">
+                      {{ getNivelShort(nivel) }}
                     </div>
+                    <small *ngIf="getDescripcionDeNivel(nivel)" class="gas-nivel-desc">
+                      {{ getDescripcionDeNivel(nivel) | slice:0:40 }}{{ getDescripcionDeNivel(nivel).length > 40 ? '…' : '' }}
+                    </small>
                   </div>
                 </div>
 
-                <!-- Notas -->
                 <div class="mb-3">
                   <textarea
                     class="form-control form-control-sm"
@@ -279,92 +248,84 @@
                 </div>
               </div>
 
-              <!-- ╔══════════════════════════════════════╗
-                   ║  MODO: VER — Tabla + Historial       ║
-                   ╚══════════════════════════════════════╝ -->
+              <!-- ╔═══════════════════════════════╗
+                   ║  VER — Tabla + Historial      ║
+                   ╚═══════════════════════════════╝ -->
               <div *ngIf="modoGas() === 'ver'">
 
-                <!-- Tabla GAS horizontal -->
-                <div *ngIf="resumenGas()!.nivelesDefinidos" class="mb-3">
-                  <div class="table-responsive">
-                    <table class="table table-sm table-bordered text-center align-middle mb-0" style="font-size: 0.78rem;">
-                      <thead>
-                        <tr>
-                          <th
-                            *ngFor="let nivel of GAS_NIVELES"
-                            [style.background-color]="GAS_LABELS[nivel].bg"
-                            [style.color]="GAS_LABELS[nivel].color"
-                            style="width: 20%; white-space: nowrap; padding: 6px 4px;"
-                          >
-                            {{ getNivelShort(nivel) }}
-                            <i
-                              *ngIf="resumenGas()!.nivelActual === nivel"
-                              class="bi bi-arrow-down-circle-fill ms-1"
-                            ></i>
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td
-                            *ngFor="let nivel of GAS_NIVELES"
-                            class="text-start p-2 small"
-                            [style.background-color]="resumenGas()!.nivelActual === nivel ? GAS_LABELS[nivel].bg : ''"
-                            [class.fw-semibold]="resumenGas()!.nivelActual === nivel"
-                          >
-                            {{ getDescripcionDeNivel(nivel) || '—' }}
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
+                <!-- Tabla GAS -->
+                <div *ngIf="resumenGas()!.nivelesDefinidos" class="gas-tabla-wrapper">
+                  <table class="gas-tabla">
+                    <thead>
+                      <tr>
+                        <th
+                          *ngFor="let nivel of GAS_NIVELES"
+                          [style.background-color]="GAS_LABELS[nivel].bg"
+                          [style.color]="GAS_LABELS[nivel].color"
+                        >
+                          {{ getNivelShort(nivel) }}
+                          <i *ngIf="resumenGas()!.nivelActual === nivel" class="bi bi-arrow-down-circle-fill ms-1"></i>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td
+                          *ngFor="let nivel of GAS_NIVELES"
+                          [style.background-color]="resumenGas()!.nivelActual === nivel ? GAS_LABELS[nivel].bg : null"
+                          [class.fw-semibold]="resumenGas()!.nivelActual === nivel"
+                        >
+                          {{ getDescripcionDeNivel(nivel) || '—' }}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
 
-                <!-- Aviso si no hay tabla definida -->
-                <div *ngIf="!resumenGas()!.nivelesDefinidos" class="alert alert-light border small py-2 mb-3">
-                  <i class="bi bi-info-circle me-1"></i>
+                <!-- Sin tabla definida -->
+                <div *ngIf="!resumenGas()!.nivelesDefinidos" class="gas-sin-tabla">
+                  <i class="bi bi-info-circle"></i>
                   La tabla GAS aún no está definida para este objetivo.
                   <button class="btn btn-link btn-sm p-0 ms-1" (click)="activarModoDefinir()">Definir ahora</button>
                 </div>
 
                 <!-- Historial de evaluaciones -->
                 <div>
-                  <p class="text-uppercase text-muted small fw-bold mb-2">
-                    <i class="bi bi-clock-history me-1"></i>Historial
+                  <p class="gas-historial-title">
+                    <i class="bi bi-clock-history"></i>Historial
                   </p>
 
-                  <p *ngIf="resumenGas()!.historial.length === 0" class="text-muted small">
+                  <p *ngIf="resumenGas()!.historial.length === 0" class="gas-historial-empty">
                     Aún no hay evaluaciones registradas para este objetivo.
                   </p>
 
                   <div
                     *ngFor="let ev of resumenGas()!.historial; let i = index"
-                    class="d-flex align-items-start gap-2 mb-2 p-2 rounded border"
-                    [class.bg-light]="i > 0"
+                    class="gas-historial-item"
+                    [class.item-anterior]="i > 0"
                   >
                     <span
-                      class="badge flex-shrink-0 mt-1"
+                      class="gas-historial-badge"
                       [style.background-color]="GAS_LABELS[ev.nivel].bg"
                       [style.color]="GAS_LABELS[ev.nivel].color"
-                      style="border: 1px solid currentColor; width: 30px; font-size: 0.72rem;"
                     >{{ getNivelShort(ev.nivel) }}</span>
 
-                    <div class="flex-grow-1">
-                      <div class="d-flex justify-content-between">
-                        <small class="fw-semibold" [style.color]="GAS_LABELS[ev.nivel].color">
+                    <div class="gas-historial-content">
+                      <div class="gas-historial-row">
+                        <span class="gas-historial-nivel" [style.color]="GAS_LABELS[ev.nivel].color">
                           {{ GAS_LABELS[ev.nivel].texto }}
-                        </small>
-                        <small class="text-muted">{{ ev.fecha | date:'dd/MM/yyyy' }}</small>
+                        </span>
+                        <span class="gas-historial-fecha">{{ ev.fecha | date:'dd/MM/yyyy' }}</span>
                       </div>
-                      <p *ngIf="ev.notas" class="text-muted small mb-0 mt-1">{{ ev.notas }}</p>
+                      <p *ngIf="ev.notas" class="gas-historial-notas">{{ ev.notas }}</p>
                     </div>
 
                     <button
-                      class="btn btn-sm btn-link text-danger p-0 flex-shrink-0"
+                      class="gas-historial-delete"
                       (click)="eliminarEvaluacion(ev.id)"
                       title="Eliminar"
                     >
-                      <i class="bi bi-trash3 small"></i>
+                      <i class="bi bi-trash3"></i>
                     </button>
                   </div>
                 </div>
@@ -373,30 +334,27 @@
               <!-- /modoGas === 'ver' -->
 
             </div>
-            <!-- /contenido panel GAS -->
-
           </div>
-          <!-- /panel GAS expandible -->
+          <!-- /panel GAS -->
 
         </div>
-        <!-- /tarjeta objetivo -->
+        <!-- /objetivo-row -->
 
       </div>
-      <!-- /grupo por área -->
+      <!-- /area-grupo -->
 
-      <!-- Objetivos más trabajados -->
-      <div *ngIf="estadisticas()?.objetivosMasTrabajados?.length" class="mt-4">
-        <h6 class="text-uppercase text-muted small fw-bold mb-3">
-          <i class="bi bi-trophy me-2"></i>Objetivos Más Trabajados
+      <!-- Top objetivos más trabajados -->
+      <div *ngIf="estadisticas()?.objetivosMasTrabajados?.length" class="top-objetivos">
+        <h6 class="top-objetivos__title">
+          <i class="bi bi-trophy"></i>Objetivos Más Trabajados
         </h6>
-        <div class="row g-2">
-          <div *ngFor="let obj of estadisticas()?.objetivosMasTrabajados" class="col-md-6">
-            <div class="p-2 border rounded bg-light d-flex justify-content-between align-items-center">
-              <span class="small">
-                <span class="badge bg-secondary me-2">{{ obj.area }}</span>{{ obj.titulo }}
-              </span>
-              <span class="badge bg-primary">{{ obj.veces }}x</span>
+        <div class="top-objetivos__grid">
+          <div *ngFor="let obj of estadisticas()?.objetivosMasTrabajados" class="top-objetivo-item">
+            <div class="top-objetivo-info">
+              <span class="badge bg-secondary me-1">{{ obj.area }}</span>
+              <span>{{ obj.titulo }}</span>
             </div>
+            <span class="badge bg-primary">{{ obj.veces }}x</span>
           </div>
         </div>
       </div>
@@ -404,57 +362,51 @@
     </div>
     <!-- /modoEdicion === false -->
 
-    <!-- ══════════════════════════════════════════════════════════
-         MODO EDICIÓN (sin cambios respecto al original)
-    ══════════════════════════════════════════════════════════ -->
+    <!-- ══ MODO EDICIÓN ══════════════════════════════════════════ -->
     <div *ngIf="modoEdicion()">
-      <p class="text-muted small mb-3">
-        <i class="bi bi-info-circle me-1"></i>
+      <p class="edicion-hint">
+        <i class="bi bi-info-circle"></i>
         Marca los objetivos que deseas asignar a este cliente
       </p>
 
-      <div *ngFor="let area of todasLasAreas()" class="mb-4">
+      <div *ngFor="let area of todasLasAreas()" class="area-grupo">
         <ng-container *ngIf="getObjetivosPorArea(area.id) as objetivosArea">
           <div *ngIf="objetivosArea.length > 0">
-            <div class="d-flex align-items-center mb-2">
-              <span class="badge me-2" [style.background-color]="area.color">{{ area.nombre }}</span>
+            <div class="area-grupo__header">
+              <span class="badge" [style.background-color]="area.color">{{ area.nombre }}</span>
             </div>
-            <div class="row g-2">
-              <div *ngFor="let obj of objetivosArea" class="col-12">
-                <div
-                  class="p-2 border rounded d-flex align-items-center gap-2"
-                  [class.border-primary]="esObjetivoSeleccionado(obj.id)"
-                  [class.bg-primary-light]="esObjetivoSeleccionado(obj.id)"
-                  [class.bg-opacity-10]="esObjetivoSeleccionado(obj.id)"
-                  style="cursor: pointer;"
-                  (click)="toggleObjetivo(obj.id)"
-                >
-                  <input
-                    type="checkbox"
-                    class="form-check-input mt-0"
-                    [checked]="esObjetivoSeleccionado(obj.id)"
-                    (click)="$event.stopPropagation()"
-                    (change)="toggleObjetivo(obj.id)"
-                  />
-                  <span class="small">{{ obj.titulo }}</span>
-                </div>
+            <div>
+              <div
+                *ngFor="let obj of objetivosArea"
+                class="edicion-objetivo"
+                [class.seleccionado]="esObjetivoSeleccionado(obj.id)"
+                (click)="toggleObjetivo(obj.id)"
+              >
+                <input
+                  type="checkbox"
+                  class="form-check-input mt-0"
+                  [checked]="esObjetivoSeleccionado(obj.id)"
+                  (click)="$event.stopPropagation()"
+                  (change)="toggleObjetivo(obj.id)"
+                />
+                <span>{{ obj.titulo }}</span>
               </div>
             </div>
           </div>
         </ng-container>
       </div>
     </div>
-    <!-- /modoEdicion -->
 
   </div>
 
-<app-confirm-modal
-  *ngIf="pendingAction()"
-  title="Eliminar evaluación"
-  [message]="confirmMsg()"
-  confirmLabel="Eliminar"
-  confirmClass="btn-danger"
-  (confirmed)="onConfirmado()"
-  (cancelled)="onCancelado()"
-></app-confirm-modal>
+  <app-confirm-modal
+    *ngIf="pendingAction()"
+    title="Eliminar evaluación"
+    [message]="confirmMsg()"
+    confirmLabel="Eliminar"
+    confirmClass="btn-danger"
+    (confirmed)="onConfirmado()"
+    (cancelled)="onCancelado()"
+  ></app-confirm-modal>
+
 </div>

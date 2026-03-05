@@ -1,0 +1,603 @@
+// ============================================================
+// OBJETIVOS TAB
+// ============================================================
+
+// ==========================================
+// CONTENEDOR PRINCIPAL
+// ==========================================
+.objetivos-tab {
+  padding: $spacing-lg;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+  min-width: 0;
+}
+
+// ==========================================
+// LOADER
+// ==========================================
+.objetivos-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-2xl;
+  color: $gray-500;
+}
+
+// ==========================================
+// HEADER CON ESTADÍSTICAS Y BOTONES
+// ==========================================
+.objetivos-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $spacing-md;
+  margin-bottom: $spacing-lg;
+  flex-wrap: wrap;
+}
+
+.objetivos-stats {
+  display: flex;
+  gap: $spacing-lg;
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  small {
+    font-size: $font-size-xs;
+    color: $gray-400;
+    font-weight: $font-weight-medium;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  h4 {
+    font-size: $font-size-xl;
+    font-weight: $font-weight-bold;
+    margin: 0;
+    line-height: 1;
+  }
+}
+
+.objetivos-toolbar {
+  display: flex;
+  gap: $spacing-xs;
+  flex-shrink: 0;
+}
+
+.objetivos-divider {
+  border: none;
+  border-top: 1px solid $gray-100;
+  margin: 0 0 $spacing-lg;
+}
+
+// ==========================================
+// ESTADO VACIO
+// ==========================================
+.objetivos-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-2xl;
+  color: $gray-400;
+  text-align: center;
+  gap: $spacing-sm;
+
+  i {
+    font-size: 2.5rem;
+  }
+
+  p {
+    margin: 0;
+    color: $gray-500;
+    font-size: $font-size-base;
+  }
+}
+
+// ==========================================
+// OBJETIVO ROW (modo visualización)
+// ==========================================
+.objetivo-row {
+  margin-bottom: $spacing-sm;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.objetivo-row__header {
+  padding: $spacing-md;
+  border: 1px solid $border-color;
+  border-radius: $border-radius;
+  background: $gray-50;
+  transition: $transition-fast;
+
+  &.gas-activo {
+    border-radius: $border-radius $border-radius 0 0;
+    border-bottom: none;
+    background: $white;
+  }
+}
+
+.objetivo-row__content {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $spacing-md;
+}
+
+.objetivo-row__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.objetivo-titulo-view {
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  color: $gray-800;
+  margin: 0 0 $spacing-xs;
+}
+
+.objetivo-meta {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  flex-wrap: wrap;
+}
+
+.objetivo-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-xs;
+  font-size: $font-size-xs;
+  color: $gray-500;
+
+  &.meta-sesiones {
+    color: $primary;
+  }
+}
+
+.objetivo-nivel-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.5rem;
+  border-radius: $border-radius-sm;
+  font-size: 0.72rem;
+  font-weight: $font-weight-semibold;
+  border: 1px solid currentColor;
+}
+
+// ==========================================
+// BOTON REVISAR GAS
+// ==========================================
+.btn-revisar-gas {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: $spacing-xs $spacing-md;
+  border: 1.5px solid $border-color;
+  border-radius: $border-radius;
+  background: $white;
+  color: $gray-600;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: $transition-fast;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  &:hover {
+    border-color: $primary;
+    color: $primary;
+    background: $primary-ultra-light;
+  }
+
+  &.activo {
+    background: $primary;
+    border-color: $primary;
+    color: $white;
+  }
+}
+
+// ==========================================
+// PANEL GAS
+// ==========================================
+.gas-panel {
+  border: 1px solid $border-color;
+  border-top: none;
+  border-radius: 0 0 $border-radius $border-radius;
+  background: $white;
+  padding: $spacing-md;
+}
+
+.gas-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-md;
+}
+
+// Fila: nivel actual + botones de acción
+.gas-actions-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-md;
+}
+
+.gas-nivel-actual {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  border-radius: $border-radius;
+}
+
+.gas-nivel-valor {
+  font-size: 1.25rem;
+  font-weight: $font-weight-bold;
+  line-height: 1;
+}
+
+.gas-nivel-texto {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  line-height: 1;
+}
+
+.gas-nivel-fecha {
+  font-size: $font-size-xs;
+  opacity: 0.7;
+}
+
+.gas-action-btns {
+  display: flex;
+  gap: $spacing-xs;
+}
+
+// Modo definir
+.gas-definir-hint {
+  font-size: $font-size-sm;
+  color: $gray-500;
+  margin: 0;
+  flex: 1;
+}
+
+.gas-nivel-row {
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-sm;
+  padding: $spacing-sm;
+  border-radius: $border-radius;
+  margin-bottom: $spacing-xs;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.gas-nivel-badge-sm {
+  width: 32px;
+  flex-shrink: 0;
+  text-align: center;
+  padding: 0.2rem 0.25rem;
+  border-radius: $border-radius-sm;
+  font-size: 0.75rem;
+  font-weight: $font-weight-semibold;
+  border: 1px solid currentColor;
+  margin-top: 2px;
+}
+
+// Modo evaluar
+.gas-evaluar-hint {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $gray-700;
+  margin: 0;
+}
+
+.gas-niveles-grid {
+  display: flex;
+  gap: $spacing-xs;
+  margin-bottom: $spacing-md;
+  flex-wrap: wrap;
+}
+
+.gas-nivel-card {
+  flex: 1;
+  min-width: 52px;
+  padding: $spacing-sm;
+  border: 1.5px solid $border-color;
+  border-radius: $border-radius;
+  text-align: center;
+  cursor: pointer;
+  transition: $transition-fast;
+
+  &:hover {
+    border-color: $primary;
+  }
+
+  &.selected {
+    border-width: 2px;
+  }
+
+  .gas-nivel-num {
+    font-weight: $font-weight-bold;
+    font-size: $font-size-base;
+    line-height: 1;
+  }
+
+  .gas-nivel-desc {
+    font-size: 0.65rem;
+    color: $gray-500;
+    line-height: 1.2;
+    margin-top: $spacing-xs;
+    display: block;
+  }
+}
+
+// Tabla GAS
+.gas-tabla-wrapper {
+  margin-bottom: $spacing-md;
+  overflow-x: auto;
+  @include custom-scrollbar(4px);
+}
+
+.gas-tabla {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.78rem;
+  border: 1px solid $border-color;
+  border-radius: $border-radius;
+  overflow: hidden;
+
+  th {
+    padding: 6px 4px;
+    text-align: center;
+    white-space: nowrap;
+    font-weight: $font-weight-semibold;
+    width: 20%;
+  }
+
+  td {
+    padding: $spacing-sm;
+    text-align: left;
+    font-size: $font-size-xs;
+    border-top: 1px solid $border-color;
+    vertical-align: top;
+  }
+}
+
+.gas-sin-tabla {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: $spacing-sm $spacing-md;
+  background: $gray-50;
+  border: 1px solid $border-color;
+  border-radius: $border-radius;
+  font-size: $font-size-sm;
+  color: $gray-600;
+  margin-bottom: $spacing-md;
+}
+
+// Historial GAS
+.gas-historial-title {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: $gray-500;
+  margin-bottom: $spacing-sm;
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+}
+
+.gas-historial-empty {
+  font-size: $font-size-sm;
+  color: $gray-400;
+  margin: 0;
+}
+
+.gas-historial-item {
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-sm;
+  padding: $spacing-sm;
+  border: 1px solid $border-color;
+  border-radius: $border-radius;
+  margin-bottom: $spacing-xs;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  &.item-anterior {
+    background: $gray-50;
+  }
+}
+
+.gas-historial-badge {
+  width: 30px;
+  flex-shrink: 0;
+  text-align: center;
+  padding: 0.15rem 0;
+  border-radius: $border-radius-sm;
+  font-size: 0.72rem;
+  font-weight: $font-weight-semibold;
+  border: 1px solid currentColor;
+  margin-top: 1px;
+}
+
+.gas-historial-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.gas-historial-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-xs;
+}
+
+.gas-historial-nivel {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+}
+
+.gas-historial-fecha {
+  font-size: $font-size-xs;
+  color: $gray-400;
+}
+
+.gas-historial-notas {
+  font-size: $font-size-sm;
+  color: $gray-500;
+  margin: $spacing-xs 0 0;
+}
+
+.gas-historial-delete {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: $gray-300;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: $border-radius-sm;
+  transition: $transition-fast;
+  font-size: 0.85rem;
+  line-height: 1;
+
+  &:hover {
+    color: $danger;
+  }
+}
+
+// ==========================================
+// MODO EDICION (checkboxes)
+// ==========================================
+.edicion-hint {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  font-size: $font-size-sm;
+  color: $gray-500;
+  margin-bottom: $spacing-md;
+}
+
+.edicion-objetivo {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  border: 1.5px solid $border-color;
+  border-radius: $border-radius;
+  background: $white;
+  cursor: pointer;
+  transition: $transition-fast;
+  margin-bottom: $spacing-xs;
+  user-select: none;
+
+  &:hover {
+    border-color: $primary;
+    background: $primary-ultra-light;
+  }
+
+  &.seleccionado {
+    border-color: $primary;
+    background: $primary-light;
+  }
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  span {
+    font-size: $font-size-sm;
+    color: $gray-700;
+  }
+}
+
+// ==========================================
+// TOP OBJETIVOS MAS TRABAJADOS
+// ==========================================
+.top-objetivos {
+  margin-top: $spacing-lg;
+}
+
+.top-objetivos__title {
+  @include section-title;
+}
+
+.top-objetivos__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: $spacing-sm;
+}
+
+.top-objetivo-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  border: 1px solid $border-color;
+  border-radius: $border-radius;
+  background: $gray-50;
+  font-size: $font-size-sm;
+}
+
+.top-objetivo-info {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  min-width: 0;
+  flex: 1;
+
+  span {
+    @include text-truncate;
+  }
+}
+
+// ==========================================
+// RESPONSIVE
+// ==========================================
+@include respond-to('md') {
+  .objetivos-tab {
+    padding: $spacing-md;
+  }
+
+  .objetivos-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .objetivos-stats {
+    justify-content: space-between;
+  }
+
+  .btn-revisar-gas {
+    span {
+      display: none;
+    }
+  }
+
+  .gas-niveles-grid {
+    .gas-nivel-card {
+      flex: 1 1 calc(33% - #{$spacing-xs});
+    }
+  }
+
+  .top-objetivos__grid {
+    grid-template-columns: 1fr;
+  }
+}

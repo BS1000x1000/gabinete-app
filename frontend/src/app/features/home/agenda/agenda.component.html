@@ -191,90 +191,141 @@
     <!-- ╚═══════════════════════════════════════════════════╝ -->
 
 
-    <!-- ╔══ PANEL DERECHO: Calendario semanal ═══════════╗ -->
+    <!-- ╔══ PANEL DERECHO: Grid semanal tipo Teams ══════╗ -->
     <div class="ag-panel ag-panel--calendar">
 
-      <!-- Cabecera de la semana -->
-      <div class="ag-cal-header">
-        <button class="ag-cal-nav" (click)="semanaAnterior()" title="Semana anterior">
+      <!-- Barra de navegación de semana -->
+      <div class="ag-wg-nav">
+        <button class="ag-wg-nav__btn" (click)="semanaAnterior()" title="Semana anterior">
           <i class="bi bi-chevron-left"></i>
         </button>
-        <span class="ag-cal-title">{{ semanaTitulo() }}</span>
-        <button class="ag-cal-nav" (click)="semanaSiguiente()" title="Semana siguiente">
+        <div class="ag-wg-nav__center">
+          <span class="ag-wg-nav__title">{{ semanaTitulo() }}</span>
+          @if (!esHoy()) {
+            <button class="ag-wg-nav__hoy" (click)="irAHoy()">Hoy</button>
+          }
+        </div>
+        <button class="ag-wg-nav__btn" (click)="semanaSiguiente()" title="Semana siguiente">
           <i class="bi bi-chevron-right"></i>
         </button>
       </div>
 
-      <!-- Chips de los 7 días -->
-      <div class="ag-week-chips">
-        @if (isLoadingSemana()) {
-          @for (i of [1, 2, 3, 4, 5, 6, 7]; track i) {
-            <div class="ag-day-chip ag-day-chip--skeleton"></div>
-          }
-        } @else {
-          @for (dia of diasSemana(); track dia.fecha) {
-            <button
-              class="ag-day-chip"
-              [class.ag-day-chip--selected]="esDiaSeleccionado(dia.fecha)"
-              [class.ag-day-chip--today]="dia.esHoy"
-              (click)="irADia(dia.fecha)"
-            >
-              <span class="ag-day-chip__label">{{ dia.diaSemana.slice(0, 2) }}</span>
-              <span class="ag-day-chip__num">{{ dia.dia }}</span>
-              <div class="ag-day-chip__dots">
-                @for (sesion of dia.sesiones.slice(0, 4); track sesion.id) {
-                  <span
-                    class="ag-dot"
-                    [style.background-color]="getTipoColor(sesion.tipoSesion)"
-                  ></span>
+      <!-- Stats rápidas de la semana -->
+      @if (resumenSemana()) {
+        <div class="ag-wg-stats">
+          <span class="ag-wg-stat">
+            <strong>{{ resumenSemana()!.totalSesiones }}</strong> sesiones
+          </span>
+          <span class="ag-wg-stat-sep">·</span>
+          <span class="ag-wg-stat ag-wg-stat--success">
+            <i class="bi bi-check-circle-fill"></i> {{ resumenSemana()!.completadas }}
+          </span>
+          <span class="ag-wg-stat-sep">·</span>
+          <span class="ag-wg-stat">
+            <i class="bi bi-people-fill"></i> {{ resumenSemana()!.clientesUnicos }}
+          </span>
+        </div>
+      }
+
+      @if (isLoadingSemana()) {
+        <div class="ag-wg-loading">
+          <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+        </div>
+      } @else {
+
+        <!-- Grid de calendario -->
+        <div class="ag-week-grid">
+
+          <!-- Header: días de la semana -->
+          <div class="ag-week-grid__header">
+            <div class="ag-week-grid__corner"></div>
+            @for (dia of diasSemana(); track dia.fecha) {
+              <div
+                class="ag-week-grid__day-header"
+                [class.ag-week-grid__day-header--today]="dia.esHoy"
+                [class.ag-week-grid__day-header--selected]="esDiaSeleccionado(dia.fecha)"
+                (click)="irADia(dia.fecha)"
+              >
+                <span class="ag-week-grid__day-name">{{ dia.diaSemana.slice(0, 2) }}</span>
+                <span class="ag-week-grid__day-num">{{ dia.dia }}</span>
+                @if (dia.totalSesiones > 0) {
+                  <span class="ag-week-grid__day-count">{{ dia.totalSesiones }}</span>
                 }
               </div>
-            </button>
-          }
-        }
-      </div>
+            }
+          </div>
 
-      <!-- Sesiones del día seleccionado (lista compacta) -->
-      @if (!isLoadingSemana()) {
-        <div class="ag-cal-sessions-wrap">
-          @for (dia of diasSemana(); track dia.fecha) {
-            @if (esDiaSeleccionado(dia.fecha)) {
-              @if (dia.sesiones.length === 0) {
-                <p class="ag-cal-empty">Sin sesiones este día</p>
-              } @else {
-                <div class="ag-cal-sessions">
-                  @for (s of dia.sesiones; track s.id) {
-                    <div class="ag-cal-row" [style.--tipo-color]="getTipoColor(s.tipoSesion)">
-                      <span class="ag-cal-row__hora">{{ s.horaInicio }}</span>
-                      <span class="ag-cal-row__dot"></span>
-                      <span class="ag-cal-row__nombre">
-                        {{ s.cliente.nombreCompleto || s.cliente.nombre }}
+          <!-- Cuerpo scrollable -->
+          <div class="ag-week-grid__scroll">
+            <div class="ag-week-grid__body" [style.height.px]="alturaGrid">
+
+              <!-- Columna de horas -->
+              <div class="ag-week-grid__time-col">
+                @for (hora of horasGrid; track hora; let i = $index) {
+                  <span
+                    class="ag-week-grid__time-label"
+                    [class.ag-week-grid__time-label--first]="i === 0"
+                    [style.top.px]="i * PX_POR_HORA"
+                  >{{ hora }}</span>
+                }
+              </div>
+
+              <!-- Columnas de cada día -->
+              @for (dia of diasSemana(); track dia.fecha) {
+                <div
+                  class="ag-week-grid__day-col"
+                  [class.ag-week-grid__day-col--today]="dia.esHoy"
+                  [class.ag-week-grid__day-col--selected]="esDiaSeleccionado(dia.fecha)"
+                  (click)="irADia(dia.fecha)"
+                >
+                  <!-- Líneas de fondo -->
+                  @for (hora of horasGrid; track hora; let i = $index) {
+                    <div class="ag-week-grid__hour-line" [style.top.px]="i * PX_POR_HORA"></div>
+                    @if (i < horasCount) {
+                      <div class="ag-week-grid__half-line" [style.top.px]="i * PX_POR_HORA + PX_POR_HORA / 2"></div>
+                    }
+                  }
+
+                  <!-- Indicador de hora actual -->
+                  @if (dia.esHoy && minutosActualesEnGrid() !== null) {
+                    <div
+                      class="ag-week-grid__now-indicator"
+                      [style.top.px]="minutosActualesEnGrid()!"
+                    ></div>
+                  }
+
+                  <!-- Bloques de sesión -->
+                  @for (sesion of dia.sesiones; track sesion.id) {
+                    <div
+                      class="ag-week-grid__event"
+                      [class.ag-week-grid__event--completada]="sesion.estado === 'COMPLETADA'"
+                      [class.ag-week-grid__event--cancelada]="sesion.estado === 'CANCELADA_CON_AVISO' || sesion.estado === 'CANCELADA_SIN_AVISO'"
+                      [style.top.px]="calcularTop(sesion.horaInicio)"
+                      [style.height.px]="calcularAltura(sesion.duracion)"
+                      [style.background-color]="getEventoBg(sesion.tipoSesion)"
+                      [style.border-left-color]="getTipoColor(sesion.tipoSesion)"
+                      [style.color]="getTipoColor(sesion.tipoSesion)"
+                      (click)="$event.stopPropagation(); irADia(dia.fecha)"
+                      [title]="(sesion.cliente.nombreCompleto || sesion.cliente.nombre + ' ' + sesion.cliente.apellidos) + ' · ' + sesion.horaInicio + '–' + sesion.horaFin"
+                    >
+                      <span class="ag-week-grid__event-time">{{ sesion.horaInicio }}–{{ sesion.horaFin }}</span>
+                      <span class="ag-week-grid__event-name">
+                        {{ sesion.cliente.nombreCompleto || sesion.cliente.nombre + ' ' + sesion.cliente.apellidos }}
                       </span>
+                      @if (calcularAltura(sesion.duracion) >= 44) {
+                        <span class="ag-week-grid__event-tipo">
+                          {{ TIPO_SESION_LABELS[sesion.tipoSesion] ?? sesion.tipoSesion }}
+                        </span>
+                      }
                     </div>
                   }
                 </div>
               }
-            }
-          }
-        </div>
-      }
 
-      <!-- Resumen estadístico de la semana -->
-      @if (resumenSemana()) {
-        <div class="ag-cal-resumen">
-          <div class="ag-cal-stat">
-            <span class="ag-cal-stat__num">{{ resumenSemana()!.totalSesiones }}</span>
-            <span class="ag-cal-stat__label">esta semana</span>
-          </div>
-          <div class="ag-cal-stat">
-            <span class="ag-cal-stat__num ag-cal-stat__num--success">{{ resumenSemana()!.completadas }}</span>
-            <span class="ag-cal-stat__label">completadas</span>
-          </div>
-          <div class="ag-cal-stat">
-            <span class="ag-cal-stat__num">{{ resumenSemana()!.clientesUnicos }}</span>
-            <span class="ag-cal-stat__label">clientes únicos</span>
+            </div>
           </div>
         </div>
+
       }
 
     </div>

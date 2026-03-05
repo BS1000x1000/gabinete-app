@@ -8,9 +8,11 @@ import {
   EstadoSesion,
   TipoSesion,
   TIPO_SESION_LABELS,
+  ESTADO_SESION_LABELS,
 } from '../../../../../interface/sesion.interface';
 import { SesionAccionesService } from '../../../../../services/sesiones-acciones.service';
 import { SesionModalesComponent } from '../../../../../components/sesiones-modales/sesiones-modales.component';
+import { SesionesFiltrosService } from '../../../../../services/sesiones-filtros.service';
 
 @Component({
   selector: 'app-sesiones-tab',
@@ -22,6 +24,7 @@ export class SesionesTabComponent implements OnInit {
   private sesionesService = inject(SesionesService);
   private route = inject(ActivatedRoute);
   private accionesSvc = inject(SesionAccionesService);
+  private readonly filtrosSvc = inject(SesionesFiltrosService);
 
   // --- Estado ---
   clienteId = signal<string>('');
@@ -29,17 +32,18 @@ export class SesionesTabComponent implements OnInit {
   isLoading = signal(false);
   error = signal<string | null>(null);
 
-  // --- Filtros ---
-  filtroEstado = signal<string>('TODAS');
-  filtroMes = signal<string>('');
+  // --- Filtros (delegados al servicio para persistencia entre navegaciones) ---
+  get filtroEstado() { return this.filtrosSvc.filtroEstado; }
+  get filtroMes()    { return this.filtrosSvc.filtroMes; }
 
   // --- Modales ---
   mostrarModalDetalle = signal(false);
   sesionSeleccionada = signal<SesionData | null>(null);
 
-  // --- Enums expuestos al template ---
+  // --- Enums/labels expuestos al template ---
   readonly EstadoSesion = EstadoSesion;
   readonly TipoSesion = TipoSesion;
+  readonly ESTADO_SESION_LABELS = ESTADO_SESION_LABELS;
 
   // --- Opciones de filtro ---
   readonly opcionesEstado = [
@@ -143,8 +147,10 @@ export class SesionesTabComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.clienteId.set(this.route.parent?.snapshot.paramMap.get('id') || '');
-    if (this.clienteId()) {
+    const id = this.route.parent?.snapshot.paramMap.get('id') || '';
+    this.clienteId.set(id);
+    this.filtrosSvc.inicializar(id);
+    if (id) {
       this.cargarSesiones();
     }
   }
@@ -236,16 +242,6 @@ export class SesionesTabComponent implements OnInit {
     return map[estado] || 'bi-question-circle';
   }
 
-  getEstadoLabel(estado: EstadoSesion): string {
-    const map: Record<EstadoSesion, string> = {
-      [EstadoSesion.PROGRAMADA]: 'Programada',
-      [EstadoSesion.COMPLETADA]: 'Completada',
-      [EstadoSesion.CANCELADA_CON_AVISO]: 'Cancelada con aviso',
-      [EstadoSesion.CANCELADA_SIN_AVISO]: 'Cancelada sin aviso',
-    };
-    return map[estado] || estado;
-  }
-
   getTipoLabel(tipo: TipoSesion): string {
     return TIPO_SESION_LABELS[tipo] ?? tipo;
   }
@@ -293,8 +289,7 @@ export class SesionesTabComponent implements OnInit {
   }
 
   limpiarFiltros(): void {
-    this.filtroEstado.set('TODAS');
-    this.filtroMes.set('');
+    this.filtrosSvc.resetear();
   }
 }
 
