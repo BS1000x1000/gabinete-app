@@ -42,6 +42,8 @@
 @import 'components/notificaciones';
 @import 'components/drawer-registro';
 @import 'components/nueva-sesion-modal';
+@import 'components/toast';
+@import 'components/confirm-modal';
 
 // ========================================
 // PAGES
@@ -50,4 +52,5 @@
 @import 'pages/home';
 @import 'pages/clientes';
 @import 'pages/dashboard';
+@import 'pages/not-found';
 // @import 'pages/cliente-detail';  // ✅ NUEVO (opcional)

@@ -56,3 +56,30 @@
     flex-direction: column;
   }
 }
+
+@media (max-width: $breakpoint-md) {
+  .app-header-inner {
+    padding: 0 $spacing-md;
+    gap: $spacing-sm;
+  }
+}
+
+@media (max-width: $breakpoint-sm) {
+  .app-header-inner {
+    padding: 0 $spacing-sm;
+  }
+}
+
+// Overlay para cerrar sidebar en móvil
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: calc(#{$z-modal-backdrop} - 1);
+  animation: fade-overlay 0.2s ease;
+}
+
+@keyframes fade-overlay {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}

@@ -1,0 +1,79 @@
+// ========================================
+// MODAL DE CONFIRMACIÓN
+// ========================================
+
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: $z-modal;
+  background: rgba(17, 24, 39, 0.45);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fade-in 0.15s ease;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.confirm-dialog {
+  background: $white;
+  border-radius: $border-radius-xl;
+  box-shadow: $shadow-2xl;
+  padding: 2rem 1.75rem 1.5rem;
+  max-width: 380px;
+  width: calc(100% - 2rem);
+  text-align: center;
+  animation: dialog-in 0.2s $animation-timing;
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.confirm-icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: $border-radius-full;
+  background: $danger-light;
+  color: $danger;
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.confirm-title {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $gray-800;
+  margin-bottom: 0.5rem;
+}
+
+.confirm-message {
+  font-size: $font-size-sm;
+  color: $gray-500;
+  line-height: $line-height-relaxed;
+  margin-bottom: 1.5rem;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 0.625rem;
+  justify-content: center;
+
+  .btn {
+    min-width: 7rem;
+  }
+}

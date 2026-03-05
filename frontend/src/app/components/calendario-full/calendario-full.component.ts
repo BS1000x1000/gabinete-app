@@ -1,6 +1,7 @@
 import { Component, signal, ViewChild, inject, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FullCalendarModule, FullCalendarComponent as FullCalendarLib } from '@fullcalendar/angular';
+import { ConfirmModalComponent } from '../../shared/components/confirm-modal/confirm-modal.component';
 import { CalendarOptions, EventClickArg, EventInput } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -13,7 +14,7 @@ import { Router } from '@angular/router';
 @Component({
   selector: 'app-calendario-full',
   standalone: true,
-  imports: [CommonModule, FullCalendarModule],
+  imports: [CommonModule, FullCalendarModule, ConfirmModalComponent],
   templateUrl: './calendario-full.component.html'
 })
 export class CalendarioFullComponent implements OnInit {
@@ -25,6 +26,10 @@ export class CalendarioFullComponent implements OnInit {
 
   isLoading = signal(false);
   eventos = signal<EventInput[]>([]);
+
+  pendingAction = signal<(() => void) | null>(null);
+  pendingRevert = signal<(() => void) | null>(null);
+  confirmMsg    = signal('');
 
   // ✅ PALETA DE COLORES (usando tu paleta)
   private readonly COLORES = {
@@ -167,25 +172,20 @@ export class CalendarioFullComponent implements OnInit {
   }
 
   handleEventDrop(info: any) {
-    console.log('📌 Evento movido:', info.event.title);
-    console.log('   Nueva fecha:', info.event.start);
-
-    if (confirm(`¿Mover "${info.event.title}" a ${info.event.start}?`)) {
-      console.log('✅ Sesión actualizada');
-    } else {
-      info.revert();
-    }
+    const fecha = new Date(info.event.start).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    this.confirmMsg.set(`¿Mover "${info.event.title}" al ${fecha}?`);
+    this.pendingAction.set(() => { /* la acción de guardado irá aquí */ });
+    this.pendingRevert.set(() => info.revert());
   }
 
   handleEventResize(info: any) {
-    console.log('📏 Evento redimensionado:', info.event.title);
-    
-    if (confirm(`¿Cambiar duración de "${info.event.title}"?`)) {
-      console.log('✅ Duración actualizada');
-    } else {
-      info.revert();
-    }
+    this.confirmMsg.set(`¿Cambiar la duración de "${info.event.title}"?`);
+    this.pendingAction.set(() => { /* la acción de guardado irá aquí */ });
+    this.pendingRevert.set(() => info.revert());
   }
+
+  onConfirmado() { this.pendingAction()?.(); this.pendingAction.set(null); this.pendingRevert.set(null); }
+  onCancelado()  { this.pendingRevert()?.(); this.pendingAction.set(null); this.pendingRevert.set(null); }
 
   handleDatesSet(dateInfo: any) {
     console.log('📅 Rango visible:', dateInfo.startStr, '-', dateInfo.endStr);

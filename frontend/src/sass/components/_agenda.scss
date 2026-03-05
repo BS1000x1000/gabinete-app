@@ -119,6 +119,16 @@
     grid-template-columns: 1fr;
     grid-template-rows: auto auto;
   }
+
+  @media (max-width: $breakpoint-md) {
+    padding: $spacing-md;
+    gap: $spacing-md;
+  }
+
+  @media (max-width: $breakpoint-sm) {
+    padding: $spacing-sm;
+    gap: $spacing-sm;
+  }
 }
 
 // ── Paneles base ──────────────────────────────────────────────

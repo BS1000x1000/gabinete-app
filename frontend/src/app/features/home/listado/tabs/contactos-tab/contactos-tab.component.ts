@@ -4,11 +4,12 @@ import { ReactiveFormsModule, FormBuilder, FormArray, Validators } from '@angula
 import { ActivatedRoute } from '@angular/router';
 import { ClientesService } from '../../../../../services/cliente.service';
 import { DataFieldComponent } from '../../../../../shared/components/data-field/data-field.component';
+import { ConfirmModalComponent } from '../../../../../shared/components/confirm-modal/confirm-modal.component';
 
 @Component({
   selector: 'app-contactos-tab',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, DataFieldComponent],
+  imports: [CommonModule, ReactiveFormsModule, DataFieldComponent, ConfirmModalComponent],
   templateUrl: './contactos-tab.component.html',
 })
 export class ContactosTabComponent implements OnInit {
@@ -23,6 +24,9 @@ export class ContactosTabComponent implements OnInit {
   agregando  = signal(false);                  // Modo nuevo contacto
   guardando  = signal(false);
   error      = signal<string | null>(null);
+
+  pendingAction  = signal<(() => void) | null>(null);
+  confirmMsg     = signal('');
 
   readonly PARENTESCOS = ['Madre', 'Padre', 'Tutor/a Legal', 'Abuelo/a', 'Tío/a', 'Hermano/a', 'Otro'];
 
@@ -112,13 +116,18 @@ export class ContactosTabComponent implements OnInit {
   }
 
   eliminar(contactoId: string, nombre: string) {
-    if (!confirm(`¿Eliminar el contacto "${nombre}"?`)) return;
-    this.clienteSvc.eliminarFamiliar(this.clienteId, contactoId)
-      .subscribe({
-        next: () => this.clienteSvc.loadAll(this.clienteId).subscribe(),
-        error: (err) => this.error.set(err?.error?.message || 'Error al eliminar.'),
-      });
+    this.confirmMsg.set(`¿Eliminar el contacto "${nombre}"?`);
+    this.pendingAction.set(() => {
+      this.clienteSvc.eliminarFamiliar(this.clienteId, contactoId)
+        .subscribe({
+          next: () => this.clienteSvc.loadAll(this.clienteId).subscribe(),
+          error: (err) => this.error.set(err?.error?.message || 'Error al eliminar.'),
+        });
+    });
   }
+
+  onConfirmado() { this.pendingAction()?.(); this.pendingAction.set(null); }
+  onCancelado()  { this.pendingAction.set(null); }
 }
 
 export default ContactosTabComponent;

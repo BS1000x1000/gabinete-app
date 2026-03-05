@@ -50,3 +50,14 @@
   </div>
 
 </div>
+
+<app-confirm-modal
+  *ngIf="pendingAction()"
+  title="Confirmar cambio"
+  [message]="confirmMsg()"
+  confirmLabel="Confirmar"
+  confirmClass="btn-primary"
+  icon="bi-arrow-left-right"
+  (confirmed)="onConfirmado()"
+  (cancelled)="onCancelado()"
+></app-confirm-modal>

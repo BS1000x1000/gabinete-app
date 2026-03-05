@@ -1,5 +1,12 @@
 <div class="app-layout">
 
+  <!-- Overlay para cerrar sidebar en móvil -->
+  <div
+    *ngIf="mobileSidebarOpen()"
+    class="sidebar-overlay d-lg-none"
+    (click)="toggleMobileSidebar()"
+  ></div>
+
   <!-- Sidebar de navegación -->
   <app-sidebar [class.show]="mobileSidebarOpen()"></app-sidebar>
 

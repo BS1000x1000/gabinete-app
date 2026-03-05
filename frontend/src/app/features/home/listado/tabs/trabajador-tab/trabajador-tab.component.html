@@ -415,4 +415,14 @@
 
     </div>
   </div>
+
+<app-confirm-modal
+  *ngIf="pendingAction()"
+  title="Eliminar asignación"
+  [message]="confirmMsg()"
+  confirmLabel="Eliminar"
+  confirmClass="btn-danger"
+  (confirmed)="onConfirmado()"
+  (cancelled)="onCancelado()"
+></app-confirm-modal>
 </div>

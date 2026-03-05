@@ -6,6 +6,7 @@ import {
   FormArray,
   Validators,
 } from '@angular/forms';
+import { ConfirmModalComponent } from '../../../../../shared/components/confirm-modal/confirm-modal.component';
 import { ActivatedRoute } from '@angular/router';
 import { ClientesService } from '../../../../../services/cliente.service';
 import { SesionesService } from '../../../../../services/sesiones.service';
@@ -31,7 +32,7 @@ interface Asignacion {
 @Component({
   selector: 'app-trabajador-tab',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, ConfirmModalComponent],
   templateUrl: './trabajador-tab.component.html',
 })
 export class TrabajadorTabComponent implements OnInit {
@@ -106,6 +107,9 @@ export class TrabajadorTabComponent implements OnInit {
   generando = signal(false);
   resultadoGeneracion = signal<{ sesionesCreadas: number } | null>(null);
   errorGeneracion = signal<string | null>(null);
+
+  pendingAction = signal<(() => void) | null>(null);
+  confirmMsg    = signal('');
 
   fechaHoy = new Date().toISOString().split('T')[0];
   fechaUnAnio = new Date(new Date().setFullYear(new Date().getFullYear() + 1))
@@ -364,19 +368,17 @@ export class TrabajadorTabComponent implements OnInit {
 
   // ─── DESASIGNAR ────────────────────────────────────────────
   desasignarTrabajador(asignacionId: string) {
-    if (
-      !confirm(
-        '¿Eliminar esta asignación y sus horarios? Las sesiones ya generadas no se eliminarán.',
-      )
-    )
-      return;
-    this.clientesSvc
-      .desasignarTrabajador(this.clienteId, asignacionId)
-      .subscribe({
+    this.confirmMsg.set('Se eliminarán los horarios. Las sesiones ya generadas no se eliminarán.');
+    this.pendingAction.set(() => {
+      this.clientesSvc.desasignarTrabajador(this.clienteId, asignacionId).subscribe({
         next: () => this.cargarAsignaciones(),
         error: (err) => console.error('❌ Error al desasignar:', err),
       });
+    });
   }
+
+  onConfirmado() { this.pendingAction()?.(); this.pendingAction.set(null); }
+  onCancelado()  { this.pendingAction.set(null); }
 
   // ─── HELPERS ───────────────────────────────────────────────
   getDiaNombre(dia: number): string {

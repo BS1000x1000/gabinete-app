@@ -12,11 +12,12 @@ import {
   GAS_LABELS,
   GAS_NIVELES,
 } from '../../../../../interface/gas.interface';
+import { ConfirmModalComponent } from '../../../../../shared/components/confirm-modal/confirm-modal.component';
 
 @Component({
   standalone: true,
   selector: 'app-objetivos-tab',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ConfirmModalComponent],
   templateUrl: './objetivos-tab.component.html',
 })
 export class ObjetivosTabComponent implements OnInit {
@@ -52,6 +53,9 @@ export class ObjetivosTabComponent implements OnInit {
 
   // Formulario nueva evaluación
   nuevaEval = signal<{ nivel: number | null; notas: string }>({ nivel: null, notas: '' });
+
+  pendingAction = signal<(() => void) | null>(null);
+  confirmMsg    = signal('');
   // ────────────────────────────────────────────────────────────
 
   // Computed (igual que antes)
@@ -266,13 +270,18 @@ export class ObjetivosTabComponent implements OnInit {
   }
 
   eliminarEvaluacion(evaluacionId: string): void {
-    if (!confirm('¿Eliminar esta evaluación del historial?')) return;
     const id = this.objetivoGasActivoId();
     if (!id) return;
-    this.gasSvc.deleteEvaluacion(evaluacionId).subscribe({
-      next: () => this.gasSvc.getResumenObjetivo(id).subscribe((r) => this.resumenGas.set(r)),
+    this.confirmMsg.set('¿Eliminar esta evaluación del historial?');
+    this.pendingAction.set(() => {
+      this.gasSvc.deleteEvaluacion(evaluacionId).subscribe({
+        next: () => this.gasSvc.getResumenObjetivo(id).subscribe((r) => this.resumenGas.set(r)),
+      });
     });
   }
+
+  onConfirmado() { this.pendingAction()?.(); this.pendingAction.set(null); }
+  onCancelado()  { this.pendingAction.set(null); }
 
   // ============================================================
   // HELPERS

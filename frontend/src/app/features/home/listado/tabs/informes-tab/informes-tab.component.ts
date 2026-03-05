@@ -1,6 +1,7 @@
 import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ConfirmModalComponent } from '../../../../../shared/components/confirm-modal/confirm-modal.component';
 import { ActivatedRoute } from '@angular/router';
 import { ClientesService } from '../../../../../services/cliente.service';
 import { InformesService } from '../../../../../services/informes.service';
@@ -20,7 +21,7 @@ import {
 @Component({
   standalone: true,
   selector: 'app-informes-tab',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ConfirmModalComponent],
   templateUrl: './informes-tab.component.html',
 })
 export default class InformesTabComponent implements OnInit {
@@ -59,6 +60,10 @@ export default class InformesTabComponent implements OnInit {
     periodoHasta: '',
   });
   mostrarFormNuevo = signal(false);
+
+  pendingAction = signal<(() => void) | null>(null);
+  confirmTitle  = signal('');
+  confirmMsg    = signal('');
 
   // Secciones del editor según tipo
   secciones = computed<SeccionInforme[]>(() => {
@@ -223,33 +228,34 @@ export default class InformesTabComponent implements OnInit {
   finalizarInforme(): void {
     const informe = this.informeActivo();
     if (!informe) return;
-    if (!confirm('¿Finalizar el informe? No podrás editarlo después.')) return;
-
-    this.guardando.set(true);
-    // Guardar todo el contenido antes de finalizar
-    const textos = this.textosSecciones();
-    const dto: UpdateInformeDto = {};
-    this.secciones().forEach((s) => {
-      (dto as any)[s.key] = textos[s.key] ?? '';
-    });
-
-    this.informesSvc.update(informe.id, dto).subscribe({
-      next: () => {
-        this.informesSvc.finalizar(informe.id).subscribe({
-          next: () => this.guardando.set(false),
-          error: () => this.guardando.set(false),
-        });
-      },
-      error: () => this.guardando.set(false),
+    this.confirmTitle.set('Finalizar informe');
+    this.confirmMsg.set('No podrás editarlo después de finalizarlo.');
+    this.pendingAction.set(() => {
+      this.guardando.set(true);
+      const textos = this.textosSecciones();
+      const dto: UpdateInformeDto = {};
+      this.secciones().forEach((s) => { (dto as any)[s.key] = textos[s.key] ?? ''; });
+      this.informesSvc.update(informe.id, dto).subscribe({
+        next: () => {
+          this.informesSvc.finalizar(informe.id).subscribe({
+            next: () => this.guardando.set(false),
+            error: () => this.guardando.set(false),
+          });
+        },
+        error: () => this.guardando.set(false),
+      });
     });
   }
 
   eliminarInforme(id: string, event: Event): void {
     event.stopPropagation();
-    if (!confirm('¿Eliminar este informe? Esta acción no se puede deshacer.'))
-      return;
-    this.informesSvc.delete(id).subscribe();
+    this.confirmTitle.set('Eliminar informe');
+    this.confirmMsg.set('Esta acción no se puede deshacer.');
+    this.pendingAction.set(() => this.informesSvc.delete(id).subscribe());
   }
+
+  onConfirmado() { this.pendingAction()?.(); this.pendingAction.set(null); }
+  onCancelado()  { this.pendingAction.set(null); }
 
   // ============================================================
   // HELPERS

@@ -1,0 +1,21 @@
+<div class="confirm-overlay" (click)="cancelled.emit()">
+  <div class="confirm-dialog" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+
+    <div class="confirm-icon-wrap">
+      <i class="bi {{ icon }}"></i>
+    </div>
+
+    <h5 class="confirm-title">{{ title }}</h5>
+    <p class="confirm-message">{{ message }}</p>
+
+    <div class="confirm-actions">
+      <button class="btn btn-sm btn-outline-secondary" (click)="cancelled.emit()">
+        Cancelar
+      </button>
+      <button class="btn btn-sm {{ confirmClass }}" (click)="confirmed.emit()">
+        {{ confirmLabel }}
+      </button>
+    </div>
+
+  </div>
+</div>

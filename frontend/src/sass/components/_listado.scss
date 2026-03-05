@@ -145,15 +145,15 @@
   }
 
   &.ficha-alert-danger {
-    background: #fef2f2;
-    color: #b91c1c;
-    border: 1px solid #fecaca;
+    background: $danger-light;
+    color: $danger-dark;
+    border: 1px solid rgba($danger, 0.25);
   }
 
   &.ficha-alert-info {
-    background: #eff6ff;
-    color: #1d4ed8;
-    border: 1px solid #bfdbfe;
+    background: $info-light;
+    color: $info-dark;
+    border: 1px solid rgba($info, 0.25);
   }
 }
 
@@ -359,15 +359,15 @@
   line-height: 1.4;
 
   &.chip-danger {
-    background: #fef2f2;
-    color: #b91c1c;
-    border: 1px solid #fecaca;
+    background: $danger-light;
+    color: $danger-dark;
+    border: 1px solid rgba($danger, 0.25);
   }
 
   &.chip-info {
-    background: #eff6ff;
-    color: #1d4ed8;
-    border: 1px solid #bfdbfe;
+    background: $info-light;
+    color: $info-dark;
+    border: 1px solid rgba($info, 0.25);
   }
 }
 
@@ -777,7 +777,7 @@
   }
 
   .btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: $gradient-primary;
     border: none;
 
     &:hover:not(:disabled) {

@@ -1,4 +1,5 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { NotificacionesService } from '../../services/notificaciones.service';
 import { SidebarComponent } from '../../shared/components/layout/sidebar/sidebar.component';
@@ -11,6 +12,7 @@ import { NuevaSesionModalComponent } from '../../shared/components/nueva-sesion-
   selector: 'app-home',
   standalone: true,
   imports: [
+    CommonModule,
     RouterOutlet,
     SidebarComponent,
     SearchBarComponent,

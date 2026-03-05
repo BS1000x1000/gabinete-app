@@ -4,34 +4,18 @@
 
 h1, h2, h3, h4, h5, h6 {
   font-weight: $font-weight-semibold;
-  line-height: 1.2;
+  line-height: 1.25;
   margin-bottom: $spacing-md;
   color: $gray-900;
+  letter-spacing: -0.015em;
 }
 
-h1 {
-  font-size: 2.5rem;
-}
-
-h2 {
-  font-size: 2rem;
-}
-
-h3 {
-  font-size: 1.75rem;
-}
-
-h4 {
-  font-size: 1.5rem;
-}
-
-h5 {
-  font-size: 1.25rem;
-}
-
-h6 {
-  font-size: 1rem;
-}
+h1 { font-size: $font-size-3xl; }   // 30px — principal de página
+h2 { font-size: $font-size-2xl; }   // 24px — sección importante
+h3 { font-size: $font-size-xl; }    // 20px — subsección
+h4 { font-size: $font-size-lg; }    // 18px — encabezado de card
+h5 { font-size: $font-size-md; }    // 16px — título de panel
+h6 { font-size: $font-size-base; }  // 15px — etiqueta de grupo
 
 p {
   margin-bottom: $spacing-md;

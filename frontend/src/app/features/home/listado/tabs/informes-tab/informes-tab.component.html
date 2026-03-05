@@ -377,4 +377,14 @@
     <!-- /vista editor -->
 
   </div>
+
+<app-confirm-modal
+  *ngIf="pendingAction()"
+  [title]="confirmTitle()"
+  [message]="confirmMsg()"
+  confirmLabel="Confirmar"
+  confirmClass="btn-danger"
+  (confirmed)="onConfirmado()"
+  (cancelled)="onCancelado()"
+></app-confirm-modal>
 </div>

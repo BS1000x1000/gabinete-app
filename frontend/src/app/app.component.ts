@@ -12,6 +12,7 @@ import { NgScrollbar } from 'ngx-scrollbar';
 import { FooterComponent } from './shared/components/layout/footer/footer.component';
 import { HeaderComponent } from './shared/components/layout/header/header.component';
 import { SidebarService } from './services/sidebar.service';
+import { ToastComponent } from './shared/components/toast/toast.component';
 
 @Component({
   selector: 'app-root',
@@ -22,6 +23,7 @@ import { SidebarService } from './services/sidebar.service';
     CommonModule,
     SidebarComponent,
     HeaderComponent,
+    ToastComponent,
   ],
   templateUrl: './app.component.html',
 })
