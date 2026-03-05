@@ -148,4 +148,66 @@ export class AuthService {
       throw new InternalServerErrorException('Error al cambiar la contraseña');
     }
   }
+
+  /**
+   * Generar token de reset de contrasena
+   * El token se devuelve en la respuesta para que el admin lo pase al usuario
+   * (en futuro: n8n lo enviara por WhatsApp/email)
+   */
+  async forgotPassword(email: string) {
+    try {
+      const user = await this.trabajadorService.findByEmail(email);
+
+      if (!user) {
+        // No revelar si el email existe o no (seguridad)
+        this.logger.warn(`Forgot password para email no registrado: ${email}`);
+        return { message: 'Si el email existe, se ha generado un token de reset' };
+      }
+
+      if (!user.activo) {
+        this.logger.warn(`Forgot password para usuario desactivado: ${email}`);
+        return { message: 'Si el email existe, se ha generado un token de reset' };
+      }
+
+      const token = require('crypto').randomBytes(32).toString('hex');
+      const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+
+      await this.trabajadorService.guardarResetToken(user.id, token, expires);
+
+      this.logger.log(`Reset token generado para: ${email}`);
+
+      return {
+        message: 'Token de reset generado correctamente',
+        resetToken: token,
+        expiresAt: expires.toISOString(),
+        instrucciones: 'Usa este token en POST /api/auth/reset-password para establecer nueva contrasena',
+      };
+    } catch (error) {
+      this.logger.error(`Error en forgot-password: ${error.message}`);
+      throw new InternalServerErrorException('Error al generar token de reset');
+    }
+  }
+
+  /**
+   * Resetear contrasena con token
+   */
+  async resetPassword(token: string, newPassword: string) {
+    try {
+      const user = await this.trabajadorService.findByResetToken(token);
+
+      if (!user) {
+        throw new UnauthorizedException('Token de reset invalido o expirado');
+      }
+
+      await this.trabajadorService.resetPasswordConToken(user.id, newPassword);
+
+      this.logger.log(`Contrasena reseteada para: ${user.username}`);
+
+      return { message: 'Contrasena actualizada correctamente. Inicia sesion con tu nueva contrasena.' };
+    } catch (error) {
+      if (error instanceof UnauthorizedException) throw error;
+      this.logger.error(`Error en reset-password: ${error.message}`);
+      throw new InternalServerErrorException('Error al resetear la contrasena');
+    }
+  }
 }

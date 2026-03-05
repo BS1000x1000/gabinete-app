@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ClientesModule } from './clientes/clientes.module';
@@ -21,6 +22,15 @@ import { ExportModule } from './export/export.module';
 
 @Module({
   imports: [
+    // Rate limiting global: 200 req / 60s por IP (permisivo para uso normal)
+    // Los endpoints criticos aplican limites mas estrictos con @Throttle()
+    ThrottlerModule.forRoot([
+      {
+        name: 'global',
+        ttl: 60000,
+        limit: 200,
+      },
+    ]),
     PrismaModule,
     ClientesModule,
     DisponibilidadModule,

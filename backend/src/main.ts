@@ -1,4 +1,4 @@
-// ✅ ESTAS LÍNEAS DEBEN IR PRIMERO, ANTES DE TODO
+// ESTAS LINEAS DEBEN IR PRIMERO, ANTES DE TODO
 import * as dotenv from 'dotenv';
 dotenv.config();
 
@@ -7,9 +7,13 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
+import helmet from 'helmet';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Cabeceras de seguridad HTTP
+  app.use(helmet());
 
   app.setGlobalPrefix('api');
   app.useGlobalInterceptors(new ResponseInterceptor());
@@ -25,12 +29,12 @@ async function bootstrap() {
   }));
   
   app.enableCors({
-    origin: 'http://localhost:4200',
+    origin: process.env.FRONTEND_URL ?? 'http://localhost:4200',
     credentials: true,
   });
   
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
-  console.log(`🚀 Aplicación corriendo en: http://localhost:${port}`);
+  console.log('Aplicacion corriendo en: http://localhost:' + port);
 }
 bootstrap();

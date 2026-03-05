@@ -122,3 +122,96 @@ $bg-gradient-end: #764ba2;
 }
 
 // Toggle de
+
+// ============================================================
+// AUTH PAGES — Variantes y estados compartidos
+// ============================================================
+
+// Variante exito del logo-circle
+.logo-circle--success {
+  background: linear-gradient(135deg, #10b981, #059669) !important;
+}
+
+// Variante error del logo-circle
+.logo-circle--error {
+  background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+}
+
+// Caja informativa (info box)
+.auth-info-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba($bg-gradient-start, 0.08);
+  border: 1px solid rgba($bg-gradient-start, 0.2);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: darken($bg-gradient-end, 10%);
+}
+
+// Link de volver
+.auth-back-link {
+  color: #6c757d;
+  text-decoration: none;
+  font-size: 0.875rem;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: $bg-gradient-end;
+  }
+}
+
+// Estado exito animado
+.auth-success-state {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+// Indicador de fuerza de contrasena
+.password-strength {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.password-strength-bar {
+  flex: 1;
+  height: 4px;
+  background: #e2e8f0;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.password-strength-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+.password-strength-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  min-width: 48px;
+  text-align: right;
+  transition: color 0.3s ease;
+}
+
+// Indicador de coincidencia
+.password-match-hint {
+  font-size: 0.8rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+
+  &.match-ok  { color: #10b981; }
+  &.match-fail { color: #ef4444; }
+
+  i { font-size: 0.875rem; }
+}
+
+// Animacion fadeInUp (si no esta definida globalmente)
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

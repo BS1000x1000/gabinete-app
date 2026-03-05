@@ -1,38 +1,18 @@
 import { Route } from '@angular/router';
 import { HomeComponent } from './home.component';
-import { ListadoComponent } from './listado/listado.component';
 
 export default [
   {
-    // El path: '' aquí significa '/home'
     path: '',
-    component: HomeComponent, // HomeComponent es el contenedor con el <router-outlet>
+    component: HomeComponent,
     children: [
-      {
-        path: '',
-        redirectTo: 'agenda',
-        pathMatch: 'full'
-      },
-      {
-        path: 'dashboard',
-        loadComponent: () => import('./dashboard/dashboard-home.component').then(m => m.DashboardHomeComponent)
-      },
-      {
-        path: 'agenda',
-        loadComponent: () => import('./agenda/agenda.component').then(m => m.AgendaComponent)
-      },
-      {
-        path: 'listado/:id',
-        loadChildren: () => import('./listado/listado.routes')
-      },
-      {
-        path: 'clientes',
-        loadComponent: () => import('../clientes/clientes.component')
-      },
-      {
-        path: 'trabajadores',
-        loadComponent: () => import('../trabajadores/trabajadores.component')
-      },
+      { path: '',           redirectTo: 'agenda', pathMatch: 'full' },
+      { path: 'dashboard',  loadComponent: () => import('./dashboard/dashboard-home.component').then(m => m.DashboardHomeComponent) },
+      { path: 'agenda',     loadComponent: () => import('./agenda/agenda.component').then(m => m.AgendaComponent) },
+      { path: 'listado/:id',loadChildren: () => import('./listado/listado.routes') },
+      { path: 'clientes',   loadComponent: () => import('../clientes/clientes.component') },
+      { path: 'trabajadores',loadComponent: () => import('../trabajadores/trabajadores.component') },
+      { path: 'ajustes',    loadComponent: () => import('../ajustes/ajustes.component').then(m => m.AjustesComponent) },
     ]
   }
 ] as Route[];

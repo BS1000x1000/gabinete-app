@@ -536,4 +536,58 @@ export class TrabajadorService {
       );
     }
   }
+
+  /**
+   * Buscar trabajador por email
+   */
+  async findByEmail(email: string): Promise<any> {
+    try {
+      return await this.prisma.trabajador.findUnique({
+        where: { email },
+        include: { rol: true },
+      });
+    } catch (error) {
+      throw new InternalServerErrorException(`Error al buscar por email: ${error.message}`);
+    }
+  }
+
+  /**
+   * Guardar token de reset de contrasena
+   */
+  async guardarResetToken(id: string, token: string, expires: Date): Promise<void> {
+    await this.prisma.trabajador.update({
+      where: { id },
+      data: {
+        resetPasswordToken: token,
+        resetPasswordExpires: expires,
+      },
+    });
+  }
+
+  /**
+   * Buscar trabajador por reset token valido (no expirado)
+   */
+  async findByResetToken(token: string): Promise<any> {
+    return await this.prisma.trabajador.findFirst({
+      where: {
+        resetPasswordToken: token,
+        resetPasswordExpires: { gt: new Date() },
+      },
+    });
+  }
+
+  /**
+   * Aplicar nueva contrasena y limpiar el token de reset
+   */
+  async resetPasswordConToken(id: string, newPassword: string): Promise<void> {
+    const hash = await bcrypt.hash(newPassword, this.SALT_ROUNDS);
+    await this.prisma.trabajador.update({
+      where: { id },
+      data: {
+        passwordHash: hash,
+        resetPasswordToken: null,
+        resetPasswordExpires: null,
+      },
+    });
+  }
 }

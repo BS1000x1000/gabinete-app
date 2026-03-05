@@ -1,0 +1,239 @@
+// ============================================================
+// AJUSTES — Pagina de perfil y seguridad
+// ============================================================
+
+.ajustes-page {
+  padding: $spacing-xl;
+  max-width: 900px;
+
+  @media (max-width: $breakpoint-md) {
+    padding: $spacing-md;
+  }
+}
+
+// Cabecera
+.ajustes-header {
+  margin-bottom: $spacing-xl;
+}
+
+.ajustes-title {
+  font-size: $font-size-2xl;
+  font-weight: $font-weight-bold;
+  color: $gray-800;
+  margin: 0 0 0.25rem;
+}
+
+.ajustes-subtitle {
+  font-size: $font-size-sm;
+  color: $gray-500;
+  margin: 0;
+}
+
+// Grid de secciones
+.ajustes-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: $spacing-lg;
+  align-items: start;
+
+  @media (max-width: $breakpoint-lg) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// Card base
+.ajustes-card {
+  background: $bg-card;
+  border-radius: $border-radius-xl;
+  border: 1px solid $border-color-light;
+  padding: $spacing-xl;
+  box-shadow: $shadow-card;
+}
+
+// Header de cada card
+.ajustes-card-header {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-lg;
+  padding-bottom: $spacing-md;
+  border-bottom: 1px solid $border-color-light;
+
+  i {
+    width: 32px;
+    height: 32px;
+    background: $primary-light;
+    color: $primary;
+    border-radius: $border-radius;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+  }
+
+  h2 {
+    font-size: $font-size-md;
+    font-weight: $font-weight-semibold;
+    color: $gray-800;
+    margin: 0;
+  }
+}
+
+.ajustes-card-desc {
+  font-size: $font-size-sm;
+  color: $gray-500;
+  margin-bottom: $spacing-lg;
+  line-height: $line-height-relaxed;
+}
+
+// ── Perfil ──────────────────────────────────────────────────
+
+.profile-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.profile-avatar-wrap {
+  margin-bottom: $spacing-md;
+}
+
+.profile-avatar-large {
+  width: 72px;
+  height: 72px;
+  background: $gradient-primary;
+  border-radius: $border-radius-full;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: $white;
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  box-shadow: 0 4px 16px rgba($primary, 0.35);
+  letter-spacing: 0.5px;
+}
+
+.profile-name {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $gray-800;
+  margin-bottom: $spacing-xs;
+}
+
+.profile-role-badge {
+  display: inline-block;
+  padding: 0.2rem 0.75rem;
+  background: $primary-light;
+  color: $primary-dark;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  border-radius: $border-radius-full;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: $spacing-lg;
+}
+
+.profile-fields {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.profile-field {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-sm $spacing-md;
+  background: $gray-50;
+  border-radius: $border-radius;
+  font-size: $font-size-sm;
+
+  &-label {
+    color: $gray-500;
+    font-weight: $font-weight-medium;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+
+    i { font-size: 0.8rem; }
+  }
+
+  &-value {
+    color: $gray-700;
+    font-weight: $font-weight-medium;
+    word-break: break-all;
+    text-align: right;
+    max-width: 55%;
+  }
+}
+
+.profile-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-xl;
+}
+
+// ── Seguridad / Formulario ───────────────────────────────────
+
+.input-icon-wrap {
+  position: relative;
+
+  .form-control {
+    padding-right: 2.5rem;
+    border: 1.5px solid $border-color;
+    border-radius: $border-radius;
+    font-size: $font-size-sm;
+    transition: $transition-base;
+
+    &:focus {
+      border-color: $primary;
+      box-shadow: 0 0 0 3px rgba($primary, 0.12);
+      outline: none;
+    }
+
+    &.is-invalid {
+      border-color: $danger;
+      &:focus { box-shadow: 0 0 0 3px rgba($danger, 0.12); }
+    }
+  }
+}
+
+.input-eye-btn {
+  position: absolute;
+  right: 0.6rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: $gray-400;
+  padding: 0.25rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  font-size: 0.9rem;
+  transition: color 0.2s ease;
+
+  &:hover { color: $gray-600; }
+}
+
+.form-label {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $gray-600;
+  margin-bottom: 0.4rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+
+  i { font-size: 0.8rem; color: $gray-400; }
+}
+
+.form-error {
+  font-size: 0.78rem;
+  color: $danger;
+  margin-top: 0.25rem;
+}

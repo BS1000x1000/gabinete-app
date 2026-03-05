@@ -9,11 +9,14 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth/local-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { TrabajadorService } from '../trabajador/trabajador.service';
 import { CreateTrabajadorDto } from '../trabajador/dto/trabajador.dto';
+import { ChangePasswordDto } from '../trabajador/dto/change-password.dto';
+import { ForgotPasswordDto, ResetPasswordDto } from './dto/reset-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -33,7 +36,6 @@ export class AuthController {
     this.logger.log(`Registrando nuevo trabajador: ${body.username}`);
     const trabajador = await this.trabajadorService.create(body);
     
-    // No devolver datos sensibles
     return {
       message: 'Trabajador registrado exitosamente',
       user: {
@@ -49,8 +51,10 @@ export class AuthController {
 
   /**
    * Login de trabajador
+   * Rate limit estricto: 5 intentos por minuto por IP
    */
-  @UseGuards(LocalAuthGuard)
+  @UseGuards(ThrottlerGuard, LocalAuthGuard)
+  @Throttle({ global: { limit: 5, ttl: 60000 } })
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async login(@Request() req) {
@@ -69,7 +73,7 @@ export class AuthController {
   }
 
   /**
-   * Verificar si el token es válido
+   * Verificar si el token es valido
    */
   @UseGuards(JwtAuthGuard)
   @Get('verify')
@@ -92,8 +96,41 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async refreshToken(@Request() req) {
     this.logger.log(`Renovando token para: ${req.user.username}`);
-    // Buscar usuario actualizado
     const trabajador = await this.trabajadorService.findOne(req.user.userId);
     return this.authService.login(trabajador);
+  }
+
+  /**
+   * Cambiar contrasena (requiere estar autenticado y conocer la contrasena actual)
+   */
+  @UseGuards(JwtAuthGuard)
+  @Post('change-password')
+  @HttpCode(HttpStatus.OK)
+  async changePassword(@Request() req, @Body() body: ChangePasswordDto) {
+    this.logger.log(`Cambio de contrasena para: ${req.user.username}`);
+    return this.authService.changePassword(req.user.userId, body.oldPassword, body.newPassword);
+  }
+
+  /**
+   * Solicitar reset de contrasena por email
+   * Rate limit estricto: 3 intentos por minuto por IP
+   */
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ global: { limit: 3, ttl: 60000 } })
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  async forgotPassword(@Body() body: ForgotPasswordDto) {
+    return this.authService.forgotPassword(body.email);
+  }
+
+  /**
+   * Resetear contrasena usando token
+   */
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ global: { limit: 5, ttl: 60000 } })
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  async resetPassword(@Body() body: ResetPasswordDto) {
+    return this.authService.resetPassword(body.token, body.newPassword);
   }
 }
