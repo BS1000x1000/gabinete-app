@@ -1,0 +1,502 @@
+// ============================================================
+// TRABAJADORES — Panel de administración del equipo
+// ============================================================
+
+.trab-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: $spacing-xl;
+
+  @media (max-width: $breakpoint-md) {
+    padding: $spacing-md;
+  }
+}
+
+// ── Header ────────────────────────────────────────────────
+
+.trab-header {
+  margin-bottom: $spacing-xl;
+}
+
+.trab-header-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: $spacing-lg;
+  gap: $spacing-md;
+
+  @media (max-width: $breakpoint-md) {
+    flex-direction: column;
+  }
+}
+
+.trab-header-info {
+  h2 {
+    font-size: 1.75rem;
+    font-weight: $font-weight-bold;
+    color: $gray-900;
+    margin: 0 0 $spacing-sm;
+    letter-spacing: -0.02em;
+  }
+}
+
+.btn-nuevo-trab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.25rem;
+  background: $gradient-primary;
+  color: $white;
+  border: none;
+  border-radius: $border-radius-lg;
+  font-weight: $font-weight-semibold;
+  font-size: $font-size-sm;
+  font-family: inherit;
+  cursor: pointer;
+  transition: $transition-base;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba($primary, 0.3);
+  flex-shrink: 0;
+
+  i { font-size: 1rem; }
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba($primary, 0.4);
+  }
+
+  &:active { transform: translateY(0); }
+}
+
+// ── Loading ───────────────────────────────────────────────
+
+.trab-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid $primary-light;
+  border-top-color: $primary;
+  border-radius: 50%;
+  animation: trab-spin 0.7s linear infinite;
+}
+
+@keyframes trab-spin {
+  to { transform: rotate(360deg); }
+}
+
+// ── Estado vacío ──────────────────────────────────────────
+
+.btn-empty-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: $spacing-lg;
+  padding: 0.65rem 1.25rem;
+  background: $gradient-primary;
+  color: $white;
+  border: none;
+  border-radius: $border-radius-lg;
+  font-weight: $font-weight-semibold;
+  font-size: $font-size-sm;
+  font-family: inherit;
+  cursor: pointer;
+  transition: $transition-base;
+  box-shadow: 0 2px 8px rgba($primary, 0.3);
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba($primary, 0.4);
+  }
+}
+
+// ── Grid de cards ──────────────────────────────────────────
+
+.trab-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: $spacing-lg;
+
+  @media (max-width: $breakpoint-sm) {
+    grid-template-columns: 1fr;
+    gap: $spacing-md;
+  }
+}
+
+// ── Card individual ───────────────────────────────────────
+
+.trab-card {
+  background: $white;
+  border-radius: $border-radius-xl;
+  border: 1px solid $border-color;
+  padding: $spacing-lg;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  transition: $transition-base;
+  box-shadow: $shadow-sm;
+  position: relative;
+  overflow: hidden;
+
+  // Línea decorativa superior
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: $gradient-primary;
+    opacity: 0;
+    transition: opacity $animation-duration-base $animation-timing;
+  }
+
+  &:hover {
+    border-color: rgba($primary, 0.25);
+    box-shadow: $shadow-hover;
+    transform: translateY(-2px);
+
+    &::before { opacity: 1; }
+
+    .trab-card-acciones { opacity: 1; }
+  }
+
+  &.trab-card--inactivo {
+    opacity: 0.7;
+    background: $gray-50;
+
+    &::before { background: $gray-300; }
+  }
+}
+
+// ── Cabecera de card ──────────────────────────────────────
+
+.trab-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-xs;
+}
+
+.trab-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: $border-radius-full;
+  background: $gradient-primary;
+  color: $white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: $font-weight-bold;
+  font-size: $font-size-md;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba($primary, 0.3);
+  flex-shrink: 0;
+
+  &.trab-avatar--inactivo {
+    background: $gray-300;
+    box-shadow: none;
+  }
+}
+
+.trab-card-badge-row {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+}
+
+.trab-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: $gray-300;
+  flex-shrink: 0;
+
+  &.trab-status-dot--activo {
+    background: #22c55e;
+    box-shadow: 0 0 0 3px rgba(#22c55e, 0.2);
+  }
+}
+
+// ── Badges de rol ─────────────────────────────────────────
+
+.trab-rol-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.6rem;
+  border-radius: $border-radius-full;
+  font-size: 0.72rem;
+  font-weight: $font-weight-semibold;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+
+  &.rol-admin {
+    background: rgba($danger, 0.1);
+    color: $danger-dark;
+  }
+
+  &.rol-terapeuta {
+    background: rgba($primary, 0.1);
+    color: $primary-dark;
+  }
+
+  &.rol-logopeda {
+    background: rgba($secondary, 0.1);
+    color: $secondary-dark;
+  }
+
+  &.rol-neuro {
+    background: rgba(#8B5CF6, 0.1);
+    color: #6D28D9;
+  }
+
+  &.rol-to {
+    background: rgba(#10b981, 0.1);
+    color: #059669;
+  }
+
+  &.rol-pedagogia {
+    background: rgba(#f59e0b, 0.1);
+    color: #b45309;
+  }
+
+  &.rol-recepcion {
+    background: rgba($info, 0.1);
+    color: $info-dark;
+  }
+
+  &.rol-default {
+    background: $gray-100;
+    color: $gray-600;
+  }
+}
+
+// ── Cuerpo de card ────────────────────────────────────────
+
+.trab-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.trab-nombre {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $gray-900;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.trab-email,
+.trab-telefono {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: $font-size-xs;
+  color: $gray-500;
+  margin: 0;
+
+  i { font-size: 0.75rem; flex-shrink: 0; }
+}
+
+// ── Estado badge ──────────────────────────────────────────
+
+.trab-card-estado {
+  padding-top: $spacing-xs;
+  border-top: 1px solid $border-color-light;
+  margin-top: auto;
+}
+
+// ── Acciones ──────────────────────────────────────────────
+
+.trab-card-acciones {
+  display: flex;
+  gap: 0.35rem;
+  justify-content: flex-end;
+  opacity: 0;
+  transition: opacity $transition-base;
+  padding-top: $spacing-xs;
+  border-top: 1px solid $border-color-light;
+}
+
+// ── Modal específico ──────────────────────────────────────
+
+.modal-card--lg {
+  max-width: 560px;
+}
+
+.modal-card--sm {
+  max-width: 380px;
+}
+
+.form-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $spacing-md;
+
+  @media (max-width: $breakpoint-sm) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-group {
+  select {
+    width: 100%;
+    padding: 0.6rem 2rem 0.6rem 0.875rem;
+    border: 1.5px solid $border-color;
+    border-radius: $border-radius-lg;
+    font-size: $font-size-sm;
+    font-family: inherit;
+    background: $white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16'%3E%3Cpath fill='%236b7280' d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E") no-repeat right 0.75rem center;
+    appearance: none;
+    cursor: pointer;
+    outline: none;
+    transition: $transition-base;
+    color: $gray-700;
+
+    &:focus {
+      border-color: $primary;
+      box-shadow: 0 0 0 3px rgba($primary, 0.1);
+    }
+  }
+}
+
+.req {
+  color: $danger;
+  margin-left: 2px;
+}
+
+.trab-modal-error {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: 0.75rem 1rem;
+  background: $danger-light;
+  border: 1px solid rgba($danger, 0.2);
+  border-radius: $border-radius-lg;
+  font-size: $font-size-sm;
+  color: $danger-dark;
+
+  i { font-size: 0.9rem; flex-shrink: 0; }
+}
+
+.btn-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba($white, 0.4);
+  border-top-color: $white;
+  border-radius: 50%;
+  animation: trab-spin 0.6s linear infinite;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+// ── Confirm modal ─────────────────────────────────────────
+
+.modal-confirm {
+  text-align: center;
+  padding: $spacing-xl;
+
+  h3 {
+    font-size: 1.1rem;
+    font-weight: $font-weight-semibold;
+    color: $gray-900;
+    margin: $spacing-md 0 $spacing-sm;
+  }
+
+  p {
+    font-size: $font-size-sm;
+    color: $gray-500;
+    margin: 0 0 $spacing-lg;
+    line-height: 1.6;
+  }
+}
+
+.confirm-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: $border-radius-full;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  font-size: 1.4rem;
+
+  &.confirm-icon--warning {
+    background: rgba($warning, 0.12);
+    color: $warning-dark;
+  }
+}
+
+.confirm-acciones {
+  display: flex;
+  gap: $spacing-sm;
+  justify-content: center;
+}
+
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1.25rem;
+  background: $danger;
+  color: $white;
+  border: none;
+  border-radius: $border-radius-lg;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  font-family: inherit;
+  cursor: pointer;
+  transition: $transition-base;
+  box-shadow: 0 2px 8px rgba($danger, 0.3);
+
+  i { font-size: 0.875rem; }
+
+  &:hover {
+    background: $danger-dark;
+    box-shadow: 0 4px 16px rgba($danger, 0.4);
+    transform: translateY(-1px);
+  }
+
+  &:active { transform: translateY(0); }
+}
+
+// ── Botones de acción en card ──────────────────────────────
+
+.accion-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1.5px solid $border-color;
+  border-radius: $border-radius-lg;
+  background: $white;
+  color: $gray-500;
+  cursor: pointer;
+  transition: $transition-base;
+  font-size: 0.85rem;
+
+  i { font-size: 0.85rem; }
+
+  &:hover { transform: translateY(-1px); }
+
+  &.accion-editar:hover {
+    border-color: $primary;
+    color: $primary;
+    background: $primary-ultra-light;
+  }
+
+  &.accion-desactivar:hover {
+    border-color: $warning-dark;
+    color: $warning-dark;
+    background: $warning-light;
+  }
+
+  &.accion-reactivar:hover {
+    border-color: #16a34a;
+    color: #16a34a;
+    background: rgba(#22c55e, 0.08);
+  }
+}

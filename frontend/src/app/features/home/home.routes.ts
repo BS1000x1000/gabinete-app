@@ -29,6 +29,10 @@ export default [
         path: 'clientes',
         loadComponent: () => import('../clientes/clientes.component')
       },
+      {
+        path: 'trabajadores',
+        loadComponent: () => import('../trabajadores/trabajadores.component')
+      },
     ]
   }
 ] as Route[];

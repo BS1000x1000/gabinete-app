@@ -34,9 +34,10 @@ export class SidebarComponent {
   userRole     = this.auth.userRole;
 
   navItems: NavItem[] = [
-    { label: 'Agenda',   icon: 'bi-calendar-week',  route: '/home/agenda'   },
-    { label: 'Clientes', icon: 'bi-people',          route: '/home/clientes' },
-    { label: 'Ajustes',  icon: 'bi-sliders',         route: '/home/ajustes'  },
+    { label: 'Agenda',       icon: 'bi-calendar-week',  route: '/home/agenda'       },
+    { label: 'Clientes',     icon: 'bi-people',          route: '/home/clientes'     },
+    { label: 'Equipo',       icon: 'bi-person-badge',    route: '/home/trabajadores' },
+    { label: 'Ajustes',      icon: 'bi-sliders',         route: '/home/ajustes'      },
   ];
 
   quickActions: QuickAction[] = [

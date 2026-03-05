@@ -1,0 +1,303 @@
+<div class="trab-container">
+
+  <!-- ── Header ──────────────────────────────────────────── -->
+  <div class="trab-header">
+    <div class="trab-header-top">
+      <div class="trab-header-info">
+        <h2>Equipo</h2>
+        <div class="header-stats">
+          <span class="stat-chip stat-total">
+            <i class="bi bi-people"></i>
+            {{ estadisticas().total }} en total
+          </span>
+          <span class="stat-chip stat-activos">
+            <i class="bi bi-check-circle"></i>
+            {{ estadisticas().activos }} activos
+          </span>
+          <span class="stat-chip stat-pausados" *ngIf="estadisticas().inactivos > 0">
+            <i class="bi bi-dash-circle"></i>
+            {{ estadisticas().inactivos }} inactivos
+          </span>
+        </div>
+      </div>
+
+      <button class="btn-nuevo-trab" (click)="abrirCrear()" type="button">
+        <i class="bi bi-person-plus"></i>
+        Nuevo trabajador
+      </button>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filtros-bar">
+      <div class="search-box">
+        <i class="bi bi-search"></i>
+        <input
+          type="text"
+          placeholder="Buscar por nombre o email..."
+          [value]="busqueda()"
+          (input)="onBusquedaChange($any($event.target).value)"
+        />
+      </div>
+
+      <select [value]="filtroRol()" (change)="onFiltroRolChange($any($event.target).value)">
+        <option value="todos">Todos los roles</option>
+        @for (rol of roles(); track rol.id) {
+          <option [value]="rol.id">{{ rol.nombreRol }}</option>
+        }
+      </select>
+
+      <select [value]="filtroEstado()" (change)="onFiltroEstadoChange($any($event.target).value)">
+        <option value="activos">Solo activos</option>
+        <option value="inactivos">Solo inactivos</option>
+        <option value="todos">Todos</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- ── Loading ──────────────────────────────────────────── -->
+  <div *ngIf="isLoading()" class="loading-state">
+    <div class="trab-spinner"></div>
+    <p>Cargando equipo...</p>
+  </div>
+
+  <!-- ── Contenido ────────────────────────────────────────── -->
+  <ng-container *ngIf="!isLoading()">
+
+    <!-- Estado vacío -->
+    <div *ngIf="trabajadoresFiltrados().length === 0" class="empty-state">
+      <div class="empty-icon">
+        <i class="bi bi-people"></i>
+      </div>
+      <ng-container *ngIf="busqueda() || filtroRol() !== 'todos' || filtroEstado() !== 'todos'">
+        <h3>Sin resultados</h3>
+        <p>No hay trabajadores que coincidan con los filtros aplicados</p>
+      </ng-container>
+      <ng-container *ngIf="!busqueda() && filtroRol() === 'todos' && filtroEstado() === 'todos'">
+        <h3>Aún no hay trabajadores</h3>
+        <p>Añade el primer miembro del equipo</p>
+        <button class="btn-empty-action" (click)="abrirCrear()" type="button">
+          <i class="bi bi-person-plus"></i>
+          Nuevo trabajador
+        </button>
+      </ng-container>
+    </div>
+
+    <!-- Grid de cards -->
+    <div *ngIf="trabajadoresFiltrados().length > 0" class="trab-grid">
+      @for (t of trabajadoresFiltrados(); track t.id) {
+        <div class="trab-card" [class.trab-card--inactivo]="!t.activo">
+
+          <!-- Cabecera de la card -->
+          <div class="trab-card-header">
+            <div class="trab-avatar" [class.trab-avatar--inactivo]="!t.activo">
+              {{ getInitials(t) }}
+            </div>
+
+            <div class="trab-card-badge-row">
+              <span class="trab-rol-badge" [ngClass]="getRolColor(t.rol?.codigo)">
+                {{ t.rol?.nombreRol ?? 'Sin rol' }}
+              </span>
+              <span class="trab-status-dot" [class.trab-status-dot--activo]="t.activo" [title]="t.activo ? 'Activo' : 'Inactivo'"></span>
+            </div>
+          </div>
+
+          <!-- Info -->
+          <div class="trab-card-body">
+            <p class="trab-nombre">{{ t.nombre }} {{ t.apellidos }}</p>
+            <p class="trab-email">
+              <i class="bi bi-envelope"></i>
+              {{ t.email }}
+            </p>
+            <p class="trab-telefono" *ngIf="t.telefono">
+              <i class="bi bi-telephone"></i>
+              {{ t.telefono }}
+            </p>
+          </div>
+
+          <!-- Estado badge -->
+          <div class="trab-card-estado">
+            <span class="badge-estado" [class.activo]="t.activo" [class.pausado]="!t.activo">
+              <i [class]="t.activo ? 'bi bi-check-circle-fill' : 'bi bi-dash-circle-fill'"></i>
+              {{ t.activo ? 'Activo' : 'Inactivo' }}
+            </span>
+          </div>
+
+          <!-- Acciones -->
+          <div class="trab-card-acciones">
+            <button
+              class="accion-btn accion-editar"
+              (click)="abrirEditar(t, $event)"
+              title="Editar"
+              type="button"
+            >
+              <i class="bi bi-pencil"></i>
+            </button>
+
+            <button
+              *ngIf="t.activo"
+              class="accion-btn accion-desactivar"
+              (click)="pedirConfirmDesactivar(t, $event)"
+              title="Desactivar"
+              type="button"
+            >
+              <i class="bi bi-slash-circle"></i>
+            </button>
+
+            <button
+              *ngIf="!t.activo"
+              class="accion-btn accion-reactivar"
+              (click)="reactivar(t, $event)"
+              title="Reactivar"
+              type="button"
+            >
+              <i class="bi bi-arrow-clockwise"></i>
+            </button>
+          </div>
+
+        </div>
+      }
+    </div>
+
+  </ng-container>
+
+</div>
+
+<!-- ── Modal crear / editar ──────────────────────────────── -->
+<div *ngIf="mostrarModal()" class="modal-overlay" (click)="cerrarModal()">
+  <div class="modal-card modal-card--lg" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <div class="modal-title">
+        <i [class]="modoModal() === 'crear' ? 'bi bi-person-plus' : 'bi bi-pencil-square'"></i>
+        <h3>{{ modoModal() === 'crear' ? 'Nuevo trabajador' : 'Editar trabajador' }}</h3>
+      </div>
+      <button class="modal-close" (click)="cerrarModal()" type="button">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+
+      <!-- Error -->
+      <div *ngIf="errorModal()" class="trab-modal-error">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        {{ errorModal() }}
+      </div>
+
+      <!-- Fila: nombre + apellidos -->
+      <div class="form-row-2">
+        <div class="form-group">
+          <label>Nombre <span class="req">*</span></label>
+          <input
+            type="text"
+            placeholder="Ej: Laura"
+            [value]="form().nombre"
+            (input)="updateFormField('nombre', $any($event.target).value)"
+          />
+        </div>
+        <div class="form-group">
+          <label>Apellidos <span class="req">*</span></label>
+          <input
+            type="text"
+            placeholder="Ej: García Martín"
+            [value]="form().apellidos"
+            (input)="updateFormField('apellidos', $any($event.target).value)"
+          />
+        </div>
+      </div>
+
+      <!-- Usuario y contraseña solo en creación -->
+      <div *ngIf="modoModal() === 'crear'" class="form-row-2">
+        <div class="form-group">
+          <label>Usuario <span class="req">*</span></label>
+          <input
+            type="text"
+            placeholder="Mín. 3 caracteres"
+            [value]="form().username"
+            (input)="updateFormField('username', $any($event.target).value)"
+            autocomplete="new-password"
+          />
+        </div>
+        <div class="form-group">
+          <label>Contraseña <span class="req">*</span></label>
+          <input
+            type="password"
+            placeholder="Mín. 6 caracteres"
+            [value]="form().password"
+            (input)="updateFormField('password', $any($event.target).value)"
+            autocomplete="new-password"
+          />
+        </div>
+      </div>
+
+      <!-- Email -->
+      <div class="form-group">
+        <label>Email <span class="req">*</span></label>
+        <input
+          type="email"
+          placeholder="Ej: laura@gabinete.es"
+          [value]="form().email"
+          (input)="updateFormField('email', $any($event.target).value)"
+        />
+      </div>
+
+      <!-- Fila: teléfono + rol -->
+      <div class="form-row-2">
+        <div class="form-group">
+          <label>Teléfono</label>
+          <input
+            type="tel"
+            placeholder="Ej: 600 123 456"
+            [value]="form().telefono"
+            (input)="updateFormField('telefono', $any($event.target).value)"
+          />
+        </div>
+        <div class="form-group">
+          <label>Rol <span class="req">*</span></label>
+          <select
+            [value]="form().rolId"
+            (change)="updateFormField('rolId', $any($event.target).value)"
+          >
+            <option value="" disabled>Seleccionar rol...</option>
+            @for (rol of roles(); track rol.id) {
+              <option [value]="rol.id">{{ rol.nombreRol }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancelar" (click)="cerrarModal()" [disabled]="guardando()" type="button">
+        Cancelar
+      </button>
+      <button class="btn-guardar" (click)="guardar()" [disabled]="guardando()" type="button">
+        <span *ngIf="guardando()" class="btn-spinner"></span>
+        {{ guardando() ? 'Guardando...' : modoModal() === 'crear' ? 'Crear trabajador' : 'Guardar cambios' }}
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Confirm desactivar ─────────────────────────────────── -->
+<div *ngIf="confirmDesactivar()" class="modal-overlay" (click)="cancelarConfirm()">
+  <div class="modal-card modal-card--sm modal-confirm" (click)="$event.stopPropagation()">
+
+    <div class="confirm-icon confirm-icon--warning">
+      <i class="bi bi-slash-circle"></i>
+    </div>
+    <h3>¿Desactivar a {{ confirmDesactivar()?.nombre }}?</h3>
+    <p>El trabajador perderá acceso al sistema. Podrás reactivarlo en cualquier momento.</p>
+
+    <div class="confirm-acciones">
+      <button class="btn-cancelar" (click)="cancelarConfirm()" type="button">Cancelar</button>
+      <button class="btn-danger" (click)="confirmarDesactivar()" type="button">
+        <i class="bi bi-slash-circle"></i>
+        Desactivar
+      </button>
+    </div>
+
+  </div>
+</div>

@@ -64,9 +64,9 @@ export function calcularEdadTexto(fechaNacimiento: Date | string): {
   console.log(meses);
   console.log(dias);
   const partes: string[] = [];
-  if (anios > 0) partes.push(anios === 1 ? '1 año' : `${anios} años`);
-  if (meses > 0) partes.push(meses === 1 ? '1 mes' : `${meses} meses`);
-  if (dias > 0) partes.push(dias === 1 ? '1 día' : `${dias} días`);
+  if (anios > 0) partes.push(anios === 1 ? '1 año' : `${anios} A`);
+  if (meses > 0) partes.push(meses === 1 ? '1 mes' : `${meses} M`);
+  if (dias > 0) partes.push(dias === 1 ? '1 día' : `${dias} D`);
   
   return { anios, meses, dias, texto: partes.join(', ') || '0 días' };
 }
