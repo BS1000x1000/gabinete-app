@@ -1,6 +1,7 @@
 import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { finalize } from 'rxjs';
 import { ConfirmModalComponent } from '../../../../../shared/components/confirm-modal/confirm-modal.component';
 import { ActivatedRoute } from '@angular/router';
 import { ClientesService } from '../../../../../services/cliente.service';
@@ -39,6 +40,7 @@ export default class InformesTabComponent implements OnInit {
   clienteId = signal<string>('');
   cargando = signal(false);
   guardando = signal(false);
+  descargandoPdf = signal(false);
 
   // Signals del servicio
   informes = this.informesSvc.informes;
@@ -263,8 +265,11 @@ export default class InformesTabComponent implements OnInit {
 
   descargarPdf(): void {
     const informe = this.informeActivo();
-    if (!informe) return;
-    this.informesSvc.descargarPdf(informe.id, informe.titulo);
+    if (!informe || this.descargandoPdf()) return;
+    this.descargandoPdf.set(true);
+    this.informesSvc.descargarPdf(informe.id, informe.titulo)
+      .pipe(finalize(() => this.descargandoPdf.set(false)))
+      .subscribe();
   }
 
   esFinalizado(): boolean {

@@ -109,10 +109,13 @@ export class InformesService {
   // ELIMINAR
   // ============================================================
 
-  descargarPdf(informeId: string, titulo: string): void {
-    this.http
+  descargarPdf(informeId: string, titulo: string): Observable<void> {
+    return this.http
       .get(`${this.api}/${informeId}/pdf`, { responseType: 'blob' })
-      .subscribe((blob) => triggerDownload(blob, `${titulo.replace(/[^a-z0-9]/gi, '_')}.pdf`));
+      .pipe(
+        tap((blob) => triggerDownload(blob, `${titulo.replace(/[^a-z0-9]/gi, '_')}.pdf`)),
+        map(() => void 0),
+      );
   }
 
   delete(id: string): Observable<{ message: string }> {

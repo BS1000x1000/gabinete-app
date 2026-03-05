@@ -238,8 +238,11 @@
           <button
             class="btn btn-outline-secondary btn-sm"
             (click)="descargarPdf()"
+            [disabled]="descargandoPdf()"
           >
-            <i class="bi bi-file-earmark-pdf me-1"></i>Descargar PDF
+            <span *ngIf="descargandoPdf()" class="spinner-border spinner-border-sm me-1"></span>
+            <i *ngIf="!descargandoPdf()" class="bi bi-file-earmark-pdf me-1"></i>
+            {{ descargandoPdf() ? 'Generando PDF...' : 'Descargar PDF' }}
           </button>
           <div *ngIf="esFinalizado()" class="alert alert-success py-2 px-2 small mb-0 text-center">
             <i class="bi bi-lock-fill me-1"></i>Informe finalizado
