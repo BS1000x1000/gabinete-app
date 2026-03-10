@@ -46,7 +46,8 @@ export class InformesPdfService {
       titulo: informe.titulo,
       tipo: informe.tipoInforme,
       elaborado_por: `${informe.trabajador.nombre} ${informe.trabajador.apellidos}`,
-      num_colegiada: (informe.trabajador as any).numColegiada ?? '',
+      num_colegiado: informe.trabajador.numeroColegiado ?? '',
+      especialidad: informe.trabajador.especialidad ?? '',
       fecha_elaboracion: new Date(informe.createdAt).toLocaleDateString('es-ES'),
       alumno: {
         nombre: `${informe.cliente.apellidos}, ${informe.cliente.nombre}`,

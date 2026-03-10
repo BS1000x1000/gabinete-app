@@ -215,3 +215,108 @@ En el template:
 ### Convención de tabs dentro de la ficha de cliente
 
 Los sub-componentes de tabs (`registro-tab`, `objetivos-tab`, etc.) deben seguir el sistema de diseño del proyecto (clases propias del SASS, no Bootstrap puro) para mantener consistencia visual. Las tabs que aún usan `card`, `container-fluid`, `btn-group` de Bootstrap directamente son deuda técnica pendiente de migrar.
+
+---
+
+## Testing — Patrones y lecciones
+
+### Infraestructura de tests (estado actual)
+
+- **Backend unit**: Jest 30 + ts-jest + `@nestjs/testing`. 162 tests en verde.
+- **Backend E2E**: Supertest + Jest. 32 tests en verde. Config en `test/jest-e2e.json`.
+- **Frontend**: Karma + Jasmine + `@angular/core/testing`. 328 tests en verde (Chrome Headless).
+
+### Backend — patrón estándar de controller spec
+
+```typescript
+const module = await Test.createTestingModule({
+  controllers: [XController],
+  providers: [{ provide: XService, useValue: serviceMock }],
+})
+  .overrideGuard(JwtAuthGuard)
+  .useValue({ canActivate: () => true })
+  .compile();
+```
+
+Siempre usar `makeMock()` con `jest.fn()` por cada método del servicio para poder encadenar `.mockResolvedValue(...)`.
+
+### Backend E2E — infraestructura
+
+Los ficheros `test/helpers/prisma-mock.ts` y `test/helpers/create-app.ts` replican la configuración exacta de `main.ts` (prefix `api`, `ResponseInterceptor`, `AllExceptionsFilter`, `ValidationPipe`). **`MotorReglasService` SIEMPRE debe sobreescribirse** porque se activa en el login y hace múltiples llamadas a la BD:
+
+```typescript
+moduleFixture
+  .overrideProvider(PrismaService).useValue(prismaMock)
+  .overrideProvider(MotorReglasService).useValue({ evaluarReglas: jest.fn().mockResolvedValue(undefined) })
+```
+
+El `jest-e2e.json` necesita `moduleNameMapper` para resolver imports `src/`:
+```json
+{ "moduleNameMapper": { "^src/(.*)$": "<rootDir>/../src/$1" } }
+```
+
+### Backend E2E — mock state contamination entre tests
+
+Si varios tests del mismo `describe` usan el mismo mock de Prisma sin `beforeEach` reset, el estado de las llamadas anteriores puede contaminar el siguiente test. Solución: encadenar `mockResolvedValueOnce` para llamadas secuenciales dentro de un mismo test:
+
+```typescript
+prisma.cliente.findUnique
+  .mockResolvedValueOnce(null)        // primera llamada: comprobación DNI
+  .mockResolvedValue(clienteNuevo);   // segunda llamada: fetch post-creación
+```
+
+### Frontend — patrón estándar de service spec (HttpClient)
+
+```typescript
+TestBed.configureTestingModule({
+  providers: [provideHttpClient(), provideHttpClientTesting()],
+});
+service = TestBed.inject(XService);
+httpMock = TestBed.inject(HttpTestingController);
+// ...
+afterEach(() => httpMock.verify());
+```
+
+### Frontend — NO usar `spyOn` en named exports de ES modules
+
+`spyOn(downloadUtils, 'triggerDownload')` **FALLA** con `"triggerDownload is not declared writable or has no setter"` porque los named exports de módulos ES son non-writable/non-configurable.
+
+**Solución**: stubear las APIs del navegador que usa la función en lugar de la función en sí:
+
+```typescript
+beforeEach(() => {
+  spyOn(URL, 'createObjectURL').and.returnValue('blob:test');
+  spyOn(URL, 'revokeObjectURL');
+});
+```
+
+Si el test necesita verificar el nombre del archivo descargado, rediseñar para verificar que el observable completa sin error, en lugar de assertar sobre `triggerDownload`.
+
+### Frontend — tests con signals y efectos de tap/side-effects
+
+Los métodos de servicio que usan `tap()` para actualizar signals necesitan que el observable se suscriba Y que el HttpMock devuelva el flush **después** de suscribir, para que el tap se ejecute:
+
+```typescript
+service.getSomething().subscribe();           // 1. suscribir
+httpMock.expectOne(url).flush(wrap(data));    // 2. flush → tap se ejecuta
+expect(service.signal()).toEqual(data);       // 3. assertar el signal
+```
+
+### Frontend — timezone en tests de fechas
+
+Los tests que comparan horas derivadas de fechas UTC (`'2026-03-10T09:00:00.000Z'`) con valores locales FALLARÁN en máquinas con offset UTC+N. Calcular los valores esperados dinámicamente igual que lo hace el servicio:
+
+```typescript
+const inicio = new Date(sesion.fechaHoraInicio);
+const expectedHora = `${String(inicio.getHours()).padStart(2, '0')}:${String(inicio.getMinutes()).padStart(2, '0')}`;
+expect(service.nuevaHoraInicio()).toBe(expectedHora); // ✅ timezone-safe
+```
+
+### Frontend — interfaces estrictas en mocks de test
+
+Los mocks de test deben incluir todos los campos requeridos de la interfaz. Campos comunes que se olvidan:
+
+- `RegistroDiario`: usa `fechaRegistro` (NO `fecha`)
+- `Informe`: requiere `tipoInforme` (NO `tipo`), `estado`, `trabajadorId`, `updatedAt`
+- `EstadisticasTrabajador`: estructura anidada `{ clientesAsignados, sesiones: { hoy, esteMes, porEstado: {...} }, registros: { esteMes } }`
+- `MiDiaResponse`: requiere `saludo`, `contadores`, `sesionesHoy`, `alertasUrgentes`, `accionesPendientes`, `resumenMes`

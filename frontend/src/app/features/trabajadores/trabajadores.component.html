@@ -266,6 +266,30 @@
         </div>
       </div>
 
+      <!-- Fila: especialidad + núm. colegiado (datos profesionales para documentos) -->
+      <div class="form-row-2">
+        <div class="form-group">
+          <label>Especialidad</label>
+          <input
+            type="text"
+            placeholder="Ej: Pedagoga, Logopeda..."
+            [value]="form().especialidad"
+            (input)="updateFormField('especialidad', $any($event.target).value)"
+          />
+          <small class="form-hint">Aparece en la firma de los informes PDF</small>
+        </div>
+        <div class="form-group">
+          <label>N.º Colegiado</label>
+          <input
+            type="text"
+            placeholder="Ej: 28/12345"
+            [value]="form().numeroColegiado"
+            (input)="updateFormField('numeroColegiado', $any($event.target).value)"
+          />
+          <small class="form-hint">Aparece en la firma de los informes PDF</small>
+        </div>
+      </div>
+
     </div>
 
     <div class="modal-footer">

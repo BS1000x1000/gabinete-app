@@ -11,6 +11,8 @@ export interface Trabajador {
   email: string;
   username?: string;
   telefono?: string;
+  numeroColegiado?: string;
+  especialidad?: string;
   fechaContratacion?: string;
   rol: {
     id: string;
@@ -34,6 +36,8 @@ export interface CreateTrabajadorPayload {
   apellidos: string;
   email: string;
   telefono?: string;
+  numeroColegiado?: string;
+  especialidad?: string;
   rolId: string;
 }
 
@@ -42,6 +46,8 @@ export interface UpdateTrabajadorPayload {
   apellidos?: string;
   email?: string;
   telefono?: string;
+  numeroColegiado?: string;
+  especialidad?: string;
   rolId?: string;
 }
 

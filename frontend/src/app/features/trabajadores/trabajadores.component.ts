@@ -15,6 +15,8 @@ interface FormTrabajador {
   email: string;
   password: string;
   telefono: string;
+  numeroColegiado: string;
+  especialidad: string;
   rolId: string;
 }
 
@@ -60,6 +62,8 @@ export class TrabajadoresComponent implements OnInit {
     email: '',
     password: '',
     telefono: '',
+    numeroColegiado: '',
+    especialidad: '',
     rolId: '',
   });
 
@@ -123,6 +127,8 @@ export class TrabajadoresComponent implements OnInit {
       email: '',
       password: '',
       telefono: '',
+      numeroColegiado: '',
+      especialidad: '',
       rolId: this.roles()[0]?.id ?? '',
     });
     this.mostrarModal.set(true);
@@ -140,6 +146,8 @@ export class TrabajadoresComponent implements OnInit {
       email: t.email,
       password: '',
       telefono: t.telefono ?? '',
+      numeroColegiado: t.numeroColegiado ?? '',
+      especialidad: t.especialidad ?? '',
       rolId: t.rol?.id ?? '',
     });
     this.mostrarModal.set(true);
@@ -185,6 +193,8 @@ export class TrabajadoresComponent implements OnInit {
         apellidos: f.apellidos.trim(),
         email: f.email.trim(),
         telefono: f.telefono.trim() || undefined,
+        numeroColegiado: f.numeroColegiado.trim() || undefined,
+        especialidad: f.especialidad.trim() || undefined,
         rolId: f.rolId,
       };
 
@@ -208,6 +218,8 @@ export class TrabajadoresComponent implements OnInit {
         apellidos: f.apellidos.trim(),
         email: f.email.trim(),
         telefono: f.telefono.trim() || undefined,
+        numeroColegiado: f.numeroColegiado.trim() || undefined,
+        especialidad: f.especialidad.trim() || undefined,
         rolId: f.rolId,
       };
 

@@ -105,6 +105,13 @@
     color: $gray-500;
     border-color: $gray-200;
   }
+
+  &.fchip-rgpd {
+    background: rgba($warning, 0.12);
+    color: darken($warning, 25%);
+    border-color: rgba($warning, 0.4);
+    font-weight: 600;
+  }
 }
 
 // Critical medical alerts in header

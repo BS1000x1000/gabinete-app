@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "TipoNotificacion" ADD VALUE 'CONSENTIMIENTO_RGPD_PENDIENTE';

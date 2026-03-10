@@ -46,6 +46,7 @@ export class NuevoClienteWizardComponent {
   formAsignacion!: FormGroup;
 
   objetivosSeleccionados = signal<string[]>([]);
+  consentimientoMarcado = signal(false);
   trabajadores = this.trabajadorSvc.trabajadores;
 
   objetivosGenerales = this.objetivosSvc.objetivosGenerales;
@@ -57,7 +58,7 @@ export class NuevoClienteWizardComponent {
 
   puedeAvanzar = computed(() => {
     this.formChanged();
-    return this.validationService.validarPaso(this.pasoActual(), {
+    const pasoValido = this.validationService.validarPaso(this.pasoActual(), {
       datosBasicos: this.formDatosBasicos,
       colegio: this.formColegio,
       familia: this.formFamilia,
@@ -65,6 +66,8 @@ export class NuevoClienteWizardComponent {
       horario: this.formHorario,
       asignacion: this.formAsignacion,
     });
+    if (this.esUltimoPaso()) return pasoValido && this.consentimientoMarcado();
+    return pasoValido;
   });
 
   progreso = computed(() => {
@@ -319,6 +322,8 @@ export class NuevoClienteWizardComponent {
       objetivosGeneralesIds: this.objetivosSeleccionados(),
 
       asignaciones: asignacionesAgrupadas,
+
+      consentimientoRgpd: this.consentimientoMarcado(),
     };
 
     console.log('📤 Creando cliente:', clienteData);
@@ -404,6 +409,10 @@ export class NuevoClienteWizardComponent {
   }
   getResumenHorario() {
     return this.disponibilidades.value;
+  }
+
+  toggleConsentimiento() {
+    this.consentimientoMarcado.update((v) => !v);
   }
 
   cerrarModal() {

@@ -409,6 +409,8 @@ export class TrabajadorService {
           ...(dto.email && { email: dto.email }),
           ...(dto.telefono !== undefined && { telefono: dto.telefono }),
           ...(dto.img !== undefined && { img: dto.img }),
+          ...(dto.numeroColegiado !== undefined && { numeroColegiado: dto.numeroColegiado }),
+          ...(dto.especialidad !== undefined && { especialidad: dto.especialidad }),
           ...(dto.fechaContratacion && {
             fechaContratacion: new Date(dto.fechaContratacion),
           }),

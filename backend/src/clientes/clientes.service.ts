@@ -79,6 +79,8 @@ export class ClientesService {
         fechaInicio: fechaInicioISO,
         colegioId: colegioId,
         idCarpetaDrive: createClienteDto.idCarpetaDrive,
+        consentimientoRgpd: createClienteDto.consentimientoRgpd ?? false,
+        consentimientoFecha: createClienteDto.consentimientoRgpd ? new Date() : null,
 
         // Familiares
         contactosFamiliares: createClienteDto.familiares
@@ -759,6 +761,10 @@ export class ClientesService {
       updateData.autorizaDatosPersonales = updateDto.autorizaDatosPersonales;
     if (updateDto.autorizaDatosImagen !== undefined)
       updateData.autorizaDatosImagen = updateDto.autorizaDatosImagen;
+    if (updateDto.consentimientoRgpd !== undefined) {
+      updateData.consentimientoRgpd = updateDto.consentimientoRgpd;
+      updateData.consentimientoFecha = updateDto.consentimientoRgpd ? new Date() : null;
+    }
     if (updateDto.colegio?.id !== undefined)
       updateData.colegioId = updateDto.colegio.id;
 

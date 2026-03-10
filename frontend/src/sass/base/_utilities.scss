@@ -35,6 +35,14 @@
 .text-center { text-align: center !important; }
 .text-muted { color: $gray-500 !important; }
 
+// Texto de ayuda bajo inputs
+.form-hint {
+  display: block;
+  font-size: 0.75rem;
+  color: $gray-400;
+  margin-top: 3px;
+}
+
 // Ancho completo
 .w-100 { width: 100% !important; }
 

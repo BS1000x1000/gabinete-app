@@ -272,6 +272,11 @@ export class CreateClienteDto {
   @ValidateNested()
   @Type(() => AsignacionTrabajadorDto)
   asignaciones?: AsignacionTrabajadorDto[];
+
+  // RGPD — fecha derivada server-side al crear
+  @IsOptional()
+  @IsBoolean()
+  consentimientoRgpd?: boolean;
 }
 
 /**
@@ -344,4 +349,12 @@ export class UpdateClienteDto {
   @ValidateNested()
   @Type(() => DatosSanitariosDto)
   datosSanitarios?: DatosSanitariosDto;
+
+  @IsOptional()
+  @IsBoolean()
+  consentimientoRgpd?: boolean;
+
+  @IsOptional()
+  @IsDateString()
+  consentimientoFecha?: string;
 }

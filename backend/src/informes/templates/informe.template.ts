@@ -20,7 +20,8 @@ export interface InformeTemplateData {
   titulo: string;
   tipo: string; // 'INICIAL' | 'SEGUIMIENTO'
   elaborado_por: string;
-  num_colegiada: string;
+  num_colegiado: string;
+  especialidad: string;
   fecha_elaboracion: string;
   alumno: {
     nombre: string;
@@ -214,8 +215,9 @@ export function buildInformeHtml(datos: InformeTemplateData): string {
           <td style="width:4%;"></td>
           <td style="width:48%;vertical-align:top;padding-left:8px;">
             <div class="sig-box">
-              <div class="sig-name">${elaboradoPor}</div>
-              <div class="sig-role">${datos.num_colegiada ? 'Colegiado/a N.º ' + escapeHtml(datos.num_colegiada) : 'Pedagogo/a'}</div>
+              <div class="sig-name">Fdo.: ${elaboradoPor}</div>
+              ${datos.especialidad ? `<div class="sig-role">${escapeHtml(datos.especialidad)}</div>` : ''}
+              ${datos.num_colegiado ? `<div class="sig-role" style="margin-top:1px;">Col. N.º ${escapeHtml(datos.num_colegiado)}</div>` : ''}
               <div class="sig-line"></div>
               <div class="sig-label">Firma y sello</div>
             </div>
@@ -228,8 +230,15 @@ export function buildInformeHtml(datos: InformeTemplateData): string {
   // ── LOPD ────────────────────────────────────────────────────
   const lopd = `
     <div class="lopd-section">
-      <div class="lopd-title">Información sobre protección de datos personales</div>
-      <p class="lopd-text">Los datos que nos facilite serán tratados exclusivamente para la gestión de la relación contractual existente entre las partes, así como para las finalidades que expresamente nos autorice. Sus datos serán conservados mientras dure nuestra relación contractual y el tiempo necesario para cumplir con las obligaciones legales correspondientes. La base legal para el tratamiento es el mantenimiento de la relación contractual. Sus datos podrán ser cedidos únicamente a destinatarios estrictamente necesarios para el cumplimiento de las obligaciones contractuales o legales. En cualquier momento puede ejercer sus derechos de acceso, rectificación, supresión, portabilidad y oposición mediante petición escrita acompañada de copia de su DNI. Si considera que sus derechos han sido desatendidos, puede reclamar ante la Agencia Española de Protección de Datos (www.aepd.es).</p>
+      <div class="lopd-title">Información sobre protección de datos personales — RGPD (UE) 2016/679 · LOPDGDD 3/2018</div>
+      <p class="lopd-text"><strong>Responsable del tratamiento:</strong> Gabinete SL · CIF: B74392815 · C/ Ejemplo, 1 · 28001 Madrid · info@gabinete.es<br>
+      <strong>Finalidad:</strong> Prestación de servicios de intervención pedagógica, psicológica y/o terapéutica, elaboración de informes de seguimiento y gestión de la relación terapéutica con el menor.<br>
+      <strong>Categoría especial de datos:</strong> Los datos tratados incluyen información relativa a la salud y desarrollo del menor, considerados datos de categoría especial conforme al Art. 9 del RGPD.<br>
+      <strong>Base jurídica:</strong> Consentimiento explícito del tutor o tutora legal del menor (Art. 6.1.a y Art. 9.2.a del RGPD). Dicho consentimiento podrá ser retirado en cualquier momento sin que ello afecte a la licitud del tratamiento previo a su retirada.<br>
+      <strong>Conservación:</strong> Los datos se conservarán durante la vigencia de la relación terapéutica y, una vez finalizada, durante el plazo legalmente exigible (mínimo 5 años) para atender posibles responsabilidades.<br>
+      <strong>Cesiones:</strong> No se cederán datos a terceros salvo obligación legal o cuando sea estrictamente necesario para la prestación del servicio (p.ej. coordinación con otros especialistas con consentimiento previo).<br>
+      <strong>Derechos:</strong> Acceso · Rectificación · Supresión · Portabilidad · Oposición · Limitación del tratamiento — mediante solicitud escrita a la dirección indicada, adjuntando copia del DNI del tutor/a legal.<br>
+      <strong>Reclamaciones:</strong> Si considera que sus derechos no han sido atendidos, puede reclamar ante la Agencia Española de Protección de Datos (www.aepd.es).</p>
     </div>`;
 
   // ── HTML final ──────────────────────────────────────────────
@@ -523,7 +532,7 @@ export function buildInformeHtml(datos: InformeTemplateData): string {
       </div>
       <div class="sc-field">
         <div class="sc-label">Elaborado por</div>
-        <div class="sc-value">${elaboradoPor}${datos.num_colegiada ? '<span style="color:#9ca3af;font-size:9.5px;"> · N.º col. ' + escapeHtml(datos.num_colegiada) + '</span>' : ''}</div>
+        <div class="sc-value">${elaboradoPor}${datos.num_colegiado ? '<span style="color:#9ca3af;font-size:9.5px;"> · Col. N.º ' + escapeHtml(datos.num_colegiado) + '</span>' : ''}</div>
       </div>
     </div>
   </div>

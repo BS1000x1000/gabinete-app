@@ -35,6 +35,8 @@ model Trabajador {
   email                String    @unique
   telefono             String?
   img                  String?   @map("url_imagen_perfil")
+  numeroColegiado      String?   @map("numero_colegiado")
+  especialidad         String?
   fechaContratacion    DateTime? @map("fecha_contratacion")
   activo               Boolean   @default(true)
   resetPasswordToken   String?   @map("reset_password_token")
@@ -81,21 +83,23 @@ model Colegio {
 }
 
 model Cliente {
-  id              String    @id @default(uuid())
-  idCarpetaDrive  String?   @map("id_carpeta_drive")
-  nombre          String
-  apellidos       String
-  fechaNacimiento DateTime? @map("fecha_nacimiento")
-  dni             String    @unique
-  domicilio       String
-  provincia       String
-  ciudad          String
-  curso           String
-  fechaInicio     DateTime? @map("fecha_inicio")
-  fechaAlta       DateTime? @default(now()) @map("fecha_alta")
-  activo          Boolean   @default(true)
-  createdAt       DateTime  @default(now()) @map("fecha_creacion")
-  updatedAt       DateTime  @updatedAt @map("ultima_actualizacion")
+  id                   String    @id @default(uuid())
+  idCarpetaDrive       String?   @map("id_carpeta_drive")
+  nombre               String
+  apellidos            String
+  fechaNacimiento      DateTime? @map("fecha_nacimiento")
+  dni                  String    @unique
+  domicilio            String
+  provincia            String
+  ciudad               String
+  curso                String
+  fechaInicio          DateTime? @map("fecha_inicio")
+  fechaAlta            DateTime? @default(now()) @map("fecha_alta")
+  activo               Boolean   @default(true)
+  consentimientoRgpd   Boolean   @default(false) @map("consentimiento_rgpd")
+  consentimientoFecha  DateTime? @map("consentimiento_fecha")
+  createdAt            DateTime  @default(now()) @map("fecha_creacion")
+  updatedAt            DateTime  @updatedAt @map("ultima_actualizacion")
 
   colegioId String?  @map("id_colegio")
   colegio   Colegio? @relation(fields: [colegioId], references: [id])
@@ -515,6 +519,7 @@ enum TipoNotificacion {
   OBJETIVO_SIN_EVALUAR
   INFORME_EN_BORRADOR
   SESION_SIN_BONO
+  CONSENTIMIENTO_RGPD_PENDIENTE
 }
 
 enum PrioridadNotif {

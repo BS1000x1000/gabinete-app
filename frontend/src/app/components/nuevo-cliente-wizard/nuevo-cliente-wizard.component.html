@@ -1184,6 +1184,39 @@
             </div>
           </div>
         </div>
+
+        <!-- ── CONSENTIMIENTO RGPD ─────────────────────────────── -->
+        <div class="rgpd-consent-block" [class.rgpd-consent-block--ok]="consentimientoMarcado()">
+          <div class="rgpd-consent-header">
+            <i class="bi bi-shield-check me-2"></i>
+            Consentimiento de tratamiento de datos (RGPD obligatorio)
+          </div>
+          <div class="rgpd-consent-body">
+            <p class="rgpd-consent-text">
+              Los datos del menor incluyen información sobre salud y desarrollo, considerada
+              <strong>categoría especial</strong> según el Art. 9 RGPD (UE) 2016/679. Para registrar al
+              cliente es obligatorio contar con el consentimiento explícito del tutor o tutora legal.
+            </p>
+            <div class="form-check rgpd-check">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                id="consentimientoRgpd"
+                [checked]="consentimientoMarcado()"
+                (change)="toggleConsentimiento()"
+              />
+              <label class="form-check-label" for="consentimientoRgpd">
+                <strong>Confirmo que el tutor/a legal ha firmado el documento de consentimiento
+                informado</strong> para el tratamiento de los datos del menor conforme al RGPD y la LOPDGDD 3/2018.
+              </label>
+            </div>
+            <p class="rgpd-consent-note">
+              <i class="bi bi-info-circle me-1"></i>
+              El documento firmado debe custodiarse físicamente en el expediente del cliente.
+              La fecha de consentimiento quedará registrada automáticamente.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
 

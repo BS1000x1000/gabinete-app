@@ -50,6 +50,13 @@
           <span *ngIf="cliente()?.fechaInicio" class="fchip">
             <i class="bi bi-calendar3 me-1"></i>Desde {{ cliente()?.fechaInicio | date: 'MMM yyyy' }}
           </span>
+          <span
+            *ngIf="!clienteRaw()?.consentimientoRgpd"
+            class="fchip fchip-rgpd"
+            title="El tutor/a legal no tiene el consentimiento RGPD registrado"
+          >
+            <i class="bi bi-shield-exclamation me-1"></i>RGPD pendiente
+          </span>
         </div>
       </div>
 

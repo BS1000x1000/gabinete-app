@@ -83,6 +83,8 @@ export interface ClienteDataBackend {
   fechaInicio?: string;
   fechaAlta: string;
   activo: boolean;
+  consentimientoRgpd: boolean;
+  consentimientoFecha?: string | null;
   
   // Relación con colegio
   colegioId?: string | null;

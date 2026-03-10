@@ -48,6 +48,16 @@ export class CreateTrabajadorDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(50)
+  numeroColegiado?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  especialidad?: string;
+
+  @IsOptional()
+  @IsString()
   fechaContratacion?: string;
 
   @IsUUID()
@@ -96,6 +106,16 @@ export class UpdateTrabajadorDto {
   @IsString()
   @MaxLength(500)
   img?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  numeroColegiado?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  especialidad?: string;
 
   @IsOptional()
   @IsString()

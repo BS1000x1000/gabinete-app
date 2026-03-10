@@ -126,18 +126,27 @@
             </td>
 
             <td>
-              <span
-                class="badge-estado"
-                [class.activo]="cliente.activo"
-                [class.pausado]="!cliente.activo"
-              >
-                <i
-                  class="bi"
-                  [class.bi-check-circle-fill]="cliente.activo"
-                  [class.bi-pause-circle-fill]="!cliente.activo"
-                ></i>
-                {{ cliente.activo ? 'Activo' : 'Pausado' }}
-              </span>
+              <div class="d-flex align-items-center gap-2">
+                <span
+                  class="badge-estado"
+                  [class.activo]="cliente.activo"
+                  [class.pausado]="!cliente.activo"
+                >
+                  <i
+                    class="bi"
+                    [class.bi-check-circle-fill]="cliente.activo"
+                    [class.bi-pause-circle-fill]="!cliente.activo"
+                  ></i>
+                  {{ cliente.activo ? 'Activo' : 'Pausado' }}
+                </span>
+                <span
+                  *ngIf="!cliente.consentimientoRgpd"
+                  class="fchip fchip-rgpd"
+                  title="Consentimiento RGPD pendiente"
+                >
+                  <i class="bi bi-shield-exclamation me-1"></i>RGPD
+                </span>
+              </div>
             </td>
 
             <td class="td-acciones">

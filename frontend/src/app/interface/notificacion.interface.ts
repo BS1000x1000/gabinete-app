@@ -7,7 +7,8 @@ export type TipoNotificacion =
   | 'SIN_SESIONES_RECIENTES'
   | 'OBJETIVO_SIN_EVALUAR'
   | 'INFORME_EN_BORRADOR'
-  | 'SESION_SIN_BONO';
+  | 'SESION_SIN_BONO'
+  | 'CONSENTIMIENTO_RGPD_PENDIENTE';
 
 export type PrioridadNotif = 'URGENTE' | 'ALTA' | 'MEDIA' | 'BAJA';
 

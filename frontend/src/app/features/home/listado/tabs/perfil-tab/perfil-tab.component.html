@@ -258,6 +258,50 @@
       </div>
     </div>
 
+    <!-- ══════════════════════════════
+         AUTORIZACIONES (full width)
+    ══════════════════════════════ -->
+    <div class="perfil-card perfil-card-full">
+      <div class="perfil-card-hdr">
+        <span class="perfil-card-icon" style="background: #fef9c3; color: #b45309;">
+          <i class="bi bi-shield-check-fill"></i>
+        </span>
+        <h3 class="perfil-card-title">Autorizaciones y RGPD</h3>
+      </div>
+      <div class="perfil-card-body">
+        <div *ngIf="errorRgpd()" class="perfil-alert-chip chip-danger mb-2">
+          <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ errorRgpd() }}
+        </div>
+
+        <div class="dato-row">
+          <span class="dato-label">Consentimiento RGPD</span>
+          <span class="dato-valor d-flex align-items-center gap-2">
+            <span class="mini-badge" [class.badge-yes]="clienteRaw()?.consentimientoRgpd" [class.badge-no]="!clienteRaw()?.consentimientoRgpd">
+              {{ clienteRaw()?.consentimientoRgpd ? 'Otorgado' : 'Pendiente' }}
+            </span>
+            <button
+              class="perfil-edit-btn"
+              [disabled]="guardandoRgpd()"
+              (click)="toggleConsentimientoRgpd()"
+              type="button">
+              <span *ngIf="guardandoRgpd()" class="spinner-border spinner-border-sm" style="width:12px;height:12px"></span>
+              <i *ngIf="!guardandoRgpd()" class="bi" [class.bi-toggle-on]="clienteRaw()?.consentimientoRgpd" [class.bi-toggle-off]="!clienteRaw()?.consentimientoRgpd"></i>
+              {{ clienteRaw()?.consentimientoRgpd ? 'Revocar' : 'Otorgar' }}
+            </button>
+          </span>
+        </div>
+
+        <div *ngIf="clienteRaw()?.consentimientoFecha" class="dato-row">
+          <span class="dato-label">Fecha de consentimiento</span>
+          <span class="dato-valor">{{ clienteRaw()?.consentimientoFecha | date: 'dd/MM/yyyy' }}</span>
+        </div>
+
+        <p class="text-muted small mt-2 mb-0" style="font-size: 0.72rem; line-height: 1.5;">
+          Tratamiento de datos de categoría especial (salud) conforme al Art. 9 LOPDGDD 3/2018.
+        </p>
+      </div>
+    </div>
+
   </div>
 </div>
 

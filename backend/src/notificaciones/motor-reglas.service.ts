@@ -60,6 +60,7 @@ export class MotorReglasService {
       this._reglaObjetivoSinEvaluar(trabajadorId, cliente, now, baseUrl),
       this._reglaInformeEnBorrador(trabajadorId, cliente, now, baseUrl),
       this._reglaSesionSinBono(trabajadorId, cliente, now, baseUrl),
+      this._reglaConsentimientoRgpdPendiente(trabajadorId, cliente, baseUrl),
     ]);
   }
 
@@ -325,6 +326,27 @@ export class MotorReglasService {
         trabajadorId,
       });
     }
+  }
+
+  // ─── Regla 10: Consentimiento RGPD pendiente ─────────────────────────────
+  private async _reglaConsentimientoRgpdPendiente(
+    trabajadorId: string,
+    cliente: any,
+    baseUrl: string,
+  ) {
+    if (!cliente.activo || cliente.consentimientoRgpd) return;
+
+    await this.notificacionesSvc.crearSiNoExiste({
+      tipo: 'CONSENTIMIENTO_RGPD_PENDIENTE',
+      prioridad: 'ALTA',
+      titulo: `Consentimiento RGPD pendiente — ${cliente.nombre} ${cliente.apellidos}`,
+      mensaje: `El cliente no ha otorgado el consentimiento de tratamiento de datos (Art. 9 LOPDGDD). Obtén la autorización antes de continuar el tratamiento.`,
+      accionUrl: `${baseUrl}/perfil`,
+      reglaOrigen: 'CONSENTIMIENTO_RGPD_PENDIENTE',
+      clienteId: cliente.id,
+      referenciaId: cliente.id,
+      trabajadorId,
+    });
   }
 
   // ─── Utilidad ─────────────────────────────────────────────────────────────
