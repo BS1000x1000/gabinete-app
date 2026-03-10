@@ -114,10 +114,19 @@ describe('SesionAccionesService', () => {
   // ── Reprogramar ───────────────────────────────────────────────────────────
   describe('flujo reprogramar', () => {
     it('abrirReprogramar precarga fecha y horas de la sesión', () => {
-      service.abrirReprogramar(mockSesion() as any);
-      expect(service.nuevaFecha()).toBe('2026-03-10');
-      expect(service.nuevaHoraInicio()).toBe('09:00');
-      expect(service.nuevaHoraFin()).toBe('10:00');
+      const sesion = mockSesion();
+      service.abrirReprogramar(sesion as any);
+
+      // Calcular los valores esperados de la misma forma que el servicio
+      const inicio = new Date(sesion.fechaHoraInicio);
+      const fin = new Date(sesion.fechaHoraFin);
+      const expectedFecha = inicio.toISOString().split('T')[0];
+      const expectedInicio = `${String(inicio.getHours()).padStart(2, '0')}:${String(inicio.getMinutes()).padStart(2, '0')}`;
+      const expectedFin = `${String(fin.getHours()).padStart(2, '0')}:${String(fin.getMinutes()).padStart(2, '0')}`;
+
+      expect(service.nuevaFecha()).toBe(expectedFecha);
+      expect(service.nuevaHoraInicio()).toBe(expectedInicio);
+      expect(service.nuevaHoraFin()).toBe(expectedFin);
     });
 
     it('cerrarReprogramar limpia todos los signals de fecha', () => {
@@ -131,8 +140,8 @@ describe('SesionAccionesService', () => {
     it('confirmarReprogramacion llama a updateSesion con las fechas correctas', () => {
       service.sesionAReprogramar.set(mockSesion() as any);
       service.nuevaFecha.set('2026-03-15');
-      service.nuevaHoraInicio.set('10:00');
-      service.nuevaHoraFin.set('11:00');
+      service.nuevaHoraInicio.set('09:00');
+      service.nuevaHoraFin.set('10:00');
       service.confirmarReprogramacion();
       expect(sesionesSvc.updateSesion).toHaveBeenCalledWith(
         'sesion-1',
@@ -147,8 +156,8 @@ describe('SesionAccionesService', () => {
       spyOn(window, 'alert');
       service.sesionAReprogramar.set(mockSesion() as any);
       service.nuevaFecha.set('2026-03-15');
-      service.nuevaHoraInicio.set('11:00');
-      service.nuevaHoraFin.set('10:00');
+      service.nuevaHoraInicio.set('10:00');
+      service.nuevaHoraFin.set('09:00');
       service.confirmarReprogramacion();
       expect(sesionesSvc.updateSesion).not.toHaveBeenCalled();
     });

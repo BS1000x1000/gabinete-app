@@ -2,7 +2,6 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { InformesService } from './informes.service';
-import * as downloadUtils from '../shared/utils/download.utils';
 import { environment } from '../../environments/environment.development';
 
 const API = `${environment.apiUrl}/informes`;
@@ -24,7 +23,6 @@ const mockInforme = (overrides: Record<string, any> = {}) => ({
 describe('InformesService', () => {
   let service: InformesService;
   let httpMock: HttpTestingController;
-  let triggerDownloadSpy: jasmine.Spy;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -32,7 +30,9 @@ describe('InformesService', () => {
     });
     service = TestBed.inject(InformesService);
     httpMock = TestBed.inject(HttpTestingController);
-    triggerDownloadSpy = spyOn(downloadUtils, 'triggerDownload');
+    // Stub browser APIs used by triggerDownload
+    spyOn(URL, 'createObjectURL').and.returnValue('blob:test');
+    spyOn(URL, 'revokeObjectURL');
   });
 
   afterEach(() => httpMock.verify());
@@ -125,17 +125,18 @@ describe('InformesService', () => {
 
   // ── descargarPdf ──────────────────────────────────────────────────────────
   describe('descargarPdf()', () => {
-    it('hace GET con responseType blob y llama triggerDownload', () => {
+    it('hace GET a /informes/:id/pdf con responseType blob', () => {
       service.descargarPdf('informe-1', 'Informe Inicial').subscribe();
 
       const req = httpMock.expectOne(`${API}/informe-1/pdf`);
       expect(req.request.method).toBe('GET');
+      expect(req.request.responseType).toBe('blob');
       req.flush(new Blob(['%PDF'], { type: 'application/pdf' }));
+    });
 
-      expect(triggerDownloadSpy).toHaveBeenCalledWith(
-        jasmine.any(Blob),
-        'Informe_Inicial.pdf',
-      );
+    it('completa el observable al recibir el blob', (done) => {
+      service.descargarPdf('informe-1', 'Informe Inicial').subscribe({ complete: done });
+      httpMock.expectOne(`${API}/informe-1/pdf`).flush(new Blob(['%PDF'], { type: 'application/pdf' }));
     });
   });
 

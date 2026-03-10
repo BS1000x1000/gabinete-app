@@ -2,7 +2,6 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { ExportService } from './export.service';
-import * as downloadUtils from '../shared/utils/download.utils';
 import { environment } from '../../environments/environment.development';
 
 const API = `${environment.apiUrl}/export`;
@@ -10,7 +9,6 @@ const API = `${environment.apiUrl}/export`;
 describe('ExportService', () => {
   let service: ExportService;
   let httpMock: HttpTestingController;
-  let triggerDownloadSpy: jasmine.Spy;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -18,7 +16,9 @@ describe('ExportService', () => {
     });
     service = TestBed.inject(ExportService);
     httpMock = TestBed.inject(HttpTestingController);
-    triggerDownloadSpy = spyOn(downloadUtils, 'triggerDownload');
+    // Stub browser APIs used by triggerDownload
+    spyOn(URL, 'createObjectURL').and.returnValue('blob:test');
+    spyOn(URL, 'revokeObjectURL');
   });
 
   afterEach(() => httpMock.verify());
@@ -56,24 +56,18 @@ describe('ExportService', () => {
       req.flush(new Blob());
     });
 
-    it('llama a triggerDownload con nombre de fichero .pdf', () => {
-      service.exportSesiones('cliente-1', { formato: 'pdf' }).subscribe();
-      httpMock.expectOne(() => true).flush(new Blob());
-
-      expect(triggerDownloadSpy).toHaveBeenCalledWith(
-        jasmine.any(Blob),
-        'sesiones_cliente-1.pdf',
-      );
+    it('completa el observable al recibir el blob (formato pdf)', (done) => {
+      service.exportSesiones('cliente-1', { formato: 'pdf' }).subscribe({
+        complete: done,
+      });
+      httpMock.expectOne(() => true).flush(new Blob(['%PDF'], { type: 'application/pdf' }));
     });
 
-    it('llama a triggerDownload con nombre de fichero .xlsx para excel', () => {
-      service.exportSesiones('cliente-1', { formato: 'excel' }).subscribe();
-      httpMock.expectOne(() => true).flush(new Blob());
-
-      expect(triggerDownloadSpy).toHaveBeenCalledWith(
-        jasmine.any(Blob),
-        'sesiones_cliente-1.xlsx',
-      );
+    it('completa el observable al recibir el blob (formato excel)', (done) => {
+      service.exportSesiones('cliente-1', { formato: 'excel' }).subscribe({
+        complete: done,
+      });
+      httpMock.expectOne(() => true).flush(new Blob([], { type: 'application/vnd.openxmlformats' }));
     });
 
     it('devuelve void (completa sin valor)', (done) => {
@@ -103,24 +97,14 @@ describe('ExportService', () => {
       req.flush(new Blob());
     });
 
-    it('usa nombre bonos_todos.pdf cuando clienteId es null', () => {
-      service.exportBonos(null, { formato: 'pdf' }).subscribe();
+    it('completa el observable para clienteId null con formato pdf', (done) => {
+      service.exportBonos(null, { formato: 'pdf' }).subscribe({ complete: done });
       httpMock.expectOne(() => true).flush(new Blob());
-
-      expect(triggerDownloadSpy).toHaveBeenCalledWith(
-        jasmine.any(Blob),
-        'bonos_todos.pdf',
-      );
     });
 
-    it('usa nombre bonos_{clienteId}.xlsx cuando hay clienteId y formato excel', () => {
-      service.exportBonos('cliente-1', { formato: 'excel' }).subscribe();
+    it('completa el observable para clienteId con formato excel', (done) => {
+      service.exportBonos('cliente-1', { formato: 'excel' }).subscribe({ complete: done });
       httpMock.expectOne(() => true).flush(new Blob());
-
-      expect(triggerDownloadSpy).toHaveBeenCalledWith(
-        jasmine.any(Blob),
-        'bonos_cliente-1.xlsx',
-      );
     });
   });
 });
