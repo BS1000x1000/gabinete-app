@@ -12,6 +12,7 @@
   border-radius: $border-radius-full; // Más redondeado
   transition: $transition-base;
   max-width: 400px;
+  cursor: pointer;
 
   &:focus-within {
     background: $white;
@@ -30,6 +31,8 @@
     flex: 1;
     outline: none;
     font-size: $font-size-base;
+    cursor: pointer;
+    caret-color: transparent;
 
     &::placeholder {
       color: $gray-400;

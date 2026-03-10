@@ -1,0 +1,76 @@
+<div class="tiptap-wrapper" [class.tiptap-disabled]="!editor?.isEditable">
+
+  <!-- Toolbar -->
+  <div class="tiptap-toolbar">
+
+    <!-- Formato de texto -->
+    <div class="tiptap-toolbar__group">
+      <button
+        type="button"
+        class="tiptap-btn"
+        [class.is-active]="isActive('bold')"
+        (click)="toggleBold()"
+        title="Negrita (Ctrl+B)"
+        [disabled]="!editor?.isEditable"
+      >
+        <i class="bi bi-type-bold"></i>
+      </button>
+      <button
+        type="button"
+        class="tiptap-btn"
+        [class.is-active]="isActive('italic')"
+        (click)="toggleItalic()"
+        title="Cursiva (Ctrl+I)"
+        [disabled]="!editor?.isEditable"
+      >
+        <i class="bi bi-type-italic"></i>
+      </button>
+    </div>
+
+    <span class="tiptap-toolbar__sep"></span>
+
+    <!-- Listas -->
+    <div class="tiptap-toolbar__group">
+      <button
+        type="button"
+        class="tiptap-btn"
+        [class.is-active]="isActive('bulletList')"
+        (click)="toggleBulletList()"
+        title="Lista con viñetas"
+        [disabled]="!editor?.isEditable"
+      >
+        <i class="bi bi-list-ul"></i>
+      </button>
+      <button
+        type="button"
+        class="tiptap-btn"
+        [class.is-active]="isActive('orderedList')"
+        (click)="toggleOrderedList()"
+        title="Lista numerada"
+        [disabled]="!editor?.isEditable"
+      >
+        <i class="bi bi-list-ol"></i>
+      </button>
+    </div>
+
+    <span class="tiptap-toolbar__sep"></span>
+
+    <!-- Imagen -->
+    <div class="tiptap-toolbar__group">
+      <button
+        type="button"
+        class="tiptap-btn"
+        (click)="insertImage()"
+        title="Insertar imagen"
+        [disabled]="!editor?.isEditable"
+      >
+        <i class="bi bi-image"></i>
+      </button>
+    </div>
+
+  </div>
+
+  <!-- Área del editor (Tiptap monta aquí su contenteditable) -->
+  <div class="tiptap-body" #editorEl></div>
+
+</div>

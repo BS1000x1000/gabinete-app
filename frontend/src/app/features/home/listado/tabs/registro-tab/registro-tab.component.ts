@@ -10,7 +10,7 @@ import {
 import { RegistrosService } from '../../../../../services/registros.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { QuillModule } from 'ngx-quill';
+import { TiptapEditorComponent } from '../../../../../components/tiptap-editor/tiptap-editor.component';
 import { ClientesService } from '../../../../../services/cliente.service';
 import { ActivatedRoute } from '@angular/router';
 import { TextCleanerService } from '../../../../../shared/utils/text-cleaner.service';
@@ -19,7 +19,7 @@ import { CreateRegistroDiarioDto } from '../../../../../interface/registro-diari
 @Component({
   standalone: true,
   selector: 'app-registro-tab',
-  imports: [CommonModule, FormsModule, QuillModule],
+  imports: [CommonModule, FormsModule, TiptapEditorComponent],
   templateUrl: './registro-tab.component.html',
 })
 export class RegistroTabComponent implements OnInit {
@@ -145,9 +145,13 @@ export class RegistroTabComponent implements OnInit {
   }
 
   async guardar() {
-    const valorActual = (this.nuevoContenido() ?? '').trim();
+    // Tiptap emite '<p></p>' cuando está vacío; DOMParser extrae el texto real de forma segura
+    const html = this.nuevoContenido() ?? '';
+    const textoPlano = new DOMParser()
+      .parseFromString(html, 'text/html')
+      .body.textContent?.trim() ?? '';
 
-    if (!valorActual) {
+    if (!textoPlano) {
       alert('Por favor, escribe el contenido del registro');
       return;
     }

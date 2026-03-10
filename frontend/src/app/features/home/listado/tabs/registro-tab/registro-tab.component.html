@@ -7,13 +7,12 @@
       <!-- Editor de texto -->
       <div class="registro-editor-wrap">
         <label class="registro-form-label">Nuevo Registro</label>
-        <quill-editor
-          class="w-100 bg-light"
+        <app-tiptap-editor
           [ngModel]="nuevoContenido()"
           (ngModelChange)="nuevoContenido.set($event)"
           [disabled]="cargando()"
-          [placeholder]="'Inserta registro aquí...'"
-        ></quill-editor>
+          placeholder="Inserta el registro de la sesión aquí..."
+        ></app-tiptap-editor>
       </div>
 
       <!-- Sección de objetivos trabajados -->

@@ -1,16 +1,18 @@
 <!-- Botón de búsqueda (visible en desktop) -->
-<div class="search-container">
+<div class="search-container" (click)="abrirBusqueda()">
   <i class="bi bi-search"></i>
-  <input 
-    type="text" 
-    class="search-input" 
+  <input
+    type="text"
+    class="search-input"
     placeholder="Buscar cliente"
+    readonly
+    (keydown)="onTriggerKeydown($event)"
   >
   <kbd>Ctrl+K</kbd>
 </div>
 
 <!-- Botón de búsqueda (móvil) -->
-<button 
+<button
   class="btn btn-link text-dark p-0 d-md-none"
   (click)="toggleSearch()"
 >

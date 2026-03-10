@@ -111,12 +111,37 @@ export class SearchBarComponent implements OnInit {
     });
   }
 
+  abrirBusqueda(caracterInicial?: string) {
+    if (this.isOpen()) return;
+    if (caracterInicial) {
+      this.searchTerm.set(caracterInicial);
+      this.selectedIndex.set(0);
+    }
+    this.isOpen.set(true);
+    setTimeout(() => {
+      const input = document.getElementById('search-input') as HTMLInputElement;
+      if (input) {
+        input.focus();
+        // Posicionar cursor al final si hay texto inicial
+        const len = input.value.length;
+        input.setSelectionRange(len, len);
+      }
+    }, 50);
+  }
+
+  onTriggerKeydown(e: KeyboardEvent) {
+    // Carácter imprimible: abrir modal y transferir ese carácter
+    if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key.length === 1) {
+      e.preventDefault();
+      this.abrirBusqueda(e.key);
+    }
+  }
+
   toggleSearch() {
-    this.isOpen.update(v => !v);
     if (this.isOpen()) {
-      setTimeout(() => {
-        document.getElementById('search-input')?.focus();
-      }, 100);
+      this.cerrarBusqueda();
+    } else {
+      this.abrirBusqueda();
     }
   }
 
