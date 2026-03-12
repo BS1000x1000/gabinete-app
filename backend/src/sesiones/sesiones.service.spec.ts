@@ -252,7 +252,7 @@ describe('SesionesService', () => {
       // Semana 9-15 marzo 2026: lunes 9 (día 1) y miércoles 11 (día 3) coinciden con horarios
       expect(result.sesionesCreadas).toBe(2);
       expect(sesionesCreadas).toHaveLength(2);
-      expect(result.mensaje || result.message).toContain('2');
+      expect(result.message).toContain('2');
     });
   });
 

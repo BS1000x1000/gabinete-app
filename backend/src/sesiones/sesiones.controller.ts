@@ -19,9 +19,12 @@ import { GenerarSesionesDto } from './dto/generar-sesiones.dto';
 import { CompletarSesionDto } from './dto/completar-sesion.dto';
 import { CancelarSesionDto } from './dto/cancelar-sesion.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/roles/roles.guard';
+import { Roles } from 'src/roles/roles.decorator';
+import { ROLES_CLINICOS } from 'src/roles/roles.constants';
 
 @Controller('sesiones')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class SesionesController {
   private readonly logger = new Logger(SesionesController.name);
 
@@ -32,6 +35,7 @@ export class SesionesController {
   // ==========================================
 
   @Post('generar')
+  @Roles(...ROLES_CLINICOS)
   @HttpCode(HttpStatus.CREATED)
   async generarSesiones(@Body() generarSesionesDto: GenerarSesionesDto) {
     this.logger.log('POST /sesiones/generar');
@@ -131,6 +135,7 @@ export class SesionesController {
   }
 
   @Patch(':id/completar')
+  @Roles(...ROLES_CLINICOS)
   async completar(
     @Param('id') id: string,
     @Body() completarSesionDto: CompletarSesionDto,
@@ -140,6 +145,7 @@ export class SesionesController {
   }
 
   @Patch(':id/cancelar')
+  @Roles(...ROLES_CLINICOS)
   async cancelar(
     @Param('id') id: string,
     @Body() cancelarSesionDto: CancelarSesionDto,
@@ -152,12 +158,14 @@ export class SesionesController {
   }
 
   @Patch(':id')
+  @Roles(...ROLES_CLINICOS)
   async update(@Param('id') id: string, @Body() updateDto: any) {
     this.logger.log(`PATCH /sesiones/${id}`);
     return this.sesionesService.update(id, updateDto);
   }
 
   @Delete(':id')
+  @Roles('ADMIN')
   @HttpCode(HttpStatus.OK)
   async remove(@Param('id') id: string) {
     this.logger.warn(`DELETE /sesiones/${id}`);

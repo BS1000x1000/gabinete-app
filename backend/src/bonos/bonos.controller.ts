@@ -3,9 +3,12 @@ import { BonosService } from './bonos.service';
 import { CreateBonoDto } from './dto/create-bono.dto';
 import { RegistrarPagoDto } from './dto/registrar-pago.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../roles/roles.guard';
+import { Roles } from '../roles/roles.decorator';
+import { ROLES_GESTION } from '../roles/roles.constants';
 
 @Controller('bonos')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class BonosController {
   constructor(private readonly bonosService: BonosService) {}
 
@@ -20,8 +23,7 @@ export class BonosController {
   }
 
   @Get('cobros-pendientes')
-//   @UseGuards(RolesGuard)
-//   @Roles('ADMIN')
+  @Roles(...ROLES_GESTION)
   getCobrosPendientes() {
     return this.bonosService.getCobrosPendientes();
   }

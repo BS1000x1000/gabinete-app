@@ -10,17 +10,23 @@ import {
   HttpStatus,
   Logger,
   NotFoundException,
+  UseGuards,
 } from '@nestjs/common';
 import { RolesService } from './roles.service';
 import { CreateRolDto, UpdateRolDto } from './dto/rol.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from './roles.guard';
+import { Roles } from './roles.decorator';
 
 @Controller('roles')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class RolesController {
   private readonly logger = new Logger(RolesController.name);
 
   constructor(private readonly rolesService: RolesService) {}
 
   @Post()
+  @Roles('ADMIN')
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() createRolDto: CreateRolDto) {
     this.logger.log(`Creando rol: ${createRolDto.nombreRol}`);
@@ -28,6 +34,7 @@ export class RolesController {
   }
 
   @Post('seed')
+  @Roles('ADMIN')
   @HttpCode(HttpStatus.CREATED)
   async seedRolesDefault() {
     this.logger.log('Creando roles por defecto');
@@ -65,6 +72,7 @@ export class RolesController {
   }
 
   @Patch(':id')
+  @Roles('ADMIN')
   async update(
     @Param('id') id: string,
     @Body() updateRolDto: UpdateRolDto,
@@ -74,6 +82,7 @@ export class RolesController {
   }
 
   @Delete(':id')
+  @Roles('ADMIN')
   @HttpCode(HttpStatus.OK)
   async remove(@Param('id') id: string) {
     this.logger.warn(`Eliminando rol: ${id}`);

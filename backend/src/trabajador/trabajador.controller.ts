@@ -11,18 +11,24 @@ import {
   HttpStatus,
   Logger,
   NotFoundException,
+  UseGuards,
 } from '@nestjs/common';
 import { TrabajadorService } from './trabajador.service';
 import { CreateTrabajadorDto, UpdateTrabajadorDto } from './dto/trabajador.dto';
 import { TipoSesion } from '@prisma/client';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../roles/roles.guard';
+import { Roles } from '../roles/roles.decorator';
 
 @Controller('trabajadores')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class TrabajadorController {
   private readonly logger = new Logger(TrabajadorController.name);
 
   constructor(private readonly trabajadorService: TrabajadorService) {}
 
   @Post()
+  @Roles('ADMIN')
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() createTrabajadorDto: CreateTrabajadorDto) {
     this.logger.log(`Creando trabajador: ${createTrabajadorDto.username}`);
@@ -86,6 +92,7 @@ export class TrabajadorController {
   }
 
   @Patch(':id')
+  @Roles('ADMIN')
   async update(
     @Param('id') id: string,
     @Body() updateTrabajadorDto: UpdateTrabajadorDto,
@@ -108,12 +115,14 @@ export class TrabajadorController {
   }
 
   @Patch(':id/reactivar')
+  @Roles('ADMIN')
   async reactivar(@Param('id') id: string) {
     this.logger.log(`Reactivando trabajador: ${id}`);
     return this.trabajadorService.reactivar(id);
   }
 
   @Delete(':id')
+  @Roles('ADMIN')
   @HttpCode(HttpStatus.OK)
   async remove(@Param('id') id: string) {
     this.logger.warn(`Desactivando trabajador: ${id}`);

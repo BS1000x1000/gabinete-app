@@ -166,7 +166,7 @@ describe('BonosService', () => {
       const tx = makeTx();
       tx.bono.findFirst.mockResolvedValue(null);
 
-      const result = await service.descontarSesion('cliente-1', 'sesion-1', tx as any);
+      const result = await service.descontarSesion('cliente-1', 'PEDAGOGIA', 'sesion-1', tx as any);
 
       expect(result).toBeNull();
       expect(tx.bono.update).not.toHaveBeenCalled();
@@ -179,7 +179,7 @@ describe('BonosService', () => {
       const actualizado = mockBono({ sesionesConsumidas: 5, estado: 'ACTIVO' });
       tx.bono.update.mockResolvedValue(actualizado);
 
-      const result = await service.descontarSesion('cliente-1', 'sesion-1', tx as any);
+      const result = await service.descontarSesion('cliente-1', 'PEDAGOGIA', 'sesion-1', tx as any);
 
       expect(tx.bono.update).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -199,7 +199,7 @@ describe('BonosService', () => {
       const agotado = mockBono({ sesionesConsumidas: 10, estado: 'CONSUMIDO' });
       tx.bono.update.mockResolvedValue(agotado);
 
-      const result = await service.descontarSesion('cliente-1', 'sesion-1', tx as any);
+      const result = await service.descontarSesion('cliente-1', 'PEDAGOGIA', 'sesion-1', tx as any);
 
       expect(tx.bono.update).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -217,7 +217,7 @@ describe('BonosService', () => {
       tx.bono.findFirst.mockResolvedValue(mockBono({ sesionesConsumidas: 0, totalSesiones: 5 }));
       tx.bono.update.mockResolvedValue(mockBono({ sesionesConsumidas: 1 }));
 
-      await service.descontarSesion('cliente-1', 'sesion-99', tx as any);
+      await service.descontarSesion('cliente-1', 'PEDAGOGIA', 'sesion-99', tx as any);
 
       expect(tx.bono.update).toHaveBeenCalledWith(
         expect.objectContaining({
