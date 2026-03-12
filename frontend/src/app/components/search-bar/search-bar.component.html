@@ -4,7 +4,7 @@
   <input
     type="text"
     class="search-input"
-    placeholder="Buscar cliente"
+    placeholder="Buscar..."
     readonly
     (keydown)="onTriggerKeydown($event)"
   >
@@ -20,77 +20,130 @@
 </button>
 
 <!-- Modal de búsqueda -->
-<div 
+<div
   *ngIf="isOpen()"
   class="search-overlay"
   (click)="cerrarBusqueda()"
 >
-  <div 
+  <div
     class="search-modal"
     (click)="$event.stopPropagation()"
   >
     <!-- Input de búsqueda -->
     <div class="search-input-wrapper">
       <i class="bi bi-search"></i>
-      <input 
+      <input
         id="search-input"
         type="text"
         class="search-input"
-        placeholder="Buscar por nombre, apellidos o DNI..."
+        placeholder="Buscar clientes, informes..."
         [ngModel]="searchTerm()"
         (ngModelChange)="searchTerm.set($event); selectedIndex.set(0)"
         autocomplete="off"
       >
-      <button 
-        class="btn btn-sm btn-link text-muted"
-        (click)="cerrarBusqueda()"
-      >
+      <button class="btn btn-sm btn-link text-muted" (click)="cerrarBusqueda()">
         <kbd>ESC</kbd>
       </button>
     </div>
 
     <!-- Resultados -->
     <div class="search-results">
-      
-      <!-- Sin resultados -->
-      <div *ngIf="searchTerm() && resultados().length === 0" class="text-center py-4">
-        <i class="bi bi-inbox text-muted fs-3"></i>
-        <p class="text-muted mt-2 mb-0">No se encontraron clientes</p>
-      </div>
 
-      <!-- Lista de resultados -->
-      <div 
-        *ngFor="let cliente of resultados(); let i = index"
-        class="search-result-item"
-        [class.active]="i === selectedIndex()"
-        (click)="seleccionarCliente(cliente)"
-        (mouseenter)="selectedIndex.set(i)"
-      >
-        <div class="d-flex align-items-center">
-          <div class="avatar-sm rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold me-3">
-            {{ cliente.nombre.charAt(0) }}{{ cliente.apellidos.charAt(0) }}
-          </div>
-          <div class="flex-grow-1">
-            <div class="fw-semibold">
-              {{ cliente.apellidos }}, {{ cliente.nombre }}
-            </div>
-            <div class="text-muted small">
-              <span *ngIf="cliente.edad">{{ cliente.edad }} años</span>
-              <span *ngIf="cliente.edad && cliente.curso"> • </span>
-              <span *ngIf="cliente.curso">{{ cliente.curso }}</span>
-              <span *ngIf="cliente.dni"> • DNI: {{ cliente.dni }}</span>
-            </div>
-          </div>
-          <i class="bi bi-arrow-right text-muted"></i>
+      <!-- Estado vacío sin búsqueda -->
+      <div *ngIf="!searchTerm() || searchTerm().length < 2" class="search-empty-state">
+        <i class="bi bi-search"></i>
+        <p>Busca clientes, informes o sesiones</p>
+        <div class="search-hints">
+          <span><kbd>↑</kbd><kbd>↓</kbd> navegar</span>
+          <span><kbd>Enter</kbd> abrir</span>
+          <span><kbd>ESC</kbd> cerrar</span>
         </div>
       </div>
 
-      <!-- Ayuda de teclado -->
-      <div *ngIf="resultados().length > 0" class="search-footer">
+      <!-- Sin resultados -->
+      <div *ngIf="searchTerm().length >= 2 && !hayResultados()" class="search-no-results">
+        <i class="bi bi-inbox"></i>
+        <p>Sin resultados para "<strong>{{ searchTerm() }}</strong>"</p>
+      </div>
+
+      <!-- ── CLIENTES ──────────────────────────────── -->
+      <ng-container *ngIf="clienteResultados().length > 0">
+        <div class="search-category-header">
+          <i class="bi bi-people-fill"></i>
+          Clientes
+        </div>
+        <div
+          *ngFor="let r of clienteResultados(); let i = index"
+          class="search-result-item search-result-item--cliente"
+          [class.active]="(offsetClientes() + i) === selectedIndex()"
+          (click)="seleccionar(r)"
+          (mouseenter)="selectedIndex.set(offsetClientes() + i)"
+        >
+          <div class="result-avatar result-avatar--cliente">
+            {{ r.iniciales }}
+          </div>
+          <div class="result-body">
+            <span class="result-titulo">{{ r.titulo }}</span>
+            <span class="result-subtitulo">{{ r.subtitulo }}</span>
+          </div>
+          <i class="bi bi-arrow-right result-arrow"></i>
+        </div>
+      </ng-container>
+
+      <!-- ── INFORMES ──────────────────────────────── -->
+      <ng-container *ngIf="informeResultados().length > 0">
+        <div class="search-category-header">
+          <i class="bi bi-file-text-fill"></i>
+          Informes
+        </div>
+        <div
+          *ngFor="let r of informeResultados(); let i = index"
+          class="search-result-item search-result-item--informe"
+          [class.active]="(offsetInformes() + i) === selectedIndex()"
+          (click)="seleccionar(r)"
+          (mouseenter)="selectedIndex.set(offsetInformes() + i)"
+        >
+          <div class="result-avatar result-avatar--informe">
+            <i class="bi bi-file-text"></i>
+          </div>
+          <div class="result-body">
+            <span class="result-titulo">{{ r.titulo }}</span>
+            <span class="result-subtitulo">{{ r.subtitulo }}</span>
+          </div>
+          <i class="bi bi-arrow-right result-arrow"></i>
+        </div>
+      </ng-container>
+
+      <!-- ── SESIONES (acceso rápido) ──────────────── -->
+      <ng-container *ngIf="sesionResultados().length > 0">
+        <div class="search-category-header">
+          <i class="bi bi-calendar3"></i>
+          Sesiones
+        </div>
+        <div
+          *ngFor="let r of sesionResultados(); let i = index"
+          class="search-result-item search-result-item--sesion"
+          [class.active]="(offsetSesiones() + i) === selectedIndex()"
+          (click)="seleccionar(r)"
+          (mouseenter)="selectedIndex.set(offsetSesiones() + i)"
+        >
+          <div class="result-avatar result-avatar--sesion">
+            <i class="bi bi-calendar3"></i>
+          </div>
+          <div class="result-body">
+            <span class="result-titulo">{{ r.titulo }}</span>
+            <span class="result-subtitulo">{{ r.subtitulo }}</span>
+          </div>
+          <i class="bi bi-arrow-right result-arrow"></i>
+        </div>
+      </ng-container>
+
+      <!-- Footer con atajos -->
+      <div *ngIf="hayResultados()" class="search-footer">
         <small class="text-muted">
-          <kbd class="text-muted">↑</kbd> <kbd class="text-muted">↓</kbd> navegar
-          <kbd class="text-muted">Enter</kbd> seleccionar
-          <kbd class="text-muted">ESC</kbd> cerrar
+          <kbd>↑</kbd><kbd>↓</kbd> navegar &nbsp;
+          <kbd>Enter</kbd> abrir &nbsp;
+          <kbd>ESC</kbd> cerrar
         </small>
       </div>
     </div>

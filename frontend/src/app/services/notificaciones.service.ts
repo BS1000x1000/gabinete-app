@@ -1,4 +1,4 @@
-import { Injectable, inject, signal, computed, OnDestroy } from '@angular/core';
+import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { tap, map, catchError } from 'rxjs/operators';
 import { EMPTY } from 'rxjs';
@@ -8,12 +8,12 @@ import { Notificacion } from '../interface/notificacion.interface';
 interface WrappedResponse<T> { data: T }
 
 @Injectable({ providedIn: 'root' })
-export class NotificacionesService implements OnDestroy {
+export class NotificacionesService {
   private http = inject(HttpClient);
   private readonly api = `${environment.apiUrl}/notificaciones`;
 
   private _notificaciones = signal<Notificacion[]>([]);
-  private _pollingInterval: ReturnType<typeof setInterval> | null = null;
+  private _eventSource: EventSource | null = null;
 
   readonly notificaciones = this._notificaciones.asReadonly();
   readonly noLeidas = computed(() => this._notificaciones().filter((n) => !n.leida && !n.descartada));
@@ -64,33 +64,31 @@ export class NotificacionesService implements OnDestroy {
     );
   }
 
-  /** Inicia polling del contador cada 5 minutos */
-  iniciarPolling() {
-    if (this._pollingInterval) return;
-    this._pollingInterval = setInterval(() => {
-      this.http
-        .get<number | WrappedResponse<number>>(`${this.api}/count`)
-        .pipe(
-          map((res: any) => (typeof res === 'number' ? res : res?.data ?? 0)),
-          catchError(() => EMPTY),
-        )
-        .subscribe((count) => {
-          // Si el count es distinto a las no leídas actuales, recargamos
-          if (count !== this.contadorNoLeidas()) {
-            this.cargar().subscribe();
-          }
-        });
-    }, 5 * 60 * 1000);
+  conectarSSE(token: string) {
+    if (this._eventSource) return;
+
+    const url = `${this.api}/stream?token=${encodeURIComponent(token)}`;
+    this._eventSource = new EventSource(url);
+
+    this._eventSource.onmessage = (event) => {
+      const notif: Notificacion = JSON.parse(event.data);
+      this._notificaciones.update((list) => {
+        if (list.some((n) => n.id === notif.id)) return list;
+        return [notif, ...list];
+      });
+    };
+
+    this._eventSource.onerror = () => {
+      // Si la conexión se cerró definitivamente (no es un reintento automático),
+      // limpiamos la referencia para permitir reconexión manual via conectarSSE().
+      if (this._eventSource?.readyState === EventSource.CLOSED) {
+        this._eventSource = null;
+      }
+    };
   }
 
-  detenerPolling() {
-    if (this._pollingInterval) {
-      clearInterval(this._pollingInterval);
-      this._pollingInterval = null;
-    }
-  }
-
-  ngOnDestroy() {
-    this.detenerPolling();
+  desconectarSSE() {
+    this._eventSource?.close();
+    this._eventSource = null;
   }
 }

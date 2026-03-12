@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrioridadNotif, TipoNotificacion } from '@prisma/client';
+import { NotificacionesSseService } from './notificaciones-sse.service';
 
 export interface CreateNotificacionDto {
   tipo: TipoNotificacion;
@@ -23,7 +24,10 @@ const PRIORIDAD_ORDEN: Record<PrioridadNotif, number> = {
 
 @Injectable()
 export class NotificacionesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly sseSvc: NotificacionesSseService,
+  ) {}
 
   async findByTrabajador(trabajadorId: string) {
     const notificaciones = await this.prisma.notificacion.findMany({
@@ -82,6 +86,13 @@ export class NotificacionesService {
 
     if (existing) return null;
 
-    return this.prisma.notificacion.create({ data: dto });
+    const notificacion = await this.prisma.notificacion.create({
+      data: dto,
+      include: { cliente: { select: { id: true, nombre: true, apellidos: true } } },
+    });
+
+    this.sseSvc.emit(dto.trabajadorId, notificacion);
+
+    return notificacion;
   }
 }

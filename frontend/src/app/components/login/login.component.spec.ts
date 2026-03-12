@@ -44,7 +44,7 @@ describe('LoginComponent', () => {
 
     // Evitar peticiones reales de notificaciones en los tests de login
     spyOn(notifSvc, 'cargar').and.returnValue(of([]));
-    spyOn(notifSvc, 'iniciarPolling');
+    spyOn(notifSvc, 'conectarSSE');
   });
 
   afterEach(() => {

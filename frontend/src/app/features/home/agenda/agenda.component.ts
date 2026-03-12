@@ -274,7 +274,7 @@ export class AgendaComponent implements OnInit {
 
   verCliente(clienteId: string, event: Event) {
     event.stopPropagation();
-    this.router.navigate(['/home/listado', clienteId, 'cliente']);
+    this.router.navigate(['/home/listado', clienteId, 'perfil']);
   }
 
   refrescar() {

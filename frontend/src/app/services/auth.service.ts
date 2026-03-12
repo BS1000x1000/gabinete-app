@@ -60,6 +60,7 @@ export class AuthService {
     return null;
   });
 
+  public readonly token = this._token.asReadonly();
   public currentUser = computed(() => this._currentUser());
   public isAuthenticated = computed(() => !!this._token());
 
@@ -106,9 +107,9 @@ export class AuthService {
           const tokenGuardado = localStorage.getItem(this.TOKEN_KEY);
           console.log('🔍 Token en localStorage:', tokenGuardado ? 'SÍ ✅' : 'NO ❌');
 
-          // Cargar notificaciones y arrancar polling
+          // Cargar notificaciones y conectar SSE
           this.notificacionesSvc.cargar().subscribe();
-          this.notificacionesSvc.iniciarPolling();
+          this.notificacionesSvc.conectarSSE(responseData.access_token);
         } else {
           console.error('❌ No se recibió access_token del backend');
         }
@@ -126,7 +127,7 @@ export class AuthService {
     this._token.set(null);
     this._currentUser.set(null);
     this._currentTrabajadorId.set(null);
-    this.notificacionesSvc.detenerPolling();
+    this.notificacionesSvc.desconectarSSE();
 
     console.log('👋 Sesión cerrada');
     this.router.navigate(['/login']);

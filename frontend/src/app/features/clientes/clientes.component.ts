@@ -128,7 +128,7 @@ export class ClientesComponent implements OnInit {
   }
 
   verFicha(clienteId: string) {
-    this.router.navigate(['/home/listado', clienteId, 'cliente']);
+    this.router.navigate(['/home/listado', clienteId, 'perfil']);
   }
 
   editarCliente(cliente: ClienteExtendido, event: Event) {
@@ -195,7 +195,7 @@ export class ClientesComponent implements OnInit {
       edadTexto: calcularEdadTexto(cliente.fechaNacimiento).texto,
       horarioResumen: this.generarResumenHorario(cliente.disponibilidad ?? []),
     }, ...lista]);
-    this.router.navigate(['/home/listado', cliente.id, 'cliente']);
+    this.router.navigate(['/home/listado', cliente.id, 'perfil']);
   }
 
   paginaAnterior() {

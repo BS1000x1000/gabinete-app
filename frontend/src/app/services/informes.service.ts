@@ -28,6 +28,12 @@ export class InformesService {
   // LISTAR
   // ============================================================
 
+  getAll(): Observable<Informe[]> {
+    return this.http
+      .get<WrappedResponse<Informe[]>>(this.api)
+      .pipe(map((res: any) => res?.data ?? res));
+  }
+
   getInformesByCliente(clienteId: string): Observable<Informe[]> {
     this.cargando.set(true);
     return this.http

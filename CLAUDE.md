@@ -70,13 +70,13 @@ Key modules in `backend/src/`:
 | `disponibilidad` | Client and client-therapist weekly schedule slots. |
 | `objetivos-generales` | Catalogue of general goals grouped by `AreaDesarrollo`. |
 | `gas` | GAS (Goal Attainment Scaling) system — see data model below. |
-| `notificaciones` | Notification engine. `motor-reglas.service.ts` evaluates rules and persists `Notificacion` records. Types: `BONO_AGOTADO`, `BONO_CASI_AGOTADO`, `INFORME_INICIAL_PENDIENTE`, `SIN_SESIONES_RECIENTES`, etc. |
+| `notificaciones` | Notification engine. `motor-reglas.service.ts` evaluates 10 rules and persists `Notificacion` records. `NotificacionesSseService` manages per-therapist SSE streams (real-time push). `JwtFlexGuard` (in `auth/guards/`) accepts Bearer header OR `?token=` query param — required for the `GET /notificaciones/stream` SSE endpoint since `EventSource` cannot send custom headers. |
 | `dashboard` | Aggregated stats for the operational dashboard. |
 | `informes` | Structured reports (`INICIAL` / `SEGUIMIENTO`) with PDF snapshot support. |
 | `n8n` | Outbound webhook calls to n8n (not registered in `AppModule` — called from services directly). |
 | `common/filters` | Global exception filters and interceptors. |
 
-**Auth flow**: `POST /auth/login` → JWT → all other routes protected by `JwtAuthGuard`.
+**Auth flow**: `POST /auth/login` → JWT (8h) → all routes protected by `JwtAuthGuard` (Bearer header). Exception: `GET /notificaciones/stream` uses `JwtFlexGuard` which also accepts `?token=` query param for SSE compatibility.
 
 ### Frontend — Angular 19
 
@@ -90,11 +90,13 @@ frontend/src/app/
 │   │   ├── dashboard/   # Operational dashboard (DashboardHomeComponent)
 │   │   ├── agenda/      # FullCalendar-based weekly schedule
 │   │   └── listado/     # Client detail with tabs
-│   │       └── tabs/    # One subfolder per tab:
-│   │           ├── cliente-tab, colegio-tab, contactos-tab
-│   │           ├── sesiones-tab, bonos-tab, objetivos-tab
-│   │           ├── registro-tab, sanitario-tab, trabajador-tab
+│   │       └── tabs/    # Active tabs only (5):
+│   │           ├── perfil-tab       # personal + sanitario + contactos + colegio + RGPD
+│   │           ├── sesiones-tab
+│   │           ├── bonos-tab
+│   │           ├── progreso-tab     # registro + objetivos GAS
 │   │           └── informes-tab
+│   │           # DELETED: cliente-tab, colegio-tab, contactos-tab, sanitario-tab, registro-tab, objetivos-tab
 │   └── clientes/        # Client list/search
 ├── services/            # Angular services (one per backend domain)
 ├── shared/
@@ -222,9 +224,9 @@ Los sub-componentes de tabs (`registro-tab`, `objetivos-tab`, etc.) deben seguir
 
 ### Infraestructura de tests (estado actual)
 
-- **Backend unit**: Jest 30 + ts-jest + `@nestjs/testing`. 162 tests en verde.
+- **Backend unit**: Jest 30 + ts-jest + `@nestjs/testing`. ~211 tests en verde.
 - **Backend E2E**: Supertest + Jest. 32 tests en verde. Config en `test/jest-e2e.json`.
-- **Frontend**: Karma + Jasmine + `@angular/core/testing`. 328 tests en verde (Chrome Headless).
+- **Frontend**: Karma + Jasmine + `@angular/core/testing`. ~374 tests en verde (Chrome Headless).
 
 ### Backend — patrón estándar de controller spec
 
@@ -311,6 +313,26 @@ const inicio = new Date(sesion.fechaHoraInicio);
 const expectedHora = `${String(inicio.getHours()).padStart(2, '0')}:${String(inicio.getMinutes()).padStart(2, '0')}`;
 expect(service.nuevaHoraInicio()).toBe(expectedHora); // ✅ timezone-safe
 ```
+
+### SSE — Server-Sent Events para notificaciones en tiempo real
+
+`EventSource` del navegador no permite cabeceras personalizadas. El token JWT viaja como query param `?token=`. El `JwtFlexGuard` acepta ambas formas (Bearer header y query param). El frontend conecta en login vía `AuthService` y reconecta en recarga vía `HomeComponent.ngOnInit()` usando `authSvc.token()` — nunca acceder a localStorage directamente.
+
+```typescript
+// En NotificacionesService
+conectarSSE(token: string) {
+  if (this._eventSource) return; // idempotente
+  this._eventSource = new EventSource(`${this.api}/stream?token=${encodeURIComponent(token)}`);
+  this._eventSource.onmessage = (e) => { /* añade al signal */ };
+  this._eventSource.onerror = () => {
+    if (this._eventSource?.readyState === EventSource.CLOSED) this._eventSource = null;
+  };
+}
+```
+
+### Búsqueda global (SearchBarComponent)
+
+`SearchBarComponent` usa Fuse.js para búsqueda fuzzy en cliente. Los datos se cargan al init (`cargarClientes()` + `cargarInformes()`). Resultados en 3 categorías con navegación unificada por teclado via `todosResultados = computed(() => [...clientes, ...informes, ...sesiones])`. El índice `selectedIndex` apunta a la lista plana. El listener de teclado se registra en `ngOnInit` y se limpia en `ngOnDestroy`.
 
 ### Frontend — interfaces estrictas en mocks de test
 

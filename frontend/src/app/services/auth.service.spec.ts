@@ -123,7 +123,7 @@ describe('AuthService', () => {
     beforeEach(() => {
       notifSvc = TestBed.inject(NotificacionesService);
       spyOn(notifSvc, 'cargar').and.returnValue(of([]));
-      spyOn(notifSvc, 'iniciarPolling');
+      spyOn(notifSvc, 'conectarSSE');
     });
 
     it('hace POST a /auth/login con las credenciales', () => {
@@ -162,7 +162,7 @@ describe('AuthService', () => {
       service.login({ username: 'ana', password: '1234' }).subscribe();
       httpMock.expectOne(`${API}/auth/login`).flush({ access_token: 'tok', user: mockUser });
       expect(notifSvc.cargar).toHaveBeenCalled();
-      expect(notifSvc.iniciarPolling).toHaveBeenCalled();
+      expect(notifSvc.conectarSSE).toHaveBeenCalled();
     });
 
     it('maneja respuesta envuelta en { data: {...} }', () => {

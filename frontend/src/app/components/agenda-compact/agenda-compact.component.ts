@@ -75,7 +75,7 @@ export class AgendaCompactComponent implements OnInit {
   }
 
   verCliente(sesion: SesionData) {
-    this.router.navigate(['/home/listado', sesion.clienteId, 'cliente']);
+    this.router.navigate(['/home/listado', sesion.clienteId, 'perfil']);
   }
 
   completarSesion(id: string, event: Event) {

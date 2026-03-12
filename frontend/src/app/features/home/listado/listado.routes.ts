@@ -46,10 +46,6 @@ export default [
       // ── Redirects de rutas legacy ──
       { path: 'registro',   redirectTo: 'progreso', pathMatch: 'full' },
       { path: 'objetivos',  redirectTo: 'progreso', pathMatch: 'full' },
-      { path: 'cliente',    redirectTo: 'perfil',   pathMatch: 'full' },
-      { path: 'contactos',  redirectTo: 'perfil',   pathMatch: 'full' },
-      { path: 'colegio',    redirectTo: 'perfil',   pathMatch: 'full' },
-      { path: 'sanitario',  redirectTo: 'perfil',   pathMatch: 'full' },
     ],
   },
 ] as Route[];

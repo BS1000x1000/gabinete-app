@@ -1,14 +1,18 @@
-import { Controller, Get, Patch, Post, Param, UseGuards, Request } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Controller, Get, Patch, Post, Param, UseGuards, Request, Sse } from '@nestjs/common';
+import { Observable } from 'rxjs';
+import { MessageEvent } from '@nestjs/common';
+import { JwtFlexGuard } from '../auth/guards/jwt-flex.guard';
 import { NotificacionesService } from './notificaciones.service';
+import { NotificacionesSseService } from './notificaciones-sse.service';
 import { MotorReglasService } from './motor-reglas.service';
 
 @Controller('notificaciones')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtFlexGuard)
 export class NotificacionesController {
   constructor(
     private readonly notificacionesSvc: NotificacionesService,
     private readonly motorReglasSvc: MotorReglasService,
+    private readonly sseSvc: NotificacionesSseService,
   ) {}
 
   @Get()
@@ -34,6 +38,11 @@ export class NotificacionesController {
   @Patch(':id/descartar')
   descartar(@Param('id') id: string) {
     return this.notificacionesSvc.descartar(id);
+  }
+
+  @Sse('stream')
+  stream(@Request() req: any): Observable<MessageEvent> {
+    return this.sseSvc.getOrCreate(req.user.sub).asObservable();
   }
 
   @Post('evaluar')

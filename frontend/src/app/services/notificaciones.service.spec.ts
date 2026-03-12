@@ -35,7 +35,7 @@ describe('NotificacionesService', () => {
   });
 
   afterEach(() => {
-    service.detenerPolling();
+    service.desconectarSSE();
     httpMock.verify();
   });
 
@@ -201,54 +201,49 @@ describe('NotificacionesService', () => {
     });
   });
 
-  // ── Polling ─────────────────────────────────────────────────────
+  // ── SSE ─────────────────────────────────────────────────────────
 
-  describe('iniciarPolling() / detenerPolling()', () => {
-    it('no arranca un segundo intervalo si ya está activo', fakeAsync(() => {
-      service.iniciarPolling();
-      service.iniciarPolling(); // segunda llamada, debe ignorarse
+  describe('conectarSSE() / desconectarSSE()', () => {
+    it('conectarSSE no crea una segunda conexión si ya hay una activa', () => {
+      const createSpy = spyOn(window as any, 'EventSource').and.returnValue({
+        onmessage: null,
+        close: jasmine.createSpy('close'),
+      });
 
-      tick(5 * 60 * 1000);
+      service.conectarSSE('token-a');
+      service.conectarSSE('token-b'); // segunda llamada, debe ignorarse
 
-      // Solo debe haber UN request de /count (no dos)
-      const reqs = httpMock.match(`${API}/count`);
-      expect(reqs.length).toBe(1);
-      reqs[0].flush(0);
+      expect(createSpy).toHaveBeenCalledTimes(1);
 
-      service.detenerPolling();
-    }));
+      service.desconectarSSE();
+    });
 
-    it('detenerPolling evita que se hagan más peticiones', fakeAsync(() => {
-      service.iniciarPolling();
-      service.detenerPolling();
+    it('desconectarSSE cierra la conexión existente', () => {
+      const mockSource = { onmessage: null, close: jasmine.createSpy('close') };
+      spyOn(window as any, 'EventSource').and.returnValue(mockSource);
 
-      tick(10 * 60 * 1000);
+      service.conectarSSE('token');
+      service.desconectarSSE();
 
-      // No debe haber ningún request después de detener
-      const reqs = httpMock.match(`${API}/count`);
-      expect(reqs.length).toBe(0);
-    }));
+      expect(mockSource.close).toHaveBeenCalled();
+    });
 
-    it('el polling recarga notificaciones cuando el contador cambia', fakeAsync(() => {
-      // Carga inicial con 1 no-leída
-      service.cargar().subscribe();
-      httpMock.expectOne(API).flush([makeNotif({ id: 'n1', leida: false })]);
+    it('añade la notificación recibida por SSE sin duplicados', () => {
+      const mockSource: any = { onmessage: null, close: jasmine.createSpy('close') };
+      spyOn(window as any, 'EventSource').and.returnValue(mockSource);
 
-      service.iniciarPolling();
-      tick(5 * 60 * 1000);
+      service.conectarSSE('token');
 
-      // El backend reporta 2 no-leídas (diferente al contador actual de 1)
-      httpMock.expectOne(`${API}/count`).flush(2);
+      const notif = makeNotif({ id: 'n-sse', leida: false });
+      mockSource.onmessage({ data: JSON.stringify(notif) });
 
-      // Debe disparar un cargar() automático
-      httpMock.expectOne(API).flush([
-        makeNotif({ id: 'n1', leida: false }),
-        makeNotif({ id: 'n2', leida: false }),
-      ]);
+      expect(service.notificaciones().some((n) => n.id === 'n-sse')).toBeTrue();
 
-      expect(service.contadorNoLeidas()).toBe(2);
+      // Segunda llegada del mismo id no duplica
+      mockSource.onmessage({ data: JSON.stringify(notif) });
+      expect(service.notificaciones().filter((n) => n.id === 'n-sse').length).toBe(1);
 
-      service.detenerPolling();
-    }));
+      service.desconectarSSE();
+    });
   });
 });
