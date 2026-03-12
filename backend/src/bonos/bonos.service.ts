@@ -2,7 +2,7 @@ import { Injectable, ConflictException, NotFoundException, BadRequestException }
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateBonoDto } from './dto/create-bono.dto';
 import { RegistrarPagoDto } from './dto/registrar-pago.dto';
-import { EstadoBono } from '@prisma/client';
+import { EstadoBono, TipoSesion } from '@prisma/client';
 
 @Injectable()
 export class BonosService {
@@ -10,20 +10,21 @@ export class BonosService {
 
   // ─── Crear bono ───────────────────────────────────────────────
   async create(dto: CreateBonoDto) {
-    // Validar que no haya un bono ACTIVO para este cliente
+    // Validar que no haya un bono ACTIVO para este cliente y tipo de terapia
     const bonoActivo = await this.prisma.bono.findFirst({
-      where: { clienteId: dto.clienteId, estado: 'ACTIVO' },
+      where: { clienteId: dto.clienteId, tipoSesion: dto.tipoSesion, estado: 'ACTIVO' },
     });
 
     if (bonoActivo) {
       throw new ConflictException(
-        `El cliente ya tiene un bono activo (ID: ${bonoActivo.id}). Consúmelo antes de crear uno nuevo.`
+        `El cliente ya tiene un bono activo de ${dto.tipoSesion} (ID: ${bonoActivo.id}). Consúmelo antes de crear uno nuevo.`
       );
     }
 
     return this.prisma.bono.create({
       data: {
         clienteId:      dto.clienteId,
+        tipoSesion:     dto.tipoSesion,
         totalSesiones:  dto.totalSesiones,
         precio:         dto.precio,
         familiarPagoId: dto.familiarPagoId,
@@ -48,10 +49,14 @@ export class BonosService {
     });
   }
 
-  // ─── Bono activo de un cliente (usado por SesionesService) ────
-  async findActivoByCliente(clienteId: string) {
+  // ─── Bono activo de un cliente por tipo de sesión (usado por SesionesService) ────
+  async findActivoByCliente(clienteId: string, tipoSesion?: TipoSesion) {
     return this.prisma.bono.findFirst({
-      where: { clienteId, estado: 'ACTIVO' },
+      where: {
+        clienteId,
+        estado: 'ACTIVO',
+        ...(tipoSesion ? { tipoSesion } : {}),
+      },
     });
   }
 
@@ -98,15 +103,17 @@ export class BonosService {
   // ─── Descuento de sesión (llamado INTERNAMENTE por SesionesService) ─
   /**
    * @transaccional — se ejecuta dentro de la transacción de completar sesión.
-   * Devuelve el bono actualizado o null si no había bono activo.
+   * Filtra el bono por clienteId + tipoSesion para descontar del bono correcto.
+   * Devuelve el bono actualizado o null si no había bono activo para ese tipo.
    */
   async descontarSesion(
     clienteId: string,
+    tipoSesion: TipoSesion,
     sesionId: string,
     tx: Parameters<Parameters<typeof this.prisma.$transaction>[0]>[0]
   ) {
     const bono = await tx.bono.findFirst({
-      where: { clienteId, estado: 'ACTIVO' },
+      where: { clienteId, tipoSesion, estado: 'ACTIVO' },
     });
 
     if (!bono) return null; // La sesión se completa, pero sin bono

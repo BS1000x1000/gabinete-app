@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter, inject, signal } from '@angular
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BonosService } from '../../../services/bonos.service';
+import { TipoSesion, TIPO_SESION_LABELS } from '../../../interface/bono.interface';
 
 @Component({
   selector: 'app-create-bono-modal',
@@ -18,6 +19,7 @@ export class CreateBonoModalComponent {
 
   private bonosService = inject(BonosService);
 
+  tipoSesion            = signal<TipoSesion>('PEDAGOGIA');
   sesionesSeleccionadas = signal<number>(4);
   precioInput           = signal<number>(0);
   familiarPagoId        = signal<string>('');
@@ -28,6 +30,8 @@ export class CreateBonoModalComponent {
   error                 = signal<string | null>(null);
 
   readonly opcionesSesiones = [4, 8];
+  readonly tipoSesionLabels = TIPO_SESION_LABELS;
+  readonly tipoSesionOpciones = Object.keys(TIPO_SESION_LABELS) as TipoSesion[];
 
   get sesionesFinales(): number {
     return this.usarCustomSesiones() && this.customSesiones()
@@ -51,6 +55,7 @@ export class CreateBonoModalComponent {
 
     this.bonosService.createBono({
       clienteId:      this.clienteId,
+      tipoSesion:     this.tipoSesion(),
       totalSesiones:  this.sesionesFinales,
       precio:         this.precioInput(),
       familiarPagoId: this.familiarPagoId() || undefined,

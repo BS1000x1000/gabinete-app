@@ -439,6 +439,7 @@ model Bono {
   totalSesiones      Int         @map("total_sesiones")
   sesionesConsumidas Int         @default(0) @map("sesiones_consumidas")
   precio             Decimal     @db.Decimal(10, 2)
+  tipoSesion         TipoSesion  @default(PEDAGOGIA) @map("tipo_sesion")
   estado             EstadoBono  @default(ACTIVO)
   pagado             Boolean     @default(false)
   metodoPago         String?     @map("metodo_pago")

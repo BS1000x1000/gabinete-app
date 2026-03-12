@@ -1,9 +1,20 @@
 export type EstadoBono = 'ACTIVO' | 'CONSUMIDO' | 'CANCELADO';
 export type MetodoPago = 'EFECTIVO' | 'TRANSFERENCIA' | 'BIZUM' | 'TARJETA';
+export type TipoSesion = 'PEDAGOGIA' | 'NEUROPSICOLOGIA' | 'LOGOPEDIA' | 'TERAPIA_OCUPACIONAL' | 'EVALUACION' | 'REUNION_COLEGIO';
+
+export const TIPO_SESION_LABELS: Record<TipoSesion, string> = {
+  PEDAGOGIA:           'Pedagogía',
+  NEUROPSICOLOGIA:     'Neuropsicología',
+  LOGOPEDIA:           'Logopedia',
+  TERAPIA_OCUPACIONAL: 'Terapia Ocupacional',
+  EVALUACION:          'Evaluación',
+  REUNION_COLEGIO:     'Reunión con colegio',
+};
 
 export interface Bono {
   id: string;
   clienteId: string;
+  tipoSesion: TipoSesion;
   totalSesiones: number;
   sesionesConsumidas: number;
   precio: number;
@@ -26,6 +37,7 @@ export interface Bono {
 
 export interface CreateBonoDto {
   clienteId: string;
+  tipoSesion: TipoSesion;
   totalSesiones: number;
   precio: number;
   familiarPagoId?: string;

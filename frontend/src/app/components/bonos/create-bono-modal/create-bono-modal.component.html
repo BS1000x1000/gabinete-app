@@ -19,6 +19,22 @@
     <div class="modal-card-body">
       <div class="create-bono-form">
 
+        <!-- Tipo de terapia -->
+        <div class="form-group-custom">
+          <label class="form-label-custom">
+            <i class="bi bi-tag me-1"></i>Tipo de terapia
+          </label>
+          <select
+            class="form-select"
+            [ngModel]="tipoSesion()"
+            (ngModelChange)="tipoSesion.set($event)"
+          >
+            <option *ngFor="let tipo of tipoSesionOpciones" [value]="tipo">
+              {{ tipoSesionLabels[tipo] }}
+            </option>
+          </select>
+        </div>
+
         <!-- Nº de sesiones -->
         <div class="form-group-custom">
           <label class="form-label-custom">

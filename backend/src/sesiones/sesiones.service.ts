@@ -226,6 +226,7 @@ export class SesionesService {
 
         const bono = await this.bonosService.descontarSesion(
           sesion.clienteId,
+          sesion.tipoSesion,
           id,
           tx,
         );
