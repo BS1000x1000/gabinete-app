@@ -20,8 +20,10 @@ import { clienteInclude, ClienteWithRelations } from './clientes.types';
 import { PaginationDto } from './dto/pagination.dto';
 import { TipoSesion } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/roles/roles.guard';
 
 @Controller('clientes')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class ClientesController {
   private readonly logger = new Logger(ClientesController.name);
 
@@ -35,9 +37,9 @@ export class ClientesController {
    * GET /api/clientes
    */
   @Get()
-  async findAll() {
+  async findAll(@Req() req: any) {
     this.logger.log('📋 GET /api/clientes');
-    return this.clientesService.findAll();
+    return this.clientesService.findAll(req.user);
   }
 
   /**
@@ -59,9 +61,9 @@ export class ClientesController {
    * ✅ DEBE IR ANTES de :id
    */
   @Get('search')
-  async search(@Query('q') query: string) {
+  async search(@Query('q') query: string, @Req() req: any) {
     this.logger.log(`🔍 GET /api/clientes/search?q=${query}`);
-    return this.clientesService.search(query);
+    return this.clientesService.search(query, req.user);
   }
 
   /**
@@ -69,7 +71,6 @@ export class ClientesController {
    * Devuelve solo los clientes asignados al terapeuta autenticado
    */
   @Get('mis-clientes')
-  @UseGuards(JwtAuthGuard)
   async getMisClientes(@Req() req: any) {
     const trabajadorId = req.user.userId;
     this.logger.log(`👤 GET /api/clientes/mis-clientes - Trabajador: ${trabajadorId}`);

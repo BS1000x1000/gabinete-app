@@ -180,9 +180,14 @@ export class ClientesService {
     return clienteCreado;
   }
 
-  async findAll(): Promise<ClienteWithRelations[]> {
+  async findAll(user?: { userId: string; rol: string }): Promise<ClienteWithRelations[]> {
+    const soloAsignados = user && !['ADMIN', 'RECEP'].includes(user.rol);
     return await this.prisma.cliente.findMany({
+      where: soloAsignados
+        ? { trabajadoresAsignados: { some: { trabajadorId: user.userId, activo: true } } }
+        : undefined,
       include: clienteInclude,
+      orderBy: { apellidos: 'asc' },
     });
   }
 
@@ -781,7 +786,8 @@ export class ClientesService {
     });
   }
 
-  async search(query: string) {
+  async search(query: string, user?: { userId: string; rol: string }) {
+    const soloAsignados = user && !['ADMIN', 'RECEP'].includes(user.rol);
     return await this.prisma.cliente.findMany({
       where: {
         OR: [
@@ -790,6 +796,9 @@ export class ClientesService {
           { dni: { contains: query } },
         ],
         activo: true,
+        ...(soloAsignados
+          ? { trabajadoresAsignados: { some: { trabajadorId: user.userId, activo: true } } }
+          : {}),
       },
       take: 10,
     });

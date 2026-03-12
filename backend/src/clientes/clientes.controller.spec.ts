@@ -65,7 +65,8 @@ describe('ClientesController', () => {
       const clientes = [mockCliente(), mockCliente({ id: 'cliente-2' })];
       service.findAll.mockResolvedValue(clientes);
 
-      const result = await controller.findAll();
+      const mockReq = { user: { userId: 'admin-1', rol: 'ADMIN' } };
+      const result = await controller.findAll(mockReq as any);
 
       expect(service.findAll).toHaveBeenCalledTimes(1);
       expect(result).toEqual(clientes);
@@ -92,9 +93,10 @@ describe('ClientesController', () => {
       const resultados = [mockCliente()];
       service.search.mockResolvedValue(resultados);
 
-      const result = await controller.search('Ana');
+      const mockReq = { user: { userId: 'admin-1', rol: 'ADMIN' } };
+      const result = await controller.search('Ana', mockReq as any);
 
-      expect(service.search).toHaveBeenCalledWith('Ana');
+      expect(service.search).toHaveBeenCalledWith('Ana', mockReq.user);
       expect(result).toEqual(resultados);
     });
   });
