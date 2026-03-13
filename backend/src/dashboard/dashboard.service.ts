@@ -2,6 +2,7 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { EstadoSesion } from '@prisma/client';
 
 @Injectable()
 export class DashboardService {
@@ -609,6 +610,109 @@ export class DashboardService {
     } catch (err) {
       throw new InternalServerErrorException(
         `Error al obtener la vista del día: ${err.message}`,
+      );
+    }
+  }
+
+  /**
+   * Estadísticas avanzadas para la página de análisis
+   */
+  async getEstadisticasAvanzadas(desde: Date, hasta: Date, trabajadorId?: string) {
+    try {
+      const trabajadorFilter = trabajadorId ? { trabajadorId } : {};
+      const sesionWhere = {
+        ...trabajadorFilter,
+        fechaHoraInicio: { gte: desde, lte: hasta },
+      };
+
+      const [allSessions, totalRegistros, topClientesRaw] = await Promise.all([
+        this.prisma.sesion.findMany({
+          where: sesionWhere,
+          select: { fechaHoraInicio: true, estado: true, tipoSesion: true, clienteId: true },
+        }),
+        this.prisma.registroDiario.count({
+          where: {
+            ...trabajadorFilter,
+            fechaRegistro: { gte: desde, lte: hasta },
+          },
+        }),
+        this.prisma.sesion.groupBy({
+          by: ['clienteId'],
+          where: sesionWhere,
+          _count: { clienteId: true },
+          orderBy: { _count: { clienteId: 'desc' } },
+          take: 10,
+        }),
+      ]);
+
+      const totalSesiones = allSessions.length;
+      const sesionesCompletadas = allSessions.filter(
+        (s) => s.estado === EstadoSesion.COMPLETADA,
+      ).length;
+      const clientesActivos = new Set(allSessions.map((s) => s.clienteId)).size;
+
+      // Agrupar por semana en TypeScript (evita N queries)
+      const weekMap = new Map<
+        string,
+        { semana: string; inicioSemana: Date; total: number; completadas: number; programadas: number; canceladas: number }
+      >();
+
+      for (const session of allSessions) {
+        const inicioSemana = startOfWeek(session.fechaHoraInicio, { weekStartsOn: 1 });
+        const key = inicioSemana.toISOString();
+        const label = format(inicioSemana, 'dd MMM', { locale: es });
+
+        if (!weekMap.has(key)) {
+          weekMap.set(key, { semana: label, inicioSemana, total: 0, completadas: 0, programadas: 0, canceladas: 0 });
+        }
+
+        const entry = weekMap.get(key)!;
+        entry.total++;
+        if (session.estado === EstadoSesion.COMPLETADA) entry.completadas++;
+        else if (session.estado === EstadoSesion.PROGRAMADA) entry.programadas++;
+        else entry.canceladas++;
+      }
+
+      const weeksSorted = [...weekMap.values()].sort(
+        (a, b) => a.inicioSemana.getTime() - b.inicioSemana.getTime(),
+      );
+
+      const evolucion = weeksSorted.map((w) => ({ semana: w.semana, total: w.total }));
+      const sesionesPorEstado = weeksSorted.map((w) => ({
+        semana: w.semana,
+        completadas: w.completadas,
+        programadas: w.programadas,
+        canceladas: w.canceladas,
+      }));
+
+      // Distribución por tipo
+      const tipoMap = new Map<string, number>();
+      for (const s of allSessions) {
+        tipoMap.set(s.tipoSesion, (tipoMap.get(s.tipoSesion) ?? 0) + 1);
+      }
+      const distribucion = [...tipoMap.entries()].map(([tipo, cantidad]) => ({ tipo, cantidad }));
+
+      // Top clientes con nombres
+      const topClientes = await Promise.all(
+        topClientesRaw.map(async (item) => {
+          const cliente = await this.prisma.cliente.findUnique({
+            where: { id: item.clienteId },
+            select: { id: true, nombre: true, apellidos: true },
+          });
+          return { cliente, total: item._count.clienteId };
+        }),
+      );
+
+      return {
+        resumen: { totalSesiones, sesionesCompletadas, clientesActivos, totalRegistros },
+        evolucion,
+        distribucion,
+        sesionesPorEstado,
+        topClientes: topClientes.filter((t) => t.cliente !== null),
+      };
+    } catch (err) {
+      throw new InternalServerErrorException(
+        `Error al obtener estadísticas avanzadas: ${err.message}`,
       );
     }
   }

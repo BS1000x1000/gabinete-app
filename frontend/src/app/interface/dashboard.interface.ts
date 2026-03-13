@@ -172,6 +172,23 @@ export interface MiDiaResponse {
   };
 }
 
+// ============================================================
+// HITO H — Estadísticas avanzadas
+// ============================================================
+
+export interface EstadisticasAvanzadas {
+  resumen: {
+    totalSesiones: number;
+    sesionesCompletadas: number;
+    clientesActivos: number;
+    totalRegistros: number;
+  };
+  evolucion: { semana: string; total: number }[];
+  distribucion: { tipo: string; cantidad: number }[];
+  sesionesPorEstado: { semana: string; completadas: number; programadas: number; canceladas: number }[];
+  topClientes: { cliente: { id: string; nombre: string; apellidos: string }; total: number }[];
+}
+
 /**
  * Resumen completo del dashboard
  */

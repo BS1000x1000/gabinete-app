@@ -10,6 +10,7 @@ import {
   ActividadReciente,
   ResumenDashboard,
   MiDiaResponse,
+  EstadisticasAvanzadas,
 } from '../interface/dashboard.interface';
 
 // ✅ NUEVO: Interface para respuestas envueltas
@@ -155,6 +156,19 @@ export class DashboardService {
           error: () => this.isLoading.set(false),
         })
       );
+  }
+
+  /**
+   * Estadísticas avanzadas para la página de análisis
+   */
+  getEstadisticasAvanzadas(desde: Date, hasta: Date, trabajadorId?: string): Observable<EstadisticasAvanzadas> {
+    let params = new HttpParams()
+      .set('desde', desde.toISOString())
+      .set('hasta', hasta.toISOString());
+    if (trabajadorId) params = params.set('trabajadorId', trabajadorId);
+    return this.http
+      .get<WrappedResponse<EstadisticasAvanzadas>>(`${this.api}/estadisticas-avanzadas`, { params })
+      .pipe(map((res) => res.data || res));
   }
 
   // ========================================

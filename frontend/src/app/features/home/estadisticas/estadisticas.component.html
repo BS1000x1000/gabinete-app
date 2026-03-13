@@ -1,0 +1,180 @@
+<div class="estadisticas-page">
+
+  <!-- ══ HEADER ═══════════════════════════════════════════════════════════ -->
+  <div class="est-header">
+    <h1 class="est-title">Estadísticas</h1>
+
+    <div class="est-range-chips">
+      @for (r of rangos; track r.key) {
+        <button class="chip" [class.active]="rangoActivo() === r.key" (click)="setRango(r.key)">
+          {{ r.label }}
+        </button>
+      }
+    </div>
+
+    @if (canVerTodos() && trabajadores().length > 0) {
+      <select
+        class="est-terapeuta-select form-select form-select-sm"
+        [(ngModel)]="trabajadorId"
+        (ngModelChange)="onTrabajadorChange()">
+        <option value="">Todos los terapeutas</option>
+        @for (t of trabajadores(); track t.id) {
+          <option [value]="t.id">{{ t.nombre }} {{ t.apellidos }}</option>
+        }
+      </select>
+    }
+  </div>
+
+  <!-- ══ SKELETON ══════════════════════════════════════════════════════════ -->
+  @if (isLoading()) {
+    <div class="est-mini-cards">
+      @for (n of [1,2,3,4]; track n) {
+        <div class="est-mini-card skeleton-card">
+          <div class="skeleton-block sk-icon"></div>
+          <div class="skeleton-block sk-value"></div>
+          <div class="skeleton-block sk-label"></div>
+        </div>
+      }
+    </div>
+    <div class="est-charts-row row-main">
+      <div class="est-chart-card"><div class="skeleton-block sk-chart"></div></div>
+      <div class="est-chart-card"><div class="skeleton-block sk-chart"></div></div>
+    </div>
+    <div class="est-charts-row row-bottom">
+      <div class="est-chart-card"><div class="skeleton-block sk-chart"></div></div>
+      <div class="est-chart-card"><div class="skeleton-block sk-chart"></div></div>
+    </div>
+  }
+
+  @if (!isLoading() && datos() !== null) {
+
+    <!-- ══ ESTADO VACÍO ════════════════════════════════════════════════════ -->
+    @if (isEmpty()) {
+      <div class="est-empty">
+        <i class="bi bi-bar-chart-line est-empty-icon"></i>
+        <p class="est-empty-title">Sin datos para este período</p>
+        <p class="est-empty-sub">No hay sesiones registradas en el rango seleccionado.</p>
+      </div>
+    }
+
+    @if (!isEmpty()) {
+
+      <!-- ══ MINI CARDS ══════════════════════════════════════════════════════ -->
+      <div class="est-mini-cards">
+        <div class="est-mini-card">
+          <div class="card-icon icon-primary"><i class="bi bi-calendar-check"></i></div>
+          <div class="card-value">{{ datos()!.resumen.totalSesiones }}</div>
+          <div class="card-label">Sesiones totales</div>
+        </div>
+        <div class="est-mini-card">
+          <div class="card-icon icon-success"><i class="bi bi-check-circle"></i></div>
+          <div class="card-value success">{{ datos()!.resumen.sesionesCompletadas }}</div>
+          <div class="card-label">Completadas</div>
+        </div>
+        <div class="est-mini-card">
+          <div class="card-icon icon-secondary"><i class="bi bi-people"></i></div>
+          <div class="card-value secondary">{{ datos()!.resumen.clientesActivos }}</div>
+          <div class="card-label">Clientes activos</div>
+        </div>
+        <div class="est-mini-card">
+          <div class="card-icon icon-accent"><i class="bi bi-journal-text"></i></div>
+          <div class="card-value accent">{{ datos()!.resumen.totalRegistros }}</div>
+          <div class="card-label">Registros diarios</div>
+        </div>
+      </div>
+
+      <!-- ══ FILA 1: Línea + Donut ═══════════════════════════════════════════ -->
+      <div class="est-charts-row row-main">
+
+        <div class="est-chart-card">
+          <div class="chart-card-title">
+            <i class="bi bi-graph-up-arrow"></i>
+            Evolución de sesiones
+          </div>
+          <div class="chart-wrap">
+            @if (datos()!.evolucion.length > 0) {
+              <canvas baseChart
+                type="line"
+                [data]="lineData()"
+                [options]="lineOpts">
+              </canvas>
+            } @else {
+              <div class="chart-empty"><i class="bi bi-graph-up"></i> Sin datos</div>
+            }
+          </div>
+        </div>
+
+        <div class="est-chart-card">
+          <div class="chart-card-title">
+            <i class="bi bi-pie-chart"></i>
+            Distribución por tipo
+          </div>
+          <div class="chart-wrap">
+            @if (datos()!.distribucion.length > 0) {
+              <canvas baseChart
+                type="doughnut"
+                [data]="donutData()"
+                [options]="donutOpts"
+                [plugins]="donutPlugins">
+              </canvas>
+            } @else {
+              <div class="chart-empty"><i class="bi bi-pie-chart"></i> Sin datos</div>
+            }
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ══ FILA 2: Barras apiladas + Top clientes ══════════════════════════ -->
+      <div class="est-charts-row row-bottom">
+
+        <div class="est-chart-card">
+          <div class="chart-card-title">
+            <i class="bi bi-bar-chart-steps"></i>
+            Sesiones por estado / semana
+          </div>
+          <div class="chart-wrap">
+            @if (datos()!.sesionesPorEstado.length > 0) {
+              <canvas baseChart
+                type="bar"
+                [data]="barData()"
+                [options]="barOpts">
+              </canvas>
+            } @else {
+              <div class="chart-empty"><i class="bi bi-bar-chart"></i> Sin datos</div>
+            }
+          </div>
+        </div>
+
+        <div class="est-chart-card">
+          <div class="chart-card-title">
+            <i class="bi bi-trophy"></i>
+            Top clientes
+          </div>
+          @if (datos()!.topClientes.length > 0) {
+            <div class="top-clientes-list">
+              @for (item of datos()!.topClientes; track item.cliente.id) {
+                <div class="top-cliente-item">
+                  <div class="avatar">
+                    {{ getInitials(item.cliente.nombre, item.cliente.apellidos) }}
+                  </div>
+                  <div class="client-info">
+                    <div class="name">{{ item.cliente.nombre }} {{ item.cliente.apellidos }}</div>
+                    <div class="progress-bar-wrap">
+                      <div class="bar" [style.width.%]="getBarWidth(item.total)"></div>
+                    </div>
+                  </div>
+                  <div class="count">{{ item.total }}</div>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="chart-empty"><i class="bi bi-people"></i> Sin datos</div>
+          }
+        </div>
+
+      </div>
+    } <!-- /!isEmpty -->
+  } <!-- /!isLoading -->
+
+</div>

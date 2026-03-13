@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { BonosService } from '../../../services/bonos.service';
 import { ClientesService } from '../../../services/cliente.service';
-import { Bono, ESTADO_BONO_CONFIG, METODO_PAGO_LABELS, getBonoProgreso } from '../../../interface/bono.interface';
+import { Bono, ESTADO_BONO_CONFIG, METODO_PAGO_LABELS, TIPO_SESION_LABELS, getBonoProgreso } from '../../../interface/bono.interface';
 import { CreateBonoModalComponent } from '../create-bono-modal/create-bono-modal.component';
 import { RegistrarPagoModalComponent } from '../registrar-pago-modal/registrar-pago-modal.component';
 import { HistorialModalComponent } from '../historial-modal/historial-modal.component';
@@ -20,8 +20,10 @@ export class BonosTabComponent implements OnInit {
   private bonosService = inject(BonosService);
   private clientesSvc  = inject(ClientesService);
 
+  readonly bonosActivos   = this.bonosService.bonosActivos;
   readonly bonoActivo     = this.bonosService.bonoActivo;
   readonly historialBonos = this.bonosService.historialBonos;
+  readonly tipoLabels     = TIPO_SESION_LABELS;
   readonly familiares     = this.clientesSvc.contactosFamiliares;
   readonly isLoading      = signal(false);
 

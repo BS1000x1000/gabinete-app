@@ -1,12 +1,14 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code when working with this repository.
 
 ## Project Overview
 
-**Gabinete Pedagógico** — management app for a therapeutic/pedagogical practice. Manages clients (children), therapists (trabajadores), sessions, session vouchers (bonos), goals (objetivos GAS), daily records, reports, and smart notifications.
+**Gabinete Pedagógico** — management app for a multi-therapist pediatric therapy practice. Manages clients (children), therapists (trabajadores), sessions, vouchers (bonos), GAS goals, daily records, reports, smart notifications, and advanced statistics.
 
-Stack: **Angular 19** (frontend) + **NestJS 11** (backend) + **Prisma 5** + **PostgreSQL** + **n8n** (Docker, port 5678).
+Stack: **Angular 19** (frontend) + **NestJS 11** (backend) + **Prisma 5** + **PostgreSQL** + **n8n** (Docker, port 5678, not yet registered in AppModule).
+
+**Current state (2026-03-13)**: ~99% complete. Multi-user RBAC (Hito I), advanced statistics with Chart.js (Hito H), and all core clinical features are implemented. Remaining: n8n integration, formal billing module, mobile polish.
 
 ---
 
@@ -15,17 +17,13 @@ Stack: **Angular 19** (frontend) + **NestJS 11** (backend) + **Prisma 5** + **Po
 ### Backend (`/backend`)
 
 ```bash
-npm run start:dev      # Dev server with watch (port 3000)
-npm run build          # Production build
-npm run lint           # ESLint with auto-fix
-npm test               # Jest unit tests
-npm run test:e2e       # End-to-end tests
-npm run test:cov       # Coverage report
-```
-
-Single test file:
-```bash
-npx jest src/sesiones/sesiones.service.spec.ts
+npm run start:dev        # Dev server with watch (port 3000)
+npm run build            # Production build
+npm run lint             # ESLint with auto-fix
+npm test                 # Jest unit tests (220 passing)
+npm run test:e2e         # E2E tests (supertest)
+npm run test:cov         # Coverage report
+npx jest src/foo/foo.spec.ts   # Single spec file
 ```
 
 Prisma:
@@ -39,15 +37,9 @@ npx prisma generate                       # Regenerate client after schema chang
 ### Frontend (`/frontend`)
 
 ```bash
-npm start       # Dev server (ng serve, port 4200)
-npm run build   # Production build
-npm test        # Karma/Jasmine tests
-```
-
-### n8n (notifications)
-
-```bash
-docker compose up -d   # Start n8n at http://localhost:5678
+npm start         # Dev server (ng serve, port 4200)
+npm run build     # Production build
+npm test          # Karma/Jasmine tests (Chrome Headless)
 ```
 
 ---
@@ -56,88 +48,192 @@ docker compose up -d   # Start n8n at http://localhost:5678
 
 ### Backend — NestJS modules
 
-Each domain follows the standard NestJS pattern: `module → controller → service → dto/types`. All DB access goes through `PrismaService` (singleton in `PrismaModule`).
-
-Key modules in `backend/src/`:
+Standard pattern: `module → controller → service → dto/types`. All DB access through `PrismaService`.
 
 | Module | Responsibility |
 |---|---|
-| `auth` | JWT + Passport local strategy. Token valid 8 hrs. Uses `SECRET` env var. |
-| `trabajador` | Therapist CRUD and profile management. |
-| `clientes` | Client CRUD, family contacts, health data (sanitario). |
-| `sesiones` | Session generation from client availability, state machine (`PROGRAMADA → COMPLETADA/CANCELADA`). Integrates with `bonos`. |
-| `bonos` | Session voucher lifecycle (`ACTIVO → CONSUMIDO`). Tracks payment and consumption. |
-| `disponibilidad` | Client and client-therapist weekly schedule slots. |
-| `objetivos-generales` | Catalogue of general goals grouped by `AreaDesarrollo`. |
-| `gas` | GAS (Goal Attainment Scaling) system — see data model below. |
-| `notificaciones` | Notification engine. `motor-reglas.service.ts` evaluates 10 rules and persists `Notificacion` records. `NotificacionesSseService` manages per-therapist SSE streams (real-time push). `JwtFlexGuard` (in `auth/guards/`) accepts Bearer header OR `?token=` query param — required for the `GET /notificaciones/stream` SSE endpoint since `EventSource` cannot send custom headers. |
-| `dashboard` | Aggregated stats for the operational dashboard. |
-| `informes` | Structured reports (`INICIAL` / `SEGUIMIENTO`) with PDF snapshot support. |
-| `n8n` | Outbound webhook calls to n8n (not registered in `AppModule` — called from services directly). |
-| `common/filters` | Global exception filters and interceptors. |
+| `auth` | JWT + Passport local. Token 8h. `JwtAuthGuard` on all routes. `JwtFlexGuard` for SSE (also accepts `?token=` query param). |
+| `trabajador` | Therapist CRUD + profile + password change. |
+| `clientes` | Client CRUD, family contacts, health data, RGPD consent. |
+| `sesiones` | Session generation from availability, state machine (`PROGRAMADA → COMPLETADA/CANCELADA_*`). Integrates with bonos. |
+| `bonos` | Voucher lifecycle (`ACTIVO → CONSUMIDO`). Payment tracking. |
+| `disponibilidad` | Weekly schedule slots per client-therapist pair. |
+| `objetivos-generales` | Catalogue of goals grouped by `AreaDesarrollo`. |
+| `gas` | GAS system — `ClienteObjetivo` → `EvaluacionGAS`. Levels -2..+2. |
+| `notificaciones` | 10-rule notification engine (`motor-reglas.service.ts`). SSE real-time push via `NotificacionesSseService`. |
+| `dashboard` | `getMiDia` (operational today view) + `getResumenCompleto` + `getEstadisticasAvanzadas` (advanced stats with date range + role-scoped data). |
+| `informes` | Structured reports (`INICIAL` / `SEGUIMIENTO`) + PDF via Puppeteer. Role-scoped: RECEP only sees FINALIZADO. |
+| `export` | PDF/Excel exports (sesiones, bonos). Puppeteer + ExcelJS. |
+| `fichaje` | Daily record CRUD + objective linking. ROLES_CLINICOS only. |
+| `gas` | GAS evaluation. ROLES_CLINICOS only for mutations. |
+| `roles` | Role CRUD. |
+| `health` | Health check endpoint. |
 
-**Auth flow**: `POST /auth/login` → JWT (8h) → all routes protected by `JwtAuthGuard` (Bearer header). Exception: `GET /notificaciones/stream` uses `JwtFlexGuard` which also accepts `?token=` query param for SSE compatibility.
+### RBAC — Roles and guards
+
+```typescript
+// backend/src/roles/roles.constants.ts
+export const ROLES_CLINICOS = ['ADMIN', 'PEDAGOGO', 'NEURO', 'LOGOPEDA'] as const;
+export const ROLES_GESTION  = ['ADMIN', 'RECEP'] as const;
+```
+
+Pattern in controllers:
+```typescript
+@UseGuards(JwtAuthGuard, RolesGuard)
+export class XController {
+  @Roles(...ROLES_CLINICOS)   // restrict specific endpoints
+  @Post()
+  create(@Req() req: any) { ... }
+}
+```
+
+Data scoping pattern in services — all methods that return user-specific data accept `user?: { userId: string; rol: string }`:
+```typescript
+async findAll(user?: { userId: string; rol: string }) {
+  if (!user || user.rol === 'ADMIN' || user.rol === 'RECEP') return this.prisma.cliente.findMany();
+  return this.prisma.cliente.findMany({
+    where: { trabajadores: { some: { trabajadorId: user.userId, activo: true } } }
+  });
+}
+```
+
+JWT payload shape: `{ sub: string, userId: string, rol: string, nombre: string }`.
 
 ### Frontend — Angular 19
 
-All components are **standalone** using **signals** for state.
+All components **standalone** using **signals** for state. No NgModules.
 
 ```
 frontend/src/app/
-├── components/          # One-off components (LoginComponent)
 ├── features/
-│   ├── home/            # Main shell after login
-│   │   ├── dashboard/   # Operational dashboard (DashboardHomeComponent)
-│   │   ├── agenda/      # FullCalendar-based weekly schedule
-│   │   └── listado/     # Client detail with tabs
-│   │       └── tabs/    # Active tabs only (5):
+│   ├── home/
+│   │   ├── agenda/           # Weekly calendar (angular-calendar)
+│   │   ├── dashboard/        # Operational today view (DashboardHomeComponent)
+│   │   ├── estadisticas/     # Advanced stats — EstadisticasComponent (Chart.js)
+│   │   └── listado/          # Client detail shell + tabs
+│   │       └── tabs/         # 6 active tabs:
 │   │           ├── perfil-tab       # personal + sanitario + contactos + colegio + RGPD
 │   │           ├── sesiones-tab
 │   │           ├── bonos-tab
-│   │           ├── progreso-tab     # registro + objetivos GAS
-│   │           └── informes-tab
-│   │           # DELETED: cliente-tab, colegio-tab, contactos-tab, sanitario-tab, registro-tab, objetivos-tab
-│   └── clientes/        # Client list/search
-├── services/            # Angular services (one per backend domain)
+│   │           ├── progreso-tab     # registro + GAS (ROLES_CLINICOS only — roleGuard)
+│   │           ├── informes-tab
+│   │           └── terapeutas-tab   # TrabajadorTabComponent — assign therapists
+│   ├── clientes/             # Client list/search
+│   ├── trabajadores/         # Therapist management (ADMIN + RECEP)
+│   └── ajustes/              # Settings
+├── services/                 # One service per backend domain
 ├── shared/
-│   ├── components/      # Reusable UI components
-│   ├── guards/          # authGuard
-│   ├── pipes/           # Custom pipes
-│   └── utils/           # authInterceptor (attaches JWT to all requests)
-├── models/              # TypeScript interfaces mirroring Prisma types
-└── validators/          # Custom form validators
+│   ├── components/
+│   │   └── layout/sidebar/   # SidebarComponent — nav + quick actions
+│   ├── guards/
+│   │   ├── auth.guard.ts     # Protects /home subtree
+│   │   └── role.guard.ts     # roleGuard(roles[]) factory — used in routes
+│   └── utils/                # authInterceptor
+└── interface/                # TypeScript interfaces mirroring Prisma types
 ```
 
-**Routing**: lazy-loaded via `loadChildren`/`loadComponent`. Default route after login is `/home/dashboard`. `authGuard` protects the entire `/home` subtree.
+**Sidebar nav items** (computed signal, role-filtered):
+- Agenda · Clientes · Estadísticas → all roles
+- Equipo → ADMIN + RECEP only
+- Ajustes → all roles
+
+**Frontend role guard usage:**
+```typescript
+// In route definitions:
+{ path: 'progreso', canActivate: [roleGuard(['ADMIN', 'PEDAGOGO', 'NEURO', 'LOGOPEDA'])] }
+{ path: 'trabajadores', canActivate: [roleGuard(['ADMIN', 'RECEP'])] }
+```
+
+**AuthService role helpers:**
+```typescript
+this.auth.isAdmin()    // computed() signal → boolean
+this.auth.isRecep()    // computed() signal → boolean
+this.auth.isAdmin() || this.auth.isRecep()  // in computed context reads both signals
+```
+
+### Routing
+
+Default route after login: `/home/agenda`. Lazy-loaded everywhere. `authGuard` protects `/home` subtree.
+
+Key routes:
+- `/home/agenda` — operational daily view
+- `/home/clientes` — client list
+- `/home/estadisticas` — advanced statistics
+- `/home/trabajadores` — therapist management (ADMIN + RECEP)
+- `/home/listado/:id/perfil|sesiones|bonos|progreso|informes|terapeutas`
 
 ### Styles
 
-**Never put styles in `component.scss`**. All styles live in `frontend/src/sass/` and are imported centrally in `main.scss`.
+**Never put styles in `component.scss`**. All styles in `frontend/src/sass/`, imported in `main.scss`.
 
 ```
 sass/
-├── abstracts/   # _variables.scss, _mixins.scss, _functions.scss
+├── abstracts/   # _variables.scss (full design system), _mixins.scss, _functions.scss
 ├── base/        # _root.scss, _reset.scss, _typography.scss, _utilities.scss
-├── components/  # _agenda.scss, _bonos.scss, _sesiones.scss, _notificaciones.scss, etc.
-├── layout/      # _header.scss, _sidebar.scss, _footer.scss, _tab-contents.scss
-└── pages/       # _login.scss, _home.scss, _clientes.scss, _dashboard.scss
+├── components/  # one file per feature component
+├── layout/      # _sidebar.scss, _header.scss, _tab-contents.scss
+└── pages/       # _login.scss, _home.scss, etc.
 ```
 
-- **Icons**: Bootstrap Icons (`bi-*` CSS classes)
-- **Primary color**: `#7c6fd6` (lila), **secondary**: `#5a9de8` (blue)
-- Bootstrap 5 + ngx-bootstrap for UI components
+Key SCSS variables:
+```scss
+$primary: #7c6fd6;          // lila — main color
+$secondary: #5a9de8;         // azul — secondary
+$primary-ultra-light: #f5f3fc;
+$primary-light: #e8e4f8;
+$success: #10b981;
+$danger: #ef4444;
+$warning: #f59e0b;
+$shadow-card: 0 1px 3px rgba(0,0,0,0.08), 0 0 0 1px rgba(124,111,214,0.05);
+$border-radius-lg: 0.75rem;
+$font-family-base: "Plus Jakarta Sans", ...
+```
+
+Icons: Bootstrap Icons (`bi-*`).
+
+### Charts
+
+**Library**: `ng2-charts@8` + `chart.js@4` — chosen for Angular 19 compatibility, smallest bundle (~60-80kB gzip tree-shaken), best TypeScript types, and cleanest upgrade path to Angular 20/21.
+
+Setup in `app.config.ts`:
+```typescript
+import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
+providers: [..., provideCharts(withDefaultRegisterables())]
+```
+
+Usage in standalone components:
+```typescript
+import { BaseChartDirective } from 'ng2-charts';
+imports: [BaseChartDirective]
+// Template:
+// <canvas baseChart type="line" [data]="data()" [options]="opts"></canvas>
+```
+
+**Why NOT ng-apexcharts**: ships uncompiled TypeScript source (no dist). Angular 19 esbuild builder cannot process it. v2.x line requires Angular 20+.
+
+Chart data driven by signals via `effect()`:
+```typescript
+effect(() => {
+  const d = this.datos();
+  if (!d) return;
+  this.lineData.set(this.buildLineData(d));
+});
+```
 
 ### Data model highlights
 
-- `Cliente` ↔ `Trabajador` linked via `ClienteTrabajador` (supports multiple therapy types per client).
-- `Sesion` belongs to a `ClienteTrabajador` pair and optionally to a `Bono`.
-- **GAS system**: `ObjetivoGeneral` (catalogue) → `ClienteObjetivo` (assignment per client with 5-level descriptors at `-2..+2`) → `EvaluacionGAS` (timestamped evaluations). `nivelGASActual` is denormalized on `ClienteObjetivo` for fast reads.
-- `RegistroDiario` tracks daily session notes and links to `ObjetivoGeneral` items worked (`RegistroDiarioObjetivo`).
-- `Notificacion` stores generated alerts per therapist/client with priority (`URGENTE`, `ALTA`, `MEDIA`, `BAJA`) and read/dismissed state.
+- `Cliente` ↔ `Trabajador` via `ClienteTrabajador` (multiple therapy types per client, `activo` flag)
+- `Sesion` → `ClienteTrabajador` pair + optional `Bono` link
+- `Bono` → `tipoSesion TipoSesion` field (required — one voucher per therapy type)
+- GAS: `ObjetivoGeneral` → `ClienteObjetivo` (with 5-level descriptors -2..+2) → `EvaluacionGAS`
+- `RegistroDiario` → `RegistroDiarioObjetivo` (M:N with objectives)
+- `Notificacion` per therapist, 10 types, 4 priority levels (URGENTE/ALTA/MEDIA/BAJA)
+- `Cliente.consentimientoRgpd Bool` + `consentimientoFecha DateTime?` — RGPD tracking
+- `Trabajador.numeroColegiado String?` + `especialidad String?`
 
 ### Environment
 
-Backend requires a `.env` file in `backend/`:
+`backend/.env`:
 ```
 DATABASE_URL=postgresql://...
 SECRET=<jwt-secret>
@@ -145,44 +241,37 @@ SECRET=<jwt-secret>
 
 ---
 
-## Patrones y lecciones aprendidas
+## Patterns and lessons learned
 
-### Bootstrap: overflow horizontal por márgenes negativos de `.row`
+### RBAC — applying roles to endpoints
 
-Las clases `.row.g-*` de Bootstrap aplican `margin-left` y `margin-right` negativos (`-0.5 * gutter`). Cuando se usan dentro de un contenedor flex/scroll sin `overflow-x: hidden`, generan un scrollbar horizontal no deseado.
+Always use both guards together:
+```typescript
+@UseGuards(JwtAuthGuard, RolesGuard)
+```
+`RolesGuard` alone won't work — it relies on `JwtAuthGuard` having run first to populate `req.user`.
 
-**Fix estándar:**
-1. Añadir `overflow-x: hidden; min-width: 0;` al contenedor padre (scroll o flex).
-2. Dar padding al wrapper que contiene la `.row` para absorber el gutter negativo (ej: `px-3` cuando se usa `g-4`).
+For endpoints that need role-SCOPED data (not 403, but filtered results), pass `req.user` to the service:
+```typescript
+@Get()
+findAll(@Req() req: any) {
+  return this.service.findAll(req.user);
+}
+```
+
+### Bootstrap: overflow horizontal from `.row` negative margins
+
+`.row.g-*` applies negative margins that cause horizontal scroll inside flex containers.
 
 ```scss
-// En el contenedor padre del scroll
-.mi-body {
-  overflow-y: auto;
-  overflow-x: hidden; // ← corta el gutter bleed de Bootstrap
-  min-width: 0;       // ← evita que el flex-child ignore su límite
-}
+.parent-scroll { overflow-x: hidden; min-width: 0; }
 ```
+Add `px-3` padding on the wrapper containing the `.row`.
 
-```html
-<!-- En la template, añadir padding al wrapper de la row -->
-<div class="container-fluid px-3 py-3">  <!-- NO p-0 -->
-  <div class="row g-4">...</div>
-</div>
-```
+### File downloads with loading state
 
-### Patrón: descargas de archivos con estado de carga
-
-Los métodos de servicio que generan y descargan archivos (PDF, Excel) **DEBEN** devolver `Observable<void>`, nunca `void`. Esto permite que el componente gestione `isLoading` con `finalize()`.
-
+Service methods returning files MUST return `Observable<void>`:
 ```typescript
-// ❌ Incorrecto — el componente no puede controlar el estado
-descargarPdf(id: string): void {
-  this.http.get(..., { responseType: 'blob' })
-    .subscribe(blob => triggerDownload(blob, 'file.pdf'));
-}
-
-// ✅ Correcto
 descargarPdf(id: string): Observable<void> {
   return this.http.get(..., { responseType: 'blob' }).pipe(
     tap(blob => triggerDownload(blob, 'file.pdf')),
@@ -190,155 +279,88 @@ descargarPdf(id: string): Observable<void> {
   );
 }
 ```
+Component uses `descargando = signal(false)` + `finalize(() => this.descargando.set(false))`.
 
-En el componente, gestionar el estado así:
+### SSE — Server-Sent Events
 
-```typescript
-descargando = signal(false);
+`EventSource` cannot send custom headers. JWT travels as `?token=` query param. `JwtFlexGuard` accepts both Bearer header and query param. Frontend connects in `AuthService` login and reconnects in `HomeComponent.ngOnInit()`.
 
-descargar(): void {
-  if (this.descargando()) return; // bloquea doble-click
-  this.descargando.set(true);
-  this.service.descargarPdf(id)
-    .pipe(finalize(() => this.descargando.set(false)))
-    .subscribe();
-}
-```
+### Drawer pattern (Registro Diario)
 
-En el template:
-```html
-<button [disabled]="descargando()" (click)="descargar()">
-  <span *ngIf="descargando()" class="spinner-border spinner-border-sm me-1"></span>
-  <i *ngIf="!descargando()" class="bi bi-file-earmark-pdf me-1"></i>
-  {{ descargando() ? 'Generando...' : 'Descargar PDF' }}
-</button>
-```
+Global `RegistroDrawerService` with `open(clienteId, sesionId?)`. Drawer component subscribes to the service signal. Overlay semitransparent on body.
 
-### Convención de tabs dentro de la ficha de cliente
+### ClienteDrawerComponent pattern (Perfil tab)
 
-Los sub-componentes de tabs (`registro-tab`, `objetivos-tab`, etc.) deben seguir el sistema de diseño del proyecto (clases propias del SASS, no Bootstrap puro) para mantener consistencia visual. Las tabs que aún usan `card`, `container-fluid`, `btn-group` de Bootstrap directamente son deuda técnica pendiente de migrar.
+Complex form sections use a shared `ClienteDrawerComponent` with sections: `personal | sanitario | contactos | colegio`. Simple boolean fields use inline toggle directly in `perfil-tab.component.ts`.
 
 ---
 
-## Testing — Patrones y lecciones
+## Testing
 
-### Infraestructura de tests (estado actual)
+### Backend — current state
+- **Unit**: 220 tests, 17 suites — all green. Jest + @nestjs/testing.
+- **E2E**: supertest + Jest. `test/helpers/create-app.ts` + `test/helpers/prisma-mock.ts`.
 
-- **Backend unit**: Jest 30 + ts-jest + `@nestjs/testing`. ~211 tests en verde.
-- **Backend E2E**: Supertest + Jest. 32 tests en verde. Config en `test/jest-e2e.json`.
-- **Frontend**: Karma + Jasmine + `@angular/core/testing`. ~374 tests en verde (Chrome Headless).
-
-### Backend — patrón estándar de controller spec
-
+### Controller spec pattern
 ```typescript
 const module = await Test.createTestingModule({
   controllers: [XController],
-  providers: [{ provide: XService, useValue: serviceMock }],
+  providers: [{ provide: XService, useValue: makeMock() }],
 })
-  .overrideGuard(JwtAuthGuard)
-  .useValue({ canActivate: () => true })
-  .compile();
+.overrideGuard(JwtAuthGuard).useValue({ canActivate: () => true })
+.compile();
 ```
+Always mock `NotificacionesSseService` when testing `NotificacionesController`.
 
-Siempre usar `makeMock()` con `jest.fn()` por cada método del servicio para poder encadenar `.mockResolvedValue(...)`.
-
-### Backend E2E — infraestructura
-
-Los ficheros `test/helpers/prisma-mock.ts` y `test/helpers/create-app.ts` replican la configuración exacta de `main.ts` (prefix `api`, `ResponseInterceptor`, `AllExceptionsFilter`, `ValidationPipe`). **`MotorReglasService` SIEMPRE debe sobreescribirse** porque se activa en el login y hace múltiples llamadas a la BD:
-
+### E2E pattern
+`MotorReglasService` MUST be overridden — it fires on login and makes DB calls:
 ```typescript
-moduleFixture
-  .overrideProvider(PrismaService).useValue(prismaMock)
-  .overrideProvider(MotorReglasService).useValue({ evaluarReglas: jest.fn().mockResolvedValue(undefined) })
+.overrideProvider(MotorReglasService).useValue({ evaluarReglas: jest.fn().mockResolvedValue(undefined) })
 ```
 
-El `jest-e2e.json` necesita `moduleNameMapper` para resolver imports `src/`:
-```json
-{ "moduleNameMapper": { "^src/(.*)$": "<rootDir>/../src/$1" } }
-```
+### RBAC test coverage (`test/rbac.e2e-spec.ts`)
+19 E2E tests covering: RECEP → 403 on clinical endpoints, 200 on allowed. ADMIN → 200 global stats. PEDAGOGO → 403 on ROLES_GESTION endpoints. Without token → 401.
 
-### Backend E2E — mock state contamination entre tests
-
-Si varios tests del mismo `describe` usan el mismo mock de Prisma sin `beforeEach` reset, el estado de las llamadas anteriores puede contaminar el siguiente test. Solución: encadenar `mockResolvedValueOnce` para llamadas secuenciales dentro de un mismo test:
-
+### Frontend — spyOn ESM named exports
 ```typescript
-prisma.cliente.findUnique
-  .mockResolvedValueOnce(null)        // primera llamada: comprobación DNI
-  .mockResolvedValue(clienteNuevo);   // segunda llamada: fetch post-creación
+// ❌ Fails — named exports are non-writable
+spyOn(downloadUtils, 'triggerDownload')
+// ✅ Stub the browser API instead
+spyOn(URL, 'createObjectURL').and.returnValue('blob:test');
 ```
 
-### Frontend — patrón estándar de service spec (HttpClient)
-
-```typescript
-TestBed.configureTestingModule({
-  providers: [provideHttpClient(), provideHttpClientTesting()],
-});
-service = TestBed.inject(XService);
-httpMock = TestBed.inject(HttpTestingController);
-// ...
-afterEach(() => httpMock.verify());
-```
-
-### Frontend — NO usar `spyOn` en named exports de ES modules
-
-`spyOn(downloadUtils, 'triggerDownload')` **FALLA** con `"triggerDownload is not declared writable or has no setter"` porque los named exports de módulos ES son non-writable/non-configurable.
-
-**Solución**: stubear las APIs del navegador que usa la función en lugar de la función en sí:
-
-```typescript
-beforeEach(() => {
-  spyOn(URL, 'createObjectURL').and.returnValue('blob:test');
-  spyOn(URL, 'revokeObjectURL');
-});
-```
-
-Si el test necesita verificar el nombre del archivo descargado, rediseñar para verificar que el observable completa sin error, en lugar de assertar sobre `triggerDownload`.
-
-### Frontend — tests con signals y efectos de tap/side-effects
-
-Los métodos de servicio que usan `tap()` para actualizar signals necesitan que el observable se suscriba Y que el HttpMock devuelva el flush **después** de suscribir, para que el tap se ejecute:
-
-```typescript
-service.getSomething().subscribe();           // 1. suscribir
-httpMock.expectOne(url).flush(wrap(data));    // 2. flush → tap se ejecuta
-expect(service.signal()).toEqual(data);       // 3. assertar el signal
-```
-
-### Frontend — timezone en tests de fechas
-
-Los tests que comparan horas derivadas de fechas UTC (`'2026-03-10T09:00:00.000Z'`) con valores locales FALLARÁN en máquinas con offset UTC+N. Calcular los valores esperados dinámicamente igual que lo hace el servicio:
-
+### Frontend — timezone-safe date tests
 ```typescript
 const inicio = new Date(sesion.fechaHoraInicio);
-const expectedHora = `${String(inicio.getHours()).padStart(2, '0')}:${String(inicio.getMinutes()).padStart(2, '0')}`;
-expect(service.nuevaHoraInicio()).toBe(expectedHora); // ✅ timezone-safe
+const expectedHora = `${String(inicio.getHours()).padStart(2,'0')}:...`;
+// NOT hardcoded '09:00'
 ```
 
-### SSE — Server-Sent Events para notificaciones en tiempo real
-
-`EventSource` del navegador no permite cabeceras personalizadas. El token JWT viaja como query param `?token=`. El `JwtFlexGuard` acepta ambas formas (Bearer header y query param). El frontend conecta en login vía `AuthService` y reconecta en recarga vía `HomeComponent.ngOnInit()` usando `authSvc.token()` — nunca acceder a localStorage directamente.
-
+### Frontend — signal side-effects order
 ```typescript
-// En NotificacionesService
-conectarSSE(token: string) {
-  if (this._eventSource) return; // idempotente
-  this._eventSource = new EventSource(`${this.api}/stream?token=${encodeURIComponent(token)}`);
-  this._eventSource.onmessage = (e) => { /* añade al signal */ };
-  this._eventSource.onerror = () => {
-    if (this._eventSource?.readyState === EventSource.CLOSED) this._eventSource = null;
-  };
-}
+service.getSomething().subscribe();        // 1. subscribe first
+httpMock.expectOne(url).flush(wrap(data)); // 2. then flush → tap/signal update fires
+expect(service.signal()).toEqual(data);    // 3. then assert
 ```
 
-### Búsqueda global (SearchBarComponent)
+---
 
-`SearchBarComponent` usa Fuse.js para búsqueda fuzzy en cliente. Los datos se cargan al init (`cargarClientes()` + `cargarInformes()`). Resultados en 3 categorías con navegación unificada por teclado via `todosResultados = computed(() => [...clientes, ...informes, ...sesiones])`. El índice `selectedIndex` apunta a la lista plana. El listener de teclado se registra en `ngOnInit` y se limpia en `ngOnDestroy`.
+## Deleted components (do NOT recreate)
 
-### Frontend — interfaces estrictas en mocks de test
+These were removed during the UX redesign (Phase 4). Their content lives in `perfil-tab` + `ClienteDrawerComponent`:
+- `cliente-tab` → `perfil-tab`
+- `colegio-tab` → `ClienteDrawerComponent section='colegio'`
+- `contactos-tab` → `ClienteDrawerComponent section='contactos'`
+- `sanitario-tab` → `ClienteDrawerComponent section='sanitario'`
+- `registro-tab` → `progreso-tab` (first panel)
+- `objetivos-tab` → `progreso-tab` (second panel)
 
-Los mocks de test deben incluir todos los campos requeridos de la interfaz. Campos comunes que se olvidan:
+Legacy URL redirects still active in `listado.routes.ts` (e.g. `/cliente → /perfil`).
 
-- `RegistroDiario`: usa `fechaRegistro` (NO `fecha`)
-- `Informe`: requiere `tipoInforme` (NO `tipo`), `estado`, `trabajadorId`, `updatedAt`
-- `EstadisticasTrabajador`: estructura anidada `{ clientesAsignados, sesiones: { hoy, esteMes, porEstado: {...} }, registros: { esteMes } }`
-- `MiDiaResponse`: requiere `saludo`, `contadores`, `sesionesHoy`, `alertasUrgentes`, `accionesPendientes`, `resumenMes`
+---
+
+## Known gaps / technical debt
+
+- `ClientesComponent` still navigates to `/cliente` (legacy) in lines 131 and 198 — works via redirect
+- `n8n` module exists but is NOT registered in `AppModule`
+- rbac.e2e-spec.ts has a minor TypeScript strict error (`username` property type) — runtime behavior correct, tests pass

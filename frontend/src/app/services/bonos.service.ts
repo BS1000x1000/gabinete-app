@@ -16,6 +16,7 @@ export class BonosService {
   private _bonosCliente = signal<Bono[]>([]);
   
   readonly bonosCliente    = this._bonosCliente.asReadonly();
+  readonly bonosActivos    = computed(() => this._bonosCliente().filter(b => b.estado === 'ACTIVO'));
   readonly bonoActivo      = computed(() => this._bonosCliente().find(b => b.estado === 'ACTIVO') ?? null);
   readonly historialBonos  = computed(() => this._bonosCliente().filter(b => b.estado !== 'ACTIVO'));
   readonly tieneBonoPendientePago = computed(() =>

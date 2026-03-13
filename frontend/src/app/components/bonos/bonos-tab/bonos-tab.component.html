@@ -11,11 +11,11 @@
   <div *ngIf="!isLoading()" class="bonos-tab">
 
     <!-- ══════════════════════════════════════════════════════
-         BONO ACTIVO
+         BONOS ACTIVOS
     ══════════════════════════════════════════════════════ -->
 
-    <!-- Sin bono activo → CTA -->
-    <div *ngIf="!bonoActivo()" class="bono-empty-state">
+    <!-- Sin bonos activos → CTA -->
+    <div *ngIf="bonosActivos().length === 0" class="bono-empty-state">
       <div class="bono-empty-icon">
         <i class="bi bi-ticket-perforated"></i>
       </div>
@@ -29,22 +29,18 @@
       </button>
     </div>
 
-    <!-- Con bono activo → Card destacado -->
-    <ng-container *ngIf="bonoActivo() as bono">
+    <!-- Con bonos activos → iterar por tipo -->
+    <ng-container *ngFor="let bono of bonosActivos()">
       <div class="bono-activo-card">
 
         <!-- Header -->
         <div class="bono-activo-header">
           <div class="bono-activo-badge">
             <i class="bi bi-lightning-charge-fill"></i>
-            Bono activo
+            Bono activo · {{ tipoLabels[bono.tipoSesion] }}
           </div>
-          <button
-            class="btn btn-outline-secondary btn-sm"
-            disabled
-            title="Primero debe consumirse el bono activo"
-          >
-            <i class="bi bi-lock me-1"></i>Bono en curso
+          <button class="btn btn-outline-primary btn-sm" (click)="showCreateModal.set(true)">
+            <i class="bi bi-plus me-1"></i>Nuevo bono
           </button>
         </div>
 

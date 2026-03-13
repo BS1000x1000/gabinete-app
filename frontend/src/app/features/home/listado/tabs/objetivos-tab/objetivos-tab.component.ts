@@ -112,7 +112,7 @@ export class ObjetivosTabComponent implements OnInit {
   activarModoEdicion() {
     this.modoEdicion.set(true);
     const objetivosActuales = this.objetivosCliente()?.objetivos || [];
-    this.objetivosSeleccionados.set(objetivosActuales.map((o) => o.id));
+    this.objetivosSeleccionados.set(objetivosActuales.map((o) => o.objetivoGeneralId));
     this.cerrarPanelGas(); // cerrar panel GAS si estaba abierto
   }
 
@@ -137,7 +137,7 @@ export class ObjetivosTabComponent implements OnInit {
 
   guardarCambios() {
     this.cargando.set(true);
-    const objetivosActuales = this.objetivosCliente()?.objetivos.map((o) => o.id) || [];
+    const objetivosActuales = this.objetivosCliente()?.objetivos.map((o) => o.objetivoGeneralId) || [];
     const objetivosNuevos = this.objetivosSeleccionados();
     const paraAgregar = objetivosNuevos.filter((id) => !objetivosActuales.includes(id));
     const paraQuitar = objetivosActuales.filter((id) => !objetivosNuevos.includes(id));

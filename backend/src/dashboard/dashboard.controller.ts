@@ -7,6 +7,7 @@ import {
   Logger,
   ParseIntPipe,
   DefaultValuePipe,
+  BadRequestException,
 } from '@nestjs/common';
 import { DashboardService } from './dashboard.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -93,6 +94,32 @@ export class DashboardController {
     const trabajadorId = canVerTodo ? undefined : req.user.userId;
     this.logger.log(`Obteniendo resumen completo del dashboard - scope: ${canVerTodo ? 'global' : req.user.userId}`);
     return this.dashboardService.getResumenCompleto(trabajadorId);
+  }
+
+  /**
+   * Estadísticas avanzadas (página de análisis)
+   * ADMIN/RECEP: pueden pasar cualquier trabajadorId o ninguno (global)
+   * Terapeutas: siempre filtran por su propio userId
+   */
+  @Get('estadisticas-avanzadas')
+  async getEstadisticasAvanzadas(
+    @Req() req: any,
+    @Query('desde') desdeStr: string,
+    @Query('hasta') hastaStr: string,
+    @Query('trabajadorId') trabajadorIdParam?: string,
+  ) {
+    if (!desdeStr || !hastaStr) {
+      throw new BadRequestException('Los parámetros desde y hasta son obligatorios');
+    }
+    const desde = new Date(desdeStr);
+    const hasta = new Date(hastaStr);
+    if (isNaN(desde.getTime()) || isNaN(hasta.getTime())) {
+      throw new BadRequestException('Fechas inválidas');
+    }
+    const canVerTodo = (ROLES_GESTION as readonly string[]).includes(req.user.rol);
+    const trabajadorId = canVerTodo ? trabajadorIdParam : req.user.userId;
+    this.logger.log(`Obteniendo estadísticas avanzadas - scope: ${trabajadorId ?? 'global'}`);
+    return this.dashboardService.getEstadisticasAvanzadas(desde, hasta, trabajadorId);
   }
 
   /**

@@ -35,10 +35,11 @@ export class SidebarComponent {
 
   readonly navItems = computed<NavItem[]>(() => {
     const items: NavItem[] = [
-      { label: 'Agenda',   icon: 'bi-calendar-week', route: '/home/agenda'   },
-      { label: 'Clientes', icon: 'bi-people',         route: '/home/clientes' },
+      { label: 'Agenda',        icon: 'bi-calendar-week',  route: '/home/agenda'        },
+      { label: 'Clientes',      icon: 'bi-people',          route: '/home/clientes'      },
+      { label: 'Estadísticas',  icon: 'bi-bar-chart-line',  route: '/home/estadisticas'  },
     ];
-    if (this.auth.isAdmin()) {
+    if (this.auth.isAdmin() || this.auth.isRecep()) {
       items.push({ label: 'Equipo', icon: 'bi-person-badge', route: '/home/trabajadores' });
     }
     items.push({ label: 'Ajustes', icon: 'bi-sliders', route: '/home/ajustes' });
