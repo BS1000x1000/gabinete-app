@@ -53,8 +53,10 @@ export class SesionesController {
   async getMiCalendarioDiario(
     @Req() req: any,
     @Query('fecha') fecha?: string,
+    @Query('trabajadorId') trabajadorIdParam?: string,
   ) {
-    const trabajadorId = req.user.userId;
+    const canVerTodo = ['ADMIN', 'RECEP'].includes(req.user.rol);
+    const trabajadorId = (canVerTodo && trabajadorIdParam) ? trabajadorIdParam : req.user.userId;
     const fechaReferencia = fecha ? new Date(fecha) : undefined;
 
     this.logger.log(`GET /sesiones/mi-calendario/diario - Trabajador: ${trabajadorId}, Fecha: ${fecha || 'hoy'}`);
@@ -69,11 +71,13 @@ export class SesionesController {
   async getMiCalendarioSemanal(
     @Req() req: any,
     @Query('fecha') fecha?: string,
+    @Query('trabajadorId') trabajadorIdParam?: string,
   ) {
-    const trabajadorId = req.user.userId;
+    const canVerTodo = ['ADMIN', 'RECEP'].includes(req.user.rol);
+    const trabajadorId = (canVerTodo && trabajadorIdParam) ? trabajadorIdParam : req.user.userId;
     const fechaReferencia = fecha ? new Date(fecha) : undefined;
 
-    this.logger.log(`GET /sesiones/mi-calendario/semanal`);
+    this.logger.log(`GET /sesiones/mi-calendario/semanal - Trabajador: ${trabajadorId}`);
 
     return this.sesionesService.getCalendarioSemanal(
       trabajadorId,

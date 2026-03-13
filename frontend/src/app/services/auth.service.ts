@@ -76,7 +76,18 @@ export class AuthService {
     return `${u.nombre} ${u.apellidos}`;
   });
 
-  public userRole = computed(() => this._currentUser()?.rol?.nombre ?? '');
+  public userRole     = computed(() => this._currentUser()?.rol?.nombre ?? '');
+  public userRoleCodigo = computed(() => this._currentUser()?.rol?.codigo ?? '');
+
+  // Helpers de rol para uso directo en templates y guards
+  public isAdmin  = computed(() => this.userRoleCodigo() === 'ADMIN');
+  public isRecep  = computed(() => this.userRoleCodigo() === 'RECEP');
+  public isClinico = computed(() =>
+    ['PEDAGOGO', 'NEURO', 'LOGOPEDA'].includes(this.userRoleCodigo())
+  );
+  public canVerTodo = computed(() =>
+    ['ADMIN', 'RECEP'].includes(this.userRoleCodigo())
+  );
 
 
   /*

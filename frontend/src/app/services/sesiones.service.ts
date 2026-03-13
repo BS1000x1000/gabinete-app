@@ -205,10 +205,10 @@ export class SesionesService {
   // CALENDARIOS
   // ========================================
 
-  getCalendarioDiario(fecha?: string): Observable<CalendarioDiario> {
-    const params = fecha
-      ? new HttpParams().set('fecha', fecha)
-      : new HttpParams();
+  getCalendarioDiario(fecha?: string, trabajadorId?: string): Observable<CalendarioDiario> {
+    let params = new HttpParams();
+    if (fecha) params = params.set('fecha', fecha);
+    if (trabajadorId) params = params.set('trabajadorId', trabajadorId);
 
     return this.http
       .get<
@@ -225,11 +225,12 @@ export class SesionesService {
   }
 
   /**
-   * Obtener calendario semanal del trabajador autenticado
+   * Obtener calendario semanal del trabajador autenticado (o el indicado por ADMIN/RECEP)
    */
-  getCalendarioSemanal(fecha?: string): Observable<CalendarioSemanal> {
+  getCalendarioSemanal(fecha?: string, trabajadorId?: string): Observable<CalendarioSemanal> {
     let params = new HttpParams();
     if (fecha) params = params.set('fecha', fecha);
+    if (trabajadorId) params = params.set('trabajadorId', trabajadorId);
 
     return this.http
       .get<

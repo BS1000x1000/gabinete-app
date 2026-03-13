@@ -16,6 +16,7 @@ function makeBono(overrides: Partial<Bono> = {}): Bono {
   return {
     id: 'bono-1',
     clienteId: 'cliente-1',
+    tipoSesion: 'PEDAGOGIA',
     totalSesiones: 10,
     sesionesConsumidas: 3,
     precio: 200,

@@ -91,7 +91,7 @@
       <!-- Tab nav -->
       <nav class="ficha-tabs">
         <a
-          *ngFor="let tab of workTabs"
+          *ngFor="let tab of workTabs()"
           class="ficha-tab"
           [routerLink]="['./', tab.target]"
           routerLinkActive="active"

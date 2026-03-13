@@ -12,6 +12,7 @@ function makeBono(overrides: Partial<Bono> = {}): Bono {
   return {
     id: 'bono-1',
     clienteId: 'cliente-1',
+    tipoSesion: 'PEDAGOGIA',
     totalSesiones: 10,
     sesionesConsumidas: 3,
     precio: 200,
@@ -125,7 +126,7 @@ describe('BonosService', () => {
 
   describe('createBono()', () => {
     it('hace POST a /bonos', () => {
-      const dto: CreateBonoDto = { clienteId: 'cliente-1', totalSesiones: 10, precio: 300 };
+      const dto: CreateBonoDto = { clienteId: 'cliente-1', tipoSesion: 'PEDAGOGIA' as const, totalSesiones: 10, precio: 300 };
       service.createBono(dto).subscribe();
       const req = httpMock.expectOne(API);
       expect(req.request.method).toBe('POST');
@@ -138,7 +139,7 @@ describe('BonosService', () => {
       httpMock.expectOne(`${API}/cliente/cliente-1`).flush({ data: [existing] });
 
       const nuevo = makeBono({ id: 'b-new' });
-      service.createBono({ clienteId: 'cliente-1', totalSesiones: 10, precio: 300 }).subscribe();
+      service.createBono({ clienteId: 'cliente-1', tipoSesion: 'PEDAGOGIA' as const, totalSesiones: 10, precio: 300 }).subscribe();
       httpMock.expectOne(API).flush({ data: nuevo });
 
       const bonos = service.bonosCliente();

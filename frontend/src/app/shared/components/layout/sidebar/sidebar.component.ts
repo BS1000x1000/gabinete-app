@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, computed } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../../services/auth.service';
@@ -33,18 +33,28 @@ export class SidebarComponent {
   userName     = this.auth.userName;
   userRole     = this.auth.userRole;
 
-  navItems: NavItem[] = [
-    { label: 'Agenda',       icon: 'bi-calendar-week',  route: '/home/agenda'       },
-    { label: 'Clientes',     icon: 'bi-people',          route: '/home/clientes'     },
-    { label: 'Equipo',       icon: 'bi-person-badge',    route: '/home/trabajadores' },
-    { label: 'Ajustes',      icon: 'bi-sliders',         route: '/home/ajustes'      },
-  ];
+  readonly navItems = computed<NavItem[]>(() => {
+    const items: NavItem[] = [
+      { label: 'Agenda',   icon: 'bi-calendar-week', route: '/home/agenda'   },
+      { label: 'Clientes', icon: 'bi-people',         route: '/home/clientes' },
+    ];
+    if (this.auth.isAdmin()) {
+      items.push({ label: 'Equipo', icon: 'bi-person-badge', route: '/home/trabajadores' });
+    }
+    items.push({ label: 'Ajustes', icon: 'bi-sliders', route: '/home/ajustes' });
+    return items;
+  });
 
-  quickActions: QuickAction[] = [
-    { label: 'Nuevo cliente',   icon: 'bi-person-plus',   action: 'nuevo-cliente'   },
-    { label: 'Nuevo registro',  icon: 'bi-pencil-square', action: 'nuevo-registro'  },
-    { label: 'Nueva sesión',    icon: 'bi-calendar-plus', action: 'nueva-sesion'    },
-  ];
+  readonly quickActions = computed<QuickAction[]>(() => {
+    const actions: QuickAction[] = [
+      { label: 'Nuevo cliente', icon: 'bi-person-plus', action: 'nuevo-cliente' },
+    ];
+    if (!this.auth.isRecep()) {
+      actions.push({ label: 'Nuevo registro', icon: 'bi-pencil-square', action: 'nuevo-registro' });
+      actions.push({ label: 'Nueva sesión',   icon: 'bi-calendar-plus', action: 'nueva-sesion'   });
+    }
+    return actions;
+  });
 
   handleQuickAction(action: string): void {
     switch (action) {

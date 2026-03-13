@@ -1,5 +1,30 @@
 <div class="ag-page">
 
+  <!-- ── Selector de terapeuta (solo ADMIN/RECEP) ──────── -->
+  @if (canVerTodo() && trabajadores().length > 0) {
+    <div class="ag-therapist-bar">
+      <button
+        class="ag-therapist-chip"
+        [class.ag-therapist-chip--active]="trabajadorSeleccionado() === null"
+        (click)="seleccionarTerapeuta(null)"
+      >
+        <i class="bi bi-people-fill"></i>
+        <span>Todos</span>
+      </button>
+      @for (t of trabajadores(); track t.id) {
+        <button
+          class="ag-therapist-chip"
+          [class.ag-therapist-chip--active]="trabajadorSeleccionado()?.id === t.id"
+          (click)="seleccionarTerapeuta(t)"
+          [title]="t.nombre + ' ' + t.apellidos"
+        >
+          <span class="ag-therapist-chip__avatar">{{ getTrabajadorIniciales(t) }}</span>
+          <span>{{ t.nombre }}</span>
+        </button>
+      }
+    </div>
+  }
+
   <!-- ── Banner de alertas ──────────────────────────────── -->
   @if (hayAlertas()) {
     <div class="ag-banner">

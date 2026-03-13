@@ -10,7 +10,7 @@
 
   <!-- ── Navegación principal ──────────────── -->
   <nav class="sidebar-nav">
-    @for (item of navItems; track item.route) {
+    @for (item of navItems(); track item.route) {
       <a
         class="sidebar-nav-item"
         [routerLink]="item.route"
@@ -29,7 +29,7 @@
   <!-- ── Acciones rápidas ───────────────────── -->
   <div class="sidebar-actions">
     <p class="sidebar-actions-label">Acciones rápidas</p>
-    @for (action of quickActions; track action.action) {
+    @for (action of quickActions(); track action.action) {
       <button
         class="sidebar-action-btn"
         (click)="handleQuickAction(action.action)"

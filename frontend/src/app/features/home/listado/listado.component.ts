@@ -15,6 +15,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { catchError, EMPTY, Subject, switchMap, takeUntil } from 'rxjs';
 import { ClientesService } from '../../../services/cliente.service';
+import { AuthService } from '../../../services/auth.service';
 
 interface WorkTab {
   label: string;
@@ -31,18 +32,26 @@ interface WorkTab {
 export class ListadoComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly clientesSvc = inject(ClientesService);
+  private readonly auth = inject(AuthService);
   private readonly destroy$ = new Subject<void>();
 
   readonly clienteId = signal<string>('');
 
-  readonly workTabs: WorkTab[] = [
-    { label: 'Perfil',      icon: 'bi-person-vcard',      target: 'perfil'     },
-    { label: 'Sesiones',    icon: 'bi-calendar2-week',    target: 'sesiones'   },
-    { label: 'Bonos',       icon: 'bi-ticket-perforated', target: 'bonos'      },
-    { label: 'Progreso',    icon: 'bi-graph-up',          target: 'progreso'   },
-    { label: 'Terapeutas',  icon: 'bi-people',            target: 'terapeutas' },
-    { label: 'Documentos',  icon: 'bi-file-earmark-text', target: 'informes'   },
-  ];
+  readonly workTabs = computed<WorkTab[]>(() => {
+    const tabs: WorkTab[] = [
+      { label: 'Perfil',     icon: 'bi-person-vcard',      target: 'perfil'     },
+      { label: 'Sesiones',   icon: 'bi-calendar2-week',    target: 'sesiones'   },
+      { label: 'Bonos',      icon: 'bi-ticket-perforated', target: 'bonos'      },
+    ];
+    if (!this.auth.isRecep()) {
+      tabs.push({ label: 'Progreso', icon: 'bi-graph-up', target: 'progreso' });
+    }
+    tabs.push(
+      { label: 'Terapeutas', icon: 'bi-people',            target: 'terapeutas' },
+      { label: 'Documentos', icon: 'bi-file-earmark-text', target: 'informes'   },
+    );
+    return tabs;
+  });
 
   readonly isLoading = signal(true);
   readonly error = signal<string | null>(null);

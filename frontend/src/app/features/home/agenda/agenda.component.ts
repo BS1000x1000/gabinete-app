@@ -20,6 +20,7 @@ import {
 import { SesionesService } from '../../../services/sesiones.service';
 import { SesionAccionesService } from '../../../services/sesiones-acciones.service';
 import { NotificacionesService } from '../../../services/notificaciones.service';
+import { TrabajadorService, Trabajador } from '../../../services/trabajadores.service';
 import {
   CalendarioDiario,
   CalendarioSemanal,
@@ -47,11 +48,29 @@ export class AgendaComponent implements OnInit {
   private sesionesSvc = inject(SesionesService);
   private accionesSvc = inject(SesionAccionesService);
   private notifSvc = inject(NotificacionesService);
+  private trabajadorSvc = inject(TrabajadorService);
   private destroyRef = inject(DestroyRef);
 
   readonly TIPO_SESION_LABELS: any = TIPO_SESION_LABELS;
   readonly ESTADO_SESION_LABELS: any = ESTADO_SESION_LABELS;
   readonly EstadoSesion = EstadoSesion;
+
+  // Selector de terapeuta (solo para ADMIN/RECEP)
+  readonly canVerTodo = computed(() => this.auth.canVerTodo());
+  readonly trabajadores = signal<Trabajador[]>([]);
+  readonly trabajadorSeleccionado = signal<Trabajador | null>(null);
+
+  readonly trabajadorIdParam = computed(() => this.trabajadorSeleccionado()?.id);
+
+  seleccionarTerapeuta(t: Trabajador | null): void {
+    this.trabajadorSeleccionado.set(t);
+    this.loadDia();
+    this.loadSemana();
+  }
+
+  getTrabajadorIniciales(t: Trabajador): string {
+    return `${t.nombre.charAt(0)}${t.apellidos.charAt(0)}`.toUpperCase();
+  }
 
   // Estado principal
   calendarioDiario = signal<CalendarioDiario | null>(null);
@@ -174,6 +193,17 @@ export class AgendaComponent implements OnInit {
   }
 
   ngOnInit() {
+    if (this.canVerTodo()) {
+      this.trabajadorSvc.getTrabajadores()
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe(() => {
+          // Solo terapeutas clínicos en el selector
+          const clinicos = this.trabajadorSvc.trabajadores().filter(
+            t => t.activo && ['ADMIN', 'PEDAGOGO', 'NEURO', 'LOGOPEDA'].includes(t.rol?.codigo ?? '')
+          );
+          this.trabajadores.set(clinicos);
+        });
+    }
     this.loadDia();
     this.loadSemana();
     this.actualizarHoraActual();
@@ -184,7 +214,7 @@ export class AgendaComponent implements OnInit {
   loadDia() {
     this.isLoadingDia.set(true);
     this.sesionesSvc
-      .getCalendarioDiario(this.fechaISO())
+      .getCalendarioDiario(this.fechaISO(), this.trabajadorIdParam())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (cal) => {
@@ -198,7 +228,7 @@ export class AgendaComponent implements OnInit {
   loadSemana() {
     this.isLoadingSemana.set(true);
     this.sesionesSvc
-      .getCalendarioSemanal(this.fechaISO())
+      .getCalendarioSemanal(this.fechaISO(), this.trabajadorIdParam())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (cal) => {

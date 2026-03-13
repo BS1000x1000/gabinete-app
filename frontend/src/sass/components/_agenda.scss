@@ -11,6 +11,78 @@
   min-height: 100%;
 }
 
+// ── Selector de terapeuta (ADMIN/RECEP) ──────────────────────
+
+.ag-therapist-bar {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: 8px $spacing-lg;
+  background: $white;
+  border-bottom: 1px solid $border-color-light;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  overflow-x: auto;
+
+  &::-webkit-scrollbar { height: 0; }
+}
+
+.ag-therapist-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: $border-radius-full;
+  border: 1.5px solid $border-color;
+  background: $white;
+  color: $gray-600;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: $transition-fast;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  i { font-size: 0.7rem; }
+
+  &__avatar {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: $primary-light;
+    color: $primary;
+    font-size: 0.58rem;
+    font-weight: $font-weight-bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: $transition-fast;
+  }
+
+  &:hover:not(&--active) {
+    border-color: $primary;
+    color: $primary;
+    background: $primary-ultra-light;
+
+    .ag-therapist-chip__avatar {
+      background: $primary;
+      color: $white;
+    }
+  }
+
+  &--active {
+    border-color: $primary;
+    background: $primary;
+    color: $white;
+
+    .ag-therapist-chip__avatar {
+      background: rgba($white, 0.25);
+      color: $white;
+    }
+  }
+}
+
 // ── Banner de alertas ────────────────────────────────────────
 
 .ag-banner {
