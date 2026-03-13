@@ -114,7 +114,10 @@ export class InformesService {
     });
   }
 
-  async findByCliente(clienteId: string) {
+  async findByCliente(
+    clienteId: string,
+    user?: { userId: string; rol: string },
+  ) {
     this.logger.log(`Obteniendo informes del cliente: ${clienteId}`);
 
     const cliente = await this.prisma.cliente.findUnique({
@@ -126,8 +129,16 @@ export class InformesService {
       );
     }
 
+    const where: any = { clienteId };
+
+    if (user?.rol === 'RECEP') {
+      where.estado = EstadoInforme.FINALIZADO;
+    } else if (user && user.rol !== 'ADMIN') {
+      where.trabajadorId = user.userId;
+    }
+
     return this.prisma.informe.findMany({
-      where: { clienteId },
+      where,
       include: informeInclude,
       orderBy: { createdAt: 'desc' },
     });

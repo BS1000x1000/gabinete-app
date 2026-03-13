@@ -15,9 +15,13 @@ import {
 import { FichajeService } from './fichaje.service';
 import { CreateRegistroDiarioDto } from './dto/create-registro.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/roles/roles.guard';
+import { Roles } from 'src/roles/roles.decorator';
+import { ROLES_CLINICOS } from 'src/roles/roles.constants';
 
 @Controller('registros')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(...ROLES_CLINICOS)
 export class FichajeController {
   private readonly logger = new Logger(FichajeController.name);
 

@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotificacionesController } from './notificaciones.controller';
 import { NotificacionesService } from './notificaciones.service';
 import { MotorReglasService } from './motor-reglas.service';
+import { NotificacionesSseService } from './notificaciones-sse.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 // ── Mock helpers ─────────────────────────────────────────────────────────────
@@ -47,6 +48,7 @@ describe('NotificacionesController', () => {
       providers: [
         { provide: NotificacionesService, useValue: service },
         { provide: MotorReglasService, useValue: motor },
+        { provide: NotificacionesSseService, useValue: { sendToUser: jest.fn() } },
       ],
     })
       .overrideGuard(JwtAuthGuard)

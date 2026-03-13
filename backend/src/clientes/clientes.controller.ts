@@ -21,6 +21,8 @@ import { PaginationDto } from './dto/pagination.dto';
 import { TipoSesion } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/roles/roles.guard';
+import { Roles } from 'src/roles/roles.decorator';
+import { ROLES_CLINICOS } from 'src/roles/roles.constants';
 
 @Controller('clientes')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -127,6 +129,7 @@ export class ClientesController {
    * POST /api/clientes/:id/objetivos-generales
    */
   @Post(':id/objetivos-generales')
+  @Roles(...ROLES_CLINICOS)
   @HttpCode(HttpStatus.CREATED)
   async asignarObjetivosGenerales(
     @Param('id') id: string,
@@ -238,6 +241,7 @@ export class ClientesController {
 
   // ── SANITARIO ─────────────────────────────────────────────
   @Patch(':id/sanitario')
+  @Roles(...ROLES_CLINICOS)
   async updateSanitario(@Param('id') id: string, @Body() body: any) {
     this.logger.log(`🏥 PATCH /api/clientes/${id}/sanitario`);
     return this.clientesService.updateSanitario(id, body);
@@ -254,6 +258,7 @@ export class ClientesController {
    * DELETE /api/clientes/:id/objetivos-generales/:objetivoId
    */
   @Delete(':id/objetivos-generales/:objetivoId')
+  @Roles(...ROLES_CLINICOS)
   @HttpCode(HttpStatus.OK)
   async desasignarObjetivoGeneral(
     @Param('id') id: string,

@@ -4,8 +4,8 @@ import { DashboardService } from './dashboard.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 // ── Mock helpers ─────────────────────────────────────────────────────────────
-const mockReq = (userId = 'trabajador-1', nombre = 'Laura') => ({
-  user: { userId, nombre },
+const mockReq = (userId = 'trabajador-1', nombre = 'Laura', rol = 'PEDAGOGO') => ({
+  user: { userId, nombre, rol },
 });
 
 const makeDashboardServiceMock = () => ({
@@ -129,14 +129,30 @@ describe('DashboardController', () => {
 
   // ── getResumenCompleto ────────────────────────────────────────────────────
   describe('getResumenCompleto()', () => {
-    it('extrae userId y devuelve resumen del dashboard', async () => {
+    it('Terapeuta: pasa su userId → estadísticas propias', async () => {
       const expected = { estadisticas: {}, sesionesHoy: [] };
       service.getResumenCompleto.mockResolvedValue(expected);
 
-      const result = await controller.getResumenCompleto(mockReq());
+      const result = await controller.getResumenCompleto(mockReq('trabajador-1', 'Laura', 'PEDAGOGO'));
 
       expect(service.getResumenCompleto).toHaveBeenCalledWith('trabajador-1');
       expect(result).toEqual(expected);
+    });
+
+    it('ADMIN: pasa undefined → estadísticas globales', async () => {
+      service.getResumenCompleto.mockResolvedValue({});
+
+      await controller.getResumenCompleto(mockReq('admin-1', 'Admin', 'ADMIN'));
+
+      expect(service.getResumenCompleto).toHaveBeenCalledWith(undefined);
+    });
+
+    it('RECEP: pasa undefined → estadísticas globales', async () => {
+      service.getResumenCompleto.mockResolvedValue({});
+
+      await controller.getResumenCompleto(mockReq('recep-1', 'Recep', 'RECEP'));
+
+      expect(service.getResumenCompleto).toHaveBeenCalledWith(undefined);
     });
   });
 

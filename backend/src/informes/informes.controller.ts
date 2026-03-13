@@ -15,12 +15,15 @@ import {
 } from '@nestjs/common';
 import type { Response } from 'express'; // ← Import correcto
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../roles/roles.guard';
+import { Roles } from '../roles/roles.decorator';
+import { ROLES_CLINICOS } from '../roles/roles.constants';
 import { CreateInformeDto, UpdateInformeDto } from './dto/informe.dto';
 import { InformesService } from './informes.service';
 import { InformesPdfService } from './informes-pdf.service';
 
 @Controller('informes')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class InformesController {
   private readonly logger = new Logger(InformesController.name);
 
@@ -40,6 +43,7 @@ export class InformesController {
   }
 
   @Post()
+  @Roles(...ROLES_CLINICOS)
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() createDto: CreateInformeDto, @Req() req: any) {
     const trabajadorId = req.user.userId;
@@ -48,9 +52,9 @@ export class InformesController {
   }
 
   @Get('cliente/:clienteId')
-  async findByCliente(@Param('clienteId') clienteId: string) {
+  async findByCliente(@Param('clienteId') clienteId: string, @Req() req: any) {
     this.logger.log(`GET /informes/cliente/${clienteId}`);
-    return this.informesService.findByCliente(clienteId);
+    return this.informesService.findByCliente(clienteId, req.user);
   }
 
   @Get('mis-informes')
@@ -94,18 +98,21 @@ export class InformesController {
   }
 
   @Patch(':id')
+  @Roles(...ROLES_CLINICOS)
   async update(@Param('id') id: string, @Body() updateDto: UpdateInformeDto) {
     this.logger.log(`PATCH /informes/${id}`);
     return this.informesService.update(id, updateDto);
   }
 
   @Patch(':id/finalizar')
+  @Roles(...ROLES_CLINICOS)
   async finalizar(@Param('id') id: string) {
     this.logger.log(`PATCH /informes/${id}/finalizar`);
     return this.informesService.finalizar(id);
   }
 
   @Delete(':id')
+  @Roles(...ROLES_CLINICOS)
   @HttpCode(HttpStatus.OK)
   async remove(@Param('id') id: string) {
     this.logger.warn(`DELETE /informes/${id}`);
