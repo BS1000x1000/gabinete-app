@@ -1,0 +1,215 @@
+<div class="perfil-tab" *ngIf="!isLoading()">
+
+  <!-- Mensaje de éxito -->
+  <div *ngIf="exito()" class="trab-alert-exito mb-3">
+    <i class="bi bi-check-circle-fill me-2"></i>{{ exito() }}
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="error()" class="alert alert-danger py-2 mb-3">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error() }}
+    <button type="button" class="btn-close float-end" (click)="error.set(null)"></button>
+  </div>
+
+  <ng-container *ngIf="trabajador()">
+
+    <!-- ══ MODO LECTURA ══ -->
+    <ng-container *ngIf="!editando()">
+
+      <!-- Cabecera de sección con botón editar -->
+      <div class="trab-section-hdr mb-3">
+        <span class="trab-section-title">
+          <i class="bi bi-person-badge me-2"></i>Datos del profesional
+        </span>
+        <button
+          *ngIf="auth.isAdmin()"
+          class="perfil-edit-btn"
+          type="button"
+          (click)="abrirEdicion()"
+        >
+          <i class="bi bi-pencil"></i> Editar
+        </button>
+      </div>
+
+      <div class="perfil-grid">
+
+        <!-- Card — Datos personales -->
+        <div class="perfil-card">
+          <div class="perfil-card-hdr">
+            <span class="perfil-card-icon" style="background: #ede9fc; color: #7c6fd6;">
+              <i class="bi bi-person-fill"></i>
+            </span>
+            <h3 class="perfil-card-title">Datos personales</h3>
+          </div>
+          <div class="perfil-card-body">
+            <div class="dato-row">
+              <span class="dato-label">Nombre</span>
+              <span class="dato-valor">{{ trabajador()?.nombre }} {{ trabajador()?.apellidos }}</span>
+            </div>
+            <div class="dato-row">
+              <span class="dato-label">Usuario</span>
+              <span class="dato-valor">{{ trabajador()?.username || '—' }}</span>
+            </div>
+            <div class="dato-row">
+              <span class="dato-label">Email</span>
+              <span class="dato-valor">{{ trabajador()?.email || '—' }}</span>
+            </div>
+            <div class="dato-row">
+              <span class="dato-label">Teléfono</span>
+              <span class="dato-valor">{{ trabajador()?.telefono || '—' }}</span>
+            </div>
+            <div class="dato-row">
+              <span class="dato-label">Estado</span>
+              <span class="dato-valor">
+                <span class="mini-badge" [class.badge-yes]="trabajador()?.activo" [class.badge-no]="!trabajador()?.activo">
+                  {{ trabajador()?.activo ? 'Activo' : 'Inactivo' }}
+                </span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card — Datos profesionales -->
+        <div class="perfil-card">
+          <div class="perfil-card-hdr">
+            <span class="perfil-card-icon" style="background: #dbeafe; color: #3b82f6;">
+              <i class="bi bi-briefcase-fill"></i>
+            </span>
+            <h3 class="perfil-card-title">Datos profesionales</h3>
+          </div>
+          <div class="perfil-card-body">
+            <div class="dato-row">
+              <span class="dato-label">Rol</span>
+              <span class="dato-valor">{{ trabajador()?.rol?.nombreRol || '—' }}</span>
+            </div>
+            <div class="dato-row">
+              <span class="dato-label">Especialidad</span>
+              <span class="dato-valor">{{ trabajador()?.especialidad || '—' }}</span>
+            </div>
+            <div class="dato-row">
+              <span class="dato-label">Nº colegiado</span>
+              <span class="dato-valor">{{ trabajador()?.numeroColegiado || '—' }}</span>
+            </div>
+            <div class="dato-row">
+              <span class="dato-label">Incorporación</span>
+              <span class="dato-valor">
+                {{ trabajador()?.fechaContratacion ? (trabajador()!.fechaContratacion | date:'dd/MM/yyyy') : '—' }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </ng-container>
+
+    <!-- ══ MODO EDICIÓN ══ -->
+    <ng-container *ngIf="editando()">
+
+      <div class="trab-section-hdr mb-3">
+        <span class="trab-section-title">
+          <i class="bi bi-pencil-square me-2"></i>Editar perfil
+        </span>
+      </div>
+
+      <div class="perfil-card trab-edit-card">
+        <div class="perfil-card-body">
+          <div class="row g-3">
+
+            <div class="col-sm-6">
+              <label class="form-label">Nombre <span class="text-danger">*</span></label>
+              <input
+                type="text"
+                class="form-control form-control-sm"
+                [value]="form().nombre"
+                (input)="updateField('nombre', $any($event.target).value)"
+              />
+            </div>
+
+            <div class="col-sm-6">
+              <label class="form-label">Apellidos <span class="text-danger">*</span></label>
+              <input
+                type="text"
+                class="form-control form-control-sm"
+                [value]="form().apellidos"
+                (input)="updateField('apellidos', $any($event.target).value)"
+              />
+            </div>
+
+            <div class="col-sm-6">
+              <label class="form-label">Email <span class="text-danger">*</span></label>
+              <input
+                type="email"
+                class="form-control form-control-sm"
+                [value]="form().email"
+                (input)="updateField('email', $any($event.target).value)"
+              />
+            </div>
+
+            <div class="col-sm-6">
+              <label class="form-label">Teléfono</label>
+              <input
+                type="tel"
+                class="form-control form-control-sm"
+                [value]="form().telefono"
+                (input)="updateField('telefono', $any($event.target).value)"
+              />
+            </div>
+
+            <div class="col-sm-6">
+              <label class="form-label">Especialidad</label>
+              <input
+                type="text"
+                class="form-control form-control-sm"
+                [value]="form().especialidad"
+                (input)="updateField('especialidad', $any($event.target).value)"
+              />
+            </div>
+
+            <div class="col-sm-6">
+              <label class="form-label">Nº colegiado</label>
+              <input
+                type="text"
+                class="form-control form-control-sm"
+                [value]="form().numeroColegiado"
+                (input)="updateField('numeroColegiado', $any($event.target).value)"
+              />
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Footer del form -->
+        <div class="trab-edit-footer">
+          <button
+            class="btn btn-sm btn-primary"
+            type="button"
+            [disabled]="guardando()"
+            (click)="guardar()"
+          >
+            <span *ngIf="guardando()" class="spinner-border spinner-border-sm me-1"></span>
+            <i *ngIf="!guardando()" class="bi bi-check-lg me-1"></i>
+            {{ guardando() ? 'Guardando...' : 'Guardar cambios' }}
+          </button>
+          <button
+            class="btn btn-sm btn-outline-secondary ms-2"
+            type="button"
+            [disabled]="guardando()"
+            (click)="cancelarEdicion()"
+          >
+            Cancelar
+          </button>
+        </div>
+
+      </div>
+
+    </ng-container>
+
+  </ng-container>
+
+</div>
+
+<!-- Loader interno -->
+<div *ngIf="isLoading()" class="d-flex justify-content-center py-5">
+  <div class="spinner-border text-primary" role="status"></div>
+</div>

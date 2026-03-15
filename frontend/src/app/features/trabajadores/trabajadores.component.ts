@@ -1,5 +1,6 @@
 import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import {
   TrabajadorService,
   Trabajador,
@@ -30,6 +31,7 @@ type FiltroEstado = 'activos' | 'inactivos' | 'todos';
 })
 export class TrabajadoresComponent implements OnInit {
   private trabajadorSvc = inject(TrabajadorService);
+  private router = inject(Router);
 
   // Estado de carga
   isLoading = signal(false);
@@ -273,6 +275,12 @@ export class TrabajadoresComponent implements OnInit {
         );
       },
     });
+  }
+
+  // ─── Navegación ────────────────────────────────────────────
+
+  verFicha(t: Trabajador) {
+    this.router.navigate(['/home/trabajadores', t.id]);
   }
 
   // ─── Filtros ───────────────────────────────────────────────

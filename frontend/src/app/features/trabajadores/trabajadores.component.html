@@ -85,7 +85,7 @@
     <!-- Grid de cards -->
     <div *ngIf="trabajadoresFiltrados().length > 0" class="trab-grid">
       @for (t of trabajadoresFiltrados(); track t.id) {
-        <div class="trab-card" [class.trab-card--inactivo]="!t.activo">
+        <div class="trab-card" [class.trab-card--inactivo]="!t.activo" (click)="verFicha(t)" style="cursor:pointer;">
 
           <!-- Cabecera de la card -->
           <div class="trab-card-header">

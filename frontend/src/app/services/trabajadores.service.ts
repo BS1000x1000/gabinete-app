@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { tap, catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { environment } from '../../environments/environment.development';
+import { TipoSesion } from '../interface/sesion.interface';
 
 export interface Trabajador {
   id: string;
@@ -51,6 +52,15 @@ export interface UpdateTrabajadorPayload {
   rolId?: string;
 }
 
+export interface ClienteAsignado {
+  id: string;
+  nombre: string;
+  apellidos: string;
+  tipoTerapia: TipoSesion;
+  activo: boolean;
+  horarios?: { diaSemana: string; horaInicio: string; horaFin: string }[];
+}
+
 interface WrappedResponse<T> {
   success: boolean;
   data: T;
@@ -66,6 +76,7 @@ export class TrabajadorService {
   private rolesApi = `${environment.apiUrl}/roles`;
 
   trabajadores = signal<Trabajador[]>([]);
+  currentTrabajador = signal<Trabajador | null>(null);
 
   getTrabajadores(incluirInactivos = false) {
     const params = incluirInactivos ? '?incluirInactivos=true' : '';
@@ -105,5 +116,27 @@ export class TrabajadorService {
 
   reactivarTrabajador(id: string) {
     return this.http.patch<WrappedResponse<Trabajador>>(`${this.api}/${id}/reactivar`, {});
+  }
+
+  getTrabajador(id: string) {
+    return this.http.get<WrappedResponse<Trabajador>>(`${this.api}/${id}`);
+  }
+
+  getClientesAsignados(id: string) {
+    return this.http.get<WrappedResponse<ClienteAsignado[]>>(`${this.api}/${id}/clientes`);
+  }
+
+  cambiarPassword(id: string, passwordActual: string, passwordNueva: string) {
+    return this.http.patch<WrappedResponse<{ message: string }>>(`${this.api}/${id}/cambiar-password`, {
+      passwordActual,
+      passwordNueva,
+    });
+  }
+
+  asignarCliente(trabajadorId: string, clienteId: string, tipoTerapia: TipoSesion) {
+    return this.http.post<WrappedResponse<any>>(
+      `${this.api}/${trabajadorId}/clientes/${clienteId}`,
+      { tipoTerapia },
+    );
   }
 }

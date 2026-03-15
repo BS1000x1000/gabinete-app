@@ -1,0 +1,361 @@
+// ========================================
+// TRABAJADOR FICHA — Individual profile
+// ========================================
+
+// ── Tab nav override — 3 columns ─────────
+// .ficha-tabs has repeat(5,1fr) — override for 3-tab layout
+.ficha-tabs.ficha-tabs-auto {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+// ── Breadcrumb / back nav ─────────────────
+.ficha-breadcrumb {
+  display: flex;
+  align-items: center;
+  margin-bottom: -$spacing-xs;
+}
+
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: $gray-500;
+  text-decoration: none;
+  padding: 5px 10px;
+  border-radius: $border-radius-sm;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+
+  i { font-size: 0.8rem; }
+
+  &:hover {
+    color: $primary;
+    border-color: $primary-light;
+    background: $primary-ultra-light;
+  }
+}
+
+// ── Header extras ─────────────────────────
+.trab-rol-dot {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid white;
+  background: $primary;
+
+  // Rol color overrides
+  &.rol-admin      { background: #6366f1; }
+  &.rol-logopeda   { background: #0ea5e9; }
+  &.rol-neuro      { background: #8b5cf6; }
+  &.rol-to         { background: #f59e0b; }
+  &.rol-pedagogia  { background: #10b981; }
+  &.rol-recepcion  { background: $secondary; }
+  &.rol-terapeuta  { background: $primary; }
+  &.rol-default    { background: $gray-400; }
+}
+
+// Rol fchip color variants (used in header chips)
+.fchip.fchip-rol {
+  font-weight: 600;
+
+  &.rol-admin      { background: #ede9fe; color: #6d28d9; border-color: #c4b5fd; }
+  &.rol-logopeda   { background: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
+  &.rol-neuro      { background: #f3e8ff; color: #7e22ce; border-color: #d8b4fe; }
+  &.rol-to         { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+  &.rol-pedagogia  { background: #d1fae5; color: #065f46; border-color: #6ee7b7; }
+  &.rol-recepcion  { background: #dbeafe; color: #1e40af; border-color: #93c5fd; }
+  &.rol-terapeuta  { background: $primary-ultra-light; color: darken($primary, 10%); border-color: $primary-light; }
+  &.rol-default    { background: $gray-100; color: $gray-600; }
+}
+
+// KPI chips — subtle highlight vs regular fchips
+.fchip.fchip-kpi {
+  background: $primary-ultra-light;
+  color: darken($primary, 5%);
+  border-color: $primary-light;
+  font-weight: 600;
+
+  i { color: $primary; }
+}
+
+// ── Section headers (inside tabs) ─────────
+.trab-section-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: $spacing-sm;
+  border-bottom: 1px solid $gray-100;
+}
+
+.trab-section-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: $gray-600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+
+  i { color: $primary; }
+}
+
+// ── Edit card / form ──────────────────────
+.trab-edit-card {
+  border-color: $primary-light;
+
+  .form-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: $gray-600;
+    margin-bottom: 4px;
+  }
+
+  .form-control {
+    font-size: 0.875rem;
+    border-color: $border-color;
+    border-radius: $border-radius;
+
+    &:focus {
+      border-color: $primary;
+      box-shadow: 0 0 0 3px rgba($primary, 0.1);
+    }
+  }
+}
+
+.trab-edit-footer {
+  padding: $spacing-sm $spacing-md;
+  border-top: 1px solid $gray-100;
+  background: $gray-50;
+  border-radius: 0 0 $border-radius-lg $border-radius-lg;
+}
+
+// ── Alert success ─────────────────────────
+.trab-alert-exito {
+  display: flex;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: $border-radius;
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #6ee7b7;
+  font-size: 0.82rem;
+  font-weight: 500;
+
+  i { color: $success; font-size: 0.9rem; }
+}
+
+// ── Clientes tab ──────────────────────────
+.trab-list-group-label {
+  font-size: 0.67rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: $gray-400;
+  margin-bottom: $spacing-xs;
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+}
+
+.trab-clientes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.trab-cliente-row {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: 10px $spacing-sm;
+  border-radius: $border-radius;
+  border: 1px solid $border-color;
+  background: white;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  text-decoration: none;
+
+  &:hover {
+    border-color: $primary-light;
+    background: $primary-ultra-light;
+
+    .trab-row-chevron { opacity: 1; transform: translateX(2px); }
+  }
+
+  &.trab-cliente-row-inactivo {
+    opacity: 0.65;
+    &:hover { opacity: 0.85; }
+  }
+}
+
+.trab-cliente-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, $primary 0%, $primary-dark 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  flex-shrink: 0;
+
+  &.trab-cliente-avatar-inactivo {
+    background: $gray-300;
+  }
+}
+
+.trab-cliente-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.trab-cliente-nombre {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: $gray-800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trab-cliente-horario {
+  font-size: 0.7rem;
+  color: $gray-500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  i { font-size: 0.65rem; }
+}
+
+.trab-row-chevron {
+  font-size: 0.7rem;
+  color: $gray-400;
+  flex-shrink: 0;
+  opacity: 0.4;
+  transition: all 0.12s ease;
+}
+
+// Therapy type badges
+.terapia-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  flex-shrink: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+
+  &.badge-logopeda   { background: #e0f2fe; color: #0369a1; }
+  &.badge-neuro      { background: #f3e8ff; color: #7e22ce; }
+  &.badge-to         { background: #fef3c7; color: #92400e; }
+  &.badge-pedagogo   { background: #d1fae5; color: #065f46; }
+  &.badge-psico      { background: #fce7f3; color: #9d174d; }
+  &.badge-default    { background: $gray-100; color: $gray-600; }
+}
+
+// ── Assign-client modal list ──────────────
+.asignar-cliente-list {
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid $border-color;
+  border-radius: $border-radius;
+  background: white;
+}
+
+.asignar-cliente-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: $spacing-md;
+  color: $gray-400;
+  font-size: 0.8rem;
+
+  i { font-size: 1.1rem; }
+}
+
+.asignar-cliente-row {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: 8px 10px;
+  cursor: pointer;
+  border-bottom: 1px solid $gray-100;
+  transition: background 0.1s ease;
+
+  &:last-child { border-bottom: none; }
+
+  &:hover { background: $primary-ultra-light; }
+
+  &.selected {
+    background: $primary-light;
+    .asignar-cliente-nombre { color: darken($primary, 10%); font-weight: 600; }
+  }
+}
+
+.asignar-cliente-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, $primary 0%, $primary-dark 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.asignar-cliente-nombre {
+  flex: 1;
+  font-size: 0.82rem;
+  color: $gray-700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.asignar-check {
+  color: $primary;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+// ── Empty state ───────────────────────────
+.trab-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-2xl $spacing-md;
+  text-align: center;
+  color: $gray-400;
+
+  i {
+    font-size: 2.5rem;
+    margin-bottom: $spacing-sm;
+    opacity: 0.4;
+  }
+
+  p {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: $gray-500;
+    margin: 0 0 4px;
+  }
+
+  span {
+    font-size: 0.78rem;
+  }
+}

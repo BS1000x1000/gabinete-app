@@ -11,7 +11,9 @@ import {
   HttpStatus,
   Logger,
   NotFoundException,
+  ForbiddenException,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import { TrabajadorService } from './trabajador.service';
 import { CreateTrabajadorDto, UpdateTrabajadorDto } from './dto/trabajador.dto';
@@ -19,6 +21,7 @@ import { TipoSesion } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../roles/roles.guard';
 import { Roles } from '../roles/roles.decorator';
+import { ROLES_GESTION } from '../roles/roles.constants';
 
 @Controller('trabajadores')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -49,20 +52,24 @@ export class TrabajadorController {
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string, @Req() req: any) {
     this.logger.log(`Buscando trabajador con ID: ${id}`);
+    if (!ROLES_GESTION.includes(req.user?.rol) && req.user?.userId !== id) {
+      throw new ForbiddenException('No tienes permiso para ver este perfil');
+    }
     const trabajador = await this.trabajadorService.findOne(id);
-    
     if (!trabajador) {
       throw new NotFoundException(`Trabajador con ID ${id} no encontrado`);
     }
-    
     return trabajador;
   }
 
   @Get(':id/clientes')
-  async getClientesAsignados(@Param('id') id: string) {
+  async getClientesAsignados(@Param('id') id: string, @Req() req: any) {
     this.logger.log(`Obteniendo clientes asignados al trabajador: ${id}`);
+    if (!ROLES_GESTION.includes(req.user?.rol) && req.user?.userId !== id) {
+      throw new ForbiddenException('No tienes permiso para ver esta información');
+    }
     return this.trabajadorService.getClientesAsignados(id);
   }
 

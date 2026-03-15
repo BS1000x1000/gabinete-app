@@ -1,0 +1,91 @@
+<div class="perfil-tab">
+
+  <!-- Sin permiso -->
+  <div *ngIf="!tieneAcceso()" class="trab-empty-state">
+    <i class="bi bi-shield-x"></i>
+    <p>Sin acceso</p>
+    <span>No tienes permiso para gestionar las credenciales de este profesional.</span>
+  </div>
+
+  <ng-container *ngIf="tieneAcceso()">
+
+    <div class="trab-section-hdr mb-3">
+      <span class="trab-section-title">
+        <i class="bi bi-shield-lock me-2"></i>Cambiar contraseña
+      </span>
+    </div>
+
+    <!-- Éxito -->
+    <div *ngIf="exito()" class="trab-alert-exito mb-3">
+      <i class="bi bi-check-circle-fill me-2"></i>{{ exito() }}
+    </div>
+
+    <!-- Error -->
+    <div *ngIf="error()" class="alert alert-danger py-2 mb-3">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error() }}
+      <button type="button" class="btn-close float-end" (click)="error.set(null)"></button>
+    </div>
+
+    <div class="perfil-card trab-edit-card" style="max-width: 480px;">
+      <div class="perfil-card-body">
+
+        <div class="mb-3">
+          <label class="form-label">Contraseña actual <span class="text-danger">*</span></label>
+          <input
+            type="password"
+            class="form-control form-control-sm"
+            [value]="form().passwordActual"
+            (input)="updateField('passwordActual', $any($event.target).value)"
+            autocomplete="current-password"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Nueva contraseña <span class="text-danger">*</span></label>
+          <input
+            type="password"
+            class="form-control form-control-sm"
+            [value]="form().passwordNueva"
+            (input)="updateField('passwordNueva', $any($event.target).value)"
+            autocomplete="new-password"
+          />
+          <div class="form-text">Mínimo 8 caracteres, incluye mayúsculas, minúsculas y un número.</div>
+        </div>
+
+        <div class="mb-1">
+          <label class="form-label">Confirmar nueva contraseña <span class="text-danger">*</span></label>
+          <input
+            type="password"
+            class="form-control form-control-sm"
+            [class.is-invalid]="form().passwordConfirmar && form().passwordNueva !== form().passwordConfirmar"
+            [value]="form().passwordConfirmar"
+            (input)="updateField('passwordConfirmar', $any($event.target).value)"
+            autocomplete="new-password"
+          />
+          <div
+            class="invalid-feedback"
+            *ngIf="form().passwordConfirmar && form().passwordNueva !== form().passwordConfirmar"
+          >
+            Las contraseñas no coinciden.
+          </div>
+        </div>
+
+      </div>
+
+      <div class="trab-edit-footer">
+        <button
+          class="btn btn-sm btn-primary"
+          type="button"
+          [disabled]="guardando()"
+          (click)="guardar()"
+        >
+          <span *ngIf="guardando()" class="spinner-border spinner-border-sm me-1"></span>
+          <i *ngIf="!guardando()" class="bi bi-lock me-1"></i>
+          {{ guardando() ? 'Guardando...' : 'Cambiar contraseña' }}
+        </button>
+      </div>
+    </div>
+
+  </ng-container>
+
+</div>
