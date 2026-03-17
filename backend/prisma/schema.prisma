@@ -271,6 +271,8 @@ model Informe {
   // Campo legado — compatibilidad con datos existentes
   contenido String? @db.Text
 
+  enviadoFamiliaAt DateTime? @map("enviado_familia_at")
+
   createdAt DateTime @default(now()) @map("fecha_creacion")
   updatedAt DateTime @updatedAt @map("ultima_actualizacion")
 
@@ -287,9 +289,10 @@ model Informe {
 // ============================================================
 
 model RegistroDiario {
-  id            String   @id @default(uuid())
-  fechaRegistro DateTime @default(now()) @map("fecha_registro")
-  contenido     String   @db.Text
+  id                  String   @id @default(uuid())
+  fechaRegistro       DateTime @default(now()) @map("fecha_registro")
+  contenido           String   @db.Text
+  compartirConFamilia Boolean  @default(true) @map("compartir_con_familia")
 
   clienteId    String     @map("id_cliente")
   cliente      Cliente    @relation(fields: [clienteId], references: [id])
@@ -486,11 +489,13 @@ enum EstadoInforme {
   BORRADOR
   REVISION
   FINALIZADO
+  ENVIADO
 }
 
 enum TipoInforme {
   INICIAL
   SEGUIMIENTO
+  REGISTROS
 }
 
 enum EstadoObjetivo {

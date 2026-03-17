@@ -15,7 +15,7 @@ export default [
       { path: 'estadisticas', loadComponent: () => import('./estadisticas/estadisticas.component').then(m => m.EstadisticasComponent) },
       { path: 'trabajadores',loadComponent: () => import('../trabajadores/trabajadores.component'), canActivate: [roleGuard(['ADMIN', 'RECEP'])] },
       { path: 'trabajadores/:id', loadChildren: () => import('../trabajadores/ficha/trabajador-ficha.routes') },
-      { path: 'ajustes',    loadComponent: () => import('../ajustes/ajustes.component').then(m => m.AjustesComponent) },
+      { path: 'ajustes',    redirectTo: 'agenda', pathMatch: 'full' },
     ]
   }
 ] as Route[];

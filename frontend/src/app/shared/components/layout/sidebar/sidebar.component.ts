@@ -42,11 +42,8 @@ export class SidebarComponent {
     if (this.auth.isAdmin() || this.auth.isRecep()) {
       items.push({ label: 'Equipo', icon: 'bi-person-badge', route: '/home/trabajadores' });
     }
-    if (this.auth.isClinico()) {
-      const id = this.auth.currentTrabajadorId();
-      if (id) items.push({ label: 'Mi perfil', icon: 'bi-person-circle', route: `/home/trabajadores/${id}` });
-    }
-    items.push({ label: 'Ajustes', icon: 'bi-sliders', route: '/home/ajustes' });
+    const id = this.auth.currentTrabajadorId();
+    if (id) items.push({ label: 'Mi perfil', icon: 'bi-person-circle', route: `/home/trabajadores/${id}` });
     return items;
   });
 

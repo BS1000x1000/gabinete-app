@@ -8,6 +8,7 @@ import {
   AbstractControl, ValidationErrors
 } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
+import { computeStrength } from '../../shared/utils/password-strength.utils';
 
 type State = 'idle' | 'loading' | 'success' | 'error' | 'no-token';
 
@@ -15,19 +16,6 @@ function confirmMatchValidator(group: AbstractControl): ValidationErrors | null 
   const a = group.get('newPassword')?.value;
   const b = group.get('confirmPassword')?.value;
   return a === b ? null : { mismatch: true };
-}
-
-function computeStrength(pwd: string): { level: number; label: string; color: string } {
-  if (!pwd) return { level: 0, label: '', color: '' };
-  let score = 0;
-  if (pwd.length >= 8)          score++;
-  if (/[A-Z]/.test(pwd))        score++;
-  if (/[0-9]/.test(pwd))        score++;
-  if (pwd.length >= 12)         score++;
-  if (score <= 1) return { level: 1, label: 'Debil',   color: '#ef4444' };
-  if (score === 2) return { level: 2, label: 'Regular', color: '#f59e0b' };
-  if (score === 3) return { level: 3, label: 'Buena',   color: '#3b82f6' };
-  return                        { level: 4, label: 'Fuerte',  color: '#10b981' };
 }
 
 @Component({

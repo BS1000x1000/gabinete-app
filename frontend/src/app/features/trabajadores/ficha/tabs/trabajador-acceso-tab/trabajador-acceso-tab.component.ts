@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { TrabajadorService } from '../../../../../services/trabajadores.service';
 import { AuthService } from '../../../../../services/auth.service';
+import { computeStrength } from '../../../../../shared/utils/password-strength.utils';
 
 interface PwdForm {
   passwordActual: string;
@@ -21,11 +22,11 @@ export class TrabajadorAccesoTabComponent implements OnInit, OnDestroy {
   private readonly trabajadorSvc = inject(TrabajadorService);
   readonly auth = inject(AuthService);
 
-  readonly trabajadorId = signal<string>('');
+  private trabajadorId = '';
   private exitoTimeout: ReturnType<typeof setTimeout> | null = null;
 
   readonly tieneAcceso = computed(() =>
-    this.auth.canVerTodo() || this.auth.currentTrabajadorId() === this.trabajadorId()
+    this.auth.canVerTodo() || this.auth.currentTrabajadorId() === this.trabajadorId
   );
 
   readonly form = signal<PwdForm>({
@@ -34,13 +35,21 @@ export class TrabajadorAccesoTabComponent implements OnInit, OnDestroy {
     passwordConfirmar: '',
   });
 
-  readonly guardando = signal(false);
-  readonly error     = signal<string | null>(null);
-  readonly exito     = signal<string | null>(null);
+  readonly guardando    = signal(false);
+  readonly error        = signal<string | null>(null);
+  readonly exito        = signal<string | null>(null);
+  readonly hideActual   = signal(true);
+  readonly hideNueva    = signal(true);
+  readonly hideConfirmar = signal(true);
+
+  readonly strength      = computed(() => computeStrength(this.form().passwordNueva));
+  readonly passwordsMatch = computed(() => {
+    const f = this.form();
+    return !!f.passwordConfirmar && f.passwordNueva === f.passwordConfirmar;
+  });
 
   ngOnInit(): void {
-    const id = this.route.parent?.snapshot.paramMap.get('id') ?? '';
-    this.trabajadorId.set(id);
+    this.trabajadorId = this.route.parent?.snapshot.paramMap.get('id') ?? '';
   }
 
   ngOnDestroy(): void {
@@ -71,7 +80,7 @@ export class TrabajadorAccesoTabComponent implements OnInit, OnDestroy {
     this.error.set(null);
 
     this.trabajadorSvc
-      .cambiarPassword(this.trabajadorId(), f.passwordActual, f.passwordNueva)
+      .cambiarPassword(this.trabajadorId, f.passwordActual, f.passwordNueva)
       .subscribe({
         next: () => {
           this.form.set({ passwordActual: '', passwordNueva: '', passwordConfirmar: '' });

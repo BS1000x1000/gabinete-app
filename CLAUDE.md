@@ -8,7 +8,7 @@ Guidance for Claude Code when working with this repository.
 
 Stack: **Angular 19** (frontend) + **NestJS 11** (backend) + **Prisma 5** + **PostgreSQL** + **n8n** (Docker, port 5678, not yet registered in AppModule).
 
-**Current state (2026-03-13)**: ~99% complete. Multi-user RBAC (Hito I), advanced statistics with Chart.js (Hito H), and all core clinical features are implemented. Remaining: n8n integration, formal billing module, mobile polish.
+**Current state (2026-03-16)**: Functionally complete for real use. Core clinical nucleus — agenda, client records, sessions, bonos, GAS, daily records, reports, SSE notifications, advanced statistics, multi-user RBAC — all implemented and tested. Remaining blockers are infrastructure/ops (deployment, backup, SMTP), not features.
 
 ---
 
@@ -135,7 +135,6 @@ frontend/src/app/
 **Sidebar nav items** (computed signal, role-filtered):
 - Agenda · Clientes · Estadísticas → all roles
 - Equipo → ADMIN + RECEP only
-- Ajustes → all roles
 
 **Frontend role guard usage:**
 ```typescript
@@ -361,6 +360,23 @@ Legacy URL redirects still active in `listado.routes.ts` (e.g. `/cliente → /pe
 
 ## Known gaps / technical debt
 
-- `ClientesComponent` still navigates to `/cliente` (legacy) in lines 131 and 198 — works via redirect
+### Minor code debt (not blocking)
+- `ClientesComponent` still navigates to `/cliente` (legacy) in lines 131 and 198 — works via redirect but should point to `/perfil` directly
 - `n8n` module exists but is NOT registered in `AppModule`
-- rbac.e2e-spec.ts has a minor TypeScript strict error (`username` property type) — runtime behavior correct, tests pass
+- `rbac.e2e-spec.ts` has a minor TypeScript strict error (`username` property type) — runtime correct, tests pass
+
+### Blockers for production deployment
+1. **No deployment defined** — needs Dockerfile + docker-compose.prod.yml for backend + frontend (Nginx), PostgreSQL, env vars separated (`.env.prod`, `environment.prod.ts`)
+2. **No database backup** — PostgreSQL without automated backup is critical risk given RGPD scope (minor health data)
+3. **SMTP not configured** — reset-password UI exists but requires real SMTP (Resend/Postmark/SES). Without it: password reset broken, no email fallback for missed SSE notifications
+4. **Security hardening** — rate limiting on `/auth/login`, Helmet.js headers (confirm active), CORS locked to production domain (likely still `*`)
+
+### Medium-term roadmap
+- **Hito K** — Billing/cobros module: payment tracking per bono, debt view per family. Currently managed externally (likely spreadsheet)
+- **n8n integration** — session reminders (email/WhatsApp), bono-empty alerts, monthly auto-reports
+- **Mobile/tablet polish** — sidebar collapse, weekly grid density, drawer form on small screens
+
+### Long-term
+- **Onboarding panel** — configurable gabinete name/logo, welcome email for new workers, CSV client import
+- **Family portal** — read-only view: upcoming sessions, bono status, finalized reports (requires separate auth model + RGPD review)
+- **Multi-tenant decision** — current architecture is single-tenant; refactor cost grows with time if SaaS route chosen

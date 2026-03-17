@@ -263,6 +263,48 @@
   &.badge-default    { background: $gray-100; color: $gray-600; }
 }
 
+// ── Password input with eye toggle ───────
+.input-icon-wrap {
+  position: relative;
+
+  .form-control {
+    padding-right: 2.5rem;
+    border: 1.5px solid $border-color;
+    border-radius: $border-radius;
+    font-size: $font-size-sm;
+    transition: $transition-base;
+
+    &:focus {
+      border-color: $primary;
+      box-shadow: 0 0 0 3px rgba($primary, 0.12);
+      outline: none;
+    }
+
+    &.is-invalid {
+      border-color: $danger;
+      &:focus { box-shadow: 0 0 0 3px rgba($danger, 0.12); }
+    }
+  }
+}
+
+.input-eye-btn {
+  position: absolute;
+  right: 0.6rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: $gray-400;
+  padding: 0.25rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  font-size: 0.9rem;
+  transition: color 0.2s ease;
+
+  &:hover { color: $gray-600; }
+}
+
 // ── Assign-client modal list ──────────────
 .asignar-cliente-list {
   max-height: 220px;
