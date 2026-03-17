@@ -18,12 +18,63 @@
           <h6 class="fw-bold mb-0">Informes</h6>
           <small class="text-muted">{{ informes().length }} informe{{ informes().length !== 1 ? 's' : '' }}</small>
         </div>
-        <button class="btn btn-primary btn-sm" (click)="abrirFormNuevo()">
-          <i class="bi bi-plus-lg me-1"></i>Nuevo informe
-        </button>
+        <div class="d-flex gap-2">
+          <button class="btn btn-sm informe-sesiones-btn" (click)="abrirFormBorrador()">
+            <i class="bi bi-envelope-paper me-1"></i>Informe de sesiones
+          </button>
+          <button class="btn btn-primary btn-sm" (click)="abrirFormNuevo()">
+            <i class="bi bi-plus-lg me-1"></i>Nuevo informe
+          </button>
+        </div>
       </div>
 
-      <!-- Formulario nuevo informe (inline) -->
+      <!-- Formulario: generar informe de sesiones -->
+      <div *ngIf="mostrarFormBorrador()" class="informe-borrador-form mb-4">
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <i class="bi bi-envelope-paper text-success"></i>
+          <h6 class="fw-semibold mb-0">Generar informe de sesiones para la familia</h6>
+        </div>
+        <p class="text-muted small mb-3">
+          Se generará un borrador con los registros marcados como compartibles en el rango indicado.
+          Podrás revisarlo y editarlo antes de enviarlo.
+        </p>
+        <div class="row g-2 mb-3">
+          <div class="col">
+            <label class="form-label small fw-semibold">Desde</label>
+            <input
+              type="date"
+              class="form-control form-control-sm"
+              [value]="formBorrador().desde"
+              (input)="setBorradorField('desde', $any($event.target).value)"
+            />
+          </div>
+          <div class="col">
+            <label class="form-label small fw-semibold">Hasta</label>
+            <input
+              type="date"
+              class="form-control form-control-sm"
+              [value]="formBorrador().hasta"
+              (input)="setBorradorField('hasta', $any($event.target).value)"
+            />
+          </div>
+        </div>
+        <div class="d-flex gap-2">
+          <button
+            class="btn btn-success btn-sm"
+            (click)="generarBorrador()"
+            [disabled]="!formBorrador().desde || !formBorrador().hasta || guardando()"
+          >
+            <span *ngIf="guardando()" class="spinner-border spinner-border-sm me-1"></span>
+            <i *ngIf="!guardando()" class="bi bi-magic me-1"></i>
+            {{ guardando() ? 'Generando...' : 'Generar borrador' }}
+          </button>
+          <button class="btn btn-outline-secondary btn-sm" (click)="mostrarFormBorrador.set(false)">
+            Cancelar
+          </button>
+        </div>
+      </div>
+
+      <!-- Formulario nuevo informe (INICIAL / SEGUIMIENTO) -->
       <div *ngIf="mostrarFormNuevo()" class="border rounded-3 p-3 mb-4 bg-light">
         <h6 class="fw-semibold mb-3">Nuevo informe</h6>
 
@@ -96,7 +147,7 @@
       </div>
 
       <!-- Sin informes -->
-      <div *ngIf="informes().length === 0 && !mostrarFormNuevo()" class="text-center py-5">
+      <div *ngIf="informes().length === 0 && !mostrarFormNuevo() && !mostrarFormBorrador()" class="text-center py-5">
         <i class="bi bi-file-earmark-text display-4 text-muted d-block mb-3"></i>
         <p class="text-muted">No hay informes para este alumno.</p>
         <button class="btn btn-primary btn-sm" (click)="abrirFormNuevo()">
@@ -108,20 +159,19 @@
       <div *ngFor="let informe of informes()" class="mb-2">
         <div
           class="p-3 border rounded d-flex justify-content-between align-items-start"
-          [class.bg-light]="informe.estado !== 'FINALIZADO'"
+          [class.bg-light]="informe.estado !== 'FINALIZADO' && informe.estado !== 'ENVIADO'"
+          [class.informe-enviado-card]="informe.estado === 'ENVIADO'"
           style="cursor: pointer;"
           (click)="abrirEditor(informe)"
         >
           <div class="flex-grow-1 me-3">
             <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
-              <!-- Tipo -->
               <span
                 class="badge"
                 [style.background-color]="TIPO_LABELS[informe.tipoInforme].bg"
                 [style.color]="TIPO_LABELS[informe.tipoInforme].color"
                 style="border: 1px solid currentColor; font-size: 0.72rem;"
               >{{ TIPO_LABELS[informe.tipoInforme].texto }}</span>
-              <!-- Estado -->
               <span class="badge {{ ESTADO_LABELS[informe.estado].badgeClass }}" style="font-size: 0.72rem;">
                 {{ ESTADO_LABELS[informe.estado].texto }}
               </span>
@@ -133,6 +183,9 @@
                 <i class="bi bi-arrow-left-right me-1"></i>
                 {{ formatearFecha(informe.periodoDesde) }} — {{ formatearFecha(informe.periodoHasta) }}
               </span>
+              <span *ngIf="informe.enviadoFamiliaAt" class="ms-2 text-success">
+                <i class="bi bi-envelope-check me-1"></i>Enviado {{ formatearFecha(informe.enviadoFamiliaAt) }}
+              </span>
             </small>
           </div>
 
@@ -140,12 +193,12 @@
             <button
               class="btn btn-sm btn-outline-primary"
               (click)="abrirEditor(informe); $event.stopPropagation()"
-              title="Editar"
+              [title]="informe.estado === 'ENVIADO' ? 'Ver' : 'Editar'"
             >
-              <i class="bi bi-pencil"></i>
+              <i class="bi" [class.bi-pencil]="informe.estado !== 'ENVIADO'" [class.bi-eye]="informe.estado === 'ENVIADO'"></i>
             </button>
             <button
-              *ngIf="informe.estado !== 'FINALIZADO'"
+              *ngIf="informe.estado !== 'FINALIZADO' && informe.estado !== 'ENVIADO'"
               class="btn btn-sm btn-outline-danger"
               (click)="eliminarInforme(informe.id, $event)"
               title="Eliminar"
@@ -161,14 +214,13 @@
 
 
     <!-- ══════════════════════════════════════════════════════════
-         VISTA: EDITOR DE INFORME
+         VISTA: EDITOR — INICIAL / SEGUIMIENTO
     ══════════════════════════════════════════════════════════ -->
-    <div *ngIf="vista() === 'editor' && informeActivo()" class="d-flex" style="min-height: 600px;">
+    <div *ngIf="vista() === 'editor' && informeActivo() && !esRegistros()" class="d-flex" style="min-height: 600px;">
 
       <!-- Columna izquierda: navegación de secciones -->
       <div class="border-end p-3" style="width: 220px; flex-shrink: 0;">
 
-        <!-- Cabecera del informe -->
         <button class="btn btn-link btn-sm text-muted p-0 mb-3 d-flex align-items-center gap-1" (click)="volverALista()">
           <i class="bi bi-chevron-left"></i> Volver
         </button>
@@ -188,7 +240,6 @@
 
         <hr class="my-2">
 
-        <!-- Índice de secciones -->
         <p class="text-uppercase text-muted small fw-bold mb-2" style="font-size: 0.65rem;">Secciones</p>
         <div
           *ngFor="let seccion of secciones(); let i = index"
@@ -202,7 +253,6 @@
           {{ seccion.titulo }}
         </div>
 
-        <!-- Sección GAS (solo lectura en informes) -->
         <div
           class="p-2 rounded mb-1 small"
           [class.bg-primary]="seccionActiva() === 'gas'"
@@ -216,10 +266,9 @@
 
         <hr class="my-2">
 
-        <!-- Botones de acción -->
         <div class="d-grid gap-2">
           <button
-            *ngIf="!esFinalizado()"
+            *ngIf="!esBloqueado()"
             class="btn btn-success btn-sm"
             (click)="guardarSeccion()"
             [disabled]="guardando()"
@@ -228,7 +277,7 @@
             <i *ngIf="!guardando()" class="bi bi-floppy me-1"></i>Guardar
           </button>
           <button
-            *ngIf="!esFinalizado()"
+            *ngIf="!esBloqueado()"
             class="btn btn-outline-success btn-sm"
             (click)="finalizarInforme()"
             [disabled]="guardando()"
@@ -252,18 +301,15 @@
       </div>
       <!-- /columna izquierda -->
 
-      <!-- Columna derecha: contenido de la sección activa -->
+      <!-- Columna derecha: contenido -->
       <div class="flex-grow-1 p-4 overflow-auto">
 
-        <!-- ── Sección de texto normal ─────────────────────────── -->
         <ng-container *ngIf="seccionActiva() !== 'gas'">
           <ng-container *ngFor="let seccion of secciones()">
             <div *ngIf="seccionActiva() === seccion.key">
-
               <h5 class="fw-bold mb-1">{{ seccion.titulo }}</h5>
               <hr class="mt-1 mb-3">
-
-              <div *ngIf="!esFinalizado()">
+              <div *ngIf="!esBloqueado()">
                 <textarea
                   class="form-control"
                   rows="18"
@@ -275,25 +321,19 @@
                   <small class="text-muted">{{ getTextoSeccion(seccion.key).length }} caracteres</small>
                 </div>
               </div>
-
-              <!-- Solo lectura si está finalizado -->
-              <div *ngIf="esFinalizado()" class="p-3 bg-light rounded" style="white-space: pre-wrap; min-height: 200px;">
+              <div *ngIf="esBloqueado()" class="p-3 bg-light rounded" style="white-space: pre-wrap; min-height: 200px;">
                 {{ getTextoSeccion(seccion.key) || 'Sin contenido.' }}
               </div>
-
             </div>
           </ng-container>
         </ng-container>
 
-        <!-- ── Sección GAS ──────────────────────────────────────── -->
+        <!-- Sección GAS -->
         <div *ngIf="seccionActiva() === 'gas'">
-
           <h5 class="fw-bold mb-1">
             {{ informeActivo()!.tipoInforme === 'INICIAL' ? '5. Objetivos específicos (GAS)' : 'Estado GAS de los objetivos' }}
           </h5>
           <hr class="mt-1 mb-3">
-
-          <!-- Aviso informativo -->
           <div class="alert alert-info small py-2 mb-3">
             <i class="bi bi-info-circle me-1"></i>
             <span *ngIf="informeActivo()!.tipoInforme === 'INICIAL'">
@@ -303,35 +343,17 @@
               Esta sección muestra el estado GAS actual de cada objetivo y el historial de evaluaciones del período.
             </span>
           </div>
-
-          <!-- Sin datos -->
           <div *ngIf="snapshotGAS().length === 0" class="text-center py-4">
             <i class="bi bi-inbox text-muted d-block mb-2 fs-3"></i>
-            <p class="text-muted small">
-              No hay objetivos GAS en el snapshot de este informe.
-              <span *ngIf="!esFinalizado()">
-                Guarda el informe para capturar el estado actual.
-              </span>
-            </p>
+            <p class="text-muted small">No hay objetivos GAS en el snapshot de este informe.</p>
           </div>
-
-          <!-- Tabla GAS por objetivo -->
           <div *ngFor="let obj of snapshotGAS()" class="mb-4">
-
-            <!-- Cabecera del objetivo -->
             <div class="d-flex align-items-center gap-2 mb-2">
               <span class="badge bg-secondary" style="font-size: 0.72rem;">{{ obj.area }}</span>
               <span class="fw-semibold small">{{ obj.objetivo }}</span>
-              <!-- Nivel actual -->
-              <span *ngIf="obj.nivelActual !== null" class="badge bg-secondary-dark ms-auto" style="font-size: 0.72rem;">
-                Nivel {{ getNivelShort(obj.nivelActual) }}
-              </span>
-              <span *ngIf="obj.nivelActual === null" class="badge bg-secondary bg-opacity-25 text-secondary ms-auto" style="font-size: 0.72rem;">
-                Sin evaluar
-              </span>
+              <span *ngIf="obj.nivelActual !== null" class="badge bg-secondary-dark ms-auto" style="font-size: 0.72rem;">Nivel {{ getNivelShort(obj.nivelActual) }}</span>
+              <span *ngIf="obj.nivelActual === null" class="badge bg-secondary bg-opacity-25 text-secondary ms-auto" style="font-size: 0.72rem;">Sin evaluar</span>
             </div>
-
-            <!-- Tabla de niveles si están definidos -->
             <div *ngIf="obj.niveles && obj.niveles.length === 5" class="table-responsive mb-2">
               <table class="table table-sm table-bordered text-center align-middle mb-0" style="font-size: 0.78rem;">
                 <thead>
@@ -344,40 +366,142 @@
                 </thead>
                 <tbody>
                   <tr>
-                    <td
-                      *ngFor="let n of obj.niveles"
-                      class="text-start p-2 small"
+                    <td *ngFor="let n of obj.niveles" class="text-start p-2 small"
                       [class.fw-semibold]="obj.nivelActual === n.nivel"
                       [class.bg-secondary-dark]="obj.nivelActual === n.nivel"
                       [class.bg-opacity-10]="obj.nivelActual === n.nivel"
-                    >
-                      {{ n.descripcion || '—' }}
-                    </td>
+                    >{{ n.descripcion || '—' }}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
-
-            <p *ngIf="!obj.niveles || obj.niveles.length < 5" class="text-muted small fst-italic">
-              Niveles GAS no definidos para este objetivo.
-            </p>
-
-            <!-- Notas del objetivo -->
-            <p *ngIf="obj.notas" class="text-muted small mb-0">
-              <i class="bi bi-chat-text me-1"></i>{{ obj.notas }}
-            </p>
-
+            <p *ngIf="!obj.niveles || obj.niveles.length < 5" class="text-muted small fst-italic">Niveles GAS no definidos para este objetivo.</p>
+            <p *ngIf="obj.notas" class="text-muted small mb-0"><i class="bi bi-chat-text me-1"></i>{{ obj.notas }}</p>
           </div>
-          <!-- /por objetivo -->
-
         </div>
-        <!-- /sección GAS -->
 
       </div>
       <!-- /columna derecha -->
 
     </div>
-    <!-- /vista editor -->
+    <!-- /editor INICIAL / SEGUIMIENTO -->
+
+
+    <!-- ══════════════════════════════════════════════════════════
+         VISTA: EDITOR — REGISTROS (informe de sesiones)
+    ══════════════════════════════════════════════════════════ -->
+    <div *ngIf="vista() === 'editor' && informeActivo() && esRegistros()" class="d-flex" style="min-height: 600px;">
+
+      <!-- Columna izquierda -->
+      <div class="border-end p-3" style="width: 220px; flex-shrink: 0;">
+
+        <button class="btn btn-link btn-sm text-muted p-0 mb-3 d-flex align-items-center gap-1" (click)="volverALista()">
+          <i class="bi bi-chevron-left"></i> Volver
+        </button>
+
+        <div class="mb-3">
+          <span
+            class="badge mb-1"
+            [style.background-color]="TIPO_LABELS['REGISTROS'].bg"
+            [style.color]="TIPO_LABELS['REGISTROS'].color"
+            style="border: 1px solid currentColor; font-size: 0.7rem;"
+          >Informe de Sesiones</span>
+          <p class="small fw-semibold mb-1 mt-1">{{ informeActivo()!.titulo }}</p>
+          <span class="badge {{ ESTADO_LABELS[informeActivo()!.estado].badgeClass }}" style="font-size: 0.7rem;">
+            {{ ESTADO_LABELS[informeActivo()!.estado].texto }}
+          </span>
+          <div *ngIf="informeActivo()!.periodoDesde" class="mt-2">
+            <small class="text-muted d-block">
+              <i class="bi bi-calendar-range me-1"></i>
+              {{ formatearFecha(informeActivo()!.periodoDesde) }} — {{ formatearFecha(informeActivo()!.periodoHasta) }}
+            </small>
+          </div>
+          <div *ngIf="esEnviado() && informeActivo()!.enviadoFamiliaAt" class="mt-2">
+            <small class="text-success d-block">
+              <i class="bi bi-envelope-check me-1"></i>
+              Enviado el {{ formatearFecha(informeActivo()!.enviadoFamiliaAt) }}
+            </small>
+          </div>
+        </div>
+
+        <hr class="my-2">
+
+        <div class="d-grid gap-2">
+
+          <!-- Guardar (solo si no enviado) -->
+          <button
+            *ngIf="!esEnviado()"
+            class="btn btn-success btn-sm"
+            (click)="guardarContenido()"
+            [disabled]="guardando()"
+          >
+            <span *ngIf="guardando()" class="spinner-border spinner-border-sm me-1"></span>
+            <i *ngIf="!guardando()" class="bi bi-floppy me-1"></i>Guardar borrador
+          </button>
+
+          <!-- Enviar a familia (solo si no enviado) -->
+          <button
+            *ngIf="!esEnviado()"
+            class="btn btn-sm informe-enviar-btn"
+            (click)="confirmarEnvio()"
+            [disabled]="enviando() || guardando()"
+          >
+            <span *ngIf="enviando()" class="spinner-border spinner-border-sm me-1"></span>
+            <i *ngIf="!enviando()" class="bi bi-send me-1"></i>
+            {{ enviando() ? 'Enviando...' : 'Enviar a familia' }}
+          </button>
+
+          <!-- Indicador: ya enviado -->
+          <div *ngIf="esEnviado()" class="informe-enviado-badge">
+            <i class="bi bi-envelope-check-fill me-1"></i>Enviado a la familia
+          </div>
+
+        </div>
+
+        <!-- Aviso editable -->
+        <div *ngIf="!esEnviado()" class="mt-3">
+          <div class="alert alert-warning py-2 px-2 small mb-0">
+            <i class="bi bi-pencil-square me-1"></i>
+            Revisa y edita el contenido antes de enviarlo.
+          </div>
+        </div>
+
+      </div>
+      <!-- /columna izquierda REGISTROS -->
+
+      <!-- Columna derecha: contenido libre -->
+      <div class="flex-grow-1 p-4 overflow-auto">
+
+        <h5 class="fw-bold mb-1">Contenido del informe</h5>
+        <p class="text-muted small mb-3">
+          Este texto se enviará por email a la familia. Edítalo libremente antes de enviarlo.
+        </p>
+        <hr class="mt-1 mb-3">
+
+        <!-- Editable -->
+        <div *ngIf="!esEnviado()">
+          <textarea
+            class="form-control informe-registros-textarea"
+            rows="22"
+            placeholder="El contenido del informe se ha generado automáticamente a partir de los registros de sesión. Puedes editarlo antes de enviarlo..."
+            [value]="textoContenido()"
+            (input)="textoContenido.set($any($event.target).value)"
+          ></textarea>
+          <div class="d-flex justify-content-end mt-2">
+            <small class="text-muted">{{ textoContenido().length }} caracteres</small>
+          </div>
+        </div>
+
+        <!-- Solo lectura si ya enviado -->
+        <div *ngIf="esEnviado()" class="informe-registros-readonly">
+          {{ informeActivo()!.contenido || 'Sin contenido.' }}
+        </div>
+
+      </div>
+      <!-- /columna derecha REGISTROS -->
+
+    </div>
+    <!-- /editor REGISTROS -->
 
   </div>
 

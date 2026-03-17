@@ -1,0 +1,98 @@
+// ============================================================
+// INFORMES — estilos específicos del tab de informes
+// ============================================================
+
+// Badge estado ENVIADO
+.badge-enviado {
+  background-color: #d1fae5;
+  color: #059669;
+  border: 1px solid #059669;
+  font-size: 0.72rem;
+}
+
+// Botón "Informe de sesiones" — estilo verde suave en el header
+.informe-sesiones-btn {
+  background-color: #d1fae5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+  font-weight: 600;
+  font-size: 0.8rem;
+
+  &:hover {
+    background-color: #a7f3d0;
+    border-color: #059669;
+    color: #047857;
+  }
+}
+
+// Botón "Enviar a familia" — verde primario en la sidebar del editor
+.informe-enviar-btn {
+  background-color: #059669;
+  color: #fff;
+  border: none;
+  font-weight: 600;
+  font-size: 0.8rem;
+
+  &:hover:not(:disabled) {
+    background-color: #047857;
+    color: #fff;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+// Indicador "Enviado a la familia" (lectura)
+.informe-enviado-badge {
+  background-color: #d1fae5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+  border-radius: 0.4rem;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+// Card en la lista con estado ENVIADO
+.informe-enviado-card {
+  background-color: #f0fdf4 !important;
+  border-color: #a7f3d0 !important;
+}
+
+// Panel del formulario "Generar borrador"
+.informe-borrador-form {
+  background-color: #f0fdf4;
+  border: 1px solid #a7f3d0;
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+// Textarea del editor REGISTROS — fuente monoespaciada para facilitar lectura
+.informe-registros-textarea {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.7;
+  resize: vertical;
+  border-color: #d1d5db;
+
+  &:focus {
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba($primary, 0.1);
+  }
+}
+
+// Vista de solo lectura para informe enviado
+.informe-registros-readonly {
+  white-space: pre-wrap;
+  font-size: 0.875rem;
+  line-height: 1.7;
+  color: #374151;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1.25rem;
+  min-height: 300px;
+}

@@ -6,6 +6,8 @@ import { Informe, CreateInformeDto, UpdateInformeDto } from '../interface/inform
 import { triggerDownload } from '../shared/utils/download.utils';
 
 
+
+
 interface WrappedResponse<T> {
   success: boolean;
   data: T;
@@ -18,6 +20,7 @@ interface WrappedResponse<T> {
 export class InformesService {
   private http = inject(HttpClient);
   private readonly api = `${environment.apiUrl}/informes`;
+  private readonly n8nApi = `${environment.apiUrl}/n8n`;
 
   // Signals
   informes = signal<Informe[]>([]);
@@ -123,6 +126,43 @@ export class InformesService {
         map(() => void 0),
       );
   }
+
+  // ============================================================
+  // INFORME DE SESIONES (REGISTROS)
+  // ============================================================
+
+  generarBorradorRegistros(clienteId: string, desde: string, hasta: string): Observable<Informe> {
+    return this.http
+      .post<WrappedResponse<Informe>>(
+        `${this.n8nApi}/generar-borrador/${clienteId}?desde=${desde}&hasta=${hasta}`,
+        {},
+      )
+      .pipe(
+        map((res) => res.data || res),
+        tap((nuevo) => {
+          this.informes.update((prev) => [nuevo, ...prev]);
+          this.informeActivo.set(nuevo);
+        }),
+      );
+  }
+
+  enviarInformeAFamilia(informeId: string): Observable<Informe> {
+    return this.http
+      .post<WrappedResponse<Informe>>(`${this.n8nApi}/enviar-informe/${informeId}`, {})
+      .pipe(
+        map((res) => res.data || res),
+        tap((actualizado) => {
+          this.informeActivo.set(actualizado);
+          this.informes.update((prev) =>
+            prev.map((i) => (i.id === informeId ? actualizado : i)),
+          );
+        }),
+      );
+  }
+
+  // ============================================================
+  // ELIMINAR
+  // ============================================================
 
   delete(id: string): Observable<{ message: string }> {
     return this.http

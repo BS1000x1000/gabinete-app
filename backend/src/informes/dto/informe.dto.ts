@@ -108,4 +108,8 @@ export class UpdateInformeDto {
   @IsOptional()
   @IsString()
   urlDocumentoFinal?: string;
+
+  @IsOptional()
+  @IsString()
+  contenido?: string;
 }

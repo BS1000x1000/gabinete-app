@@ -132,7 +132,7 @@ export class InformesService {
     const where: any = { clienteId };
 
     if (user?.rol === 'RECEP') {
-      where.estado = EstadoInforme.FINALIZADO;
+      where.estado = { in: [EstadoInforme.FINALIZADO, EstadoInforme.ENVIADO] };
     } else if (user && user.rol !== 'ADMIN') {
       where.trabajadorId = user.userId;
     }
@@ -180,10 +180,9 @@ export class InformesService {
       throw new NotFoundException(`Informe con ID ${id} no encontrado`);
     }
 
-    // No permitir editar un informe ya FINALIZADO
-    if (informe.estado === EstadoInforme.FINALIZADO) {
+    if (informe.estado === EstadoInforme.FINALIZADO || informe.estado === EstadoInforme.ENVIADO) {
       throw new BadRequestException(
-        'No se puede modificar un informe finalizado',
+        'No se puede modificar un informe finalizado o ya enviado',
       );
     }
 
@@ -219,6 +218,7 @@ export class InformesService {
           ...(dto.urlDocumentoFinal && {
             urlDocumentoFinal: dto.urlDocumentoFinal,
           }),
+          ...(dto.contenido !== undefined && { contenido: dto.contenido }),
         },
         include: informeInclude,
       });
@@ -246,8 +246,8 @@ export class InformesService {
       throw new NotFoundException(`Informe con ID ${id} no encontrado`);
     }
 
-    if (informe.estado === EstadoInforme.FINALIZADO) {
-      throw new BadRequestException('El informe ya está finalizado');
+    if (informe.estado === EstadoInforme.FINALIZADO || informe.estado === EstadoInforme.ENVIADO) {
+      throw new BadRequestException('El informe ya está finalizado o enviado');
     }
 
     // Regenerar snapshot GAS justo antes de finalizar
@@ -275,9 +275,9 @@ export class InformesService {
       throw new NotFoundException(`Informe con ID ${id} no encontrado`);
     }
 
-    if (informe.estado === EstadoInforme.FINALIZADO) {
+    if (informe.estado === EstadoInforme.FINALIZADO || informe.estado === EstadoInforme.ENVIADO) {
       throw new BadRequestException(
-        'No se puede eliminar un informe finalizado',
+        'No se puede eliminar un informe finalizado o enviado',
       );
     }
 

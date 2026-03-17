@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { ConfirmModalComponent } from '../../../../../shared/components/confirm-modal/confirm-modal.component';
 import { ActivatedRoute } from '@angular/router';
+import { formatearFechaCorta } from '../../../../../shared/utils/date';
 import { ClientesService } from '../../../../../services/cliente.service';
 import { InformesService } from '../../../../../services/informes.service';
 import { GasService } from '../../../../../services/gas.service';
@@ -40,6 +41,7 @@ export default class InformesTabComponent implements OnInit {
   clienteId = signal<string>('');
   cargando = signal(false);
   guardando = signal(false);
+  enviando = signal(false);
   descargandoPdf = signal(false);
 
   // Signals del servicio
@@ -49,7 +51,7 @@ export default class InformesTabComponent implements OnInit {
   // Vista: 'lista' | 'editor'
   vista = signal<'lista' | 'editor'>('lista');
 
-  // Formulario nuevo informe
+  // Formulario nuevo informe (INICIAL / SEGUIMIENTO)
   formNuevo = signal<{
     titulo: string;
     tipoInforme: TipoInforme;
@@ -63,14 +65,18 @@ export default class InformesTabComponent implements OnInit {
   });
   mostrarFormNuevo = signal(false);
 
+  // Formulario generar informe de sesiones (REGISTROS)
+  formBorrador = signal<{ desde: string; hasta: string }>({ desde: '', hasta: '' });
+  mostrarFormBorrador = signal(false);
+
   pendingAction = signal<(() => void) | null>(null);
   confirmTitle  = signal('');
   confirmMsg    = signal('');
 
-  // Secciones del editor según tipo
+  // Secciones del editor según tipo (solo INICIAL / SEGUIMIENTO)
   secciones = computed<SeccionInforme[]>(() => {
     const informe = this.informeActivo();
-    if (!informe) return [];
+    if (!informe || informe.tipoInforme === 'REGISTROS') return [];
     return informe.tipoInforme === 'INICIAL'
       ? SECCIONES_INICIAL
       : SECCIONES_SEGUIMIENTO;
@@ -87,8 +93,11 @@ export default class InformesTabComponent implements OnInit {
     }
   });
 
-  // Texto de cada sección en el editor (para el ngModel)
+  // Texto de cada sección en el editor (INICIAL / SEGUIMIENTO)
   textosSecciones = signal<Record<string, string>>({});
+
+  // Texto del contenido libre (REGISTROS)
+  textoContenido = signal<string>('');
 
   // Sección activa en el editor
   seccionActiva = signal<string | null>(null);
@@ -117,16 +126,12 @@ export default class InformesTabComponent implements OnInit {
   }
 
   // ============================================================
-  // CREAR INFORME
+  // CREAR INFORME (INICIAL / SEGUIMIENTO)
   // ============================================================
 
   abrirFormNuevo(): void {
-    this.formNuevo.set({
-      titulo: '',
-      tipoInforme: 'INICIAL',
-      periodoDesde: '',
-      periodoHasta: '',
-    });
+    this.mostrarFormBorrador.set(false);
+    this.formNuevo.set({ titulo: '', tipoInforme: 'INICIAL', periodoDesde: '', periodoHasta: '' });
     this.mostrarFormNuevo.set(true);
   }
 
@@ -146,12 +151,8 @@ export default class InformesTabComponent implements OnInit {
       titulo: form.titulo,
       tipoInforme: form.tipoInforme,
       clienteId: this.clienteId(),
-      ...(form.tipoInforme === 'SEGUIMIENTO' && form.periodoDesde
-        ? { periodoDesde: form.periodoDesde }
-        : {}),
-      ...(form.tipoInforme === 'SEGUIMIENTO' && form.periodoHasta
-        ? { periodoHasta: form.periodoHasta }
-        : {}),
+      ...(form.tipoInforme === 'SEGUIMIENTO' && form.periodoDesde ? { periodoDesde: form.periodoDesde } : {}),
+      ...(form.tipoInforme === 'SEGUIMIENTO' && form.periodoHasta ? { periodoHasta: form.periodoHasta } : {}),
     };
 
     this.guardando.set(true);
@@ -166,22 +167,51 @@ export default class InformesTabComponent implements OnInit {
   }
 
   // ============================================================
+  // GENERAR INFORME DE SESIONES (REGISTROS)
+  // ============================================================
+
+  abrirFormBorrador(): void {
+    this.mostrarFormNuevo.set(false);
+    this.formBorrador.set({ desde: '', hasta: '' });
+    this.mostrarFormBorrador.set(true);
+  }
+
+  setBorradorField(field: 'desde' | 'hasta', value: string): void {
+    this.formBorrador.update((f) => ({ ...f, [field]: value }));
+  }
+
+  generarBorrador(): void {
+    const { desde, hasta } = this.formBorrador();
+    if (!desde || !hasta) return;
+
+    this.guardando.set(true);
+    this.informesSvc.generarBorradorRegistros(this.clienteId(), desde, hasta).subscribe({
+      next: (informe) => {
+        this.guardando.set(false);
+        this.mostrarFormBorrador.set(false);
+        this.abrirEditor(informe);
+      },
+      error: () => this.guardando.set(false),
+    });
+  }
+
+  // ============================================================
   // EDITOR
   // ============================================================
 
   abrirEditor(informe: Informe): void {
     this.informesSvc.informeActivo.set(informe);
-    // Inicializar textos de las secciones con el contenido actual
-    const textos: Record<string, string> = {};
-    const secciones =
-      informe.tipoInforme === 'INICIAL'
-        ? SECCIONES_INICIAL
-        : SECCIONES_SEGUIMIENTO;
-    secciones.forEach((s) => {
-      textos[s.key] = (informe as any)[s.key] ?? '';
-    });
-    this.textosSecciones.set(textos);
-    this.seccionActiva.set(secciones[0]?.key ?? null);
+
+    if (informe.tipoInforme === 'REGISTROS') {
+      this.textoContenido.set(informe.contenido ?? '');
+    } else {
+      const textos: Record<string, string> = {};
+      const secciones = informe.tipoInforme === 'INICIAL' ? SECCIONES_INICIAL : SECCIONES_SEGUIMIENTO;
+      secciones.forEach((s) => { textos[s.key] = (informe as any)[s.key] ?? ''; });
+      this.textosSecciones.set(textos);
+      this.seccionActiva.set(secciones[0]?.key ?? null);
+    }
+
     this.vista.set('editor');
   }
 
@@ -199,16 +229,14 @@ export default class InformesTabComponent implements OnInit {
     this.textosSecciones.update((t) => ({ ...t, [key]: valor }));
   }
 
-  // Autoguardado al cambiar de sección o explícitamente
+  // Autoguardado secciones (INICIAL / SEGUIMIENTO)
   guardarSeccion(): void {
     const informe = this.informeActivo();
-    if (!informe || informe.estado === 'FINALIZADO') return;
+    if (!informe || this.esBloqueado()) return;
 
     const textos = this.textosSecciones();
     const dto: UpdateInformeDto = {};
-    this.secciones().forEach((s) => {
-      (dto as any)[s.key] = textos[s.key] ?? '';
-    });
+    this.secciones().forEach((s) => { (dto as any)[s.key] = textos[s.key] ?? ''; });
 
     this.guardando.set(true);
     this.informesSvc.update(informe.id, dto).subscribe({
@@ -218,9 +246,41 @@ export default class InformesTabComponent implements OnInit {
   }
 
   cambiarSeccion(key: string): void {
-    // Guardar antes de cambiar
     this.guardarSeccion();
     this.seccionActiva.set(key);
+  }
+
+  // Guardar contenido libre (REGISTROS)
+  guardarContenido(): void {
+    const informe = this.informeActivo();
+    if (!informe || this.esBloqueado()) return;
+
+    this.guardando.set(true);
+    this.informesSvc.update(informe.id, { contenido: this.textoContenido() }).subscribe({
+      next: () => this.guardando.set(false),
+      error: () => this.guardando.set(false),
+    });
+  }
+
+  // Enviar informe a la familia (REGISTROS)
+  confirmarEnvio(): void {
+    const informe = this.informeActivo();
+    if (!informe) return;
+    this.confirmTitle.set('Enviar informe a la familia');
+    this.confirmMsg.set('Se enviará un email a la familia con el contenido actual. Esta acción no se puede deshacer.');
+    this.pendingAction.set(() => {
+      this.enviando.set(true);
+      // Primero guardar el contenido actual, luego enviar
+      this.informesSvc.update(informe.id, { contenido: this.textoContenido() }).subscribe({
+        next: () => {
+          this.informesSvc.enviarInformeAFamilia(informe.id).subscribe({
+            next: () => this.enviando.set(false),
+            error: () => this.enviando.set(false),
+          });
+        },
+        error: () => this.enviando.set(false),
+      });
+    });
   }
 
   // ============================================================
@@ -272,9 +332,10 @@ export default class InformesTabComponent implements OnInit {
       .subscribe();
   }
 
-  esFinalizado(): boolean {
-    return this.informeActivo()?.estado === 'FINALIZADO';
-  }
+  esBloqueado  = computed(() => { const e = this.informeActivo()?.estado; return e === 'FINALIZADO' || e === 'ENVIADO'; });
+  esFinalizado = computed(() => this.informeActivo()?.estado === 'FINALIZADO');
+  esEnviado    = computed(() => this.informeActivo()?.estado === 'ENVIADO');
+  esRegistros  = computed(() => this.informeActivo()?.tipoInforme === 'REGISTROS');
 
   getTextoSeccion(key: string): string {
     return this.textosSecciones()[key] ?? '';
@@ -283,18 +344,12 @@ export default class InformesTabComponent implements OnInit {
   getNivelShort(nivel: number | null): string {
     if (nivel === null) return '—';
     return (
-      ({ [-2]: '-2', [-1]: '-1', [0]: '0', [1]: '+1', [2]: '+2' } as any)[
-        nivel
-      ] ?? `${nivel}`
+      ({ [-2]: '-2', [-1]: '-1', [0]: '0', [1]: '+1', [2]: '+2' } as any)[nivel] ?? `${nivel}`
     );
   }
 
   formatearFecha(iso: string | null | undefined): string {
     if (!iso) return '—';
-    return new Date(iso).toLocaleDateString('es-ES', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
+    return formatearFechaCorta(iso);
   }
 }

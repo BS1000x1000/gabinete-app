@@ -2,8 +2,8 @@
 // INTERFACES INFORMES — FRONTEND
 // ============================================================
 
-export type TipoInforme = 'INICIAL' | 'SEGUIMIENTO';
-export type EstadoInforme = 'BORRADOR' | 'REVISION' | 'FINALIZADO';
+export type TipoInforme = 'INICIAL' | 'SEGUIMIENTO' | 'REGISTROS';
+export type EstadoInforme = 'BORRADOR' | 'REVISION' | 'FINALIZADO' | 'ENVIADO';
 
 export interface Informe {
   id: string;
@@ -13,20 +13,22 @@ export interface Informe {
   clienteId: string;
   trabajadorId: string;
 
-  // Período evaluado (solo SEGUIMIENTO)
+  // Período evaluado
   periodoDesde?: string | null;
   periodoHasta?: string | null;
 
-  // Secciones del informe
+  // Secciones del informe (INICIAL / SEGUIMIENTO)
   motivoConsulta?: string | null;
   analisisInformacion?: string | null;
   evaluacionInicial?: string | null;
   objetivosGeneralesTexto?: string | null;
-
-  // Solo SEGUIMIENTO
   evolucionObservada?: string | null;
   objetivosProximoCurso?: string | null;
   recomendaciones?: string | null;
+
+  // Contenido libre (REGISTROS)
+  contenido?: string | null;
+  enviadoFamiliaAt?: string | null;
 
   // Snapshot GAS para reproducibilidad del PDF
   objetivosSnapshotJson?: string | null;
@@ -81,18 +83,21 @@ export interface UpdateInformeDto {
   objetivosProximoCurso?: string;
   recomendaciones?: string;
   urlDocumentoFinal?: string;
+  contenido?: string;
 }
 
 // Labels para la UI
 export const TIPO_INFORME_LABELS: Record<TipoInforme, { texto: string; color: string; bg: string }> = {
-  INICIAL:      { texto: 'Informe Inicial',      color: '#0d6efd', bg: '#cfe2ff' },
+  INICIAL:      { texto: 'Informe Inicial',       color: '#0d6efd', bg: '#cfe2ff' },
   SEGUIMIENTO:  { texto: 'Informe de Seguimiento', color: '#6610f2', bg: '#e0cffc' },
+  REGISTROS:    { texto: 'Informe de Sesiones',    color: '#059669', bg: '#d1fae5' },
 };
 
 export const ESTADO_INFORME_LABELS: Record<EstadoInforme, { texto: string; badgeClass: string }> = {
   BORRADOR:    { texto: 'Borrador',    badgeClass: 'bg-secondary' },
   REVISION:    { texto: 'En revisión', badgeClass: 'bg-warning text-dark' },
   FINALIZADO:  { texto: 'Finalizado',  badgeClass: 'bg-success' },
+  ENVIADO:     { texto: 'Enviado',     badgeClass: 'badge-enviado' },
 };
 
 // Secciones del informe para el formulario
