@@ -1,5 +1,7 @@
-import { Controller, Get, Post, Param, Query, UseGuards, BadRequestException, Body } from '@nestjs/common';
+import { Controller, Get, Post, Param, Query, UseGuards, BadRequestException, Body, Res } from '@nestjs/common';
+import type { Response } from 'express';
 import { N8nService } from './n8n.service';
+import { GenerarPdfInformeDto } from './dto/generar-pdf-informe.dto';
 import { N8nApiKeyGuard } from './guards/n8n-api-key.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../roles/roles.guard';
@@ -19,18 +21,22 @@ export class N8nController {
   }
 
   // Genera PDF del informe redactado por IA — llamado por n8n
+  // Usa @Res() directamente para evitar que ResponseInterceptor envuelva el binario en JSON
   @Post('pdf-informe')
   @UseGuards(N8nApiKeyGuard)
-  generarPdfInforme(
-    @Body() body: {
-      htmlContenido: string;
-      clienteNombre: string;
-      clienteApellidos: string;
-      desde: string;
-      hasta: string;
-    },
+  async generarPdfInforme(
+    @Body() body: GenerarPdfInformeDto,
+    @Res() res: Response,
   ) {
-    return this.n8nService.generarPdfInforme(body);
+    const buffer = await this.n8nService.generarPdfInforme(body);
+    const filename = `informe_${body.clienteNombre}_${body.clienteApellidos}_${body.desde.slice(0, 7)}.pdf`
+      .replace(/\s+/g, '_');
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Content-Length': buffer.length,
+    });
+    res.end(buffer);
   }
 
   // Genera un borrador de informe a partir de los registros del período

@@ -5,6 +5,7 @@ import { TipoInforme, EstadoInforme } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PdfGeneratorService } from '../common/pdf/pdf-generator.service';
 import { BonoAlertaItem } from './interface/n8n-automatizaciones.interface';
+import { GenerarPdfInformeDto } from './dto/generar-pdf-informe.dto';
 
 @Injectable()
 export class N8nService {
@@ -22,13 +23,7 @@ export class N8nService {
   // PDF — Genera PDF de informe a partir de HTML (llamado por n8n)
   // ============================================================
 
-  async generarPdfInforme(opts: {
-    htmlContenido: string;
-    clienteNombre: string;
-    clienteApellidos: string;
-    desde: string;
-    hasta: string;
-  }): Promise<string> {
+  async generarPdfInforme(opts: GenerarPdfInformeDto): Promise<Buffer> {
     const html = `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -61,8 +56,7 @@ export class N8nService {
 </body>
 </html>`;
 
-    const buffer = await this.pdfGenerator.generatePdf(html);
-    return buffer.toString('base64');
+    return this.pdfGenerator.generatePdf(html);
   }
 
   // ============================================================
