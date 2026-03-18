@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Param, Query, UseGuards, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Param, Query, UseGuards, BadRequestException, Body } from '@nestjs/common';
 import { N8nService } from './n8n.service';
 import { N8nApiKeyGuard } from './guards/n8n-api-key.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -16,6 +16,21 @@ export class N8nController {
   @UseGuards(N8nApiKeyGuard)
   getBonosAlertas() {
     return this.n8nService.getBonosAlertas();
+  }
+
+  // Genera PDF del informe redactado por IA — llamado por n8n
+  @Post('pdf-informe')
+  @UseGuards(N8nApiKeyGuard)
+  generarPdfInforme(
+    @Body() body: {
+      htmlContenido: string;
+      clienteNombre: string;
+      clienteApellidos: string;
+      desde: string;
+      hasta: string;
+    },
+  ) {
+    return this.n8nService.generarPdfInforme(body);
   }
 
   // Genera un borrador de informe a partir de los registros del período

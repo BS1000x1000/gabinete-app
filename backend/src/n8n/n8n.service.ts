@@ -3,6 +3,7 @@ import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { TipoInforme, EstadoInforme } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { PdfGeneratorService } from '../common/pdf/pdf-generator.service';
 import { BonoAlertaItem } from './interface/n8n-automatizaciones.interface';
 
 @Injectable()
@@ -10,10 +11,58 @@ export class N8nService {
   constructor(
     private readonly httpService: HttpService,
     private readonly prisma: PrismaService,
+    private readonly pdfGenerator: PdfGeneratorService,
   ) {}
 
   private toDateStr(date: Date | null | undefined): string | undefined {
     return date?.toISOString().split('T')[0];
+  }
+
+  // ============================================================
+  // PDF — Genera PDF de informe a partir de HTML (llamado por n8n)
+  // ============================================================
+
+  async generarPdfInforme(opts: {
+    htmlContenido: string;
+    clienteNombre: string;
+    clienteApellidos: string;
+    desde: string;
+    hasta: string;
+  }): Promise<string> {
+    const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 12px; color: #1f2937; padding: 0; }
+    @page { size: A4; margin: 2cm 1.5cm; }
+    .header { text-align: center; margin-bottom: 24px; border-bottom: 2px solid #7c6fd6; padding-bottom: 16px; }
+    .header h1 { font-size: 18px; font-weight: 700; color: #7c6fd6; }
+    .header p { font-size: 11px; color: #6b7280; margin-top: 4px; }
+    .content { line-height: 1.7; }
+    .content h2, .content h3 { color: #7c6fd6; margin: 16px 0 8px; }
+    .content p { margin-bottom: 10px; }
+    .content ul, .content ol { margin: 8px 0 10px 20px; }
+    .footer { text-align: center; font-size: 9px; color: #9ca3af; margin-top: 32px; border-top: 1px solid #e5e7eb; padding-top: 10px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Informe de Sesiones</h1>
+    <p>${opts.clienteNombre} ${opts.clienteApellidos} &nbsp;·&nbsp; Período: ${opts.desde} / ${opts.hasta}</p>
+  </div>
+  <div class="content">
+    ${opts.htmlContenido}
+  </div>
+  <div class="footer">
+    Documento confidencial — Gabinete Psicopedagógico · Generado el ${new Date().toLocaleDateString('es-ES')}
+  </div>
+</body>
+</html>`;
+
+    const buffer = await this.pdfGenerator.generatePdf(html);
+    return buffer.toString('base64');
   }
 
   // ============================================================
