@@ -13,7 +13,7 @@
     <div *ngIf="vista() === 'lista'" class="px-4 py-3">
 
       <!-- Header -->
-      <div class="d-flex justify-content-between align-items-center mb-4">
+      <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
           <h6 class="fw-bold mb-0">Informes</h6>
           <small class="text-muted">{{ informes().length }} informe{{ informes().length !== 1 ? 's' : '' }}</small>
@@ -25,6 +25,76 @@
           <button class="btn btn-primary btn-sm" (click)="abrirFormNuevo()">
             <i class="bi bi-plus-lg me-1"></i>Nuevo informe
           </button>
+        </div>
+      </div>
+
+      <!-- Barra de filtros -->
+      <div *ngIf="informes().length > 0" class="informes-filtros mb-3">
+        <div class="informes-filtros-row">
+          <span class="informes-filtros-label">Tipo</span>
+          <button
+            class="informes-filtro-pill"
+            [class.active]="filtroTipo() === 'todos'"
+            (click)="filtroTipo.set('todos')"
+          >Todos</button>
+          <button
+            class="informes-filtro-pill"
+            [class.active]="filtroTipo() === 'INICIAL'"
+            (click)="filtroTipo.set('INICIAL')"
+          >Inicial</button>
+          <button
+            class="informes-filtro-pill"
+            [class.active]="filtroTipo() === 'SEGUIMIENTO'"
+            (click)="filtroTipo.set('SEGUIMIENTO')"
+          >Seguimiento</button>
+          <button
+            class="informes-filtro-pill"
+            [class.active]="filtroTipo() === 'REGISTROS'"
+            (click)="filtroTipo.set('REGISTROS')"
+          >Sesiones</button>
+        </div>
+        <div *ngIf="aniosDisponibles().length > 1" class="informes-filtros-row">
+          <span class="informes-filtros-label">Año</span>
+          <button
+            class="informes-filtro-pill"
+            [class.active]="filtroAnio() === null"
+            (click)="filtroAnio.set(null)"
+          >Todos</button>
+          <button
+            *ngFor="let anio of aniosDisponibles()"
+            class="informes-filtro-pill"
+            [class.active]="filtroAnio() === anio"
+            (click)="filtroAnio.set(anio)"
+          >{{ anio }}</button>
+        </div>
+
+        <div class="informes-filtros-row">
+          <span class="informes-filtros-label">Estado</span>
+          <button
+            class="informes-filtro-pill"
+            [class.active]="filtroEstado() === 'todos'"
+            (click)="filtroEstado.set('todos')"
+          >Todos</button>
+          <button
+            class="informes-filtro-pill estado-borrador"
+            [class.active]="filtroEstado() === 'BORRADOR'"
+            (click)="filtroEstado.set('BORRADOR')"
+          >Borrador</button>
+          <button
+            class="informes-filtro-pill estado-revision"
+            [class.active]="filtroEstado() === 'REVISION'"
+            (click)="filtroEstado.set('REVISION')"
+          >En revisión</button>
+          <button
+            class="informes-filtro-pill estado-finalizado"
+            [class.active]="filtroEstado() === 'FINALIZADO'"
+            (click)="filtroEstado.set('FINALIZADO')"
+          >Finalizado</button>
+          <button
+            class="informes-filtro-pill estado-enviado"
+            [class.active]="filtroEstado() === 'ENVIADO'"
+            (click)="filtroEstado.set('ENVIADO')"
+          >Enviado</button>
         </div>
       </div>
 
@@ -155,47 +225,101 @@
         </button>
       </div>
 
-      <!-- Lista de informes -->
-      <div *ngFor="let informe of informes()" class="mb-2">
-        <div
-          class="p-3 border rounded d-flex justify-content-between align-items-start"
-          [class.bg-light]="informe.estado !== 'FINALIZADO' && informe.estado !== 'ENVIADO'"
-          [class.informe-enviado-card]="informe.estado === 'ENVIADO'"
-          style="cursor: pointer;"
-          (click)="abrirEditor(informe)"
-        >
-          <div class="flex-grow-1 me-3">
-            <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+      <!-- ── LAYOUT CON SECCIONES (hay borradores y no hay filtro de estado) ── -->
+      <ng-container *ngIf="mostrarSecciones()">
+
+        <!-- Sección: Pendientes de completar -->
+        <div class="informes-seccion-pendientes mb-3">
+          <div class="informes-seccion-header pendientes">
+            <i class="bi bi-clock-history"></i>
+            <span>Pendientes de completar</span>
+            <span class="informes-seccion-count">{{ informesData().borradores.length }}</span>
+          </div>
+          <ng-container *ngFor="let informe of informesData().borradores">
+            <ng-container *ngTemplateOutlet="cardInforme; context: { informe: informe }"></ng-container>
+          </ng-container>
+        </div>
+
+        <!-- Sección: Finalizados y enviados -->
+        <div *ngIf="informesData().filtrados.length > 0">
+          <div class="informes-seccion-header completados mb-2">
+            <i class="bi bi-check2-circle"></i>
+            <span>Finalizados y enviados</span>
+            <span class="informes-seccion-count">{{ informesData().filtrados.length }}</span>
+          </div>
+          <ng-container *ngFor="let informe of informesData().filtrados">
+            <ng-container *ngTemplateOutlet="cardInforme; context: { informe: informe }"></ng-container>
+          </ng-container>
+        </div>
+
+      </ng-container>
+
+      <!-- ── LAYOUT PLANO (hay filtro de estado activo o no hay borradores) ── -->
+      <ng-container *ngIf="!mostrarSecciones() && informes().length > 0">
+
+        <!-- Sin resultados para el filtro activo -->
+        <div *ngIf="informesData().filtrados.length === 0" class="text-center py-4">
+          <i class="bi bi-funnel text-muted d-block mb-2 fs-3"></i>
+          <p class="text-muted small">No hay informes con los filtros aplicados.</p>
+          <button class="btn btn-link btn-sm" (click)="filtroTipo.set('todos'); filtroEstado.set('todos'); filtroAnio.set(null)">
+            Limpiar filtros
+          </button>
+        </div>
+
+        <!-- Lista filtrada (borradores ya están en filtrados cuando el filtro de estado los incluye) -->
+        <ng-container *ngFor="let informe of informesData().filtrados">
+          <ng-container *ngTemplateOutlet="cardInforme; context: { informe: informe }"></ng-container>
+        </ng-container>
+
+      </ng-container>
+
+    </div>
+    <!-- /vista lista -->
+
+    <!-- ── TEMPLATE CARD INFORME (compacta) ── -->
+    <ng-template #cardInforme let-informe="informe">
+      <div
+        class="informe-card-compact"
+        [class.borrador]="informe.estado === 'BORRADOR' || informe.estado === 'REVISION'"
+        [class.enviado]="informe.estado === 'ENVIADO'"
+        [class.finalizado]="informe.estado === 'FINALIZADO'"
+        (click)="abrirEditor(informe)"
+      >
+        <!-- Franja de color izquierda via clase -->
+        <div class="informe-card-body">
+          <div class="informe-card-info">
+            <div class="informe-card-badges">
               <span
-                class="badge"
-                [style.background-color]="TIPO_LABELS[informe.tipoInforme].bg"
-                [style.color]="TIPO_LABELS[informe.tipoInforme].color"
-                style="border: 1px solid currentColor; font-size: 0.72rem;"
-              >{{ TIPO_LABELS[informe.tipoInforme].texto }}</span>
-              <span class="badge {{ ESTADO_LABELS[informe.estado].badgeClass }}" style="font-size: 0.72rem;">
-                {{ ESTADO_LABELS[informe.estado].texto }}
+                class="informe-tipo-badge"
+                [style.background-color]="getTipoLabel(informe.tipoInforme).bg"
+                [style.color]="getTipoLabel(informe.tipoInforme).color"
+              >{{ getTipoLabel(informe.tipoInforme).texto }}</span>
+              <span class="badge {{ getEstadoLabel(informe.estado).badgeClass }}" style="font-size: 0.68rem;">
+                {{ getEstadoLabel(informe.estado).texto }}
               </span>
             </div>
-            <p class="mb-1 fw-semibold small">{{ informe.titulo }}</p>
-            <small class="text-muted">
-              <i class="bi bi-calendar3 me-1"></i>{{ formatearFecha(informe.createdAt) }}
-              <span *ngIf="informe.periodoDesde" class="ms-2">
+            <p class="informe-card-titulo">{{ informe.titulo }}</p>
+            <div class="informe-card-meta">
+              <span><i class="bi bi-calendar3 me-1"></i>{{ formatearFecha(informe.createdAt) }}</span>
+              <span *ngIf="informe.periodoDesde">
                 <i class="bi bi-arrow-left-right me-1"></i>
                 {{ formatearFecha(informe.periodoDesde) }} — {{ formatearFecha(informe.periodoHasta) }}
               </span>
-              <span *ngIf="informe.enviadoFamiliaAt" class="ms-2 text-success">
+              <span *ngIf="informe.enviadoFamiliaAt" class="text-success">
                 <i class="bi bi-envelope-check me-1"></i>Enviado {{ formatearFecha(informe.enviadoFamiliaAt) }}
               </span>
-            </small>
+            </div>
           </div>
-
-          <div class="d-flex gap-1 align-items-center">
+          <div class="informe-card-actions">
             <button
               class="btn btn-sm btn-outline-primary"
               (click)="abrirEditor(informe); $event.stopPropagation()"
-              [title]="informe.estado === 'ENVIADO' ? 'Ver' : 'Editar'"
+              [title]="informe.estado === 'ENVIADO' || informe.estado === 'FINALIZADO' ? 'Ver' : 'Editar'"
             >
-              <i class="bi" [class.bi-pencil]="informe.estado !== 'ENVIADO'" [class.bi-eye]="informe.estado === 'ENVIADO'"></i>
+              <i class="bi"
+                [class.bi-pencil]="informe.estado !== 'ENVIADO' && informe.estado !== 'FINALIZADO'"
+                [class.bi-eye]="informe.estado === 'ENVIADO' || informe.estado === 'FINALIZADO'"
+              ></i>
             </button>
             <button
               *ngIf="informe.estado !== 'FINALIZADO' && informe.estado !== 'ENVIADO'"
@@ -208,9 +332,7 @@
           </div>
         </div>
       </div>
-
-    </div>
-    <!-- /vista lista -->
+    </ng-template>
 
 
     <!-- ══════════════════════════════════════════════════════════

@@ -1,5 +1,5 @@
 import { Component, computed, inject, signal, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { ConfirmModalComponent } from '../../../../../shared/components/confirm-modal/confirm-modal.component';
@@ -12,6 +12,7 @@ import {
   TIPO_INFORME_LABELS,
   ESTADO_INFORME_LABELS,
   TipoInforme,
+  EstadoInforme,
   SeccionInforme,
   SECCIONES_INICIAL,
   SECCIONES_SEGUIMIENTO,
@@ -23,7 +24,7 @@ import {
 @Component({
   standalone: true,
   selector: 'app-informes-tab',
-  imports: [CommonModule, FormsModule, ConfirmModalComponent],
+  imports: [CommonModule, NgTemplateOutlet, FormsModule, ConfirmModalComponent],
   templateUrl: './informes-tab.component.html',
 })
 export default class InformesTabComponent implements OnInit {
@@ -47,6 +48,44 @@ export default class InformesTabComponent implements OnInit {
   // Signals del servicio
   informes = this.informesSvc.informes;
   informeActivo = this.informesSvc.informeActivo;
+
+  // Filtros de la lista
+  filtroTipo   = signal<'todos' | TipoInforme>('todos');
+  filtroEstado = signal<'todos' | EstadoInforme>('todos');
+  filtroAnio   = signal<number | null>(null);
+
+  // Años disponibles derivados del array — aparece solo si hay más de un año
+  aniosDisponibles = computed(() => {
+    const years = this.informes().map(i => new Date(i.createdAt).getFullYear());
+    return [...new Set(years)].sort((a, b) => b - a);
+  });
+
+  // Un único computed que produce { borradores, filtrados } en un solo recorrido.
+  // Cuando hay filtro de estado activo: borradores = [] y filtrados = lista estricta.
+  // Cuando no hay filtro: borradores = BORRADOR/REVISION, filtrados = el resto.
+  informesData = computed(() => {
+    const tipo   = this.filtroTipo();
+    const estado = this.filtroEstado();
+    const anio   = this.filtroAnio();
+    const all    = this.informes();
+    const esBorrador = (i: Informe) => i.estado === 'BORRADOR' || i.estado === 'REVISION';
+    const matchTipo  = (i: Informe) => tipo === 'todos' || i.tipoInforme === tipo;
+    const matchAnio  = (i: Informe) => anio === null || new Date(i.createdAt).getFullYear() === anio;
+
+    if (estado !== 'todos') {
+      return {
+        borradores: [] as Informe[],
+        filtrados:  all.filter(i => i.estado === estado && matchTipo(i) && matchAnio(i)),
+      };
+    }
+    return {
+      borradores: all.filter(i =>  esBorrador(i) && matchTipo(i) && matchAnio(i)),
+      filtrados:  all.filter(i => !esBorrador(i) && matchTipo(i) && matchAnio(i)),
+    };
+  });
+
+  // Layout de dos secciones solo cuando hay borradores visibles
+  mostrarSecciones = computed(() => this.informesData().borradores.length > 0);
 
   // Vista: 'lista' | 'editor'
   vista = signal<'lista' | 'editor'>('lista');
@@ -336,6 +375,15 @@ export default class InformesTabComponent implements OnInit {
   esFinalizado = computed(() => this.informeActivo()?.estado === 'FINALIZADO');
   esEnviado    = computed(() => this.informeActivo()?.estado === 'ENVIADO');
   esRegistros  = computed(() => this.informeActivo()?.tipoInforme === 'REGISTROS');
+
+  // Helpers tipados para uso en ng-template (contexto 'any')
+  getTipoLabel(tipo: string): { texto: string; color: string; bg: string } {
+    return this.TIPO_LABELS[tipo as TipoInforme] ?? { texto: tipo, color: '#000', bg: '#eee' };
+  }
+
+  getEstadoLabel(estado: string): { texto: string; badgeClass: string } {
+    return this.ESTADO_LABELS[estado as EstadoInforme] ?? { texto: estado, badgeClass: 'bg-secondary' };
+  }
 
   getTextoSeccion(key: string): string {
     return this.textosSecciones()[key] ?? '';
