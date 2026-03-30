@@ -17,7 +17,7 @@ import {
 import { ClientesService } from './clientes.service';
 import { CreateClienteDto } from './dto/create-cliente.dto';
 import { clienteInclude, ClienteWithRelations } from './clientes.types';
-import { PaginationDto } from './dto/pagination.dto';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { TipoSesion } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/roles/roles.guard';
@@ -39,9 +39,9 @@ export class ClientesController {
    * GET /api/clientes
    */
   @Get()
-  async findAll(@Req() req: any) {
+  async findAll(@Req() req: any, @Query() pagination: PaginationDto) {
     this.logger.log('📋 GET /api/clientes');
-    return this.clientesService.findAll(req.user);
+    return this.clientesService.findAll(req.user, pagination);
   }
 
   /**

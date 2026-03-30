@@ -13,7 +13,7 @@ import {
   Req,
 } from '@nestjs/common';
 import { FichajeService } from './fichaje.service';
-import { CreateRegistroDiarioDto } from './dto/create-registro.dto';
+import { CreateRegistroDiarioDto, UpdateRegistroDiarioDto } from './dto/create-registro.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/roles/roles.guard';
 import { Roles } from 'src/roles/roles.decorator';
@@ -62,16 +62,13 @@ export class FichajeController {
   @Patch(':id')
   async update(
     @Param('id') id: string,
-    @Body() updateDto: { 
-      contenido: string;
-      objetivosGeneralesTrabajados?: string[];
-    },
+    @Body() updateDto: UpdateRegistroDiarioDto,
   ) {
     this.logger.log(`Actualizando registro: ${id}`);
     return this.fichajeService.update(
-      id, 
+      id,
       updateDto.contenido,
-      updateDto.objetivosGeneralesTrabajados
+      updateDto.objetivosGeneralesTrabajados,
     );
   }
 

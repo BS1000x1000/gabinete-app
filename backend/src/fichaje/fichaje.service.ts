@@ -4,12 +4,27 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { CreateRegistroDiarioDto } from './dto/create-registro.dto';
+import { CreateRegistroDiarioDto, ObjetivoTrabajadoDto } from './dto/create-registro.dto';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class FichajeService {
   constructor(private readonly prisma: PrismaService) {}
+
+  private async validateObjetivos(objetivos: ObjetivoTrabajadoDto[]): Promise<void> {
+    const ids = objetivos.map(o => o.objetivoGeneralId);
+    const encontrados = await this.prisma.objetivoGeneral.findMany({
+      where: { id: { in: ids } },
+      select: { id: true },
+    });
+    const idsEncontrados = encontrados.map(o => o.id);
+    const idsNoEncontrados = ids.filter(id => !idsEncontrados.includes(id));
+    if (idsNoEncontrados.length > 0) {
+      throw new BadRequestException(
+        `Objetivos no encontrados: ${idsNoEncontrados.join(', ')}`,
+      );
+    }
+  }
 
   /* ---------- CREATE ---------- */
   async create(
@@ -17,48 +32,19 @@ export class FichajeService {
     trabajadorId: string,
   ): Promise<any> {
     try {
-      // 1. Verificar que el cliente exista
       const cliente = await this.prisma.cliente.findUnique({
         where: { id: dto.clienteId },
       });
+      if (!cliente) throw new NotFoundException('Cliente no encontrado');
 
-      if (!cliente) {
-        throw new NotFoundException('Cliente no encontrado');
-      }
-
-      // 2. ✅ Verificar que los objetivos existan (si se enviaron)
       if (dto.objetivosGeneralesTrabajados?.length) {
-        const objetivosExistentes = await this.prisma.objetivoGeneral.findMany({
-          where: {
-            id: {
-              in: dto.objetivosGeneralesTrabajados,
-            },
-          },
-          select: {
-            id: true,
-            titulo: true,
-          },
-        });
-
-        const idsEncontrados = objetivosExistentes.map(obj => obj.id);
-        const idsNoEncontrados = dto.objetivosGeneralesTrabajados!.filter(
-          id => !idsEncontrados.includes(id)
-        );
-
-        if (idsNoEncontrados.length > 0) {
-          throw new BadRequestException(
-            `Objetivos no encontrados: ${idsNoEncontrados.join(', ')}`
-          );
-        }
-
+        await this.validateObjetivos(dto.objetivosGeneralesTrabajados);
       }
 
-      // 3. Si viene sesionId, verificar y marcarla como completada
       if (dto.sesionId) {
         const sesion = await this.prisma.sesion.findUnique({
           where: { id: dto.sesionId },
         });
-
         if (sesion) {
           await this.prisma.sesion.update({
             where: { id: dto.sesionId },
@@ -67,62 +53,34 @@ export class FichajeService {
         }
       }
 
-      // 4. ✅ CORREGIDO: Crear el registro diario
-      const nuevoRegistro = await this.prisma.registroDiario.create({
+      return await this.prisma.registroDiario.create({
         data: {
           contenido: dto.contenido,
           clienteId: dto.clienteId,
-          trabajadorId: trabajadorId,
+          trabajadorId,
           ...(dto.fechaRegistro && {
             fechaRegistro: new Date(dto.fechaRegistro),
           }),
-          // ✅ CLAVE: Usar los campos explícitos de la tabla intermedia
-          ...(dto.objetivosGeneralesTrabajados && 
-            dto.objetivosGeneralesTrabajados.length > 0 && {
+          ...(dto.objetivosGeneralesTrabajados?.length && {
             objetivosGeneralesTrabajados: {
-              create: dto.objetivosGeneralesTrabajados.map((objetivoId) => ({
-                objetivoGeneralId: objetivoId, // ✅ Campo directo, no nested
+              create: dto.objetivosGeneralesTrabajados.map((obj) => ({
+                objetivoGeneralId: obj.objetivoGeneralId,
+                notasRegistro: obj.notasRegistro ?? null,
               })),
             },
           }),
         },
         include: {
-          cliente: {
-            select: {
-              id: true,
-              nombre: true,
-              apellidos: true,
-            },
-          },
-          trabajador: {
-            select: {
-              id: true,
-              nombre: true,
-              apellidos: true,
-            },
-          },
+          cliente: { select: { id: true, nombre: true, apellidos: true } },
+          trabajador: { select: { id: true, nombre: true, apellidos: true } },
           objetivosGeneralesTrabajados: {
-            include: {
-              objetivoGeneral: {
-                include: {
-                  areaDesarrollo: true,
-                },
-              },
-            },
+            include: { objetivoGeneral: { include: { areaDesarrollo: true } } },
           },
         },
       });
-
-      return nuevoRegistro;
-
     } catch (err) {
-      if (err instanceof NotFoundException || err instanceof BadRequestException) {
-        throw err;
-      }
-      
-      throw new InternalServerErrorException(
-        `Error al crear registro diario: ${err.message}`,
-      );
+      if (err instanceof NotFoundException || err instanceof BadRequestException) throw err;
+      throw new InternalServerErrorException(`Error al crear registro diario: ${err.message}`);
     }
   }
 
@@ -130,126 +88,67 @@ export class FichajeService {
   async update(
     id: string,
     contenido: string,
-    objetivosGeneralesTrabajados?: string[],
+    objetivosGeneralesTrabajados?: ObjetivoTrabajadoDto[],
   ): Promise<any> {
     try {
-      const registro = await this.prisma.registroDiario.findUnique({
-        where: { id },
-      });
-      
-      if (!registro) {
-        throw new NotFoundException('Registro diario no encontrado');
-      }
+      const registro = await this.prisma.registroDiario.findUnique({ where: { id } });
+      if (!registro) throw new NotFoundException('Registro diario no encontrado');
 
-      // ✅ Validar objetivos si se envían
       if (objetivosGeneralesTrabajados?.length) {
-        const objetivosExistentes = await this.prisma.objetivoGeneral.findMany({
-          where: {
-            id: { in: objetivosGeneralesTrabajados },
-          },
-          select: { id: true },
-        });
+        await this.validateObjetivos(objetivosGeneralesTrabajados);
+      }
 
-        const idsEncontrados = objetivosExistentes.map(obj => obj.id);
-        const idsNoEncontrados = objetivosGeneralesTrabajados!.filter(
-          id => !idsEncontrados.includes(id)
-        );
-
-        if (idsNoEncontrados.length > 0) {
-          throw new BadRequestException(
-            `Objetivos no encontrados: ${idsNoEncontrados.join(', ')}`
-          );
+      // deleteMany + update en transacción para garantizar atomicidad
+      return await this.prisma.$transaction(async (tx) => {
+        if (objetivosGeneralesTrabajados !== undefined) {
+          await tx.registroDiarioObjetivo.deleteMany({ where: { registroDiarioId: id } });
         }
-      }
-
-      // Si se actualizan los objetivos, primero eliminar los existentes
-      if (objetivosGeneralesTrabajados !== undefined) {
-        await this.prisma.registroDiarioObjetivo.deleteMany({
-          where: { registroDiarioId: id },
-        });
-      }
-
-      // ✅ CORREGIDO: Actualizar el registro
-      return await this.prisma.registroDiario.update({
-        where: { id },
-        data: {
-          contenido,
-          ...(objetivosGeneralesTrabajados && 
-            objetivosGeneralesTrabajados.length > 0 && {
-            objetivosGeneralesTrabajados: {
-              create: objetivosGeneralesTrabajados.map((objetivoId) => ({
-                objetivoGeneralId: objetivoId, // ✅ Campo directo
-              })),
-            },
-          }),
-        },
-        include: {
-          trabajador: {
-            select: {
-              id: true,
-              nombre: true,
-              apellidos: true,
-            },
-          },
-          objetivosGeneralesTrabajados: {
-            include: {
-              objetivoGeneral: {
-                include: {
-                  areaDesarrollo: true,
-                },
+        return tx.registroDiario.update({
+          where: { id },
+          data: {
+            contenido,
+            ...(objetivosGeneralesTrabajados?.length && {
+              objetivosGeneralesTrabajados: {
+                create: objetivosGeneralesTrabajados.map((obj) => ({
+                  objetivoGeneralId: obj.objetivoGeneralId,
+                  notasRegistro: obj.notasRegistro ?? null,
+                })),
               },
+            }),
+          },
+          include: {
+            trabajador: { select: { id: true, nombre: true, apellidos: true } },
+            objetivosGeneralesTrabajados: {
+              include: { objetivoGeneral: { include: { areaDesarrollo: true } } },
             },
           },
-        },
+        });
       });
     } catch (err) {
-      if (err instanceof NotFoundException || err instanceof BadRequestException) {
-        throw err;
-      }
-      throw new InternalServerErrorException(
-        `Error al actualizar registro diario: ${err.message}`,
-      );
+      if (err instanceof NotFoundException || err instanceof BadRequestException) throw err;
+      throw new InternalServerErrorException(`Error al actualizar registro diario: ${err.message}`);
     }
   }
 
   /* ---------- READ (por Cliente) ---------- */
   async findByCliente(clienteId: string): Promise<any[]> {
     try {
-      const cliente = await this.prisma.cliente.findUnique({
-        where: { id: clienteId },
-      });
-      
-      if (!cliente) {
-        throw new NotFoundException('Cliente no encontrado');
-      }
+      const cliente = await this.prisma.cliente.findUnique({ where: { id: clienteId } });
+      if (!cliente) throw new NotFoundException('Cliente no encontrado');
 
       return await this.prisma.registroDiario.findMany({
         where: { clienteId },
         include: {
-          trabajador: {
-            select: {
-              id: true,
-              nombre: true,
-              apellidos: true,
-            },
-          },
+          trabajador: { select: { id: true, nombre: true, apellidos: true } },
           objetivosGeneralesTrabajados: {
-            include: {
-              objetivoGeneral: {
-                include: {
-                  areaDesarrollo: true,
-                },
-              },
-            },
+            include: { objetivoGeneral: { include: { areaDesarrollo: true } } },
           },
         },
         orderBy: { fechaRegistro: 'desc' },
       });
     } catch (err) {
       if (err instanceof NotFoundException) throw err;
-      throw new InternalServerErrorException(
-        `Error al obtener registros del cliente: ${err.message}`,
-      );
+      throw new InternalServerErrorException(`Error al obtener registros del cliente: ${err.message}`);
     }
   }
 
@@ -259,29 +158,15 @@ export class FichajeService {
       return await this.prisma.registroDiario.findMany({
         where: { trabajadorId },
         include: {
-          cliente: {
-            select: {
-              id: true,
-              nombre: true,
-              apellidos: true,
-            },
-          },
+          cliente: { select: { id: true, nombre: true, apellidos: true } },
           objetivosGeneralesTrabajados: {
-            include: {
-              objetivoGeneral: {
-                include: {
-                  areaDesarrollo: true,
-                },
-              },
-            },
+            include: { objetivoGeneral: { include: { areaDesarrollo: true } } },
           },
         },
         orderBy: { fechaRegistro: 'desc' },
       });
     } catch (err) {
-      throw new InternalServerErrorException(
-        `Error al obtener registros del trabajador: ${err.message}`,
-      );
+      throw new InternalServerErrorException(`Error al obtener registros del trabajador: ${err.message}`);
     }
   }
 
@@ -291,63 +176,30 @@ export class FichajeService {
       const registro = await this.prisma.registroDiario.findUnique({
         where: { id },
         include: {
-          trabajador: {
-            select: {
-              id: true,
-              nombre: true,
-              apellidos: true,
-            },
-          },
-          cliente: {
-            select: {
-              id: true,
-              nombre: true,
-              apellidos: true,
-            },
-          },
+          trabajador: { select: { id: true, nombre: true, apellidos: true } },
+          cliente: { select: { id: true, nombre: true, apellidos: true } },
           objetivosGeneralesTrabajados: {
-            include: {
-              objetivoGeneral: {
-                include: {
-                  areaDesarrollo: true,
-                },
-              },
-            },
+            include: { objetivoGeneral: { include: { areaDesarrollo: true } } },
           },
         },
       });
-      
-      if (!registro) {
-        throw new NotFoundException('Registro diario no encontrado');
-      }
-      
+      if (!registro) throw new NotFoundException('Registro diario no encontrado');
       return registro;
     } catch (err) {
       if (err instanceof NotFoundException) throw err;
-      throw new InternalServerErrorException(
-        `Error al obtener el registro diario: ${err.message}`,
-      );
+      throw new InternalServerErrorException(`Error al obtener el registro diario: ${err.message}`);
     }
   }
 
   /* ---------- DELETE ---------- */
   async remove(id: string): Promise<void> {
     try {
-      const registro = await this.prisma.registroDiario.findUnique({
-        where: { id },
-      });
-      
-      if (!registro) {
-        throw new NotFoundException('Registro diario no encontrado');
-      }
-
-      // Las relaciones se eliminan automáticamente por el onDelete: Cascade
+      const registro = await this.prisma.registroDiario.findUnique({ where: { id } });
+      if (!registro) throw new NotFoundException('Registro diario no encontrado');
       await this.prisma.registroDiario.delete({ where: { id } });
     } catch (err) {
       if (err instanceof NotFoundException) throw err;
-      throw new InternalServerErrorException(
-        `Error al eliminar registro diario: ${err.message}`,
-      );
+      throw new InternalServerErrorException(`Error al eliminar registro diario: ${err.message}`);
     }
   }
 }

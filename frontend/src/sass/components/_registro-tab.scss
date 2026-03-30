@@ -369,6 +369,72 @@
 }
 
 // ==========================================
+// OBJETIVO CARD WRAP + NOTAS INPUT
+// ==========================================
+.objetivo-card-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+// Textarea de notas por objetivo — aparece bajo la tarjeta seleccionada
+.objetivo-notas-input {
+  width: 100%;
+  min-height: 60px;
+  padding: $spacing-xs $spacing-sm;
+  margin-top: 3px;
+  font-size: $font-size-xs;
+  font-family: inherit;
+  color: $gray-700;
+  background: $white;
+  border: 1.5px solid rgba($primary, 0.3);
+  border-top: none;
+  border-radius: 0 0 $border-radius $border-radius;
+  resize: vertical;
+  outline: none;
+  line-height: 1.5;
+  transition: border-color $animation-duration-fast $animation-timing;
+
+  &::placeholder {
+    color: $gray-400;
+    font-style: italic;
+  }
+
+  &:focus {
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba($primary, 0.08);
+  }
+}
+
+// ==========================================
+// HISTORIAL — BADGE CON NOTAS ANOTADAS
+// ==========================================
+.historial-objetivos__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-xs;
+  align-items: flex-start;
+}
+
+// Wrapper que agrupa el badge + sus notas
+.objetivo-badge-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-width: 320px;
+}
+
+// Texto de notas bajo el badge — estilo anotación clínica
+.objetivo-badge-notas {
+  font-size: 0.7rem;
+  color: $gray-500;
+  font-style: italic;
+  line-height: 1.45;
+  padding-left: 6px;
+  border-left: 2px solid rgba($primary, 0.25);
+  word-break: break-word;
+}
+
+// ==========================================
 // RESPONSIVE
 // ==========================================
 @include respond-to('md') {

@@ -25,8 +25,8 @@
         >
           <i class="bi" [ngClass]="mostrarObjetivos() ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
           {{ mostrarObjetivos() ? "Ocultar" : "Marcar" }} Objetivos Trabajados
-          <span *ngIf="objetivosSeleccionados().length > 0" class="objetivos-count">
-            {{ objetivosSeleccionados().length }}
+          <span *ngIf="objetivosSeleccionadosCount() > 0" class="objetivos-count">
+            {{ objetivosSeleccionadosCount() }}
           </span>
         </button>
 
@@ -34,7 +34,7 @@
         <div *ngIf="mostrarObjetivos()" class="objetivos-panel">
           <p class="objetivos-panel__hint">
             <i class="bi bi-info-circle"></i>
-            Selecciona los objetivos que trabajaste en esta sesión
+            Selecciona los objetivos trabajados y añade notas específicas opcionales
           </p>
 
           <div *ngIf="objetivosAgrupados().length === 0" class="objetivos-panel__empty">
@@ -47,23 +47,35 @@
               <span class="badge" [style.background-color]="grupo.color">{{ grupo.area }}</span>
             </div>
             <div class="area-grupo__objetivos">
-              <label
+              <div
                 *ngFor="let objetivo of grupo.objetivos"
-                class="objetivo-card"
-                [class.selected]="esObjetivoSeleccionado(objetivo.id)"
+                class="objetivo-card-wrap"
               >
-                <input
-                  type="checkbox"
-                  class="form-check-input objetivo-checkbox"
-                  [checked]="esObjetivoSeleccionado(objetivo.id)"
-                  (change)="toggleObjetivo(objetivo.id)"
-                />
-                <span class="objetivo-titulo">{{ objetivo.titulo }}</span>
-                <i
+                <label
+                  class="objetivo-card"
+                  [class.selected]="esObjetivoSeleccionado(objetivo.id)"
+                >
+                  <input
+                    type="checkbox"
+                    class="form-check-input objetivo-checkbox"
+                    [checked]="esObjetivoSeleccionado(objetivo.id)"
+                    (change)="toggleObjetivo(objetivo.id)"
+                  />
+                  <span class="objetivo-titulo">{{ objetivo.titulo }}</span>
+                  <i
+                    *ngIf="esObjetivoSeleccionado(objetivo.id)"
+                    class="bi bi-check-circle-fill objetivo-check-icon"
+                  ></i>
+                </label>
+                <textarea
                   *ngIf="esObjetivoSeleccionado(objetivo.id)"
-                  class="bi bi-check-circle-fill objetivo-check-icon"
-                ></i>
-              </label>
+                  class="objetivo-notas-input"
+                  rows="2"
+                  placeholder="¿Qué se trabajó con este objetivo? (opcional)"
+                  [value]="objetivosNotasMap()[objetivo.id] ?? ''"
+                  (input)="setNotasObjetivo(objetivo.id, $any($event.target).value)"
+                ></textarea>
+              </div>
             </div>
           </div>
         </div>
@@ -149,13 +161,20 @@
                 <i class="bi bi-bullseye"></i>Objetivos trabajados:
               </span>
               <div class="historial-objetivos__badges">
-                <span
+                <div
                   *ngFor="let objTrabajado of reg.objetivosGeneralesTrabajados"
-                  class="badge"
-                  [style.background-color]="objTrabajado.objetivoGeneral.areaDesarrollo.color"
+                  class="objetivo-badge-item"
                 >
-                  {{ objTrabajado.objetivoGeneral.titulo }}
-                </span>
+                  <span
+                    class="badge"
+                    [style.background-color]="objTrabajado.objetivoGeneral.areaDesarrollo.color"
+                  >
+                    {{ objTrabajado.objetivoGeneral.titulo }}
+                  </span>
+                  <span *ngIf="objTrabajado.notasRegistro" class="objetivo-badge-notas">
+                    {{ objTrabajado.notasRegistro }}
+                  </span>
+                </div>
               </div>
             </div>
           </div>

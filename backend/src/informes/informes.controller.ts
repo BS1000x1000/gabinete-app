@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   HttpCode,
   HttpStatus,
   Logger,
@@ -13,6 +14,7 @@ import {
   Req,
   Res,
 } from '@nestjs/common';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 import type { Response } from 'express'; // ← Import correcto
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../roles/roles.guard';
@@ -37,9 +39,9 @@ export class InformesController {
   // ==========================================
 
   @Get()
-  async findAll() {
+  async findAll(@Query() pagination: PaginationDto) {
     this.logger.log('GET /informes');
-    return this.informesService.findAll();
+    return this.informesService.findAll(pagination);
   }
 
   @Post()

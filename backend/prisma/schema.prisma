@@ -186,6 +186,10 @@ model Sesion {
   bonoId  String?  @map("id_bono")
   bono    Bono?    @relation(fields: [bonoId], references: [id])
 
+  @@index([clienteId])
+  @@index([trabajadorId])
+  @@index([fechaHoraInicio])
+  @@index([trabajadorId, fechaHoraInicio])
   @@map("sesiones")
 }
 
@@ -281,6 +285,9 @@ model Informe {
   trabajadorId String     @map("id_trabajador")
   trabajador   Trabajador @relation(fields: [trabajadorId], references: [id])
 
+  @@index([clienteId])
+  @@index([trabajadorId])
+  @@index([createdAt])
   @@map("informes")
 }
 
@@ -303,6 +310,9 @@ model RegistroDiario {
   updatedAt                    DateTime                 @updatedAt @map("ultima_actualizacion")
   objetivosGeneralesTrabajados RegistroDiarioObjetivo[]
 
+  @@index([clienteId])
+  @@index([trabajadorId])
+  @@index([fechaRegistro])
   @@map("registros_diarios")
 }
 
@@ -427,6 +437,8 @@ model RegistroDiarioObjetivo {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("fecha_creacion")
 
+  notasRegistro String? @db.Text @map("notas_registro")
+
   registroDiarioId String         @map("id_registro_diario")
   registroDiario   RegistroDiario @relation(fields: [registroDiarioId], references: [id], onDelete: Cascade)
 
@@ -461,6 +473,8 @@ model Bono {
 
   sesiones        Sesion[]
 
+  @@index([clienteId])
+  @@index([estado])
   @@map("bonos")
 }
 
@@ -554,5 +568,7 @@ model Notificacion {
   clienteId    String?    @map("id_cliente")
   cliente      Cliente?   @relation(fields: [clienteId], references: [id])
 
+  @@index([trabajadorId])
+  @@index([leida])
   @@map("notificaciones")
 }

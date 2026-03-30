@@ -8,6 +8,7 @@ import {
 import { TipoInforme, EstadoInforme } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateInformeDto, UpdateInformeDto } from './dto/informe.dto';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 // Include completo para devolver el informe con todas sus relaciones
 const informeInclude = {
@@ -106,12 +107,23 @@ export class InformesService {
   // LISTAR INFORMES
   // ============================================================
 
-  async findAll() {
-    this.logger.log('Obteniendo todos los informes');
-    return this.prisma.informe.findMany({
-      include: informeInclude,
-      orderBy: { createdAt: 'desc' },
-    });
+  async findAll(pagination: PaginationDto = {}) {
+    const { page = 1, limit = 50 } = pagination;
+    const skip = (page - 1) * limit;
+
+    this.logger.log(`Obteniendo informes (page=${page}, limit=${limit})`);
+
+    const [data, total] = await Promise.all([
+      this.prisma.informe.findMany({
+        include: informeInclude,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.informe.count(),
+    ]);
+
+    return { data, total, page, limit };
   }
 
   async findByCliente(

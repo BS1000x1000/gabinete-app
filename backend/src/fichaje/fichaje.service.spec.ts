@@ -25,8 +25,19 @@ describe('FichajeService', () => {
     it('BadRequest si objetivo no existe', async()=>{
       prisma.cliente.findUnique.mockResolvedValue({id:"c1"});
       prisma.objetivoGeneral.findMany.mockResolvedValue([]);
-      const dtoConObj={...dto,objetivosGeneralesTrabajados:['obj-inexistente']};
+      const dtoConObj={...dto,objetivosGeneralesTrabajados:[{objetivoGeneralId:'obj-inexistente'}]};
       await expect(svc.create(dtoConObj,'t1')).rejects.toThrow(BadRequestException);
+    });
+    it('crea registro con objetivos y notas', async()=>{
+      prisma.cliente.findUnique.mockResolvedValue({id:'c1'});
+      prisma.objetivoGeneral.findMany.mockResolvedValue([{id:'obj1',titulo:'Atención'}]);
+      const registro={id:'rd1',contenido:'Sesion bien',clienteId:'c1',trabajadorId:'t1'};
+      prisma.registroDiario.create.mockResolvedValue(registro);
+      const dtoConNotas={...dto,objetivosGeneralesTrabajados:[{objetivoGeneralId:'obj1',notasRegistro:'Hoja de distractores'}]};
+      const r = await svc.create(dtoConNotas,'t1');
+      expect(r.id).toBe('rd1');
+      const createCall = prisma.registroDiario.create.mock.calls[0][0];
+      expect(createCall.data.objetivosGeneralesTrabajados.create[0].notasRegistro).toBe('Hoja de distractores');
     });
     it('crea registro diario correctamente', async()=>{
       prisma.cliente.findUnique.mockResolvedValue({id:"c1"});
@@ -43,7 +54,7 @@ describe('FichajeService', () => {
     it('BadRequest si objetivo no existe en update', async()=>{
       prisma.registroDiario.findUnique.mockResolvedValue({id:'rd1'});
       prisma.objetivoGeneral.findMany.mockResolvedValue([]);
-      await expect(svc.update('rd1','contenido',['obj-x'])).rejects.toThrow(BadRequestException);
+      await expect(svc.update('rd1','contenido',[{objetivoGeneralId:'obj-x'}])).rejects.toThrow(BadRequestException);
     });
     it('actualiza contenido', async()=>{
       prisma.registroDiario.findUnique.mockResolvedValue({id:'rd1'});

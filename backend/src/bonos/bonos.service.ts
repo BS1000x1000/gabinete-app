@@ -35,10 +35,11 @@ export class BonosService {
   }
 
   // ─── Obtener bonos de un cliente ──────────────────────────────
-  async findByCliente(clienteId: string) {
+  async findByCliente(clienteId: string, limit = 100) {
     return this.prisma.bono.findMany({
       where: { clienteId },
       orderBy: { createdAt: 'desc' },
+      take: limit,
       include: {
         familiarPago: { select: { id: true, nombre: true, apellidos: true } },
         sesiones: {

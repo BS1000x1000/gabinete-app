@@ -34,21 +34,18 @@ export class RegistroTabComponent implements OnInit {
   filtro = signal('Todo');
   clienteId = signal<string>('');
 
-  // ✅ NUEVO: Objetivos seleccionados para marcar como trabajados
-  objetivosSeleccionados = signal<string[]>([]);
+  objetivosNotasMap = signal<Record<string, string>>({});
   mostrarObjetivos = signal(false);
 
   // Registros y objetivos del cliente
   registros = this.fichajeSvc.registros;
   objetivosCliente = this.clientesSvc.objetivos;
 
-  // ✅ NUEVO: Computed para agrupar objetivos por área
+  // Computed para agrupar objetivos por área
   objetivosAgrupados = computed(() => {
     const objetivos = this.objetivosCliente()?.objetivos || [];
 
-    // Agrupar por área
     const grupos = new Map<string, any[]>();
-
     objetivos.forEach((obj) => {
       if (!grupos.has(obj.area)) {
         grupos.set(obj.area, []);
@@ -93,6 +90,8 @@ export class RegistroTabComponent implements OnInit {
     });
   });
 
+  objetivosSeleccionadosCount = computed(() => Object.keys(this.objetivosNotasMap()).length);
+
   ngOnInit(): void {
     this.route.parent?.paramMap.subscribe((params) => {
       const id = params.get('id');
@@ -127,29 +126,35 @@ export class RegistroTabComponent implements OnInit {
     });
   }
 
-  // ✅ NUEVO: Toggle de objetivo seleccionado
+  // Toggle: añadir con notas vacías o eliminar del mapa
   toggleObjetivo(objetivoId: string) {
-    this.objetivosSeleccionados.update((prev) => {
-      if (prev.includes(objetivoId)) {
-        return prev.filter((id) => id !== objetivoId);
+    this.objetivosNotasMap.update((prev) => {
+      const next = { ...prev };
+      if (objetivoId in next) {
+        delete next[objetivoId];
       } else {
-        return [...prev, objetivoId];
+        next[objetivoId] = '';
       }
+      return next;
     });
   }
 
-  // ✅ NUEVO: Verificar si un objetivo está seleccionado
+  // Actualizar las notas de un objetivo concreto
+  setNotasObjetivo(objetivoId: string, notas: string) {
+    this.objetivosNotasMap.update((prev) => ({ ...prev, [objetivoId]: notas }));
+  }
+
+  // Verificar si un objetivo está seleccionado
   esObjetivoSeleccionado(objetivoId: string): boolean {
-    console.log(objetivoId);
-    return this.objetivosSeleccionados().includes(objetivoId);
+    return objetivoId in this.objetivosNotasMap();
   }
 
   async guardar() {
-    // Tiptap emite '<p></p>' cuando está vacío; DOMParser extrae el texto real de forma segura
     const html = this.nuevoContenido() ?? '';
-    const textoPlano = new DOMParser()
-      .parseFromString(html, 'text/html')
-      .body.textContent?.trim() ?? '';
+    const textoPlano =
+      new DOMParser()
+        .parseFromString(html, 'text/html')
+        .body.textContent?.trim() ?? '';
 
     if (!textoPlano) {
       alert('Por favor, escribe el contenido del registro');
@@ -157,24 +162,25 @@ export class RegistroTabComponent implements OnInit {
     }
 
     this.cargando.set(true);
-    console.log(this.objetivosSeleccionados());
+
+    const map = this.objetivosNotasMap();
+    const objetivos = Object.keys(map).map((id) => ({
+      objetivoGeneralId: id,
+      ...(map[id] ? { notasRegistro: map[id] } : {}),
+    }));
+
     const nuevo: CreateRegistroDiarioDto = {
       clienteId: this.clienteId(),
       contenido: this.cleaner.sanitizeInput(this.nuevoContenido()),
-      // ✅ NUEVO: Incluir objetivos trabajados
-      objetivosGeneralesTrabajados:
-        this.objetivosSeleccionados().length > 0
-          ? this.objetivosSeleccionados()
-          : undefined,
+      objetivosGeneralesTrabajados: objetivos.length > 0 ? objetivos : undefined,
     };
-    console.log(nuevo);
+
     this.fichajeSvc.createRegistro(nuevo).subscribe({
       next: () => {
         this.nuevoContenido.set('');
-        this.objetivosSeleccionados.set([]); // ✅ Limpiar selección
+        this.objetivosNotasMap.set({});
         this.mostrarObjetivos.set(false);
         this.cargando.set(false);
-        console.log('✅ Registro guardado con objetivos');
       },
       error: (err) => {
         console.error('❌ Error al guardar registro:', err);
@@ -186,7 +192,7 @@ export class RegistroTabComponent implements OnInit {
 
   limpiar() {
     this.nuevoContenido.set('');
-    this.objetivosSeleccionados.set([]);
+    this.objetivosNotasMap.set({});
   }
 }
 export default RegistroTabComponent;

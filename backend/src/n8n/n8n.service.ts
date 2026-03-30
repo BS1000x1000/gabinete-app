@@ -4,7 +4,12 @@ import { firstValueFrom } from 'rxjs';
 import { TipoInforme, EstadoInforme } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PdfGeneratorService } from '../common/pdf/pdf-generator.service';
-import { BonoAlertaItem } from './interface/n8n-automatizaciones.interface';
+import {
+  BonoAlertaItem,
+  NotaObjetivoItem,
+  ObjetivoProgresoItem,
+  ObjetivosProgresoResponse,
+} from './interface/n8n-automatizaciones.interface';
 import { GenerarPdfInformeDto } from './dto/generar-pdf-informe.dto';
 
 @Injectable()
@@ -225,5 +230,100 @@ export class N8nService {
         enviadoFamiliaAt: new Date(),
       },
     });
+  }
+
+  // ============================================================
+  // AUTOMATIZACIÓN 3 — Progreso de objetivos por período
+  // Alimenta el análisis IA semestral para informe de evolución GAS
+  // ============================================================
+
+  async getObjetivosProgreso(
+    clienteId: string,
+    desde: Date,
+    hasta: Date,
+  ): Promise<ObjetivosProgresoResponse> {
+    const cliente = await this.prisma.cliente.findUnique({
+      where: { id: clienteId },
+      select: { nombre: true, apellidos: true },
+    });
+
+    if (!cliente) throw new NotFoundException('Cliente no encontrado');
+
+    // Obtener todas las entradas de la tabla puente en el rango
+    const rows = await this.prisma.registroDiarioObjetivo.findMany({
+      where: {
+        registroDiario: {
+          clienteId,
+          fechaRegistro: { gte: desde, lte: hasta },
+        },
+      },
+      include: {
+        registroDiario: {
+          select: {
+            id: true,
+            fechaRegistro: true,
+            trabajador: { select: { nombre: true, apellidos: true } },
+          },
+        },
+        objetivoGeneral: {
+          select: {
+            id: true,
+            titulo: true,
+            areaDesarrollo: { select: { nombre: true, color: true } },
+          },
+        },
+      },
+      orderBy: { registroDiario: { fechaRegistro: 'asc' } },
+    });
+
+    // Niveles GAS actuales del cliente
+    const clienteObjetivos = await this.prisma.clienteObjetivo.findMany({
+      where: { clienteId, activo: true },
+      select: { objetivoGeneralId: true, nivelGASActual: true },
+    });
+    const gasMap = new Map(
+      clienteObjetivos.map((co) => [co.objetivoGeneralId, co.nivelGASActual]),
+    );
+
+    // Agrupar por objetivo
+    const grouped = new Map<string, ObjetivoProgresoItem>();
+
+    for (const row of rows) {
+      const oId = row.objetivoGeneralId;
+
+      if (!grouped.has(oId)) {
+        grouped.set(oId, {
+          objetivoGeneralId: oId,
+          titulo: row.objetivoGeneral.titulo,
+          area: row.objetivoGeneral.areaDesarrollo.nombre,
+          colorArea: row.objetivoGeneral.areaDesarrollo.color ?? null,
+          nivelGASActual: gasMap.get(oId) ?? null,
+          totalSesiones: 0,
+          notas: [],
+        });
+      }
+
+      const item = grouped.get(oId)!;
+      item.totalSesiones++;
+
+      if (row.notasRegistro) {
+        const nota: NotaObjetivoItem = {
+          fecha: this.toDateStr(row.registroDiario.fechaRegistro)!,
+          notasRegistro: row.notasRegistro,
+          registroId: row.registroDiario.id,
+          terapeutaNombre: `${row.registroDiario.trabajador.nombre} ${row.registroDiario.trabajador.apellidos}`,
+        };
+        item.notas.push(nota);
+      }
+    }
+
+    return {
+      clienteId,
+      clienteNombre: cliente.nombre,
+      clienteApellidos: cliente.apellidos,
+      desde: this.toDateStr(desde)!,
+      hasta: this.toDateStr(hasta)!,
+      objetivos: Array.from(grouped.values()),
+    };
   }
 }

@@ -179,11 +179,12 @@ export class SesionesService {
   /**
    * Obtener sesiones de un cliente
    */
-  async findByCliente(clienteId: string): Promise<SesionWithRelations[]> {
+  async findByCliente(clienteId: string, limit = 500): Promise<SesionWithRelations[]> {
     return await this.prisma.sesion.findMany({
       where: { clienteId },
       include: sesionInclude,
       orderBy: { fechaHoraInicio: 'desc' },
+      take: limit,
     });
   }
 

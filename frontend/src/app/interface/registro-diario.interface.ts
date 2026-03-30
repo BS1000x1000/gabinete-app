@@ -31,10 +31,11 @@ export interface RegistroDiario {
 }
 
 /**
- * Objetivo trabajado en un registro específico
+ * Objetivo trabajado en un registro específico (respuesta del API)
  */
 export interface ObjetivoTrabajado {
   id: string;
+  notasRegistro?: string | null;
   objetivoGeneral: {
     id: string;
     titulo: string;
@@ -46,6 +47,14 @@ export interface ObjetivoTrabajado {
 }
 
 /**
+ * Item de objetivo trabajado para enviar al API (con notas opcionales)
+ */
+export interface ObjetivoTrabajadoInput {
+  objetivoGeneralId: string;
+  notasRegistro?: string;
+}
+
+/**
  * DTO para crear un registro diario
  */
 export interface CreateRegistroDiarioDto {
@@ -53,7 +62,7 @@ export interface CreateRegistroDiarioDto {
   contenido: string;
   fechaRegistro?: string;
   sesionId?: string; // Vincular a una sesión específica
-  objetivosGeneralesTrabajados?: string[];
+  objetivosGeneralesTrabajados?: ObjetivoTrabajadoInput[];
 }
 
 /**
@@ -61,5 +70,5 @@ export interface CreateRegistroDiarioDto {
  */
 export interface UpdateRegistroDiarioDto {
   contenido?: string;
-  objetivosGeneralesTrabajados?: string[];
+  objetivosGeneralesTrabajados?: ObjetivoTrabajadoInput[];
 }

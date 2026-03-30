@@ -74,8 +74,8 @@ export class ClientesService {
    */
   getAll(): Observable<ClienteDataBackend[]> {
     return this.http
-      .get<WrappedResponse<ClienteDataBackend[]>>(this.api)
-      .pipe(map((res) => res.data || res));
+      .get<any>(`${this.api}?limit=500`)
+      .pipe(map((res: any) => res?.data?.data ?? res?.data ?? res));
   }
 
   getMisClientes(): Observable<ClienteDataBackend[]> {

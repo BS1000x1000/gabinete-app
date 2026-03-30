@@ -13,14 +13,28 @@ import { Req } from '@nestjs/common';
 export class N8nController {
   constructor(private readonly n8nService: N8nService) {}
 
-  // Llamado por el cron de n8n — protegido por API key
+  private parseDateRange(desdeStr: string, hastaStr: string): { desde: Date; hasta: Date } {
+    if (!desdeStr || !hastaStr) {
+      throw new BadRequestException('Los parámetros desde y hasta son obligatorios');
+    }
+    const desde = new Date(desdeStr);
+    const hasta = new Date(hastaStr);
+    hasta.setHours(23, 59, 59, 999);
+    if (isNaN(desde.getTime()) || isNaN(hasta.getTime())) {
+      throw new BadRequestException('Formato de fecha inválido. Usar YYYY-MM-DD');
+    }
+    if (desde > hasta) {
+      throw new BadRequestException('"desde" no puede ser posterior a "hasta"');
+    }
+    return { desde, hasta };
+  }
+
   @Get('bonos-alertas')
   @UseGuards(N8nApiKeyGuard)
   getBonosAlertas() {
     return this.n8nService.getBonosAlertas();
   }
 
-  // Genera PDF del informe redactado por IA — llamado por n8n
   // Usa @Res() directamente para evitar que ResponseInterceptor envuelva el binario en JSON
   @Post('pdf-informe')
   @UseGuards(N8nApiKeyGuard)
@@ -39,7 +53,6 @@ export class N8nController {
     res.end(buffer);
   }
 
-  // Genera un borrador de informe a partir de los registros del período
   @Post('generar-borrador/:clienteId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(...ROLES_CLINICOS)
@@ -49,30 +62,26 @@ export class N8nController {
     @Query('hasta') hastaStr: string,
     @Req() req: any,
   ) {
-    if (!desdeStr || !hastaStr) {
-      throw new BadRequestException('Los parámetros desde y hasta son obligatorios');
-    }
-
-    const desde = new Date(desdeStr);
-    const hasta = new Date(hastaStr);
-    hasta.setHours(23, 59, 59, 999);
-
-    if (isNaN(desde.getTime()) || isNaN(hasta.getTime())) {
-      throw new BadRequestException('Formato de fecha inválido. Usar YYYY-MM-DD');
-    }
-
-    if (desde > hasta) {
-      throw new BadRequestException('La fecha "desde" no puede ser posterior a "hasta"');
-    }
-
+    const { desde, hasta } = this.parseDateRange(desdeStr, hastaStr);
     return this.n8nService.generarBorradorInforme(clienteId, desde, hasta, req.user.userId);
   }
 
-  // Envía el informe ya revisado/editado a la familia
   @Post('enviar-informe/:informeId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(...ROLES_CLINICOS)
   enviarInforme(@Param('informeId') informeId: string) {
     return this.n8nService.enviarInformeFamilia(informeId);
+  }
+
+  // Devuelve objetivos trabajados con sus notas en un período para análisis IA semestral
+  @Get('objetivos-progreso/:clienteId')
+  @UseGuards(N8nApiKeyGuard)
+  getObjetivosProgreso(
+    @Param('clienteId') clienteId: string,
+    @Query('desde') desdeStr: string,
+    @Query('hasta') hastaStr: string,
+  ) {
+    const { desde, hasta } = this.parseDateRange(desdeStr, hastaStr);
+    return this.n8nService.getObjetivosProgreso(clienteId, desde, hasta);
   }
 }

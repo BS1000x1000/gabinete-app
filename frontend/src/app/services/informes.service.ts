@@ -33,8 +33,8 @@ export class InformesService {
 
   getAll(): Observable<Informe[]> {
     return this.http
-      .get<WrappedResponse<Informe[]>>(this.api)
-      .pipe(map((res: any) => res?.data ?? res));
+      .get<any>(`${this.api}?limit=500`)
+      .pipe(map((res: any) => res?.data?.data ?? res?.data ?? res));
   }
 
   getInformesByCliente(clienteId: string): Observable<Informe[]> {

@@ -162,7 +162,7 @@ export class DrawerRegistroComponent implements OnDestroy {
       contenido:                    v.contenido!,
       fechaRegistro:                v.fechaRegistro ? new Date(v.fechaRegistro).toISOString() : undefined,
       sesionId:                     this.state().sesionId ?? undefined,
-      objetivosGeneralesTrabajados: Array.from(this.objetivosSeleccionados()),
+      objetivosGeneralesTrabajados: Array.from(this.objetivosSeleccionados()).map((id) => ({ objetivoGeneralId: id })),
     };
 
     this.registrosSvc.createRegistro(dto)

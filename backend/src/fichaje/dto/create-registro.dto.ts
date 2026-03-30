@@ -1,4 +1,21 @@
-import { IsString, IsOptional, IsDateString, IsArray, IsUUID } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsDateString,
+  IsArray,
+  IsUUID,
+  ValidateNested,
+} from 'class-validator';
+import { Type } from 'class-transformer';
+
+export class ObjetivoTrabajadoDto {
+  @IsUUID('4')
+  objetivoGeneralId: string;
+
+  @IsOptional()
+  @IsString()
+  notasRegistro?: string;
+}
 
 export class CreateRegistroDiarioDto {
   @IsString()
@@ -17,6 +34,18 @@ export class CreateRegistroDiarioDto {
 
   @IsOptional()
   @IsArray()
-  @IsUUID('4', { each: true })
-  objetivosGeneralesTrabajados?: string[];
+  @ValidateNested({ each: true })
+  @Type(() => ObjetivoTrabajadoDto)
+  objetivosGeneralesTrabajados?: ObjetivoTrabajadoDto[];
+}
+
+export class UpdateRegistroDiarioDto {
+  @IsString()
+  contenido: string;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ObjetivoTrabajadoDto)
+  objetivosGeneralesTrabajados?: ObjetivoTrabajadoDto[];
 }

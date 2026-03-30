@@ -8,7 +8,7 @@ import { PrismaClient, TipoSesion } from '@prisma/client';
 import { ClienteWithRelations, clienteInclude } from './clientes.types';
 import { CreateClienteDto } from './dto/create-cliente.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { PaginationDto } from './dto/pagination.dto';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 @Injectable()
 export class ClientesService {
@@ -180,15 +180,29 @@ export class ClientesService {
     return clienteCreado;
   }
 
-  async findAll(user?: { userId: string; rol: string }): Promise<ClienteWithRelations[]> {
+  async findAll(
+    user?: { userId: string; rol: string },
+    pagination: PaginationDto = {},
+  ) {
+    const { page = 1, limit = 100 } = pagination;
+    const skip = (page - 1) * limit;
     const soloAsignados = user && !['ADMIN', 'RECEP'].includes(user.rol);
-    return await this.prisma.cliente.findMany({
-      where: soloAsignados
-        ? { trabajadoresAsignados: { some: { trabajadorId: user.userId, activo: true } } }
-        : undefined,
-      include: clienteInclude,
-      orderBy: { apellidos: 'asc' },
-    });
+    const where = soloAsignados
+      ? { trabajadoresAsignados: { some: { trabajadorId: user.userId, activo: true } } }
+      : undefined;
+
+    const [data, total] = await Promise.all([
+      this.prisma.cliente.findMany({
+        where,
+        include: clienteInclude,
+        orderBy: { apellidos: 'asc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.cliente.count({ where }),
+    ]);
+
+    return { data, total, page, limit };
   }
 
   async findByTrabajador(trabajadorId: string): Promise<ClienteWithRelations[]> {
@@ -201,30 +215,6 @@ export class ClientesService {
       include: clienteInclude,
       orderBy: { apellidos: 'asc' },
     });
-  }
-
-  async findAllPaginated(paginationDto: PaginationDto) {
-    const { page = 1, limit = 10 } = paginationDto;
-    const skip = (page - 1) * limit;
-
-    const [items, total] = await Promise.all([
-      this.prisma.cliente.findMany({
-        skip,
-        take: limit,
-        include: clienteInclude,
-      }),
-      this.prisma.cliente.count(),
-    ]);
-
-    return {
-      items,
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
   }
 
   async findOne(id: string): Promise<ClienteWithRelations | null> {

@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs grep:*)",
+      "Bash(python3:*)",
+      "Bash(npx prisma:*)",
+      "Bash(find /e/Programming/PROYECTS/PROPIOS/gabinete-app/frontend -name *informes* -type f)",
+      "Bash(npm run:*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read|Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ./hooks/read_hook.js"
+          }
+        ]
+      }
+    ]
+  }
+}
