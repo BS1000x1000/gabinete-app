@@ -53,27 +53,27 @@
               >
                 <label
                   class="objetivo-card"
-                  [class.selected]="esObjetivoSeleccionado(objetivo.id)"
+                  [class.selected]="esObjetivoSeleccionado(objetivo.objetivoGeneralId)"
                 >
                   <input
                     type="checkbox"
                     class="form-check-input objetivo-checkbox"
-                    [checked]="esObjetivoSeleccionado(objetivo.id)"
-                    (change)="toggleObjetivo(objetivo.id)"
+                    [checked]="esObjetivoSeleccionado(objetivo.objetivoGeneralId)"
+                    (change)="toggleObjetivo(objetivo.objetivoGeneralId)"
                   />
                   <span class="objetivo-titulo">{{ objetivo.titulo }}</span>
                   <i
-                    *ngIf="esObjetivoSeleccionado(objetivo.id)"
+                    *ngIf="esObjetivoSeleccionado(objetivo.objetivoGeneralId)"
                     class="bi bi-check-circle-fill objetivo-check-icon"
                   ></i>
                 </label>
                 <textarea
-                  *ngIf="esObjetivoSeleccionado(objetivo.id)"
+                  *ngIf="esObjetivoSeleccionado(objetivo.objetivoGeneralId)"
                   class="objetivo-notas-input"
                   rows="2"
                   placeholder="¿Qué se trabajó con este objetivo? (opcional)"
-                  [value]="objetivosNotasMap()[objetivo.id] ?? ''"
-                  (input)="setNotasObjetivo(objetivo.id, $any($event.target).value)"
+                  [value]="objetivosNotasMap()[objetivo.objetivoGeneralId] || ''"
+                  (input)="setNotasObjetivo(objetivo.objetivoGeneralId, $any($event.target).value)"
                 ></textarea>
               </div>
             </div>
@@ -98,7 +98,7 @@
           <button
             class="btn btn-primary btn-sm px-4"
             (click)="guardar()"
-            [disabled]="!nuevoContenido()?.trim() || cargando()"
+            [disabled]="!nuevoContenido().trim() || cargando()"
           >
             @if (cargando()) {
               <span class="spinner-border spinner-border-sm me-2"></span>
