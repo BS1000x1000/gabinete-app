@@ -108,6 +108,10 @@ export default class InformesTabComponent implements OnInit {
   formBorrador = signal<{ desde: string; hasta: string }>({ desde: '', hasta: '' });
   mostrarFormBorrador = signal(false);
 
+  // Formulario generar informe de progreso de objetivos (OBJETIVOS_PROGRESO)
+  formObjetivos = signal<{ desde: string; hasta: string }>({ desde: '', hasta: '' });
+  mostrarFormObjetivos = signal(false);
+
   pendingAction = signal<(() => void) | null>(null);
   confirmTitle  = signal('');
   confirmMsg    = signal('');
@@ -235,13 +239,43 @@ export default class InformesTabComponent implements OnInit {
   }
 
   // ============================================================
+  // GENERAR INFORME DE PROGRESO DE OBJETIVOS (OBJETIVOS_PROGRESO)
+  // ============================================================
+
+  abrirFormObjetivos(): void {
+    this.mostrarFormNuevo.set(false);
+    this.mostrarFormBorrador.set(false);
+    this.formObjetivos.set({ desde: '', hasta: '' });
+    this.mostrarFormObjetivos.set(true);
+  }
+
+  setObjetivosField(field: 'desde' | 'hasta', value: string): void {
+    this.formObjetivos.update((f) => ({ ...f, [field]: value }));
+  }
+
+  generarBorradorObjetivos(): void {
+    const { desde, hasta } = this.formObjetivos();
+    if (!desde || !hasta) return;
+
+    this.guardando.set(true);
+    this.informesSvc.generarBorradorObjetivos(this.clienteId(), desde, hasta).subscribe({
+      next: (informe) => {
+        this.guardando.set(false);
+        this.mostrarFormObjetivos.set(false);
+        this.abrirEditor(informe);
+      },
+      error: () => this.guardando.set(false),
+    });
+  }
+
+  // ============================================================
   // EDITOR
   // ============================================================
 
   abrirEditor(informe: Informe): void {
     this.informesSvc.informeActivo.set(informe);
 
-    if (informe.tipoInforme === 'REGISTROS') {
+    if (informe.tipoInforme === 'REGISTROS' || informe.tipoInforme === 'OBJETIVOS_PROGRESO') {
       this.textoContenido.set(informe.contenido ?? '');
     } else {
       const textos: Record<string, string> = {};
@@ -371,10 +405,12 @@ export default class InformesTabComponent implements OnInit {
       .subscribe();
   }
 
-  esBloqueado  = computed(() => { const e = this.informeActivo()?.estado; return e === 'FINALIZADO' || e === 'ENVIADO'; });
-  esFinalizado = computed(() => this.informeActivo()?.estado === 'FINALIZADO');
-  esEnviado    = computed(() => this.informeActivo()?.estado === 'ENVIADO');
-  esRegistros  = computed(() => this.informeActivo()?.tipoInforme === 'REGISTROS');
+  esBloqueado         = computed(() => { const e = this.informeActivo()?.estado; return e === 'FINALIZADO' || e === 'ENVIADO'; });
+  esFinalizado        = computed(() => this.informeActivo()?.estado === 'FINALIZADO');
+  esEnviado           = computed(() => this.informeActivo()?.estado === 'ENVIADO');
+  esRegistros         = computed(() => this.informeActivo()?.tipoInforme === 'REGISTROS');
+  esObjetivosProgreso = computed(() => this.informeActivo()?.tipoInforme === 'OBJETIVOS_PROGRESO');
+  esContenidoLibre    = computed(() => this.esRegistros() || this.esObjetivosProgreso());
 
   // Helpers tipados para uso en ng-template (contexto 'any')
   getTipoLabel(tipo: string): { texto: string; color: string; bg: string } {

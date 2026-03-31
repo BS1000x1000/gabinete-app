@@ -22,6 +22,9 @@
           <button class="btn btn-sm informe-sesiones-btn" (click)="abrirFormBorrador()">
             <i class="bi bi-envelope-paper me-1"></i>Informe de sesiones
           </button>
+          <button class="btn btn-sm informe-objetivos-btn" (click)="abrirFormObjetivos()">
+            <i class="bi bi-graph-up-arrow me-1"></i>Informe de progreso
+          </button>
           <button class="btn btn-primary btn-sm" (click)="abrirFormNuevo()">
             <i class="bi bi-plus-lg me-1"></i>Nuevo informe
           </button>
@@ -52,6 +55,11 @@
             [class.active]="filtroTipo() === 'REGISTROS'"
             (click)="filtroTipo.set('REGISTROS')"
           >Sesiones</button>
+          <button
+            class="informes-filtro-pill"
+            [class.active]="filtroTipo() === 'OBJETIVOS_PROGRESO'"
+            (click)="filtroTipo.set('OBJETIVOS_PROGRESO')"
+          >Progreso</button>
         </div>
         <div class="informes-filtros-row">
         <!-- <div *ngIf="aniosDisponibles().length > 1" class="informes-filtros-row"> -->
@@ -140,6 +148,53 @@
             {{ guardando() ? 'Generando...' : 'Generar borrador' }}
           </button>
           <button class="btn btn-outline-secondary btn-sm" (click)="mostrarFormBorrador.set(false)">
+            Cancelar
+          </button>
+        </div>
+      </div>
+
+      <!-- Formulario: generar informe de progreso de objetivos -->
+      <div *ngIf="mostrarFormObjetivos()" class="informe-borrador-form mb-4">
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <i class="bi bi-graph-up-arrow" style="color: #7c3aed"></i>
+          <h6 class="fw-semibold mb-0">Generar informe de progreso por objetivos</h6>
+        </div>
+        <p class="text-muted small mb-3">
+          Se creará un borrador con la evolución de cada objetivo trabajado en el período,
+          incluyendo las notas de sesión registradas. Podrás editarlo antes de enviarlo.
+        </p>
+        <div class="row g-2 mb-3">
+          <div class="col">
+            <label class="form-label small fw-semibold">Desde</label>
+            <input
+              type="date"
+              class="form-control form-control-sm"
+              [value]="formObjetivos().desde"
+              (input)="setObjetivosField('desde', $any($event.target).value)"
+            />
+          </div>
+          <div class="col">
+            <label class="form-label small fw-semibold">Hasta</label>
+            <input
+              type="date"
+              class="form-control form-control-sm"
+              [value]="formObjetivos().hasta"
+              (input)="setObjetivosField('hasta', $any($event.target).value)"
+            />
+          </div>
+        </div>
+        <div class="d-flex gap-2">
+          <button
+            class="btn btn-sm"
+            style="background: #7c3aed; color: white;"
+            (click)="generarBorradorObjetivos()"
+            [disabled]="!formObjetivos().desde || !formObjetivos().hasta || guardando()"
+          >
+            <span *ngIf="guardando()" class="spinner-border spinner-border-sm me-1"></span>
+            <i *ngIf="!guardando()" class="bi bi-magic me-1"></i>
+            {{ guardando() ? 'Generando...' : 'Generar borrador' }}
+          </button>
+          <button class="btn btn-outline-secondary btn-sm" (click)="mostrarFormObjetivos.set(false)">
             Cancelar
           </button>
         </div>
@@ -339,7 +394,7 @@
     <!-- ══════════════════════════════════════════════════════════
          VISTA: EDITOR — INICIAL / SEGUIMIENTO
     ══════════════════════════════════════════════════════════ -->
-    <div *ngIf="vista() === 'editor' && informeActivo() && !esRegistros()" class="d-flex" style="min-height: 600px;">
+    <div *ngIf="vista() === 'editor' && informeActivo() && !esContenidoLibre()" class="d-flex" style="min-height: 600px;">
 
       <!-- Columna izquierda: navegación de secciones -->
       <div class="border-end p-3" style="width: 220px; flex-shrink: 0;">
@@ -513,7 +568,7 @@
     <!-- ══════════════════════════════════════════════════════════
          VISTA: EDITOR — REGISTROS (informe de sesiones)
     ══════════════════════════════════════════════════════════ -->
-    <div *ngIf="vista() === 'editor' && informeActivo() && esRegistros()" class="d-flex" style="min-height: 600px;">
+    <div *ngIf="vista() === 'editor' && informeActivo() && esContenidoLibre()" class="d-flex" style="min-height: 600px;">
 
       <!-- Columna izquierda -->
       <div class="border-end p-3" style="width: 220px; flex-shrink: 0;">
@@ -525,10 +580,10 @@
         <div class="mb-3">
           <span
             class="badge mb-1"
-            [style.background-color]="TIPO_LABELS['REGISTROS'].bg"
-            [style.color]="TIPO_LABELS['REGISTROS'].color"
+            [style.background-color]="getTipoLabel(informeActivo()!.tipoInforme).bg"
+            [style.color]="getTipoLabel(informeActivo()!.tipoInforme).color"
             style="border: 1px solid currentColor; font-size: 0.7rem;"
-          >Informe de Sesiones</span>
+          >{{ getTipoLabel(informeActivo()!.tipoInforme).texto }}</span>
           <p class="small fw-semibold mb-1 mt-1">{{ informeActivo()!.titulo }}</p>
           <span class="badge {{ ESTADO_LABELS[informeActivo()!.estado].badgeClass }}" style="font-size: 0.7rem;">
             {{ ESTADO_LABELS[informeActivo()!.estado].texto }}

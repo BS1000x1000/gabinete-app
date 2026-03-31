@@ -73,6 +73,19 @@ export class N8nController {
     return this.n8nService.enviarInformeFamilia(informeId);
   }
 
+  @Post('generar-borrador-objetivos/:clienteId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(...ROLES_CLINICOS)
+  generarBorradorObjetivos(
+    @Param('clienteId') clienteId: string,
+    @Query('desde') desdeStr: string,
+    @Query('hasta') hastaStr: string,
+    @Req() req: any,
+  ) {
+    const { desde, hasta } = this.parseDateRange(desdeStr, hastaStr);
+    return this.n8nService.generarBorradorObjetivos(clienteId, desde, hasta, req.user.userId);
+  }
+
   // Devuelve objetivos trabajados con sus notas en un período para análisis IA semestral
   @Get('objetivos-progreso/:clienteId')
   @UseGuards(N8nApiKeyGuard)

@@ -193,8 +193,8 @@ export class N8nService {
 
     if (!informe) throw new NotFoundException('Informe no encontrado');
 
-    if (informe.tipoInforme !== TipoInforme.REGISTROS) {
-      throw new BadRequestException('Solo se pueden enviar informes de tipo REGISTROS por esta vía');
+    if (informe.tipoInforme !== TipoInforme.REGISTROS && informe.tipoInforme !== TipoInforme.OBJETIVOS_PROGRESO) {
+      throw new BadRequestException('Solo se pueden enviar informes de tipo REGISTROS u OBJETIVOS_PROGRESO por esta vía');
     }
 
     if (informe.estado !== EstadoInforme.BORRADOR && informe.estado !== EstadoInforme.REVISION) {
@@ -204,21 +204,29 @@ export class N8nService {
     const contacto = informe.cliente.contactosFamiliares[0];
     if (!contacto) throw new NotFoundException('No hay contacto principal con email para este cliente');
 
-    const webhookUrl = process.env.N8N_INFORME_WEBHOOK_URL;
-    if (!webhookUrl) throw new InternalServerErrorException('N8N_INFORME_WEBHOOK_URL no configurada');
+    const esObjetivosProgreso = informe.tipoInforme === TipoInforme.OBJETIVOS_PROGRESO;
+    const webhookUrl = esObjetivosProgreso
+      ? process.env.N8N_OBJETIVOS_WEBHOOK_URL
+      : process.env.N8N_INFORME_WEBHOOK_URL;
+    if (!webhookUrl) throw new InternalServerErrorException(
+      esObjetivosProgreso ? 'N8N_OBJETIVOS_WEBHOOK_URL no configurada' : 'N8N_INFORME_WEBHOOK_URL no configurada',
+    );
+
+    const payload: Record<string, unknown> = {
+      emailContacto: contacto.email!,
+      nombreContacto: `${contacto.nombre} ${contacto.apellidos}`,
+      clienteNombre: informe.cliente.nombre,
+      clienteApellidos: informe.cliente.apellidos,
+      desde: this.toDateStr(informe.periodoDesde),
+      hasta: this.toDateStr(informe.periodoHasta),
+      contenido: informe.contenido,
+    };
+    if (esObjetivosProgreso && informe.objetivosSnapshotJson) {
+      payload['objetivosJson'] = informe.objetivosSnapshotJson;
+    }
 
     try {
-      await firstValueFrom(
-        this.httpService.post(webhookUrl, {
-          emailContacto: contacto.email!,
-          nombreContacto: `${contacto.nombre} ${contacto.apellidos}`,
-          clienteNombre: informe.cliente.nombre,
-          clienteApellidos: informe.cliente.apellidos,
-          desde: this.toDateStr(informe.periodoDesde),
-          hasta: this.toDateStr(informe.periodoHasta),
-          contenido: informe.contenido,
-        }),
-      );
+      await firstValueFrom(this.httpService.post(webhookUrl, payload));
     } catch (error) {
       throw new InternalServerErrorException(`Error al contactar con n8n: ${error.message}`);
     }
@@ -233,7 +241,53 @@ export class N8nService {
   }
 
   // ============================================================
-  // AUTOMATIZACIÓN 3 — Progreso de objetivos por período
+  // AUTOMATIZACIÓN 3a — Generar borrador informe de progreso de objetivos
+  // El terapeuta lo revisa/edita antes de enviarlo a la familia
+  // ============================================================
+
+  async generarBorradorObjetivos(
+    clienteId: string,
+    desde: Date,
+    hasta: Date,
+    trabajadorId: string,
+  ) {
+    const progreso = await this.getObjetivosProgreso(clienteId, desde, hasta);
+
+    const lines: string[] = [
+      `Informe de Progreso — ${progreso.clienteNombre} ${progreso.clienteApellidos}`,
+      `Período: ${progreso.desde} a ${progreso.hasta}`,
+      '',
+    ];
+    for (const obj of progreso.objetivos) {
+      lines.push(`[${obj.area}] ${obj.titulo} — ${obj.totalSesiones} sesión(es)`);
+      if (obj.notas.length > 0) {
+        for (const nota of obj.notas) {
+          lines.push(`  • ${nota.fecha} (${nota.terapeutaNombre}): ${nota.notasRegistro}`);
+        }
+      } else {
+        lines.push('  (Sin notas de sesión en este período)');
+      }
+      lines.push('');
+    }
+
+    return this.prisma.informe.create({
+      data: {
+        titulo: `Progreso de objetivos — ${progreso.desde.slice(0, 7)} / ${progreso.hasta.slice(0, 7)}`,
+        tipoInforme: TipoInforme.OBJETIVOS_PROGRESO,
+        estado: EstadoInforme.BORRADOR,
+        clienteId,
+        trabajadorId,
+        periodoDesde: desde,
+        periodoHasta: hasta,
+        contenido: lines.join('\n'),
+        objetivosSnapshotJson: JSON.stringify(progreso.objetivos),
+      },
+      include: { cliente: true, trabajador: true },
+    });
+  }
+
+  // ============================================================
+  // AUTOMATIZACIÓN 3b — Progreso de objetivos por período (para n8n)
   // Alimenta el análisis IA semestral para informe de evolución GAS
   // ============================================================
 

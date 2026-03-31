@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "TipoInforme" ADD VALUE 'OBJETIVOS_PROGRESO';

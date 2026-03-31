@@ -146,6 +146,21 @@ export class InformesService {
       );
   }
 
+  generarBorradorObjetivos(clienteId: string, desde: string, hasta: string): Observable<Informe> {
+    return this.http
+      .post<WrappedResponse<Informe>>(
+        `${this.n8nApi}/generar-borrador-objetivos/${clienteId}?desde=${desde}&hasta=${hasta}`,
+        {},
+      )
+      .pipe(
+        map((res) => res.data || res),
+        tap((nuevo) => {
+          this.informes.update((prev) => [nuevo, ...prev]);
+          this.informeActivo.set(nuevo);
+        }),
+      );
+  }
+
   enviarInformeAFamilia(informeId: string): Observable<Informe> {
     return this.http
       .post<WrappedResponse<Informe>>(`${this.n8nApi}/enviar-informe/${informeId}`, {})

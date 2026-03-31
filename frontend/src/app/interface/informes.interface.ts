@@ -2,7 +2,7 @@
 // INTERFACES INFORMES — FRONTEND
 // ============================================================
 
-export type TipoInforme = 'INICIAL' | 'SEGUIMIENTO' | 'REGISTROS';
+export type TipoInforme = 'INICIAL' | 'SEGUIMIENTO' | 'REGISTROS' | 'OBJETIVOS_PROGRESO';
 export type EstadoInforme = 'BORRADOR' | 'REVISION' | 'FINALIZADO' | 'ENVIADO';
 
 export interface Informe {
@@ -88,9 +88,10 @@ export interface UpdateInformeDto {
 
 // Labels para la UI
 export const TIPO_INFORME_LABELS: Record<TipoInforme, { texto: string; color: string; bg: string }> = {
-  INICIAL:      { texto: 'Informe Inicial',       color: '#0d6efd', bg: '#cfe2ff' },
-  SEGUIMIENTO:  { texto: 'Informe de Seguimiento', color: '#6610f2', bg: '#e0cffc' },
-  REGISTROS:    { texto: 'Informe de Sesiones',    color: '#059669', bg: '#d1fae5' },
+  INICIAL:             { texto: 'Informe Inicial',        color: '#0d6efd', bg: '#cfe2ff' },
+  SEGUIMIENTO:         { texto: 'Informe de Seguimiento', color: '#6610f2', bg: '#e0cffc' },
+  REGISTROS:           { texto: 'Informe de Sesiones',    color: '#059669', bg: '#d1fae5' },
+  OBJETIVOS_PROGRESO:  { texto: 'Informe de Progreso',    color: '#7c3aed', bg: '#ede9fe' },
 };
 
 export const ESTADO_INFORME_LABELS: Record<EstadoInforme, { texto: string; badgeClass: string }> = {
