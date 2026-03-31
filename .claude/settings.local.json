@@ -5,7 +5,9 @@
       "Bash(python3:*)",
       "Bash(npx prisma:*)",
       "Bash(find /e/Programming/PROYECTS/PROPIOS/gabinete-app/frontend -name *informes* -type f)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(grep:*)",
+      "Bash(npm test:*)"
     ]
   },
   "hooks": {
