@@ -49,7 +49,7 @@ export class N8nService {
 </head>
 <body>
   <div class="header">
-    <h1>Informe de Sesiones</h1>
+    <h1>${opts.tituloPdf ?? 'Informe de Sesiones'}</h1>
     <p>${opts.clienteNombre} ${opts.clienteApellidos} &nbsp;·&nbsp; Período: ${opts.desde} / ${opts.hasta}</p>
   </div>
   <div class="content">

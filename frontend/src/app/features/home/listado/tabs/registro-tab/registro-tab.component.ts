@@ -14,7 +14,7 @@ import { TiptapEditorComponent } from '../../../../../components/tiptap-editor/t
 import { ClientesService } from '../../../../../services/cliente.service';
 import { ActivatedRoute } from '@angular/router';
 import { TextCleanerService } from '../../../../../shared/utils/text-cleaner.service';
-import { CreateRegistroDiarioDto } from '../../../../../interface/registro-diario.interface';
+import { CreateRegistroDiarioDto, RegistroDiario } from '../../../../../interface/registro-diario.interface';
 
 @Component({
   standalone: true,
@@ -36,6 +36,7 @@ export class RegistroTabComponent implements OnInit {
 
   objetivosNotasMap = signal<Record<string, string>>({});
   mostrarObjetivos = signal(false);
+  editandoId = signal<string | null>(null);
 
   // Registros y objetivos del cliente
   registros = this.fichajeSvc.registros;
@@ -149,6 +150,27 @@ export class RegistroTabComponent implements OnInit {
     return objetivoId in this.objetivosNotasMap();
   }
 
+  editarRegistro(reg: RegistroDiario): void {
+    this.editandoId.set(reg.id!);
+    this.nuevoContenido.set(reg.contenido);
+
+    const map: Record<string, string> = {};
+    for (const obj of reg.objetivosGeneralesTrabajados ?? []) {
+      map[obj.objetivoGeneral.id] = obj.notasRegistro ?? '';
+    }
+    this.objetivosNotasMap.set(map);
+    this.mostrarObjetivos.set(Object.keys(map).length > 0);
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  cancelarEdicion(): void {
+    this.editandoId.set(null);
+    this.nuevoContenido.set('');
+    this.objetivosNotasMap.set({});
+    this.mostrarObjetivos.set(false);
+  }
+
   async guardar() {
     const html = this.nuevoContenido() ?? '';
     const textoPlano =
@@ -169,28 +191,51 @@ export class RegistroTabComponent implements OnInit {
       ...(map[id] ? { notasRegistro: map[id] } : {}),
     }));
 
-    const nuevo: CreateRegistroDiarioDto = {
-      clienteId: this.clienteId(),
-      contenido: this.cleaner.sanitizeInput(this.nuevoContenido()),
-      objetivosGeneralesTrabajados: objetivos.length > 0 ? objetivos : undefined,
-    };
+    const idEditando = this.editandoId();
 
-    this.fichajeSvc.createRegistro(nuevo).subscribe({
-      next: () => {
-        this.nuevoContenido.set('');
-        this.objetivosNotasMap.set({});
-        this.mostrarObjetivos.set(false);
-        this.cargando.set(false);
-      },
-      error: (err) => {
-        console.error('❌ Error al guardar registro:', err);
-        this.cargando.set(false);
-        alert('Error al guardar el registro');
-      },
-    });
+    if (idEditando) {
+      this.fichajeSvc.updateRegistro(idEditando, {
+        contenido: this.cleaner.sanitizeInput(this.nuevoContenido()),
+        objetivosGeneralesTrabajados: objetivos.length > 0 ? objetivos : [],
+      }).subscribe({
+        next: () => {
+          this.editandoId.set(null);
+          this.nuevoContenido.set('');
+          this.objetivosNotasMap.set({});
+          this.mostrarObjetivos.set(false);
+          this.cargando.set(false);
+        },
+        error: (err) => {
+          console.error('❌ Error al actualizar registro:', err);
+          this.cargando.set(false);
+          alert('Error al actualizar el registro');
+        },
+      });
+    } else {
+      const nuevo: CreateRegistroDiarioDto = {
+        clienteId: this.clienteId(),
+        contenido: this.cleaner.sanitizeInput(this.nuevoContenido()),
+        objetivosGeneralesTrabajados: objetivos.length > 0 ? objetivos : undefined,
+      };
+
+      this.fichajeSvc.createRegistro(nuevo).subscribe({
+        next: () => {
+          this.nuevoContenido.set('');
+          this.objetivosNotasMap.set({});
+          this.mostrarObjetivos.set(false);
+          this.cargando.set(false);
+        },
+        error: (err) => {
+          console.error('❌ Error al guardar registro:', err);
+          this.cargando.set(false);
+          alert('Error al guardar el registro');
+        },
+      });
+    }
   }
 
   limpiar() {
+    this.editandoId.set(null);
     this.nuevoContenido.set('');
     this.objetivosNotasMap.set({});
   }

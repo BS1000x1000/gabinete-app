@@ -174,6 +174,7 @@ export default class InformesTabComponent implements OnInit {
 
   abrirFormNuevo(): void {
     this.mostrarFormBorrador.set(false);
+    this.mostrarFormObjetivos.set(false);
     this.formNuevo.set({ titulo: '', tipoInforme: 'INICIAL', periodoDesde: '', periodoHasta: '' });
     this.mostrarFormNuevo.set(true);
   }
@@ -215,6 +216,7 @@ export default class InformesTabComponent implements OnInit {
 
   abrirFormBorrador(): void {
     this.mostrarFormNuevo.set(false);
+    this.mostrarFormObjetivos.set(false);
     this.formBorrador.set({ desde: '', hasta: '' });
     this.mostrarFormBorrador.set(true);
   }

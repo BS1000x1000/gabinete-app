@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class GenerarPdfInformeDto {
   @IsString()
@@ -20,4 +20,9 @@ export class GenerarPdfInformeDto {
   @IsString()
   @IsNotEmpty()
   hasta: string;
+
+  /** Título que aparece en la cabecera del PDF. Defecto: "Informe de Sesiones" */
+  @IsString()
+  @IsOptional()
+  tituloPdf?: string;
 }

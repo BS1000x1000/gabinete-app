@@ -7,7 +7,11 @@
       "Bash(find /e/Programming/PROYECTS/PROPIOS/gabinete-app/frontend -name *informes* -type f)",
       "Bash(npm run:*)",
       "Bash(grep:*)",
-      "Bash(npm test:*)"
+      "Bash(npm test:*)",
+      "Bash(find E:ProgrammingPROYECTSPROPIOSgabinete-appbackend -maxdepth 2 -type f \\\\\\(-name .env* -o -name *.env \\\\\\))",
+      "Bash(find E:ProgrammingPROYECTSPROPIOSgabinete-appbackendsrc -name *.env* -type f)",
+      "Bash(find /e/Programming/PROYECTS/PROPIOS/gabinete-app/backend/src -name \"*.dto.ts\" -type f -exec wc -l {})",
+      "Bash(find E:ProgrammingPROYECTSPROPIOSgabinete-appbackendsrc -name *.env* -o -name .env)"
     ]
   },
   "hooks": {

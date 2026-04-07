@@ -6,7 +6,19 @@
 
       <!-- Editor de texto -->
       <div class="registro-editor-wrap">
-        <label class="registro-form-label">Nuevo Registro</label>
+        <div class="d-flex align-items-center justify-content-between mb-1">
+          <label class="registro-form-label mb-0">
+            {{ editandoId() ? 'Editar Registro' : 'Nuevo Registro' }}
+          </label>
+          <button
+            *ngIf="editandoId()"
+            class="btn btn-link btn-sm text-muted p-0"
+            (click)="cancelarEdicion()"
+            type="button"
+          >
+            <i class="bi bi-x-lg me-1"></i>Cancelar edición
+          </button>
+        </div>
         <app-tiptap-editor
           [ngModel]="nuevoContenido()"
           (ngModelChange)="nuevoContenido.set($event)"
@@ -103,6 +115,8 @@
             @if (cargando()) {
               <span class="spinner-border spinner-border-sm me-2"></span>
               Guardando...
+            } @else if (editandoId()) {
+              <i class="bi bi-floppy me-2"></i>Guardar cambios
             } @else {
               <i class="bi bi-send-fill me-2"></i>Guardar Registro
             }
@@ -144,7 +158,7 @@
         </div>
       } @else {
         @for (reg of registrosFiltrados(); track reg.id) {
-          <div class="historial-item">
+          <div class="historial-item" [class.editando]="editandoId() === reg.id">
             <div class="historial-item__meta">
               <span class="historial-autor">
                 <i class="bi bi-person"></i>
@@ -154,6 +168,16 @@
                 <i class="bi bi-calendar3"></i>
                 {{ reg.fechaRegistro | date: "dd/MM/yyyy HH:mm" }}
               </span>
+              <button
+                class="btn btn-link btn-sm p-0 ms-auto"
+                [class.text-primary]="editandoId() === reg.id"
+                [class.text-muted]="editandoId() !== reg.id"
+                (click)="editandoId() === reg.id ? cancelarEdicion() : editarRegistro(reg)"
+                type="button"
+                title="{{ editandoId() === reg.id ? 'Cancelar edición' : 'Editar registro' }}"
+              >
+                <i class="bi" [class.bi-pencil]="editandoId() !== reg.id" [class.bi-x-circle]="editandoId() === reg.id"></i>
+              </button>
             </div>
             <p class="historial-contenido" [innerHTML]="reg.contenido"></p>
             <div *ngIf="reg.objetivosGeneralesTrabajados!.length > 0" class="historial-objetivos">
