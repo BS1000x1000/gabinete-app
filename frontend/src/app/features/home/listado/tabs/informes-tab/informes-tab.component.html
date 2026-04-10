@@ -60,6 +60,11 @@
             [class.active]="filtroTipo() === 'OBJETIVOS_PROGRESO'"
             (click)="filtroTipo.set('OBJETIVOS_PROGRESO')"
           >Progreso</button>
+          <button
+            class="informes-filtro-pill"
+            [class.active]="filtroTipo() === 'ALTA'"
+            (click)="filtroTipo.set('ALTA')"
+          >Alta</button>
         </div>
         <div class="informes-filtros-row">
         <!-- <div *ngIf="aniosDisponibles().length > 1" class="informes-filtros-row"> -->
@@ -235,8 +240,8 @@
           />
         </div>
 
-        <!-- Período (solo SEGUIMIENTO) -->
-        <div *ngIf="formNuevo().tipoInforme === 'SEGUIMIENTO'" class="row g-2 mb-3">
+        <!-- Período (SEGUIMIENTO y ALTA) -->
+        <div *ngIf="formNuevo().tipoInforme === 'SEGUIMIENTO' || formNuevo().tipoInforme === 'ALTA'" class="row g-2 mb-3">
           <div class="col">
             <label class="form-label small fw-semibold">Período desde</label>
             <input
@@ -439,7 +444,7 @@
           style="cursor: pointer; font-size: 0.8rem;"
           (click)="cambiarSeccion('gas')"
         >
-          {{ informeActivo()!.tipoInforme === 'INICIAL' ? '5. Objetivos específicos (GAS)' : '· Estado GAS' }}
+          {{ informeActivo()!.tipoInforme === 'INICIAL' ? '5. Objetivos específicos (GAS)' : informeActivo()!.tipoInforme === 'ALTA' ? '6. Estado GAS al alta' : '· Estado GAS' }}
         </div>
 
         <hr class="my-2">
@@ -519,6 +524,9 @@
             </span>
             <span *ngIf="informeActivo()!.tipoInforme === 'SEGUIMIENTO'">
               Esta sección muestra el estado GAS actual de cada objetivo y el historial de evaluaciones del período.
+            </span>
+            <span *ngIf="informeActivo()!.tipoInforme === 'ALTA'">
+              Esta sección muestra el estado GAS final de cada objetivo al cierre del tratamiento.
             </span>
           </div>
           <div *ngIf="snapshotGAS().length === 0" class="text-center py-4">

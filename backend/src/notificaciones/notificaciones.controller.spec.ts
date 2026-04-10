@@ -4,6 +4,7 @@ import { NotificacionesService } from './notificaciones.service';
 import { MotorReglasService } from './motor-reglas.service';
 import { NotificacionesSseService } from './notificaciones-sse.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { JwtFlexGuard } from '../auth/guards/jwt-flex.guard';
 
 // ── Mock helpers ─────────────────────────────────────────────────────────────
 const mockReq = (sub = 'trabajador-1', rol = 'PEDAGOGO') => ({
@@ -52,6 +53,8 @@ describe('NotificacionesController', () => {
       ],
     })
       .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(JwtFlexGuard)
       .useValue({ canActivate: () => true })
       .compile();
 

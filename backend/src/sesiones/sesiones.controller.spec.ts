@@ -156,7 +156,7 @@ describe('SesionesController', () => {
       const sesion = mockSesion();
       service.findOne.mockResolvedValue(sesion);
 
-      const result = await controller.findOne('sesion-1');
+      const result = await controller.findOne('sesion-1', mockReq() as any);
 
       expect(result).toEqual(sesion);
     });
@@ -164,7 +164,7 @@ describe('SesionesController', () => {
     it('lanza NotFoundException si la sesión no existe', async () => {
       service.findOne.mockResolvedValue(null);
 
-      await expect(controller.findOne('sesion-x')).rejects.toThrow(NotFoundException);
+      await expect(controller.findOne('sesion-x', mockReq() as any)).rejects.toThrow(NotFoundException);
     });
   });
 

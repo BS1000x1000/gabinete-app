@@ -9,7 +9,6 @@ import { NotificacionesService } from './notificaciones.service';
 import { environment } from '../../environments/environment.development';
 
 const API = environment.apiUrl;
-const TOKEN_KEY = 'access_token';
 const USER_KEY = 'current_user';
 
 const mockUser = {
@@ -27,7 +26,7 @@ describe('AuthService', () => {
   let router: Router;
 
   beforeEach(() => {
-    localStorage.clear(); // siempre limpio antes de crear el servicio
+    localStorage.clear();
 
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
@@ -75,13 +74,11 @@ describe('AuthService', () => {
     });
   });
 
-  // ── Computed signals — con sesión en localStorage ────────────────
+  // ── Computed signals — con usuario en localStorage ────────────────
 
-  describe('cuando hay token y usuario en localStorage', () => {
+  describe('cuando hay usuario en localStorage', () => {
     beforeEach(() => {
-      localStorage.setItem(TOKEN_KEY, 'fake-jwt-token');
       localStorage.setItem(USER_KEY, JSON.stringify(mockUser));
-      // Re-crear el servicio para que lea el localStorage inicializado
       TestBed.resetTestingModule();
       TestBed.configureTestingModule({
         providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
@@ -131,36 +128,36 @@ describe('AuthService', () => {
       const req = httpMock.expectOne(`${API}/auth/login`);
       expect(req.request.method).toBe('POST');
       expect(req.request.body).toEqual({ username: 'ana', password: '1234' });
-      req.flush({ access_token: 'tok', user: mockUser });
-    });
-
-    it('guarda el token en localStorage tras login exitoso', () => {
-      service.login({ username: 'ana', password: '1234' }).subscribe();
-      httpMock.expectOne(`${API}/auth/login`).flush({ access_token: 'tok', user: mockUser });
-      expect(localStorage.getItem(TOKEN_KEY)).toBe('tok');
+      req.flush({ user: mockUser });
     });
 
     it('guarda el usuario en localStorage tras login exitoso', () => {
       service.login({ username: 'ana', password: '1234' }).subscribe();
-      httpMock.expectOne(`${API}/auth/login`).flush({ access_token: 'tok', user: mockUser });
+      httpMock.expectOne(`${API}/auth/login`).flush({ user: mockUser });
       expect(JSON.parse(localStorage.getItem(USER_KEY)!)).toEqual(mockUser);
+    });
+
+    it('NO guarda el token en localStorage (es HttpOnly cookie)', () => {
+      service.login({ username: 'ana', password: '1234' }).subscribe();
+      httpMock.expectOne(`${API}/auth/login`).flush({ user: mockUser });
+      expect(localStorage.getItem('access_token')).toBeNull();
     });
 
     it('actualiza isAuthenticated a true tras login exitoso', () => {
       service.login({ username: 'ana', password: '1234' }).subscribe();
-      httpMock.expectOne(`${API}/auth/login`).flush({ access_token: 'tok', user: mockUser });
+      httpMock.expectOne(`${API}/auth/login`).flush({ user: mockUser });
       expect(service.isAuthenticated()).toBeTrue();
     });
 
     it('actualiza currentUser con los datos del usuario', () => {
       service.login({ username: 'ana', password: '1234' }).subscribe();
-      httpMock.expectOne(`${API}/auth/login`).flush({ access_token: 'tok', user: mockUser });
+      httpMock.expectOne(`${API}/auth/login`).flush({ user: mockUser });
       expect(service.currentUser()).toEqual(mockUser);
     });
 
     it('inicia las notificaciones tras login exitoso', () => {
       service.login({ username: 'ana', password: '1234' }).subscribe();
-      httpMock.expectOne(`${API}/auth/login`).flush({ access_token: 'tok', user: mockUser });
+      httpMock.expectOne(`${API}/auth/login`).flush({ user: mockUser });
       expect(notifSvc.cargar).toHaveBeenCalled();
       expect(notifSvc.conectarSSE).toHaveBeenCalled();
     });
@@ -169,8 +166,8 @@ describe('AuthService', () => {
       service.login({ username: 'ana', password: '1234' }).subscribe();
       httpMock
         .expectOne(`${API}/auth/login`)
-        .flush({ data: { access_token: 'tok', user: mockUser } });
-      expect(localStorage.getItem(TOKEN_KEY)).toBe('tok');
+        .flush({ data: { user: mockUser } });
+      expect(service.currentUser()).toEqual(mockUser);
     });
   });
 
@@ -178,23 +175,25 @@ describe('AuthService', () => {
 
   describe('logout()', () => {
     beforeEach(() => {
-      localStorage.setItem(TOKEN_KEY, 'fake-jwt-token');
       localStorage.setItem(USER_KEY, JSON.stringify(mockUser));
-    });
-
-    it('elimina el token de localStorage', () => {
-      service.logout();
-      expect(localStorage.getItem(TOKEN_KEY)).toBeNull();
     });
 
     it('elimina el usuario de localStorage', () => {
       service.logout();
+      httpMock.expectOne(`${API}/auth/logout`).flush({});
       expect(localStorage.getItem(USER_KEY)).toBeNull();
+    });
+
+    it('resetea isAuthenticated a false', () => {
+      service.logout();
+      httpMock.expectOne(`${API}/auth/logout`).flush({});
+      expect(service.isAuthenticated()).toBeFalse();
     });
 
     it('navega a /login', () => {
       spyOn(router, 'navigate');
       service.logout();
+      httpMock.expectOne(`${API}/auth/logout`).flush({});
       expect(router.navigate).toHaveBeenCalledWith(['/login']);
     });
   });

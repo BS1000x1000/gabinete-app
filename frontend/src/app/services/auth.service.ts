@@ -6,7 +6,6 @@ import { environment } from '../../environments/environment.development';
 import { NotificacionesService } from './notificaciones.service';
 
 interface LoginResponse {
-  access_token: string;
   token_type: string;
   expires_in: string;
   user: {
@@ -33,36 +32,17 @@ export class AuthService {
   private http = inject(HttpClient);
   private router = inject(Router);
   private notificacionesSvc = inject(NotificacionesService);
-  
-  // ✅ USAR ENVIRONMENT
+
   private readonly api = environment.apiUrl;
-  private readonly TOKEN_KEY = 'access_token';
   private readonly USER_KEY = 'current_user';
 
-  // Signals
-  private _token = signal<string | null>(localStorage.getItem(this.TOKEN_KEY));
+  // Signals — el JWT es HttpOnly, el frontend solo guarda datos del usuario
   private _currentUser = signal<LoginResponse['user'] | null>(this.getUserFromStorage());
-  private _currentTrabajadorId = signal<string | null>(null);
 
-  // Computed
-  public currentTrabajadorId = computed(() => {
-    // Primero intenta obtener del user guardado
-    const user = this._currentUser();
-    if (user?.id) return user.id;
+  public currentTrabajadorId = computed(() => this._currentUser()?.id ?? null);
 
-    // Si no hay user pero hay token, decodificar
-    const token = this._token();
-    if (token) {
-      const payload = this.decodeJwt(token);
-      return payload?.sub || null;
-    }
-
-    return null;
-  });
-
-  public readonly token = this._token.asReadonly();
   public currentUser = computed(() => this._currentUser());
-  public isAuthenticated = computed(() => !!this._token());
+  public isAuthenticated = computed(() => !!this._currentUser());
 
   public userInitials = computed(() => {
     const u = this._currentUser();
@@ -76,12 +56,11 @@ export class AuthService {
     return `${u.nombre} ${u.apellidos}`;
   });
 
-  public userRole     = computed(() => this._currentUser()?.rol?.nombre ?? '');
+  public userRole      = computed(() => this._currentUser()?.rol?.nombre ?? '');
   public userRoleCodigo = computed(() => this._currentUser()?.rol?.codigo ?? '');
 
-  // Helpers de rol para uso directo en templates y guards
-  public isAdmin  = computed(() => this.userRoleCodigo() === 'ADMIN');
-  public isRecep  = computed(() => this.userRoleCodigo() === 'RECEP');
+  public isAdmin   = computed(() => this.userRoleCodigo() === 'ADMIN');
+  public isRecep   = computed(() => this.userRoleCodigo() === 'RECEP');
   public isClinico = computed(() =>
     ['PEDAGOGO', 'NEURO', 'LOGOPEDA'].includes(this.userRoleCodigo())
   );
@@ -89,43 +68,27 @@ export class AuthService {
     ['ADMIN', 'RECEP'].includes(this.userRoleCodigo())
   );
 
-
   /*
    * Login del trabajador
    */
   login(credentials: LoginCredentials): Observable<LoginResponse> {
     return this.http.post<any>(`${this.api}/auth/login`, credentials).pipe(
       tap((res) => {
-        console.log('📦 Respuesta del backend:', res);
-        
-        // ✅ CORREGIDO: Acceder a res.data.access_token
-        const responseData = res.data || res; // Por si acaso viene sin wrapper
-        
-        if (responseData.access_token) {
-          // Guardar en localStorage
-          localStorage.setItem(this.TOKEN_KEY, responseData.access_token);
+        const responseData = res.data || res;
+
+        if (responseData.user) {
           localStorage.setItem(this.USER_KEY, JSON.stringify(responseData.user));
-
-          // Actualizar signals
-          this._token.set(responseData.access_token);
           this._currentUser.set(responseData.user);
-          this._currentTrabajadorId.set(responseData.user.id);
 
-          console.log('✅ Token guardado en localStorage');
-          console.log('✅ User guardado:', responseData.user);
-
-          // Verificar que se guardó correctamente
-          const tokenGuardado = localStorage.getItem(this.TOKEN_KEY);
-          console.log('🔍 Token en localStorage:', tokenGuardado ? 'SÍ ✅' : 'NO ❌');
-
-          // Cargar notificaciones y conectar SSE
+          // JWT es HttpOnly — el browser lo gestiona automáticamente
+          // SSE también usa la cookie (withCredentials: true)
           this.notificacionesSvc.cargar().subscribe();
-          this.notificacionesSvc.conectarSSE(responseData.access_token);
+          this.notificacionesSvc.conectarSSE();
         } else {
-          console.error('❌ No se recibió access_token del backend');
+          console.error('❌ No se recibió información del usuario del backend');
         }
       }),
-      map((res) => res.data || res) // ✅ Retornar solo el data
+      map((res) => res.data || res)
     );
   }
 
@@ -133,14 +96,13 @@ export class AuthService {
    * Logout del trabajador
    */
   logout() {
-    localStorage.removeItem(this.TOKEN_KEY);
+    // Pedir al backend que borre la cookie HttpOnly
+    this.http.post(`${this.api}/auth/logout`, {}).subscribe({ error: () => {} });
+
     localStorage.removeItem(this.USER_KEY);
-    this._token.set(null);
     this._currentUser.set(null);
-    this._currentTrabajadorId.set(null);
     this.notificacionesSvc.desconectarSSE();
 
-    console.log('👋 Sesión cerrada');
     this.router.navigate(['/login']);
   }
 
@@ -163,12 +125,11 @@ export class AuthService {
    */
   refreshToken(): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${this.api}/auth/refresh`, {}).pipe(
-      tap((res) => {
-        if (res.access_token) {
-          localStorage.setItem(this.TOKEN_KEY, res.access_token);
-          localStorage.setItem(this.USER_KEY, JSON.stringify(res.user));
-          this._token.set(res.access_token);
-          this._currentUser.set(res.user);
+      tap((res: any) => {
+        const responseData = res.data || res;
+        if (responseData.user) {
+          localStorage.setItem(this.USER_KEY, JSON.stringify(responseData.user));
+          this._currentUser.set(responseData.user);
         }
       })
     );
@@ -177,27 +138,6 @@ export class AuthService {
   // ========================================
   // HELPERS PRIVADOS
   // ========================================
-
-  /**
-   * Decodificar JWT
-   */
-  private decodeJwt(token: string): any {
-    try {
-      const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(
-        window
-          .atob(base64)
-          .split('')
-          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-          .join('')
-      );
-      return JSON.parse(jsonPayload);
-    } catch (e) {
-      console.error('Error al decodificar JWT:', e);
-      return null;
-    }
-  }
 
   /**
    * Obtener usuario de localStorage
@@ -213,7 +153,7 @@ export class AuthService {
   }
 
   // ========================================
-  // RESET PASSWORD
+  // RESET / CHANGE PASSWORD
   // ========================================
 
   forgotPassword(email: string): Observable<any> {

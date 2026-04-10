@@ -279,9 +279,9 @@ export class ClientesController {
    * ⚠️ DEBE IR AL FINAL (captura todo lo que no matcheó antes)
    */
   @Get(':id')
-  async findOne(@Param('id') id: string): Promise<ClienteWithRelations> {
+  async findOne(@Param('id') id: string, @Req() req: any): Promise<ClienteWithRelations> {
     this.logger.log(`📋 GET /api/clientes/${id}`);
-    const cliente = await this.clientesService.findOne(id);
+    const cliente = await this.clientesService.findOne(id, req.user);
 
     if (!cliente) {
       throw new NotFoundException(`Cliente con ID ${id} no encontrado`);

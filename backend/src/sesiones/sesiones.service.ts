@@ -191,7 +191,19 @@ export class SesionesService {
   /**
    * Obtener una sesión por ID
    */
-  async findOne(id: string): Promise<SesionWithRelations | null> {
+  async findOne(id: string, user?: { userId: string; rol: string }): Promise<SesionWithRelations | null> {
+    const soloAsignados = user && !['ADMIN', 'RECEP'].includes(user.rol);
+    if (soloAsignados) {
+      return await this.prisma.sesion.findFirst({
+        where: {
+          id,
+          cliente: {
+            trabajadoresAsignados: { some: { trabajadorId: user.userId, activo: true } },
+          },
+        },
+        include: sesionInclude,
+      });
+    }
     return await this.prisma.sesion.findUnique({
       where: { id },
       include: sesionInclude,

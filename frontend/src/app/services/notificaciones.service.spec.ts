@@ -210,8 +210,8 @@ describe('NotificacionesService', () => {
         close: jasmine.createSpy('close'),
       });
 
-      service.conectarSSE('token-a');
-      service.conectarSSE('token-b'); // segunda llamada, debe ignorarse
+      service.conectarSSE();
+      service.conectarSSE(); // segunda llamada, debe ignorarse
 
       expect(createSpy).toHaveBeenCalledTimes(1);
 
@@ -222,7 +222,7 @@ describe('NotificacionesService', () => {
       const mockSource = { onmessage: null, close: jasmine.createSpy('close') };
       spyOn(window as any, 'EventSource').and.returnValue(mockSource);
 
-      service.conectarSSE('token');
+      service.conectarSSE();
       service.desconectarSSE();
 
       expect(mockSource.close).toHaveBeenCalled();
@@ -232,7 +232,7 @@ describe('NotificacionesService', () => {
       const mockSource: any = { onmessage: null, close: jasmine.createSpy('close') };
       spyOn(window as any, 'EventSource').and.returnValue(mockSource);
 
-      service.conectarSSE('token');
+      service.conectarSSE();
 
       const notif = makeNotif({ id: 'n-sse', leida: false });
       mockSource.onmessage({ data: JSON.stringify(notif) });

@@ -17,6 +17,7 @@ import {
 } from '@nestjs/common';
 import { TrabajadorService } from './trabajador.service';
 import { CreateTrabajadorDto, UpdateTrabajadorDto } from './dto/trabajador.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { TipoSesion } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../roles/roles.guard';
@@ -111,14 +112,14 @@ export class TrabajadorController {
   @Patch(':id/cambiar-password')
   async cambiarPassword(
     @Param('id') id: string,
-    @Body() body: { passwordActual: string; passwordNueva: string },
+    @Body() body: ChangePasswordDto,
+    @Req() req: any,
   ) {
+    if (req.user.userId !== id && req.user.rol !== 'ADMIN') {
+      throw new ForbiddenException('No puedes cambiar la contraseña de otro usuario');
+    }
     this.logger.log(`Cambiando contraseña del trabajador: ${id}`);
-    return this.trabajadorService.cambiarPassword(
-      id,
-      body.passwordActual,
-      body.passwordNueva,
-    );
+    return this.trabajadorService.cambiarPassword(id, body.passwordActual, body.passwordNueva);
   }
 
   @Patch(':id/reactivar')

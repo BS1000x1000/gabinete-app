@@ -147,7 +147,7 @@ describe('ClientesController', () => {
       const cliente = mockCliente();
       service.findOne.mockResolvedValue(cliente);
 
-      const result = await controller.findOne('cliente-1');
+      const result = await controller.findOne('cliente-1', mockReq() as any);
 
       expect(result).toEqual(cliente);
     });
@@ -155,7 +155,7 @@ describe('ClientesController', () => {
     it('lanza NotFoundException si el cliente no existe', async () => {
       service.findOne.mockResolvedValue(null);
 
-      await expect(controller.findOne('cliente-x')).rejects.toThrow(NotFoundException);
+      await expect(controller.findOne('cliente-x', mockReq() as any)).rejects.toThrow(NotFoundException);
     });
   });
 

@@ -1,15 +1,17 @@
-import { IsString, MinLength, MaxLength, Matches } from 'class-validator';
+import { IsString, IsNotEmpty, MinLength, MaxLength, Matches } from 'class-validator';
 
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/;
 const PASSWORD_MSG = 'La contrasena debe tener minimo 8 caracteres, una mayuscula, una minuscula y un numero';
 
 export class ChangePasswordDto {
   @IsString()
-  oldPassword: string;
+  @IsNotEmpty()
+  passwordActual: string;
 
   @IsString()
+  @IsNotEmpty()
   @MinLength(8)
   @MaxLength(100)
   @Matches(PASSWORD_REGEX, { message: PASSWORD_MSG })
-  newPassword: string;
+  passwordNueva: string;
 }

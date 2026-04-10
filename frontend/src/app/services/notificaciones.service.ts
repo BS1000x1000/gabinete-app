@@ -64,11 +64,12 @@ export class NotificacionesService {
     );
   }
 
-  conectarSSE(token: string) {
+  conectarSSE() {
     if (this._eventSource) return;
 
-    const url = `${this.api}/stream?token=${encodeURIComponent(token)}`;
-    this._eventSource = new EventSource(url);
+    // El browser envía la cookie HttpOnly automáticamente con withCredentials: true
+    const url = `${this.api}/stream`;
+    this._eventSource = new EventSource(url, { withCredentials: true });
 
     this._eventSource.onmessage = (event) => {
       const notif: Notificacion = JSON.parse(event.data);

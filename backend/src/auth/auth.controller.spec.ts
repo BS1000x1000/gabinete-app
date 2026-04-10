@@ -1,7 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { AuditService } from './audit.service';
 import { TrabajadorService } from '../trabajador/trabajador.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { ThrottlerGuard } from '@nestjs/throttler';
 
@@ -26,6 +28,8 @@ const mockReq = (overrides: Record<string, any> = {}) => ({
   },
 });
 
+const mockRes = () => ({ cookie: jest.fn(), clearCookie: jest.fn() });
+
 const makeAuthServiceMock = () => ({
   login: jest.fn(),
   changePassword: jest.fn(),
@@ -36,6 +40,12 @@ const makeAuthServiceMock = () => ({
 const makeTrabajadorServiceMock = () => ({
   create: jest.fn(),
   findOne: jest.fn(),
+});
+
+const makeAuditServiceMock = () => ({ registrar: jest.fn() });
+
+const makePrismaServiceMock = () => ({
+  tokenRevocado: { create: jest.fn() },
 });
 
 // ── Suite ─────────────────────────────────────────────────────────────────────
@@ -52,7 +62,9 @@ describe('AuthController', () => {
       controllers: [AuthController],
       providers: [
         { provide: AuthService, useValue: authService },
+        { provide: AuditService, useValue: makeAuditServiceMock() },
         { provide: TrabajadorService, useValue: trabajadorService },
+        { provide: PrismaService, useValue: makePrismaServiceMock() },
       ],
     })
       .overrideGuard(JwtAuthGuard)
@@ -90,7 +102,7 @@ describe('AuthController', () => {
 
   // ── login ─────────────────────────────────────────────────────────────────
   describe('login()', () => {
-    it('llama a authService.login con el usuario del request', async () => {
+    it('llama a authService.login, setea la cookie y no devuelve el token en el body', async () => {
       const loginResponse = {
         access_token: 'jwt.token',
         token_type: 'Bearer',
@@ -98,11 +110,14 @@ describe('AuthController', () => {
       };
       authService.login.mockResolvedValue(loginResponse);
       const req = { user: mockUser() };
+      const res = mockRes();
 
-      const result = await controller.login(req);
+      const result = await controller.login(req, res as any);
 
       expect(authService.login).toHaveBeenCalledWith(req.user);
-      expect(result.access_token).toBe('jwt.token');
+      expect(res.cookie).toHaveBeenCalledWith('access_token', 'jwt.token', expect.any(Object));
+      expect((result as any).access_token).toBeUndefined();
+      expect((result as any).user).toBeDefined();
     });
   });
 
@@ -135,17 +150,19 @@ describe('AuthController', () => {
 
   // ── refreshToken ──────────────────────────────────────────────────────────
   describe('refreshToken()', () => {
-    it('busca el trabajador y genera nuevo token', async () => {
+    it('busca el trabajador, genera nuevo token y lo setea como cookie', async () => {
       const trabajador = mockUser();
       const loginResponse = { access_token: 'nuevo.jwt', token_type: 'Bearer', user: trabajador };
       trabajadorService.findOne.mockResolvedValue(trabajador);
       authService.login.mockResolvedValue(loginResponse);
+      const res = mockRes();
 
-      const result = await controller.refreshToken(mockReq());
+      const result = await controller.refreshToken(mockReq(), res as any);
 
       expect(trabajadorService.findOne).toHaveBeenCalledWith('user-1');
       expect(authService.login).toHaveBeenCalledWith(trabajador);
-      expect(result.access_token).toBe('nuevo.jwt');
+      expect(res.cookie).toHaveBeenCalledWith('access_token', 'nuevo.jwt', expect.any(Object));
+      expect((result as any).access_token).toBeUndefined();
     });
   });
 

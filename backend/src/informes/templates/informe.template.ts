@@ -94,42 +94,48 @@ function buildGasTableHtml(niveles: GasNivel[], nivelActual: number): string {
 
 export function buildInformeHtml(datos: InformeTemplateData): string {
   const esSeguimiento = datos.tipo === 'SEGUIMIENTO';
-  const subtitulo = esSeguimiento ? 'INFORME DE SEGUIMIENTO' : 'INFORME INICIAL';
+  const esAlta = datos.tipo === 'ALTA';
+  const subtitulo = esSeguimiento ? 'INFORME DE SEGUIMIENTO' : esAlta ? 'INFORME DE ALTA' : 'INFORME INICIAL';
 
   // Escape once — used in both student card and signatures section
   const elaboradoPor = escapeHtml(datos.elaborado_por);
 
   // ── Secciones de texto ─────────────────────────────────────
   type Seccion = { titulo: string; contenido: string };
-  const secciones: Seccion[] = [
-    { titulo: '1. Motivo de consulta', contenido: datos.motivoConsulta },
-    {
-      titulo: '2. Análisis de la información recabada',
-      contenido: datos.analisisInformacion
-        ? `En el proceso de valoración de ${escapeHtml(datos.alumno.nombre_pila)}, se ha recabado la siguiente información:<br><br>${escapeHtml(datos.analisisInformacion)}`
-        : '',
-    },
-    {
-      titulo: '3. Evaluación inicial',
-      contenido: datos.evaluacionInicial
-        ? `Tras el proceso de evaluación realizado con ${escapeHtml(datos.alumno.nombre_pila)}, se presentan los siguientes resultados:<br><br>${escapeHtml(datos.evaluacionInicial)}`
-        : '',
-    },
-    {
-      titulo: '4. Objetivos generales de intervención',
-      contenido: datos.objetivosGeneralesTexto
-        ? `Los objetivos generales de intervención planteados para ${escapeHtml(datos.alumno.nombre_pila)} son los siguientes:<br><br>${escapeHtml(datos.objetivosGeneralesTexto)}`
-        : '',
-    },
-  ];
-
-  if (esSeguimiento) {
-    secciones.push(
-      { titulo: '5. Evolución observada', contenido: datos.evolucionObservada },
-      { titulo: '6. Objetivos próximo curso', contenido: datos.objetivosProximoCurso },
-      { titulo: '7. Recomendaciones', contenido: datos.recomendaciones },
-    );
-  }
+  const secciones: Seccion[] = esAlta
+    ? [
+        { titulo: '1. Motivo de consulta / razón del alta', contenido: datos.motivoConsulta },
+        { titulo: '2. Resumen del proceso terapéutico', contenido: datos.evolucionObservada },
+        { titulo: '3. Estado al cierre del tratamiento', contenido: datos.evaluacionInicial },
+        { titulo: '4. Logros alcanzados', contenido: datos.objetivosGeneralesTexto },
+        { titulo: '5. Recomendaciones de continuidad', contenido: datos.recomendaciones },
+      ]
+    : [
+        { titulo: '1. Motivo de consulta', contenido: datos.motivoConsulta },
+        {
+          titulo: '2. Análisis de la información recabada',
+          contenido: datos.analisisInformacion
+            ? `En el proceso de valoración de ${escapeHtml(datos.alumno.nombre_pila)}, se ha recabado la siguiente información:<br><br>${escapeHtml(datos.analisisInformacion)}`
+            : '',
+        },
+        {
+          titulo: '3. Evaluación inicial',
+          contenido: datos.evaluacionInicial
+            ? `Tras el proceso de evaluación realizado con ${escapeHtml(datos.alumno.nombre_pila)}, se presentan los siguientes resultados:<br><br>${escapeHtml(datos.evaluacionInicial)}`
+            : '',
+        },
+        {
+          titulo: '4. Objetivos generales de intervención',
+          contenido: datos.objetivosGeneralesTexto
+            ? `Los objetivos generales de intervención planteados para ${escapeHtml(datos.alumno.nombre_pila)} son los siguientes:<br><br>${escapeHtml(datos.objetivosGeneralesTexto)}`
+            : '',
+        },
+        ...(esSeguimiento ? [
+          { titulo: '5. Evolución observada', contenido: datos.evolucionObservada },
+          { titulo: '6. Objetivos próximo curso', contenido: datos.objetivosProximoCurso },
+          { titulo: '7. Recomendaciones', contenido: datos.recomendaciones },
+        ] : []),
+      ];
 
   const seccionesHtml = secciones
     .map(
@@ -147,7 +153,7 @@ export function buildInformeHtml(datos: InformeTemplateData): string {
     .join('');
 
   // ── Sección GAS ─────────────────────────────────────────────
-  const gasNumero = esSeguimiento ? 8 : 5;
+  const gasNumero = esSeguimiento ? 8 : esAlta ? 6 : 5;
   const gasIntro = `La metodología GAS (Goal Attainment Scaling) permite cuantificar el progreso de ${escapeHtml(datos.alumno.nombre_pila)} estableciendo objetivos individualizados en una escala de cinco niveles, facilitando la medición objetiva del avance terapéutico.`;
 
   // Single pass over GAS_COLS to build both header and label rows

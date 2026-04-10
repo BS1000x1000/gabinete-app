@@ -127,9 +127,9 @@ export class SesionesController {
   // ==========================================
 
   @Get(':id')
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string, @Req() req: any) {
     this.logger.log(`GET /sesiones/${id}`);
-    const sesion = await this.sesionesService.findOne(id);
+    const sesion = await this.sesionesService.findOne(id, req.user);
 
     if (!sesion) {
       throw new NotFoundException(`Sesión con ID ${id} no encontrada`);

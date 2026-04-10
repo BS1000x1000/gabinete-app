@@ -2,7 +2,7 @@
 // INTERFACES INFORMES — FRONTEND
 // ============================================================
 
-export type TipoInforme = 'INICIAL' | 'SEGUIMIENTO' | 'REGISTROS' | 'OBJETIVOS_PROGRESO';
+export type TipoInforme = 'INICIAL' | 'SEGUIMIENTO' | 'REGISTROS' | 'OBJETIVOS_PROGRESO' | 'ALTA';
 export type EstadoInforme = 'BORRADOR' | 'REVISION' | 'FINALIZADO' | 'ENVIADO';
 
 export interface Informe {
@@ -92,6 +92,7 @@ export const TIPO_INFORME_LABELS: Record<TipoInforme, { texto: string; color: st
   SEGUIMIENTO:         { texto: 'Informe de Seguimiento', color: '#6610f2', bg: '#e0cffc' },
   REGISTROS:           { texto: 'Informe de Sesiones',    color: '#059669', bg: '#d1fae5' },
   OBJETIVOS_PROGRESO:  { texto: 'Informe de Progreso',    color: '#7c3aed', bg: '#ede9fe' },
+  ALTA:                { texto: 'Informe de Alta',         color: '#b45309', bg: '#fef3c7' },
 };
 
 export const ESTADO_INFORME_LABELS: Record<EstadoInforme, { texto: string; badgeClass: string }> = {
@@ -129,6 +130,34 @@ export const SECCIONES_INICIAL: SeccionInforme[] = [
     key: 'objetivosGeneralesTexto',
     titulo: '4. Objetivos generales',
     placeholder: 'Describe los objetivos generales del plan de intervención...',
+  },
+];
+
+export const SECCIONES_ALTA: SeccionInforme[] = [
+  {
+    key: 'motivoConsulta',
+    titulo: '1. Motivo de consulta / razón del alta',
+    placeholder: 'Describe el motivo original de consulta y la razón del alta...',
+  },
+  {
+    key: 'evolucionObservada',
+    titulo: '2. Resumen del proceso terapéutico',
+    placeholder: 'Resume el proceso seguido durante el tratamiento...',
+  },
+  {
+    key: 'evaluacionInicial',
+    titulo: '3. Estado al cierre del tratamiento',
+    placeholder: 'Describe el estado del alumno al finalizar el tratamiento...',
+  },
+  {
+    key: 'objetivosGeneralesTexto',
+    titulo: '4. Logros alcanzados',
+    placeholder: 'Enumera los logros y objetivos alcanzados durante el tratamiento...',
+  },
+  {
+    key: 'recomendaciones',
+    titulo: '5. Recomendaciones de continuidad',
+    placeholder: 'Incluye recomendaciones para familia, colegio y seguimiento post-alta...',
   },
 ];
 

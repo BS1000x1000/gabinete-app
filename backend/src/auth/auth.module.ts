@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { AuthService } from "./auth.service";
+import { AuditService } from "./audit.service";
 import { TrabajadorService } from "src/trabajador/trabajador.service";
 import { LocalStrategy } from "./strategies/local.strategy";
 import { PassportModule } from "@nestjs/passport";
@@ -14,12 +15,13 @@ import { NotificacionesModule } from "src/notificaciones/notificaciones.module";
         PassportModule,
         JwtModule.register({
             secret: process.env.SECRET,
-            signOptions: { expiresIn: '8hrs'}
+            signOptions: { expiresIn: '2h' }
         }),
         TrabajadorModule,
         NotificacionesModule,
     ],
-    providers: [AuthService, TrabajadorService, LocalStrategy, JwtStrategy],
-    controllers: [AuthController]
+    providers: [AuthService, AuditService, TrabajadorService, LocalStrategy, JwtStrategy],
+    controllers: [AuthController],
+    exports: [AuditService],
 })
 export class AuthModule {}

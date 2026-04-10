@@ -16,6 +16,7 @@ import {
   SeccionInforme,
   SECCIONES_INICIAL,
   SECCIONES_SEGUIMIENTO,
+  SECCIONES_ALTA,
   CreateInformeDto,
   Informe,
   UpdateInformeDto,
@@ -36,7 +37,7 @@ export default class InformesTabComponent implements OnInit {
   // Constantes para la template
   readonly TIPO_LABELS = TIPO_INFORME_LABELS;
   readonly ESTADO_LABELS = ESTADO_INFORME_LABELS;
-  readonly TIPOS: TipoInforme[] = ['INICIAL', 'SEGUIMIENTO'];
+  readonly TIPOS: TipoInforme[] = ['INICIAL', 'SEGUIMIENTO', 'ALTA'];
 
   // Estado
   clienteId = signal<string>('');
@@ -116,13 +117,11 @@ export default class InformesTabComponent implements OnInit {
   confirmTitle  = signal('');
   confirmMsg    = signal('');
 
-  // Secciones del editor según tipo (solo INICIAL / SEGUIMIENTO)
+  // Secciones del editor según tipo (INICIAL / SEGUIMIENTO / ALTA)
   secciones = computed<SeccionInforme[]>(() => {
     const informe = this.informeActivo();
-    if (!informe || informe.tipoInforme === 'REGISTROS') return [];
-    return informe.tipoInforme === 'INICIAL'
-      ? SECCIONES_INICIAL
-      : SECCIONES_SEGUIMIENTO;
+    if (!informe || informe.tipoInforme === 'REGISTROS' || informe.tipoInforme === 'OBJETIVOS_PROGRESO') return [];
+    return this.getSeccionesParaTipo(informe.tipoInforme);
   });
 
   // Snapshot GAS parseado del informe activo
@@ -191,12 +190,13 @@ export default class InformesTabComponent implements OnInit {
     const form = this.formNuevo();
     if (!form.titulo.trim()) return;
 
+    const conPeriodo = form.tipoInforme === 'SEGUIMIENTO' || form.tipoInforme === 'ALTA';
     const dto: CreateInformeDto = {
       titulo: form.titulo,
       tipoInforme: form.tipoInforme,
       clienteId: this.clienteId(),
-      ...(form.tipoInforme === 'SEGUIMIENTO' && form.periodoDesde ? { periodoDesde: form.periodoDesde } : {}),
-      ...(form.tipoInforme === 'SEGUIMIENTO' && form.periodoHasta ? { periodoHasta: form.periodoHasta } : {}),
+      ...(conPeriodo && form.periodoDesde ? { periodoDesde: form.periodoDesde } : {}),
+      ...(conPeriodo && form.periodoHasta ? { periodoHasta: form.periodoHasta } : {}),
     };
 
     this.guardando.set(true);
@@ -281,7 +281,7 @@ export default class InformesTabComponent implements OnInit {
       this.textoContenido.set(informe.contenido ?? '');
     } else {
       const textos: Record<string, string> = {};
-      const secciones = informe.tipoInforme === 'INICIAL' ? SECCIONES_INICIAL : SECCIONES_SEGUIMIENTO;
+      const secciones = this.getSeccionesParaTipo(informe.tipoInforme);
       secciones.forEach((s) => { textos[s.key] = (informe as any)[s.key] ?? ''; });
       this.textosSecciones.set(textos);
       this.seccionActiva.set(secciones[0]?.key ?? null);
@@ -413,6 +413,12 @@ export default class InformesTabComponent implements OnInit {
   esRegistros         = computed(() => this.informeActivo()?.tipoInforme === 'REGISTROS');
   esObjetivosProgreso = computed(() => this.informeActivo()?.tipoInforme === 'OBJETIVOS_PROGRESO');
   esContenidoLibre    = computed(() => this.esRegistros() || this.esObjetivosProgreso());
+
+  private getSeccionesParaTipo(tipo: TipoInforme): SeccionInforme[] {
+    if (tipo === 'INICIAL') return SECCIONES_INICIAL;
+    if (tipo === 'ALTA') return SECCIONES_ALTA;
+    return SECCIONES_SEGUIMIENTO;
+  }
 
   // Helpers tipados para uso en ng-template (contexto 'any')
   getTipoLabel(tipo: string): { texto: string; color: string; bg: string } {

@@ -11,7 +11,15 @@
       "Bash(find E:ProgrammingPROYECTSPROPIOSgabinete-appbackend -maxdepth 2 -type f \\\\\\(-name .env* -o -name *.env \\\\\\))",
       "Bash(find E:ProgrammingPROYECTSPROPIOSgabinete-appbackendsrc -name *.env* -type f)",
       "Bash(find /e/Programming/PROYECTS/PROPIOS/gabinete-app/backend/src -name \"*.dto.ts\" -type f -exec wc -l {})",
-      "Bash(find E:ProgrammingPROYECTSPROPIOSgabinete-appbackendsrc -name *.env* -o -name .env)"
+      "Bash(find E:ProgrammingPROYECTSPROPIOSgabinete-appbackendsrc -name *.env* -o -name .env)",
+      "Bash(npx jest:*)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(npm install:*)",
+      "Bash(npx ng:*)",
+      "Bash(npx tsc:*)",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(wc -l /e/Programming/PROYECTS/PROPIOS/gabinete-app/backend/src/*/*.service.ts)"
     ]
   },
   "hooks": {

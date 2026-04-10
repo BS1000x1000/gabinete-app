@@ -165,11 +165,18 @@ export class InformesService {
     });
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, user?: { userId: string; rol: string }) {
     this.logger.log(`Buscando informe con ID: ${id}`);
 
-    const informe = await this.prisma.informe.findUnique({
-      where: { id },
+    const where: any = { id };
+    if (user?.rol === 'RECEP') {
+      where.estado = { in: [EstadoInforme.FINALIZADO, EstadoInforme.ENVIADO] };
+    } else if (user && user.rol !== 'ADMIN') {
+      where.trabajadorId = user.userId;
+    }
+
+    const informe = await this.prisma.informe.findFirst({
+      where,
       include: informeInclude,
     });
 

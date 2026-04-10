@@ -1,0 +1,192 @@
+// ============================================================
+// AJUSTES — página de configuración y seguridad
+// ============================================================
+
+.ajustes-page {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+// ── Cabecera ─────────────────────────────────────────────────
+
+.ajustes-header {
+  margin-bottom: 1.75rem;
+}
+
+.ajustes-header-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: $gray-800;
+  margin-bottom: 0.2rem;
+}
+
+.ajustes-header-sub {
+  font-size: 0.875rem;
+  color: $gray-500;
+  margin: 0;
+}
+
+// ── Grid de cards ─────────────────────────────────────────────
+
+.ajustes-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+// ── Card base ────────────────────────────────────────────────
+
+.ajustes-card {
+  overflow: hidden;
+}
+
+.ajustes-card-header {
+  padding: 0.875rem 1.25rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: $primary;
+  background: $primary-ultra-light;
+  border-bottom: 1px solid $primary-light;
+  display: flex;
+  align-items: center;
+}
+
+.ajustes-card-body {
+  padding: 1.5rem 1.25rem;
+}
+
+// ── Perfil ───────────────────────────────────────────────────
+
+.ajustes-profile {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.ajustes-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: $primary-ultra-light;
+  border: 2px solid $primary-light;
+  color: $primary;
+  font-size: 1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  letter-spacing: 0.5px;
+}
+
+.ajustes-profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.ajustes-profile-name {
+  font-size: 0.975rem;
+  font-weight: 600;
+  color: $gray-800;
+  line-height: 1.3;
+}
+
+.ajustes-profile-role {
+  font-size: 0.78rem;
+  color: $gray-500;
+}
+
+// ── Sección descripción ──────────────────────────────────────
+
+.ajustes-section-desc {
+  font-size: 0.85rem;
+  color: $gray-500;
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+// ── Alertas ──────────────────────────────────────────────────
+
+.ajustes-alert {
+  font-size: 0.875rem;
+  border-radius: 0.5rem;
+  padding: 0.6rem 0.9rem;
+}
+
+// ── Formulario ───────────────────────────────────────────────
+
+.ajustes-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.ajustes-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.ajustes-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: $gray-700;
+  letter-spacing: 0.01em;
+}
+
+.ajustes-input-wrap {
+  position: relative;
+}
+
+.ajustes-input {
+  padding-right: 2.6rem;
+  font-size: 0.9rem;
+  border-color: $gray-300;
+  border-radius: 0.5rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &:focus {
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba($primary, 0.12);
+  }
+}
+
+.ajustes-eye-btn {
+  position: absolute;
+  right: 0.65rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 0.2rem;
+  color: $gray-400;
+  cursor: pointer;
+  line-height: 1;
+  transition: color 0.15s ease;
+
+  &:hover { color: $primary; }
+}
+
+.ajustes-hint {
+  font-size: 0.78rem;
+  display: flex;
+  align-items: center;
+}
+
+// ── Botón submit ─────────────────────────────────────────────
+
+.ajustes-actions {
+  padding-top: 0.4rem;
+}
+
+.ajustes-submit-btn {
+  min-width: 200px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  padding: 0.55rem 1.25rem;
+}

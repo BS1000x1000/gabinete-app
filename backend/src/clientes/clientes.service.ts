@@ -217,7 +217,17 @@ export class ClientesService {
     });
   }
 
-  async findOne(id: string): Promise<ClienteWithRelations | null> {
+  async findOne(id: string, user?: { userId: string; rol: string }): Promise<ClienteWithRelations | null> {
+    const soloAsignados = user && !['ADMIN', 'RECEP'].includes(user.rol);
+    if (soloAsignados) {
+      return await this.prisma.cliente.findFirst({
+        where: {
+          id,
+          trabajadoresAsignados: { some: { trabajadorId: user.userId, activo: true } },
+        },
+        include: clienteInclude,
+      });
+    }
     return await this.prisma.cliente.findUnique({
       where: { id },
       include: clienteInclude,

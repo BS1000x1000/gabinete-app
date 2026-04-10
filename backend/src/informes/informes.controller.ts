@@ -94,9 +94,9 @@ export class InformesController {
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string, @Req() req: any) {
     this.logger.log(`GET /informes/${id}`);
-    return this.informesService.findOne(id);
+    return this.informesService.findOne(id, req.user);
   }
 
   @Patch(':id')

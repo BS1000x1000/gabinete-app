@@ -511,6 +511,7 @@ enum TipoInforme {
   SEGUIMIENTO
   REGISTROS
   OBJETIVOS_PROGRESO
+  ALTA
 }
 
 enum EstadoObjetivo {
@@ -572,4 +573,37 @@ model Notificacion {
   @@index([trabajadorId])
   @@index([leida])
   @@map("notificaciones")
+}
+
+// ============================================================
+// SEGURIDAD — TOKENS REVOCADOS
+// ============================================================
+
+model TokenRevocado {
+  jti       String   @id
+  expiresAt DateTime @map("expires_at")
+  revokedAt DateTime @default(now()) @map("revoked_at")
+
+  @@index([expiresAt])
+  @@map("tokens_revocados")
+}
+
+// ============================================================
+// AUDIT LOG (RGPD)
+// ============================================================
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  evento    String   // 'LOGIN_OK' | 'LOGIN_FAIL' | 'LOGOUT' | 'PASSWORD_CHANGE' | 'ACCESO_FICHA'
+  userId    String?  @map("user_id")    // null en LOGIN_FAIL si el usuario no existe
+  username  String?
+  ip        String?
+  recurso   String?  // clienteId, informeId, etc. — contexto del acceso
+  metadata  Json?    // datos adicionales en formato libre
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([evento])
+  @@index([createdAt])
+  @@map("audit_log")
 }

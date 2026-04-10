@@ -179,7 +179,7 @@
                 <i class="bi" [class.bi-pencil]="editandoId() !== reg.id" [class.bi-x-circle]="editandoId() === reg.id"></i>
               </button>
             </div>
-            <p class="historial-contenido" [innerHTML]="reg.contenido"></p>
+            <p class="historial-contenido" [innerHTML]="sanitizeHtml(reg.contenido)"></p>
             <div *ngIf="reg.objetivosGeneralesTrabajados!.length > 0" class="historial-objetivos">
               <span class="historial-objetivos__label">
                 <i class="bi bi-bullseye"></i>Objetivos trabajados:

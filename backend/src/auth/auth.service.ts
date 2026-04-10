@@ -74,8 +74,10 @@ export class AuthService {
     }
 
     // Payload más completo
+    const jti = require('crypto').randomUUID();
     const payload = {
       sub: user.id,              // ID del trabajador (estándar JWT)
+      jti,                       // ID único del token (para revocación)
       username: user.username,
       rol: user.rol.codigo,      // ADMIN, PEDAGOGO, etc.
       nombre: user.nombre,
@@ -169,10 +171,13 @@ export class AuthService {
         return { message: 'Si el email existe, se ha generado un token de reset' };
       }
 
-      const token = require('crypto').randomBytes(32).toString('hex');
+      const crypto = require('crypto');
+      const token = crypto.randomBytes(32).toString('hex');
       const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+      // Guardar el hash del token, nunca el token en texto plano
+      const tokenHash = crypto.createHmac('sha256', process.env.SECRET).update(token).digest('hex');
 
-      await this.trabajadorService.guardarResetToken(user.id, token, expires);
+      await this.trabajadorService.guardarResetToken(user.id, tokenHash, expires);
 
       this.logger.log(`Reset token generado para: ${email}`);
 
@@ -193,7 +198,9 @@ export class AuthService {
    */
   async resetPassword(token: string, newPassword: string) {
     try {
-      const user = await this.trabajadorService.findByResetToken(token);
+      // Hashear el token recibido para comparar con el hash almacenado
+      const tokenHash = require('crypto').createHmac('sha256', process.env.SECRET).update(token).digest('hex');
+      const user = await this.trabajadorService.findByResetToken(tokenHash);
 
       if (!user) {
         throw new UnauthorizedException('Token de reset invalido o expirado');
