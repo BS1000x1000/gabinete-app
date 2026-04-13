@@ -19,7 +19,8 @@
       "Bash(npx tsc:*)",
       "Bash(ls:*)",
       "Bash(find:*)",
-      "Bash(wc -l /e/Programming/PROYECTS/PROPIOS/gabinete-app/backend/src/*/*.service.ts)"
+      "Bash(wc -l /e/Programming/PROYECTS/PROPIOS/gabinete-app/backend/src/*/*.service.ts)",
+      "Bash(apt-cache show:*)"
     ]
   },
   "hooks": {

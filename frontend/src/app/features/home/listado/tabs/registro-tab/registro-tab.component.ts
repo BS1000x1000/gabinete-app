@@ -7,7 +7,8 @@ import {
   signal,
   type OnInit,
 } from '@angular/core';
-import { DomSanitizer, SecurityContext } from '@angular/platform-browser';
+import { SecurityContext } from '@angular/core';
+import { DomSanitizer } from '@angular/platform-browser';
 import { RegistrosService } from '../../../../../services/registros.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';

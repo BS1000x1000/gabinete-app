@@ -1,7 +1,7 @@
 # TODO — Tareas técnicas pre-deploy
 
 Derivadas del análisis de arquitectura (2026-03-23). Actualizado 2026-04-10.  
-Los bloques 1 y 2 (índices y paginación) están **completados**. Pendientes: 3, 4 y 5.
+Los bloques 1, 2 y 3 (índices, paginación y Dockerfiles) están **completados**. Pendientes: 4 y 5 (parcialmente).
 
 ---
 
@@ -35,7 +35,7 @@ Sin índices, todas las búsquedas hacen full table scan. Con 10.000 sesiones un
 
 ---
 
-## BLOQUE 3 — Dockerfiles y docker-compose.prod.yml ⬜ PENDIENTE
+## BLOQUE 3 — Dockerfiles y docker-compose.prod.yml ✅ COMPLETADO
 
 ### Tarea 3.1 — Crear docker-compose.prod.yml
 
@@ -107,7 +107,7 @@ server {
 }
 ```
 
-### Tarea 3.4 — Crear .env.prod.example
+### Tarea 3.4 — Crear .env.prod.example ✅
 
 Template con todas las variables de producción:
 ```
@@ -174,9 +174,9 @@ for (const key of required) {
 `frontend/src/app/features/clientes/clientes.component.ts`, líneas 131 y 198:  
 Cambiar `/cliente` → `/perfil` directamente (funciona via redirect pero está sucio).
 
-### Tarea 5.2 — Corregir error TypeScript en rbac.e2e-spec.ts ⬜
+### Tarea 5.2 — Corregir error TypeScript en rbac.e2e-spec.ts ✅
 
-Error de tipo en la propiedad `username`. Tests pasan, runtime correcto, pero rompe `strict: true`.
+Añadida interfaz `TestUserOverrides` tipada explícitamente. `mkUser` ya no usa `Record<string, any>`.
 
 ---
 
@@ -186,6 +186,6 @@ Error de tipo en la propiedad `username`. Tests pasan, runtime correcto, pero ro
 |---|---|
 | 1 — Índices | ✅ Completo |
 | 2 — Paginación | ✅ Completo |
-| 3 — Dockerfiles | ⬜ Pendiente |
+| 3 — Dockerfiles | ✅ Completo |
 | 4 — Seguridad | ⬜ Pendiente |
-| 5 — Deuda técnica | ⬜ Pendiente |
+| 5 — Deuda técnica | ✅ Completo |

@@ -2,7 +2,6 @@ import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { NotificacionesService } from '../../services/notificaciones.service';
-import { AuthService } from '../../services/auth.service';
 import { SidebarComponent} from '../../shared/components/layout/sidebar/sidebar.component';
 import { SearchBarComponent } from '../../components/search-bar/search-bar.component';
 import { NotificationBellComponent } from '../../shared/components/notification-bell/notification-bell.component';
@@ -26,15 +25,13 @@ import { NuevaSesionModalComponent } from '../../shared/components/nueva-sesion-
 })
 export class HomeComponent implements OnInit {
   private notificacionesSvc = inject(NotificacionesService);
-  private authSvc = inject(AuthService);
 
   mobileSidebarOpen = signal(false);
 
   ngOnInit() {
     this.notificacionesSvc.cargar().subscribe();
-    // Reconectar SSE si el usuario ya tiene token (recarga de página)
-    const token = this.authSvc.token();
-    if (token) this.notificacionesSvc.conectarSSE(token);
+    // Reconectar SSE si el usuario ya tiene sesión activa (recarga de página)
+    this.notificacionesSvc.conectarSSE();
   }
 
   toggleMobileSidebar() {

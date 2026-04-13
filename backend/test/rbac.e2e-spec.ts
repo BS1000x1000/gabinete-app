@@ -20,15 +20,21 @@ const TEST_HASH = bcrypt.hashSync('Test123!', 1);
 
 // ── Fixtures de usuario ───────────────────────────────────────────────────────
 
-const mkUser = (overrides: Record<string, any>) => ({
+interface TestUserOverrides {
+  id: string;
+  username: string;
+  rol: { id: string; nombreRol: string; codigo: string };
+}
+
+const mkUser = (overrides: TestUserOverrides) => ({
   passwordHash: TEST_HASH,
   activo: true,
   nombre: 'Test',
   apellidos: 'User',
   email: 'test@test.es',
   rolId: 'rol-1',
-  resetPasswordToken: null,
-  resetPasswordExpires: null,
+  resetPasswordToken: null as null,
+  resetPasswordExpires: null as null,
   createdAt: new Date(),
   updatedAt: new Date(),
   ...overrides,

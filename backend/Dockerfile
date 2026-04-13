@@ -16,7 +16,6 @@ FROM node:22-slim AS runner
 RUN apt-get update && apt-get install -y --no-install-recommends \
     chromium \
     fonts-noto \
-    fonts-noto-cjk \
     && rm -rf /var/lib/apt/lists/*
 
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
@@ -36,4 +35,4 @@ COPY prisma ./prisma
 EXPOSE 3000
 
 # Run migrations then start the app
-CMD npx prisma migrate deploy && node dist/main
+CMD npx prisma migrate deploy && exec node dist/main
