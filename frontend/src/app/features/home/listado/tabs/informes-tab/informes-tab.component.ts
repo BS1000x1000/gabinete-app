@@ -45,6 +45,7 @@ export default class InformesTabComponent implements OnInit {
   guardando = signal(false);
   enviando = signal(false);
   descargandoPdf = signal(false);
+  abriendo = signal(false);
 
   // Signals del servicio
   informes = this.informesSvc.informes;
@@ -215,10 +216,11 @@ export default class InformesTabComponent implements OnInit {
   // ============================================================
 
   abrirFormBorrador(): void {
+    const abierto = this.mostrarFormBorrador();
     this.mostrarFormNuevo.set(false);
     this.mostrarFormObjetivos.set(false);
-    this.formBorrador.set({ desde: '', hasta: '' });
-    this.mostrarFormBorrador.set(true);
+    if (!abierto) this.formBorrador.set({ desde: '', hasta: '' });
+    this.mostrarFormBorrador.set(!abierto);
   }
 
   setBorradorField(field: 'desde' | 'hasta', value: string): void {
@@ -245,10 +247,11 @@ export default class InformesTabComponent implements OnInit {
   // ============================================================
 
   abrirFormObjetivos(): void {
+    const abierto = this.mostrarFormObjetivos();
     this.mostrarFormNuevo.set(false);
     this.mostrarFormBorrador.set(false);
-    this.formObjetivos.set({ desde: '', hasta: '' });
-    this.mostrarFormObjetivos.set(true);
+    if (!abierto) this.formObjetivos.set({ desde: '', hasta: '' });
+    this.mostrarFormObjetivos.set(!abierto);
   }
 
   setObjetivosField(field: 'desde' | 'hasta', value: string): void {
@@ -406,6 +409,20 @@ export default class InformesTabComponent implements OnInit {
       .pipe(finalize(() => this.descargandoPdf.set(false)))
       .subscribe();
   }
+
+  abrirPdfArchivado(): void {
+    const informe = this.informeActivo();
+    if (!informe || this.abriendo()) return;
+    this.abriendo.set(true);
+    this.informesSvc.getPdfUrl(informe.id)
+      .pipe(finalize(() => this.abriendo.set(false)))
+      .subscribe({
+        next: (url) => window.open(url, '_blank', 'noopener'),
+        error: () => { /* el interceptor global ya muestra el error */ },
+      });
+  }
+
+  readonly tienePdfArchivado = computed(() => !!this.informeActivo()?.urlDocumentoFinal);
 
   esBloqueado         = computed(() => { const e = this.informeActivo()?.estado; return e === 'FINALIZADO' || e === 'ENVIADO'; });
   esFinalizado        = computed(() => this.informeActivo()?.estado === 'FINALIZADO');

@@ -20,7 +20,8 @@
       "Bash(ls:*)",
       "Bash(find:*)",
       "Bash(wc -l /e/Programming/PROYECTS/PROPIOS/gabinete-app/backend/src/*/*.service.ts)",
-      "Bash(apt-cache show:*)"
+      "Bash(apt-cache show:*)",
+      "Bash(xargs cat:*)"
     ]
   },
   "hooks": {

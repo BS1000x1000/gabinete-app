@@ -1,7 +1,7 @@
 # TODO — Tareas técnicas pre-deploy
 
 Derivadas del análisis de arquitectura (2026-03-23). Actualizado 2026-04-10.  
-Los bloques 1, 2 y 3 (índices, paginación y Dockerfiles) están **completados**. Pendientes: 4 y 5 (parcialmente).
+**Todos los bloques completados** (2026-04-13). La app está lista técnicamente para desplegar.
 
 ---
 
@@ -125,45 +125,19 @@ N8N_DB_PASSWORD=<password>
 
 ---
 
-## BLOQUE 4 — Seguridad ⬜ PENDIENTE
+## BLOQUE 4 — Seguridad ✅ COMPLETADO
 
-### Tarea 4.1 — Rate limiting en /auth/login ⬜
+### Tarea 4.1 — Rate limiting en /auth/login ✅
+`ThrottlerModule.forRoot` en `AppModule`. `AuthController.login()` con `@UseGuards(ThrottlerGuard)` + `@Throttle({ global: { limit: 5, ttl: 60000 } })`. También aplicado en forgot-password y reset-password.
 
-Instalar si no está: `npm install @nestjs/throttler`
+### Tarea 4.2 — CORS bloqueado al dominio de producción ✅
+`app.enableCors({ origin: process.env.FRONTEND_URL ?? 'http://localhost:4200', credentials: true })` en `main.ts`. Variable `FRONTEND_URL` en `.env.prod.example`.
 
-Configurar en `AppModule`:
-```typescript
-ThrottlerModule.forRoot([{ ttl: 60000, limit: 5 }])
-```
-Aplicar `ThrottlerGuard` específicamente en `AuthController.login()`.
+### Tarea 4.3 — Helmet.js confirmado activo ✅
+`app.use(helmet({ contentSecurityPolicy: { directives: {...} }, crossOriginEmbedderPolicy: false }))` en `main.ts`. CSP explícito configurado.
 
-### Tarea 4.2 — CORS bloqueado al dominio de producción ⬜
-
-En `backend/src/main.ts`:
-```typescript
-app.enableCors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:4200',
-  credentials: true,
-});
-```
-
-### Tarea 4.3 — Helmet.js confirmado activo ⬜
-
-Verificar que `app.use(helmet())` está en `main.ts`. Si no:
-```bash
-npm install helmet
-```
-
-### Tarea 4.4 — Validación de variables de entorno al arrancar ⬜
-
-La app debe fallar rápido si faltan variables críticas:
-```typescript
-// En main.ts, antes de app.listen()
-const required = ['DATABASE_URL', 'SECRET', 'CORS_ORIGIN'];
-for (const key of required) {
-  if (!process.env[key]) throw new Error(`Missing required env var: ${key}`);
-}
-```
+### Tarea 4.4 — Validación de variables de entorno al arrancar ✅
+`const REQUIRED_ENV = ['DATABASE_URL', 'SECRET', 'FRONTEND_URL']` validadas al bootstrap. La app falla rápido si faltan.
 
 ---
 
@@ -187,5 +161,5 @@ Añadida interfaz `TestUserOverrides` tipada explícitamente. `mkUser` ya no usa
 | 1 — Índices | ✅ Completo |
 | 2 — Paginación | ✅ Completo |
 | 3 — Dockerfiles | ✅ Completo |
-| 4 — Seguridad | ⬜ Pendiente |
+| 4 — Seguridad | ✅ Completo |
 | 5 — Deuda técnica | ✅ Completo |

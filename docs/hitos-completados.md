@@ -1,7 +1,7 @@
 # Hitos completados — Historial
 
 Gabinete Pedagógico · Angular 19 + NestJS + Prisma + PostgreSQL  
-Última actualización: 2026-04-10
+Última actualización: 2026-04-13
 
 ---
 
@@ -108,7 +108,43 @@ Ver detalle completo en [n8n-automatizaciones.md](n8n-automatizaciones.md).
 
 ---
 
-## Estado de tests (2026-04-10)
+---
+
+## Sesión de fixes y hardening (2026-04-13)
+
+### Auth guard — login no redirigía ✅
+`authGuard` usaba `localStorage.getItem('access_token')` que nunca se escribe (el JWT es HttpOnly cookie). Corregido: ahora usa `AuthService.isAuthenticated()` (signal respaldado por `current_user` en localStorage).
+
+### Build frontend — 3 errores de compilación ✅
+- `home.component.ts`: llamaba `authSvc.token()` (inexistente) y `conectarSSE(token)` — SSE migró a cookie, el método no acepta argumento. Corregido + `AuthService` eliminado del componente.
+- `registro-tab.component.ts`: `SecurityContext` ya no se re-exporta desde `@angular/platform-browser` en Angular 19. Movido a `@angular/core`.
+
+### Todo el bloque 4 de seguridad confirmado completo ✅
+Rate limiting (ThrottlerModule), CORS por env var (FRONTEND_URL), Helmet.js con CSP explícito, y validación de env vars al arrancar: todo estaba ya implementado — solo la documentación estaba desactualizada.
+
+### Tab Acceso de trabajador — rediseño ✅
+- Eliminado formulario de cambio de contraseña (duplicado de Ajustes, y no funcionaba para ADMIN cambiando la pwd de otro — requería contraseña actual ajena).
+- Nuevo contenido: credenciales (usuario, email, estado) + selector de rol con guardado + zona peligrosa (desactivar/reactivar cuenta).
+- Tab solo visible para ADMIN (`isAdmin()` en lugar de `canVerTodo() || esPropioUsuario`).
+- Ruta `/acceso` protegida con `roleGuard(['ADMIN'])` en `trabajador-ficha.routes.ts`.
+
+### Acceso de terapeutas a su propio perfil ✅
+- `trabajadores` (lista): `roleGuard(['ADMIN','RECEP'])` ✅
+- `trabajadores/:id` (ficha): sin guard — cualquier usuario autenticado puede ver su propio perfil. El sidebar ya tenía el enlace "Mi perfil" apuntando al propio ID.
+- Protección en el componente: si no eres ADMIN/RECEP e intentas acceder al perfil de otro → redirige a tu propio perfil.
+
+### CSS ficha-tabs — hueco vacío con 2 tabs ✅
+`.ficha-tabs.ficha-tabs-auto` tenía `repeat(3, 1fr)` hardcodeado. Cambiado a `grid-auto-flow: column; grid-auto-columns: 1fr` — las columnas se crean según los tabs reales (2 para terapeutas/RECEP, 3 para ADMIN).
+
+### .env.prod.example creado ✅
+Template con todas las variables de producción alineado con `docker-compose.prod.yml`.
+
+### TypeScript strict en rbac.e2e-spec.ts ✅
+`mkUser` tipado con interfaz `TestUserOverrides` explícita en lugar de `Record<string, any>`.
+
+---
+
+## Estado de tests (2026-04-13)
 
 | Suite | Tests | Estado |
 |---|---|---|

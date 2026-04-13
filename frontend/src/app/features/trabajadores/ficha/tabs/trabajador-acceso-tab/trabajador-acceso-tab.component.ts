@@ -1,20 +1,14 @@
 import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { TrabajadorService } from '../../../../../services/trabajadores.service';
+import { TrabajadorService, Trabajador, Rol } from '../../../../../services/trabajadores.service';
 import { AuthService } from '../../../../../services/auth.service';
-import { computeStrength } from '../../../../../shared/utils/password-strength.utils';
-
-interface PwdForm {
-  passwordActual: string;
-  passwordNueva: string;
-  passwordConfirmar: string;
-}
 
 @Component({
   selector: 'app-trabajador-acceso-tab',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './trabajador-acceso-tab.component.html',
 })
 export class TrabajadorAccesoTabComponent implements OnInit, OnDestroy {
@@ -25,74 +19,94 @@ export class TrabajadorAccesoTabComponent implements OnInit, OnDestroy {
   private trabajadorId = '';
   private exitoTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  readonly tieneAcceso = computed(() =>
-    this.auth.canVerTodo() || this.auth.currentTrabajadorId() === this.trabajadorId
+  readonly trabajador    = signal<Trabajador | null>(null);
+  readonly roles         = signal<Rol[]>([]);
+  readonly isLoading     = signal(true);
+  readonly guardandoRol  = signal(false);
+  readonly guardandoEstado = signal(false);
+  readonly error         = signal<string | null>(null);
+  readonly exito         = signal<string | null>(null);
+  readonly rolSeleccionado = signal<string>('');
+
+  readonly esPropioUsuario = computed(
+    () => this.auth.currentTrabajadorId() === this.trabajadorId,
   );
-
-  readonly form = signal<PwdForm>({
-    passwordActual: '',
-    passwordNueva: '',
-    passwordConfirmar: '',
-  });
-
-  readonly guardando    = signal(false);
-  readonly error        = signal<string | null>(null);
-  readonly exito        = signal<string | null>(null);
-  readonly hideActual   = signal(true);
-  readonly hideNueva    = signal(true);
-  readonly hideConfirmar = signal(true);
-
-  readonly strength      = computed(() => computeStrength(this.form().passwordNueva));
-  readonly passwordsMatch = computed(() => {
-    const f = this.form();
-    return !!f.passwordConfirmar && f.passwordNueva === f.passwordConfirmar;
-  });
 
   ngOnInit(): void {
     this.trabajadorId = this.route.parent?.snapshot.paramMap.get('id') ?? '';
+    this.cargar();
   }
 
   ngOnDestroy(): void {
     if (this.exitoTimeout !== null) clearTimeout(this.exitoTimeout);
   }
 
-  updateField(field: keyof PwdForm, value: string): void {
-    this.form.update((f) => ({ ...f, [field]: value }));
+  private cargar(): void {
+    const cached = this.trabajadorSvc.currentTrabajador();
+    if (cached && cached.id === this.trabajadorId) {
+      this.trabajador.set(cached);
+      this.rolSeleccionado.set(cached.rol?.id ?? '');
+    }
+
+    this.trabajadorSvc.getRoles().subscribe({
+      next: (res) => {
+        this.roles.set(res.data ?? []);
+        this.isLoading.set(false);
+      },
+      error: () => this.isLoading.set(false),
+    });
   }
 
-  guardar(): void {
-    const f = this.form();
+  guardarRol(): void {
+    const nuevoRolId = this.rolSeleccionado();
+    if (!nuevoRolId || nuevoRolId === this.trabajador()?.rol?.id) return;
 
-    if (!f.passwordActual) {
-      this.error.set('La contraseña actual es obligatoria.');
-      return;
-    }
-    if (!f.passwordNueva || f.passwordNueva.length < 8) {
-      this.error.set('La nueva contraseña debe tener al menos 8 caracteres.');
-      return;
-    }
-    if (f.passwordNueva !== f.passwordConfirmar) {
-      this.error.set('Las contraseñas no coinciden.');
-      return;
-    }
-
-    this.guardando.set(true);
+    this.guardandoRol.set(true);
     this.error.set(null);
 
-    this.trabajadorSvc
-      .cambiarPassword(this.trabajadorId, f.passwordActual, f.passwordNueva)
-      .subscribe({
-        next: () => {
-          this.form.set({ passwordActual: '', passwordNueva: '', passwordConfirmar: '' });
-          this.guardando.set(false);
-          this.exito.set('Contraseña actualizada correctamente.');
-          this.exitoTimeout = setTimeout(() => this.exito.set(null), 4000);
-        },
-        error: (err: any) => {
-          this.error.set(err?.error?.message ?? 'Error al cambiar la contraseña.');
-          this.guardando.set(false);
-        },
-      });
+    this.trabajadorSvc.updateTrabajador(this.trabajadorId, { rolId: nuevoRolId }).subscribe({
+      next: (res) => {
+        this.trabajador.set(res.data);
+        this.trabajadorSvc.currentTrabajador.set(res.data);
+        this.guardandoRol.set(false);
+        this.mostrarExito('Rol actualizado correctamente.');
+      },
+      error: (err: any) => {
+        this.error.set(err?.error?.message ?? 'Error al cambiar el rol.');
+        this.guardandoRol.set(false);
+      },
+    });
+  }
+
+  toggleEstado(): void {
+    const t = this.trabajador();
+    if (!t) return;
+
+    this.guardandoEstado.set(true);
+    this.error.set(null);
+
+    const op$ = t.activo
+      ? this.trabajadorSvc.desactivarTrabajador(this.trabajadorId)
+      : this.trabajadorSvc.reactivarTrabajador(this.trabajadorId);
+
+    op$.subscribe({
+      next: () => {
+        const actualizado = { ...t, activo: !t.activo };
+        this.trabajador.set(actualizado);
+        this.trabajadorSvc.currentTrabajador.set(actualizado);
+        this.guardandoEstado.set(false);
+        this.mostrarExito(actualizado.activo ? 'Cuenta activada.' : 'Cuenta desactivada.');
+      },
+      error: (err: any) => {
+        this.error.set(err?.error?.message ?? 'Error al cambiar el estado.');
+        this.guardandoEstado.set(false);
+      },
+    });
+  }
+
+  private mostrarExito(msg: string): void {
+    this.exito.set(msg);
+    this.exitoTimeout = setTimeout(() => this.exito.set(null), 3000);
   }
 }
 

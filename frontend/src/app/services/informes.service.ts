@@ -127,6 +127,17 @@ export class InformesService {
       );
   }
 
+  /**
+   * Obtiene una URL prefirmada (15 min) del PDF archivado en R2.
+   * Solo disponible para informes FINALIZADO/ENVIADO que se finalizaron
+   * con R2 configurado.
+   */
+  getPdfUrl(informeId: string): Observable<string> {
+    return this.http
+      .get<{ data: { url: string } }>(`${this.api}/${informeId}/pdf-url`)
+      .pipe(map((res) => res.data.url));
+  }
+
   // ============================================================
   // INFORME DE SESIONES (REGISTROS)
   // ============================================================

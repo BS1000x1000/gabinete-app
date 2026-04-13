@@ -2,10 +2,13 @@
 // TRABAJADOR FICHA — Individual profile
 // ========================================
 
-// ── Tab nav override — 3 columns ─────────
-// .ficha-tabs has repeat(5,1fr) — override for 3-tab layout
+// ── Tab nav override — auto columns ──────
+// Overrides the 5-col grid from _listado.scss.
+// Uses auto-flow so it adapts to 2 or 3 tabs without gaps.
 .ficha-tabs.ficha-tabs-auto {
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: unset;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
 }
 
 // ── Breadcrumb / back nav ─────────────────

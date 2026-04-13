@@ -1,130 +1,128 @@
-<div class="perfil-tab">
+<div class="perfil-tab" *ngIf="!isLoading()">
 
-  <!-- Sin permiso -->
-  <div *ngIf="!tieneAcceso()" class="trab-empty-state">
-    <i class="bi bi-shield-x"></i>
-    <p>Sin acceso</p>
-    <span>No tienes permiso para gestionar las credenciales de este profesional.</span>
+  <!-- Éxito -->
+  <div *ngIf="exito()" class="trab-alert-exito mb-3">
+    <i class="bi bi-check-circle-fill me-2"></i>{{ exito() }}
   </div>
 
-  <ng-container *ngIf="tieneAcceso()">
+  <!-- Error -->
+  <div *ngIf="error()" class="alert alert-danger py-2 mb-3">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error() }}
+    <button type="button" class="btn-close float-end" (click)="error.set(null)"></button>
+  </div>
+
+  <ng-container *ngIf="trabajador()">
 
     <div class="trab-section-hdr mb-3">
       <span class="trab-section-title">
-        <i class="bi bi-shield-lock me-2"></i>Cambiar contraseña
+        <i class="bi bi-shield-lock me-2"></i>Gestión de acceso
       </span>
     </div>
 
-    <!-- Éxito -->
-    <div *ngIf="exito()" class="trab-alert-exito mb-3">
-      <i class="bi bi-check-circle-fill me-2"></i>{{ exito() }}
-    </div>
+    <div class="perfil-grid">
 
-    <!-- Error -->
-    <div *ngIf="error()" class="alert alert-danger py-2 mb-3">
-      <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error() }}
-      <button type="button" class="btn-close float-end" (click)="error.set(null)"></button>
-    </div>
-
-    <div class="perfil-card trab-edit-card" style="max-width: 480px;">
-      <div class="perfil-card-body">
-
-        <!-- Contraseña actual -->
-        <div class="mb-3">
-          <label class="form-label">Contraseña actual <span class="text-danger">*</span></label>
-          <div class="input-icon-wrap">
-            <input
-              [type]="hideActual() ? 'password' : 'text'"
-              class="form-control form-control-sm"
-              [value]="form().passwordActual"
-              (input)="updateField('passwordActual', $any($event.target).value)"
-              autocomplete="current-password"
-            />
-            <button type="button" class="input-eye-btn" (click)="hideActual.set(!hideActual())" tabindex="-1">
-              <i class="bi" [class.bi-eye]="hideActual()" [class.bi-eye-slash]="!hideActual()"></i>
-            </button>
-          </div>
-        </div>
-
-        <!-- Nueva contraseña -->
-        <div class="mb-1">
-          <label class="form-label">Nueva contraseña <span class="text-danger">*</span></label>
-          <div class="input-icon-wrap">
-            <input
-              [type]="hideNueva() ? 'password' : 'text'"
-              class="form-control form-control-sm"
-              [value]="form().passwordNueva"
-              (input)="updateField('passwordNueva', $any($event.target).value)"
-              autocomplete="new-password"
-            />
-            <button type="button" class="input-eye-btn" (click)="hideNueva.set(!hideNueva())" tabindex="-1">
-              <i class="bi" [class.bi-eye]="hideNueva()" [class.bi-eye-slash]="!hideNueva()"></i>
-            </button>
-          </div>
-        </div>
-
-        <!-- Indicador de fuerza -->
-        <div *ngIf="strength().level > 0" class="password-strength mb-3">
-          <div class="password-strength-bar">
-            <div
-              class="password-strength-fill"
-              [style.width.%]="strength().level * 25"
-              [style.background-color]="strength().color"
-            ></div>
-          </div>
-          <span class="password-strength-label" [style.color]="strength().color">
-            {{ strength().label }}
+      <!-- Card — Credenciales -->
+      <div class="perfil-card">
+        <div class="perfil-card-hdr">
+          <span class="perfil-card-icon" style="background: #ede9fc; color: #7c6fd6;">
+            <i class="bi bi-person-vcard-fill"></i>
           </span>
+          <h3 class="perfil-card-title">Credenciales</h3>
         </div>
-        <div *ngIf="strength().level === 0" class="mb-3">
-          <div class="form-text">Mín. 8 caracteres, mayúscula y número.</div>
-        </div>
-
-        <!-- Confirmar contraseña -->
-        <div class="mb-1">
-          <label class="form-label">Confirmar nueva contraseña <span class="text-danger">*</span></label>
-          <div class="input-icon-wrap">
-            <input
-              [type]="hideConfirmar() ? 'password' : 'text'"
-              class="form-control form-control-sm"
-              [class.is-invalid]="form().passwordConfirmar && !passwordsMatch()"
-              [value]="form().passwordConfirmar"
-              (input)="updateField('passwordConfirmar', $any($event.target).value)"
-              autocomplete="new-password"
-            />
-            <button type="button" class="input-eye-btn" (click)="hideConfirmar.set(!hideConfirmar())" tabindex="-1">
-              <i class="bi" [class.bi-eye]="hideConfirmar()" [class.bi-eye-slash]="!hideConfirmar()"></i>
-            </button>
+        <div class="perfil-card-body">
+          <div class="dato-row">
+            <span class="dato-label">Usuario</span>
+            <span class="dato-valor">{{ trabajador()?.username || '—' }}</span>
+          </div>
+          <div class="dato-row">
+            <span class="dato-label">Email</span>
+            <span class="dato-valor">{{ trabajador()?.email || '—' }}</span>
+          </div>
+          <div class="dato-row">
+            <span class="dato-label">Estado</span>
+            <span class="dato-valor">
+              <span class="mini-badge" [class.badge-yes]="trabajador()?.activo" [class.badge-no]="!trabajador()?.activo">
+                {{ trabajador()?.activo ? 'Activo' : 'Inactivo' }}
+              </span>
+            </span>
           </div>
         </div>
-
-        <!-- Match hint — always reserves space to avoid layout jump -->
-        <div
-          class="password-match-hint mb-3"
-          [class.match-ok]="passwordsMatch()"
-          [class.match-fail]="!passwordsMatch()"
-          [style.visibility]="form().passwordConfirmar ? 'visible' : 'hidden'"
-        >
-          <i class="bi" [class.bi-check-circle-fill]="passwordsMatch()" [class.bi-x-circle-fill]="!passwordsMatch()"></i>
-          {{ passwordsMatch() ? 'Las contraseñas coinciden' : 'Las contraseñas no coinciden' }}
-        </div>
-
       </div>
 
-      <div class="trab-edit-footer">
-        <button
-          class="btn btn-sm btn-primary"
-          type="button"
-          [disabled]="guardando()"
-          (click)="guardar()"
-        >
-          <span *ngIf="guardando()" class="spinner-border spinner-border-sm me-1"></span>
-          <i *ngIf="!guardando()" class="bi bi-lock me-1"></i>
-          {{ guardando() ? 'Guardando...' : 'Cambiar contraseña' }}
-        </button>
+      <!-- Card — Rol -->
+      <div class="perfil-card trab-edit-card" *ngIf="!esPropioUsuario()">
+        <div class="perfil-card-hdr">
+          <span class="perfil-card-icon" style="background: #dbeafe; color: #3b82f6;">
+            <i class="bi bi-person-gear"></i>
+          </span>
+          <h3 class="perfil-card-title">Rol asignado</h3>
+        </div>
+        <div class="perfil-card-body">
+          <label class="form-label">Rol</label>
+          <select
+            class="form-select form-select-sm"
+            [ngModel]="rolSeleccionado()"
+            (ngModelChange)="rolSeleccionado.set($event)"
+          >
+            <option *ngFor="let r of roles()" [value]="r.id">{{ r.nombreRol }}</option>
+          </select>
+        </div>
+        <div class="trab-edit-footer">
+          <button
+            class="btn btn-sm btn-primary"
+            type="button"
+            [disabled]="guardandoRol() || rolSeleccionado() === trabajador()?.rol?.id"
+            (click)="guardarRol()"
+          >
+            <span *ngIf="guardandoRol()" class="spinner-border spinner-border-sm me-1"></span>
+            <i *ngIf="!guardandoRol()" class="bi bi-check-lg me-1"></i>
+            {{ guardandoRol() ? 'Guardando...' : 'Guardar rol' }}
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Zona peligrosa — desactivar/activar cuenta -->
+    <div class="mt-4" *ngIf="!esPropioUsuario()">
+      <div class="trab-section-hdr mb-3">
+        <span class="trab-section-title text-danger">
+          <i class="bi bi-exclamation-triangle me-2"></i>Zona peligrosa
+        </span>
+      </div>
+      <div class="perfil-card" style="border: 1px solid #fecaca;">
+        <div class="perfil-card-body">
+          <p class="mb-1 fw-semibold">{{ trabajador()?.activo ? 'Desactivar cuenta' : 'Reactivar cuenta' }}</p>
+          <p class="text-muted small mb-3">
+            <ng-container *ngIf="trabajador()?.activo">
+              El profesional dejará de poder iniciar sesión. Sus datos clínicos se conservan.
+            </ng-container>
+            <ng-container *ngIf="!trabajador()?.activo">
+              El profesional podrá volver a iniciar sesión con sus credenciales anteriores.
+            </ng-container>
+          </p>
+          <button
+            class="btn btn-sm"
+            [class.btn-outline-danger]="trabajador()?.activo"
+            [class.btn-outline-success]="!trabajador()?.activo"
+            type="button"
+            [disabled]="guardandoEstado()"
+            (click)="toggleEstado()"
+          >
+            <span *ngIf="guardandoEstado()" class="spinner-border spinner-border-sm me-1"></span>
+            <i *ngIf="!guardandoEstado() && trabajador()?.activo" class="bi bi-person-x me-1"></i>
+            <i *ngIf="!guardandoEstado() && !trabajador()?.activo" class="bi bi-person-check me-1"></i>
+            {{ guardandoEstado() ? 'Procesando...' : (trabajador()?.activo ? 'Desactivar cuenta' : 'Reactivar cuenta') }}
+          </button>
+        </div>
       </div>
     </div>
 
   </ng-container>
 
+</div>
+
+<!-- Loader -->
+<div *ngIf="isLoading()" class="d-flex justify-content-center py-5">
+  <div class="spinner-border text-primary" role="status"></div>
 </div>

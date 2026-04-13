@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import {
   ActivatedRoute,
+  Router,
   RouterLink,
   RouterLinkActive,
   RouterModule,
@@ -37,7 +38,8 @@ interface Kpis {
   templateUrl: './trabajador-ficha.component.html',
 })
 export class TrabajadorFichaComponent implements OnInit, OnDestroy {
-  private readonly route      = inject(ActivatedRoute);
+  private readonly route         = inject(ActivatedRoute);
+  private readonly router        = inject(Router);
   private readonly trabajadorSvc = inject(TrabajadorService);
   private readonly dashboardSvc  = inject(DashboardService);
   readonly auth = inject(AuthService);
@@ -68,8 +70,7 @@ export class TrabajadorFichaComponent implements OnInit, OnDestroy {
       { label: 'Perfil',    icon: 'bi-person-badge',  target: 'perfil'   },
       { label: 'Clientes',  icon: 'bi-people',         target: 'clientes' },
     ];
-    const id = this.trabajadorId();
-    if (this.auth.canVerTodo() || this.auth.currentTrabajadorId() === id) {
+    if (this.auth.isAdmin()) {
       tabs.push({ label: 'Acceso', icon: 'bi-shield-lock', target: 'acceso' });
     }
     return tabs;
@@ -85,6 +86,15 @@ export class TrabajadorFichaComponent implements OnInit, OnDestroy {
             this.isLoading.set(false);
             return EMPTY;
           }
+
+          // Terapeutas solo pueden ver su propio perfil
+          const esPropio = this.auth.currentTrabajadorId() === id;
+          if (!this.auth.canVerTodo() && !esPropio) {
+            const propioId = this.auth.currentTrabajadorId();
+            this.router.navigate(propioId ? ['/home/trabajadores', propioId] : ['/home/agenda']);
+            return EMPTY;
+          }
+
           this.trabajadorId.set(id);
           this.isLoading.set(true);
           this.error.set(null);

@@ -93,6 +93,16 @@ export class InformesController {
     res.end(buffer);
   }
 
+  /**
+   * GET /api/informes/:id/pdf-url
+   * Devuelve una URL prefirmada (15 min) para el PDF archivado en R2.
+   */
+  @Get(':id/pdf-url')
+  async getPdfUrl(@Param('id') id: string, @Req() req: any) {
+    this.logger.log(`GET /api/informes/${id}/pdf-url`);
+    return this.informesService.getPdfUrl(id, req.user);
+  }
+
   @Get(':id')
   async findOne(@Param('id') id: string, @Req() req: any) {
     this.logger.log(`GET /informes/${id}`);
