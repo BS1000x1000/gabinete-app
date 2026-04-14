@@ -23,7 +23,8 @@
       "Bash(apt-cache show:*)",
       "Bash(xargs cat:*)",
       "Bash(npm audit:*)",
-      "Bash(npm update:*)"
+      "Bash(npm update:*)",
+      "Bash(read d:*)"
     ]
   },
   "hooks": {
