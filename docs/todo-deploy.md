@@ -1,7 +1,7 @@
-# TODO — Tareas técnicas pre-deploy
+# TODO — Tareas técnicas pre-deploy y post-deploy
 
-Derivadas del análisis de arquitectura (2026-03-23). Actualizado 2026-04-10.  
-**Todos los bloques completados** (2026-04-13). La app está lista técnicamente para desplegar.
+Derivadas del análisis de arquitectura (2026-03-23). Actualizado 2026-04-13.  
+**Bloques 1-5 completados.** Bloques 6 y 7 (seguridad/legal) pendientes — ver auditoría en `docs/seguridad-legal-audit.md`.
 
 ---
 
@@ -154,12 +154,120 @@ Añadida interfaz `TestUserOverrides` tipada explícitamente. `mkUser` ya no usa
 
 ---
 
+---
+
+## BLOQUE 6 — Seguridad y cumplimiento legal — PRE-DEPLOY ⬜ PENDIENTE
+
+Detectado en auditoría 2026-04-13. Todos bloqueantes antes del primer despliegue.  
+Ver análisis detallado en `docs/seguridad-legal-audit.md`.
+
+| Tarea | Severidad | Estado |
+|---|---|---|
+| 6.1 — `POST /auth/register` sin guard (cualquiera puede crear cuentas) | CRÍTICO | ⬜ |
+| 6.2 — `GET /informes/:id/pdf` con `@UseGuards()` vacío (sin autenticación) | CRÍTICO | ⬜ |
+| 6.3 — `console.log` exponiendo DNI y datos en producción (4 archivos) | ALTO | ⬜ |
+| 6.4 — Borrado físico de historias clínicas viola Ley 41/2002 → soft-delete | CRÍTICO LEGAL | ⬜ |
+| 6.5 — nginx sin cabeceras de seguridad (CSP, HSTS, X-Frame-Options, etc.) | ALTO | ⬜ |
+| 6.6 — npm audit: axios CRITICAL (SSRF), Angular HIGH (XSS), multer HIGH (DoS) | CRÍTICO | ⬜ |
+| 6.7 — DPA con n8n sin documentar (RGPD Art. 28, datos de menores) | CRÍTICO LEGAL | ⬜ |
+
+### Detalle por tarea
+
+#### 6.1 — Guard en `/auth/register`
+- `backend/src/auth/auth.controller.ts`
+- Añadir `@UseGuards(JwtAuthGuard, RolesGuard)` + `@Roles('ADMIN')` al endpoint
+
+#### 6.2 — Guard en `/informes/:id/pdf`
+- `backend/src/informes/informes.controller.ts`
+- Sustituir `@UseGuards()` vacío por `@UseGuards(JwtAuthGuard)`
+
+#### 6.3 — Eliminar console.log con datos personales
+- `frontend/src/app/shared/validators/dni-unico.validator.ts` — líneas 15, 46, 51
+- `frontend/src/app/features/clientes/nuevo-cliente-wizard/nuevo-cliente-wizard.component.ts` — línea 329
+
+#### 6.4 — Soft-delete en Cliente (Ley 41/2002)
+- `backend/prisma/schema.prisma` — añadir `deletedAt DateTime?` al modelo `Cliente`
+- `backend/src/clientes/clientes.service.ts` — `remove()` pasa a marcar `deletedAt`, no `prisma.cliente.delete()`
+- `findAll` / `findOne` filtran `where: { deletedAt: null }` por defecto
+- Migración: `npx prisma migrate dev --name soft-delete-clientes`
+
+#### 6.5 — Cabeceras de seguridad nginx
+- `frontend/nginx.conf` — añadir `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `Strict-Transport-Security`, `Content-Security-Policy`
+
+#### 6.6 — npm audit fix
+```bash
+cd backend && npm audit fix          # axios CRITICAL, multer HIGH, path-to-regexp HIGH
+cd frontend && npm update @angular/core @angular/common   # XSS HIGH
+# Verificar: npm audit --omit=dev → 0 critical/high en ambos proyectos
+```
+
+#### 6.7 — DPA / RAT con n8n
+- Si n8n self-hosted en misma instancia → documentar como componente interno en Registro de Actividades de Tratamiento (RAT)
+- Si n8n Cloud → firmar DPA con n8n GmbH antes de enviar cualquier dato
+
+---
+
+## BLOQUE 7 — Seguridad y legal — POST-DEPLOY (primeras 2-4 semanas) ⬜ PENDIENTE
+
+No bloquean el despliegue pero deben resolverse antes de tener usuarios reales.
+
+| Tarea | Prioridad | Estado |
+|---|---|---|
+| 7.1 — Sanitización XSS en editor Tiptap (DOMPurify) | ALTA | ⬜ |
+| 7.2 — Reset token no debe exponerse en respuesta `forgot-password` | ALTA | ⬜ |
+| 7.3 — `/health` expone info de infraestructura sin auth | MEDIA | ⬜ |
+| 7.4 — Redactar Registro de Actividades de Tratamiento (RAT) | ALTA LEGAL | ⬜ |
+| 7.5 — Política de retención de datos documentada | ALTA LEGAL | ⬜ |
+| 7.6 — Limpiar `console.log` del backend (reemplazar por NestJS Logger) | MEDIA | ⬜ |
+
+### Detalle por tarea
+
+#### 7.1 — DOMPurify en editor Tiptap
+- `cd frontend && npm install dompurify @types/dompurify`
+- Pasar contenido del editor por `DOMPurify.sanitize(html)` antes de cualquier `[innerHTML]`
+- Afecta principalmente a `informes-tab` y al renderizado del editor
+
+#### 7.2 — Reset token en respuesta
+- `backend/src/auth/auth.service.ts` — `forgotPassword()`
+- Solo devolver `{ message: 'Si el email existe recibirás un enlace' }` (sin confirmar si existe → previene user enumeration)
+
+#### 7.3 — Endpoint /health
+- Solo devolver `{ status: 'ok' }` — sin versión, detalles de BD ni hostname
+- Alternativa: restringir a IP de Coolify en nginx
+
+#### 7.4 — RAT (Registro de Actividades de Tratamiento)
+- Documento interno obligatorio por Art. 30 RGPD para tratamiento de categoría especial
+- Tratamientos: historia clínica, objetivos terapéuticos, contactos familiares, sesiones/bonos, informes
+- Para cada uno: finalidad, base legal, categorías de datos, destinatarios, plazo de supresión, medidas de seguridad
+
+#### 7.5 — Política de retención
+- Definir plazo: 5 años mínimo para historia clínica desde última sesión
+- Procedimiento manual anual o cron que liste clientes archivables (sin actividad > plazo)
+
+#### 7.6 — Logger en backend
+- Buscar `console.log` en `backend/src/` y reemplazar por `this.logger = new Logger(XService.name)`
+- Los logs de producción no deben incluir payloads con datos de pacientes
+
+---
+
+## BLOQUE 8 — Medio plazo (1-3 meses post-deploy) ⬜ PENDIENTE
+
+| Tarea | Estado |
+|---|---|
+| 8.1 — Portabilidad de datos RGPD Art. 20: `GET /clientes/:id/export` | ⬜ |
+| 8.2 — Auditoría de consentimiento RGPD (quién marcó consentimiento, cuándo) | ⬜ |
+
+---
+
 ## Estado global
 
-| Bloque | Estado |
-|---|---|
-| 1 — Índices | ✅ Completo |
-| 2 — Paginación | ✅ Completo |
-| 3 — Dockerfiles | ✅ Completo |
-| 4 — Seguridad | ✅ Completo |
-| 5 — Deuda técnica | ✅ Completo |
+| Bloque | Fase | Estado |
+|---|---|---|
+| 1 — Índices | Pre-deploy | ✅ Completo |
+| 2 — Paginación | Pre-deploy | ✅ Completo |
+| 3 — Dockerfiles | Pre-deploy | ✅ Completo |
+| 4 — Seguridad (throttling, CORS, Helmet) | Pre-deploy | ✅ Completo |
+| 5 — Deuda técnica | Pre-deploy | ✅ Completo |
+| 6 — Seguridad y legal (auditoría) | **Pre-deploy** | ⬜ Pendiente |
+| 7 — Seguridad y legal post-deploy | **Post-deploy** | ⬜ Pendiente |
+| 8 — Cumplimiento RGPD ampliado | Medio plazo | ⬜ Pendiente |

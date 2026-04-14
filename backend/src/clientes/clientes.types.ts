@@ -1,5 +1,7 @@
 import { Prisma } from '@prisma/client';
 
+export const WHERE_NOT_DELETED = { deletedAt: null } as const;
+
 // Define el include una sola vez
 export const clienteInclude = {
   colegio: true,

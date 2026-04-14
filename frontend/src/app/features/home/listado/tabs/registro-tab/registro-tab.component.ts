@@ -7,8 +7,6 @@ import {
   signal,
   type OnInit,
 } from '@angular/core';
-import { SecurityContext } from '@angular/core';
-import { DomSanitizer } from '@angular/platform-browser';
 import { RegistrosService } from '../../../../../services/registros.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -29,10 +27,9 @@ export class RegistroTabComponent implements OnInit {
   private clientesSvc = inject(ClientesService);
   private route = inject(ActivatedRoute);
   private cleaner = inject(TextCleanerService);
-  private sanitizer = inject(DomSanitizer);
 
   sanitizeHtml(html: string): string {
-    return this.sanitizer.sanitize(SecurityContext.HTML, html) ?? '';
+    return this.cleaner.sanitizeHtml(html);
   }
 
   hoy = new Date();

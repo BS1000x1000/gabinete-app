@@ -75,7 +75,6 @@ export class InformesController {
    * Genera y devuelve el PDF del informe como descarga directa
    */
   @Get(':id/pdf')
-  @UseGuards()
   async descargarPdf(
     @Param('id') id: string,
     @Res() res: Response,           // ← Ahora tipado correctamente con Express Response

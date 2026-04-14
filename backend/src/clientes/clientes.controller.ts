@@ -22,7 +22,7 @@ import { TipoSesion } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/roles/roles.guard';
 import { Roles } from 'src/roles/roles.decorator';
-import { ROLES_CLINICOS } from 'src/roles/roles.constants';
+import { ROLES_CLINICOS, ROLES_GESTION } from 'src/roles/roles.constants';
 
 @Controller('clientes')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -51,11 +51,12 @@ export class ClientesController {
   @HttpCode(HttpStatus.CREATED)
   async create(
     @Body() createClienteDto: CreateClienteDto,
+    @Req() req: any,
   ): Promise<ClienteWithRelations> {
     this.logger.log(
       `📋 POST /api/clientes - ${createClienteDto.nombre} ${createClienteDto.apellidos}`,
     );
-    return this.clientesService.create(createClienteDto);
+    return this.clientesService.create(createClienteDto, req.user?.userId);
   }
 
   /**
@@ -275,6 +276,18 @@ export class ClientesController {
   // ========================================
 
   /**
+   * GET /api/clientes/:id/export
+   * Exportación completa de datos personales del cliente (RGPD Art. 20 — portabilidad)
+   * Solo ADMIN o RECEP pueden solicitar la exportación
+   */
+  @Get(':id/export')
+  @Roles(...ROLES_GESTION)
+  async exportarDatos(@Param('id') id: string) {
+    this.logger.log(`📤 GET /api/clientes/${id}/export`);
+    return this.clientesService.exportarDatos(id);
+  }
+
+  /**
    * GET /api/clientes/:id
    * ⚠️ DEBE IR AL FINAL (captura todo lo que no matcheó antes)
    */
@@ -297,9 +310,10 @@ export class ClientesController {
   async update(
     @Param('id') id: string,
     @Body() updateClienteDto: Partial<CreateClienteDto>,
+    @Req() req: any,
   ): Promise<ClienteWithRelations> {
     this.logger.log(`📋 PATCH /api/clientes/${id}`);
-    return this.clientesService.update(id, updateClienteDto);
+    return this.clientesService.update(id, updateClienteDto, req.user?.userId);
   }
 
   /**

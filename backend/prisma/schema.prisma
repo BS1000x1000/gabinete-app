@@ -96,8 +96,10 @@ model Cliente {
   fechaInicio          DateTime? @map("fecha_inicio")
   fechaAlta            DateTime? @default(now()) @map("fecha_alta")
   activo               Boolean   @default(true)
-  consentimientoRgpd   Boolean   @default(false) @map("consentimiento_rgpd")
-  consentimientoFecha  DateTime? @map("consentimiento_fecha")
+  consentimientoRgpd        Boolean   @default(false) @map("consentimiento_rgpd")
+  consentimientoFecha       DateTime? @map("consentimiento_fecha")
+  consentimientoTrabajadorId String?  @map("consentimiento_trabajador_id")
+  deletedAt                 DateTime? @map("deleted_at")
   createdAt            DateTime  @default(now()) @map("fecha_creacion")
   updatedAt            DateTime  @updatedAt @map("ultima_actualizacion")
 

@@ -327,6 +327,29 @@
   flex: 1;
 }
 
+.rgpd-export-row {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding-top: $spacing-sm;
+  border-top: 1px dashed $gray-200;
+
+  .dato-label { flex: none; }
+}
+
+.rgpd-export-btn {
+  color: $secondary;
+  border-color: lighten($secondary, 25%);
+
+  &:hover:not(:disabled) {
+    color: darken($secondary, 10%);
+    border-color: $secondary;
+    background: lighten($secondary, 38%);
+  }
+
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+}
+
 .dato-row {
   display: flex;
   align-items: baseline;

@@ -5,7 +5,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaClient, TipoSesion } from '@prisma/client';
-import { ClienteWithRelations, clienteInclude } from './clientes.types';
+import { ClienteWithRelations, clienteInclude, WHERE_NOT_DELETED } from './clientes.types';
+import { ROLES_GESTION } from '../roles/roles.constants';
 import { CreateClienteDto } from './dto/create-cliente.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
@@ -16,6 +17,7 @@ export class ClientesService {
 
   async create(
     createClienteDto: CreateClienteDto,
+    trabajadorId?: string,
   ): Promise<ClienteWithRelations> {
     // Verificar DNI duplicado
     const dniExiste = await this.existeDni(createClienteDto.dni);
@@ -81,6 +83,7 @@ export class ClientesService {
         idCarpetaDrive: createClienteDto.idCarpetaDrive,
         consentimientoRgpd: createClienteDto.consentimientoRgpd ?? false,
         consentimientoFecha: createClienteDto.consentimientoRgpd ? new Date() : null,
+        consentimientoTrabajadorId: createClienteDto.consentimientoRgpd ? (trabajadorId ?? null) : null,
 
         // Familiares
         contactosFamiliares: createClienteDto.familiares
@@ -186,10 +189,10 @@ export class ClientesService {
   ) {
     const { page = 1, limit = 100 } = pagination;
     const skip = (page - 1) * limit;
-    const soloAsignados = user && !['ADMIN', 'RECEP'].includes(user.rol);
+    const soloAsignados = user && !ROLES_GESTION.includes(user.rol as any);
     const where = soloAsignados
-      ? { trabajadoresAsignados: { some: { trabajadorId: user.userId, activo: true } } }
-      : undefined;
+      ? { ...WHERE_NOT_DELETED, trabajadoresAsignados: { some: { trabajadorId: user.userId, activo: true } } }
+      : WHERE_NOT_DELETED;
 
     const [data, total] = await Promise.all([
       this.prisma.cliente.findMany({
@@ -208,6 +211,7 @@ export class ClientesService {
   async findByTrabajador(trabajadorId: string): Promise<ClienteWithRelations[]> {
     return await this.prisma.cliente.findMany({
       where: {
+        ...WHERE_NOT_DELETED,
         trabajadoresAsignados: {
           some: { trabajadorId, activo: true },
         },
@@ -218,18 +222,19 @@ export class ClientesService {
   }
 
   async findOne(id: string, user?: { userId: string; rol: string }): Promise<ClienteWithRelations | null> {
-    const soloAsignados = user && !['ADMIN', 'RECEP'].includes(user.rol);
+    const soloAsignados = user && !ROLES_GESTION.includes(user.rol as any);
     if (soloAsignados) {
       return await this.prisma.cliente.findFirst({
         where: {
           id,
+          ...WHERE_NOT_DELETED,
           trabajadoresAsignados: { some: { trabajadorId: user.userId, activo: true } },
         },
         include: clienteInclude,
       });
     }
-    return await this.prisma.cliente.findUnique({
-      where: { id },
+    return await this.prisma.cliente.findFirst({
+      where: { id, ...WHERE_NOT_DELETED },
       include: clienteInclude,
     });
   }
@@ -741,6 +746,7 @@ export class ClientesService {
       movil?: string;
       fechaAlta?: string;
     },
+    trabajadorId?: string,
   ): Promise<ClienteWithRelations> {
     const updateData: any = {};
 
@@ -769,6 +775,7 @@ export class ClientesService {
     if (updateDto.consentimientoRgpd !== undefined) {
       updateData.consentimientoRgpd = updateDto.consentimientoRgpd;
       updateData.consentimientoFecha = updateDto.consentimientoRgpd ? new Date() : null;
+      updateData.consentimientoTrabajadorId = updateDto.consentimientoRgpd ? (trabajadorId ?? null) : null;
     }
     if (updateDto.colegio?.id !== undefined)
       updateData.colegioId = updateDto.colegio.id;
@@ -781,13 +788,14 @@ export class ClientesService {
   }
 
   async remove(id: string): Promise<void> {
-    await this.prisma.cliente.delete({
+    await this.prisma.cliente.update({
       where: { id },
+      data: { deletedAt: new Date() },
     });
   }
 
   async search(query: string, user?: { userId: string; rol: string }) {
-    const soloAsignados = user && !['ADMIN', 'RECEP'].includes(user.rol);
+    const soloAsignados = user && !ROLES_GESTION.includes(user.rol as any);
     return await this.prisma.cliente.findMany({
       where: {
         OR: [
@@ -796,6 +804,7 @@ export class ClientesService {
           { dni: { contains: query } },
         ],
         activo: true,
+        ...WHERE_NOT_DELETED,
         ...(soloAsignados
           ? { trabajadoresAsignados: { some: { trabajadorId: user.userId, activo: true } } }
           : {}),
@@ -807,10 +816,61 @@ export class ClientesService {
   async existeDni(dni: string): Promise<boolean> {
     const cliente = await this.prisma.cliente.findUnique({
       where: { dni },
-      select: { id: true },
+      select: { deletedAt: true },
+    });
+    return !!cliente && cliente.deletedAt === null;
+  }
+
+  // ── EXPORTACIÓN RGPD (Art. 20) ───────────────────────────
+  async exportarDatos(clienteId: string) {
+    const cliente = await this.prisma.cliente.findFirst({
+      where: { id: clienteId, ...WHERE_NOT_DELETED },
+      include: {
+        colegio: true,
+        contactosFamiliares: true,
+        sanitario: true,
+        disponibilidad: true,
+        trabajadoresAsignados: {
+          include: {
+            trabajador: { select: { id: true, nombre: true, apellidos: true, email: true, especialidad: true } },
+            horarios: true,
+          },
+        },
+        sesiones: {
+          orderBy: { fechaHoraInicio: 'asc' },
+          include: { bono: { select: { id: true, tipoSesion: true } } },
+        },
+        bonos: { orderBy: { createdAt: 'desc' } },
+        informes: {
+          orderBy: { createdAt: 'desc' },
+          select: { id: true, titulo: true, tipoInforme: true, estado: true, createdAt: true },
+        },
+        registrosDiarios: {
+          orderBy: { fechaRegistro: 'desc' },
+          include: {
+            objetivosGeneralesTrabajados: {
+              include: { objetivoGeneral: { select: { id: true, titulo: true } } },
+            },
+          },
+        },
+        objetivosGeneralesAsignados: {
+          where: { activo: true },
+          include: {
+            objetivoGeneral: { include: { areaDesarrollo: true } },
+            evaluaciones: { orderBy: { fecha: 'desc' } },
+            descripcionesNiveles: true,
+          },
+        },
+      },
     });
 
-    return !!cliente;
+    if (!cliente) throw new NotFoundException(`Cliente con ID ${clienteId} no encontrado`);
+
+    return {
+      exportadoEn: new Date().toISOString(),
+      baseLegal: 'Art. 20 RGPD — Derecho a la portabilidad de los datos',
+      cliente,
+    };
   }
 
   // ── FAMILIARES ────────────────────────────────────────────

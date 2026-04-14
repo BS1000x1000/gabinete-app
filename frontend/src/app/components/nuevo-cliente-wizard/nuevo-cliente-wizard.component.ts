@@ -326,8 +326,6 @@ export class NuevoClienteWizardComponent {
       consentimientoRgpd: this.consentimientoMarcado(),
     };
 
-    console.log('📤 Creando cliente:', clienteData);
-
     this.clientesSvc.create(clienteData).subscribe({
       next: (nuevoCliente) => {
         console.log('✅ Cliente creado:', nuevoCliente);

@@ -9,6 +9,7 @@ import { ActivatedRoute } from '@angular/router';
 import { ClientesService } from '../../../../../services/cliente.service';
 import { DrawerService, DrawerSection } from '../../../../../services/drawer.service';
 import { ClienteDrawerComponent } from '../../../../../shared/components/cliente-drawer/cliente-drawer.component';
+import { AuthService } from '../../../../../services/auth.service';
 
 @Component({
   standalone: true,
@@ -20,6 +21,7 @@ export class PerfilTabComponent {
   private route = inject(ActivatedRoute);
   readonly clientesSvc = inject(ClientesService);
   private drawerSvc = inject(DrawerService);
+  readonly auth = inject(AuthService);
 
   @ViewChild(ClienteDrawerComponent) drawer!: ClienteDrawerComponent;
 
@@ -31,6 +33,7 @@ export class PerfilTabComponent {
 
   guardandoRgpd = signal(false);
   errorRgpd = signal<string | null>(null);
+  exportando = signal(false);
 
   openDrawer(section: DrawerSection): void {
     const id = this.route.parent?.snapshot.paramMap.get('id') ?? '';
@@ -52,6 +55,17 @@ export class PerfilTabComponent {
         this.guardandoRgpd.set(false);
         this.errorRgpd.set(err?.error?.message ?? 'Error al guardar');
       },
+    });
+  }
+
+  exportarDatosRgpd(): void {
+    const id = this.route.parent?.snapshot.paramMap.get('id') ?? '';
+    const raw = this.clienteRaw();
+    const nombre = raw ? `${raw.nombre}_${raw.apellidos}` : id;
+    this.exportando.set(true);
+    this.clientesSvc.exportarDatos(id, nombre).subscribe({
+      next: () => this.exportando.set(false),
+      error: () => this.exportando.set(false),
     });
   }
 }

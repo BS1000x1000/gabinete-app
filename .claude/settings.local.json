@@ -21,7 +21,9 @@
       "Bash(find:*)",
       "Bash(wc -l /e/Programming/PROYECTS/PROPIOS/gabinete-app/backend/src/*/*.service.ts)",
       "Bash(apt-cache show:*)",
-      "Bash(xargs cat:*)"
+      "Bash(xargs cat:*)",
+      "Bash(npm audit:*)",
+      "Bash(npm update:*)"
     ]
   },
   "hooks": {

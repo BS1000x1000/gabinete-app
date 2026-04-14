@@ -16,6 +16,7 @@ import {
 } from '../interface/objetivo-general.interface';
 import { calcularEdad, calcularEdadTexto } from '../shared/utils/date';
 import { VerificacionDniResponse } from '../interface/verificacion-dni.interface';
+import { triggerDownload } from '../shared/utils/download.utils';
 
 // ✅ NUEVO: Interface para respuestas envueltas
 interface WrappedResponse<T> {
@@ -392,6 +393,25 @@ export class ClientesService {
       .pipe(
         map((res) => res.data || res),
         tap(() => console.log(`❌ Asignación ${asignacionId} eliminada`)),
+      );
+  }
+
+  // ========================================
+  // RGPD — EXPORTACIÓN DE DATOS (Art. 20)
+  // ========================================
+
+  exportarDatos(clienteId: string, nombreCliente: string): Observable<void> {
+    return this.http
+      .get<WrappedResponse<any>>(`${this.api}/${clienteId}/export`)
+      .pipe(
+        map((res) => res.data ?? res),
+        tap((data) => {
+          const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+          const fecha = new Date().toISOString().slice(0, 10);
+          const nombre = nombreCliente.replace(/\s+/g, '_').toLowerCase();
+          triggerDownload(blob, `exportacion_rgpd_${nombre}_${fecha}.json`);
+        }),
+        map(() => void 0),
       );
   }
 

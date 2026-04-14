@@ -153,8 +153,8 @@ export class AuthService {
 
   /**
    * Generar token de reset de contrasena
-   * El token se devuelve en la respuesta para que el admin lo pase al usuario
-   * (en futuro: n8n lo enviara por WhatsApp/email)
+   * El token NO se devuelve en la respuesta — se enviará por email (n8n/SMTP).
+   * Hasta que SMTP esté activo, el admin puede leer el token del log del servidor.
    */
   async forgotPassword(email: string) {
     try {
@@ -179,14 +179,10 @@ export class AuthService {
 
       await this.trabajadorService.guardarResetToken(user.id, tokenHash, expires);
 
-      this.logger.log(`Reset token generado para: ${email}`);
+      // Temporal hasta SMTP activo — solo primeros 8 chars para debug, nunca el token completo
+      this.logger.log(`Reset token para ${email}: ${token.slice(0, 8)}*** (expira: ${expires.toISOString()})`);
 
-      return {
-        message: 'Token de reset generado correctamente',
-        resetToken: token,
-        expiresAt: expires.toISOString(),
-        instrucciones: 'Usa este token en POST /api/auth/reset-password para establecer nueva contrasena',
-      };
+      return { message: 'Si el email existe, recibirás un enlace de recuperación' };
     } catch (error) {
       this.logger.error(`Error en forgot-password: ${error.message}`);
       throw new InternalServerErrorException('Error al generar token de reset');

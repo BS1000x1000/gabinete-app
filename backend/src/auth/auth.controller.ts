@@ -16,6 +16,8 @@ import { AuthService } from './auth.service';
 import { AuditService } from './audit.service';
 import { LocalAuthGuard } from './guards/local-auth/local-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { RolesGuard } from '../roles/roles.guard';
+import { Roles } from '../roles/roles.decorator';
 import { TrabajadorService } from '../trabajador/trabajador.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateTrabajadorDto } from '../trabajador/dto/trabajador.dto';
@@ -46,6 +48,8 @@ export class AuthController {
   /**
    * Registro de nuevo trabajador
    */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
   async register(@Body() body: CreateTrabajadorDto) {

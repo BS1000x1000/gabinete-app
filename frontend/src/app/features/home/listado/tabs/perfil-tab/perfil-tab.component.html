@@ -299,6 +299,19 @@
         <p class="text-muted small mt-2 mb-0" style="font-size: 0.72rem; line-height: 1.5;">
           Tratamiento de datos de categoría especial (salud) conforme al Art. 9 LOPDGDD 3/2018.
         </p>
+
+        <div *ngIf="auth.isAdmin() || auth.isRecep()" class="rgpd-export-row mt-3">
+          <span class="dato-label">Portabilidad (Art. 20)</span>
+          <button
+            class="perfil-edit-btn rgpd-export-btn"
+            type="button"
+            [disabled]="exportando()"
+            (click)="exportarDatosRgpd()">
+            <span *ngIf="exportando()" class="spinner-border spinner-border-sm" style="width:12px;height:12px"></span>
+            <i *ngIf="!exportando()" class="bi bi-download"></i>
+            {{ exportando() ? 'Exportando…' : 'Exportar datos JSON' }}
+          </button>
+        </div>
       </div>
     </div>
 
