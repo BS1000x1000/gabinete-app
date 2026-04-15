@@ -43,7 +43,8 @@ export enum EstadoSesion {
   PROGRAMADA = 'PROGRAMADA',
   COMPLETADA = 'COMPLETADA',
   CANCELADA_CON_AVISO = 'CANCELADA_CON_AVISO',
-  CANCELADA_SIN_AVISO = 'CANCELADA_SIN_AVISO'
+  CANCELADA_SIN_AVISO = 'CANCELADA_SIN_AVISO',
+  VACACIONES = 'VACACIONES'
 }
 
 /**
@@ -72,6 +73,7 @@ export const ESTADO_SESION_LABELS: Record<EstadoSesion, string> = {
   [EstadoSesion.COMPLETADA]:          'Completada',
   [EstadoSesion.CANCELADA_CON_AVISO]: 'Cancelada con aviso',
   [EstadoSesion.CANCELADA_SIN_AVISO]: 'Cancelada sin aviso',
+  [EstadoSesion.VACACIONES]:          'Vacaciones',
 };
 
 /**

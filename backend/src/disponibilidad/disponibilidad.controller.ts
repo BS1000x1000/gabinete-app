@@ -9,11 +9,15 @@ import {
   HttpCode,
   HttpStatus,
   Logger,
+  UseGuards,
 } from '@nestjs/common';
 import { DisponibilidadService } from './disponibilidad.service';
 import { CreateDisponibilidadDto } from './dto/create-disponibilidad.dto';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/roles/roles.guard';
 
 @Controller('disponibilidad')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class DisponibilidadController {
   private readonly logger = new Logger(DisponibilidadController.name);
 

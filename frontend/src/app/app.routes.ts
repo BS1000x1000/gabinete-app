@@ -14,6 +14,8 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadChildren: () => import('./features/home/home.routes')
   },
+  { path: 'legal/privacidad',  loadComponent: () => import('./features/legal/politica-privacidad.component').then(m => m.PoliticaPrivacidadComponent), title: 'Política de Privacidad' },
+  { path: 'legal/aviso-legal', loadComponent: () => import('./features/legal/aviso-legal.component').then(m => m.AvisoLegalComponent),                  title: 'Aviso Legal' },
   { path: '',   redirectTo: '/login', pathMatch: 'full' },
   { path: '**', component: NotFoundComponent, title: 'Pagina no encontrada' }
 ];

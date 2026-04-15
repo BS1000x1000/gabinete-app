@@ -14,7 +14,7 @@ export default [
       { path: 'clientes',   loadComponent: () => import('../clientes/clientes.component') },
       { path: 'estadisticas', loadComponent: () => import('./estadisticas/estadisticas.component').then(m => m.EstadisticasComponent) },
       { path: 'trabajadores',     loadComponent: () => import('../trabajadores/trabajadores.component'),          canActivate: [roleGuard(['ADMIN', 'RECEP'])] },
-      { path: 'trabajadores/:id', loadChildren: () => import('../trabajadores/ficha/trabajador-ficha.routes') },
+      { path: 'trabajadores/:id', loadChildren: () => import('../trabajadores/ficha/trabajador-ficha.routes'), canActivate: [roleGuard(['ADMIN', 'RECEP'])] },
       { path: 'ajustes',    loadComponent: () => import('../ajustes/ajustes.component') },
     ]
   }

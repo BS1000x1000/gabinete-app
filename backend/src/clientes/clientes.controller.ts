@@ -23,13 +23,18 @@ import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/roles/roles.guard';
 import { Roles } from 'src/roles/roles.decorator';
 import { ROLES_CLINICOS, ROLES_GESTION } from 'src/roles/roles.constants';
+import { AuditService } from 'src/auth/audit.service';
+import { CreateConsentimientoDto } from './dto/create-consentimiento.dto';
 
 @Controller('clientes')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ClientesController {
   private readonly logger = new Logger(ClientesController.name);
 
-  constructor(private readonly clientesService: ClientesService) {}
+  constructor(
+    private readonly clientesService: ClientesService,
+    private readonly auditService: AuditService,
+  ) {}
 
   // ========================================
   // RUTAS SIN PARÁMETROS (PRIMERO)
@@ -271,6 +276,56 @@ export class ClientesController {
     return this.clientesService.desasignarObjetivoGeneral(id, objetivoId);
   }
 
+  // ── CONSENTIMIENTO RGPD ───────────────────────────────────
+
+  /**
+   * POST /api/clientes/:id/consentimiento
+   * Registra un consentimiento RGPD firmado por el tutor legal
+   */
+  @Post(':id/consentimiento')
+  @Roles(...ROLES_CLINICOS)
+  @HttpCode(HttpStatus.CREATED)
+  async registrarConsentimiento(
+    @Param('id') clienteId: string,
+    @Body() dto: CreateConsentimientoDto,
+    @Req() req: any,
+  ) {
+    this.logger.log(`📝 POST /api/clientes/${clienteId}/consentimiento`);
+    dto.ipRegistro = dto.ipRegistro ?? req.ip;
+    return this.clientesService.registrarConsentimiento(clienteId, req.user.userId, dto);
+  }
+
+  /**
+   * GET /api/clientes/:id/consentimientos
+   * Historial de consentimientos RGPD del cliente
+   */
+  @Get(':id/consentimientos')
+  async getHistoricoConsentimientos(@Param('id') clienteId: string) {
+    this.logger.log(`📋 GET /api/clientes/${clienteId}/consentimientos`);
+    return this.clientesService.getHistoricoConsentimientos(clienteId);
+  }
+
+  /**
+   * DELETE /api/clientes/:id/anonimizar
+   * Anonimiza un cliente (solo ADMIN, requiere soft-delete previo)
+   */
+  @Delete(':id/anonimizar')
+  @Roles('ADMIN')
+  @HttpCode(HttpStatus.OK)
+  async anonimizarCliente(@Param('id') id: string, @Req() req: any) {
+    this.logger.warn(`🔒 DELETE /api/clientes/${id}/anonimizar - solicitado por ${req.user?.userId}`);
+    this.auditService.registrar({
+      evento: 'ACCESO_FICHA',
+      userId: req.user?.userId,
+      username: req.user?.username,
+      ip: req.ip,
+      recurso: id,
+      metadata: { accion: 'ANONIMIZAR_CLIENTE' },
+    });
+    await this.clientesService.anonimizarCliente(id);
+    return { message: 'Cliente anonimizado correctamente', id, status: 'success' };
+  }
+
   // ========================================
   // RUTAS GENÉRICAS CON :id (ÚLTIMO)
   // ========================================
@@ -282,8 +337,16 @@ export class ClientesController {
    */
   @Get(':id/export')
   @Roles(...ROLES_GESTION)
-  async exportarDatos(@Param('id') id: string) {
+  async exportarDatos(@Param('id') id: string, @Req() req: any) {
     this.logger.log(`📤 GET /api/clientes/${id}/export`);
+    this.auditService.registrar({
+      evento: 'ACCESO_FICHA',
+      userId: req.user?.userId,
+      username: req.user?.username,
+      ip: req.ip,
+      recurso: id,
+      metadata: { accion: 'EXPORT_RGPD' },
+    });
     return this.clientesService.exportarDatos(id);
   }
 
@@ -299,6 +362,14 @@ export class ClientesController {
     if (!cliente) {
       throw new NotFoundException(`Cliente con ID ${id} no encontrado`);
     }
+
+    this.auditService.registrar({
+      evento: 'ACCESO_FICHA',
+      userId: req.user?.userId,
+      username: req.user?.username,
+      ip: req.ip,
+      recurso: id,
+    });
 
     return cliente;
   }

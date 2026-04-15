@@ -988,4 +988,94 @@ export class ClientesService {
       },
     });
   }
+
+  // ── CONSENTIMIENTO RGPD ───────────────────────────────────
+
+  async registrarConsentimiento(
+    clienteId: string,
+    trabajadorId: string,
+    dto: { familiarId: string; aceptado: boolean; versionTexto: string; textoConsentimiento: string; ipRegistro?: string },
+  ) {
+    const cliente = await this.prisma.cliente.findFirst({ where: { id: clienteId, ...WHERE_NOT_DELETED } });
+    if (!cliente) throw new NotFoundException(`Cliente ${clienteId} no encontrado`);
+
+    const familiar = await this.prisma.familiar.findFirst({ where: { id: dto.familiarId, clienteId } });
+    if (!familiar) throw new NotFoundException(`Familiar ${dto.familiarId} no pertenece al cliente`);
+
+    const registro = await this.prisma.consentimientoRgpd.create({
+      data: {
+        clienteId,
+        familiarId: dto.familiarId,
+        trabajadorId,
+        aceptado: dto.aceptado,
+        versionTexto: dto.versionTexto,
+        textoConsentimiento: dto.textoConsentimiento,
+        ipRegistro: dto.ipRegistro,
+      },
+      include: { familiar: { select: { nombre: true, apellidos: true, parentesco: true } } },
+    });
+
+    // Actualizar cache en Cliente para consultas rápidas
+    await this.prisma.cliente.update({
+      where: { id: clienteId },
+      data: {
+        consentimientoRgpd: dto.aceptado,
+        consentimientoFecha: new Date(),
+        consentimientoTrabajadorId: trabajadorId,
+      },
+    });
+
+    return registro;
+  }
+
+  async getHistoricoConsentimientos(clienteId: string) {
+    const cliente = await this.prisma.cliente.findFirst({ where: { id: clienteId, ...WHERE_NOT_DELETED } });
+    if (!cliente) throw new NotFoundException(`Cliente ${clienteId} no encontrado`);
+
+    return this.prisma.consentimientoRgpd.findMany({
+      where: { clienteId },
+      orderBy: { fechaRegistro: 'desc' },
+      include: {
+        familiar: { select: { nombre: true, apellidos: true, parentesco: true } },
+        trabajador: { select: { nombre: true, apellidos: true } },
+      },
+    });
+  }
+
+  // ── ANONIMIZACION (Art. 17 RGPD + Ley 41/2002) ───────────
+
+  async anonimizarCliente(clienteId: string) {
+    const cliente = await this.prisma.cliente.findFirst({ where: { id: clienteId } });
+    if (!cliente) throw new NotFoundException(`Cliente ${clienteId} no encontrado`);
+    if (!cliente.deletedAt) throw new BadRequestException(`El cliente debe estar eliminado (soft delete) antes de anonimizar`);
+
+    const anonId = clienteId.slice(0, 8);
+
+    await this.prisma.$transaction([
+      // Anonimizar datos identificativos del cliente
+      this.prisma.cliente.update({
+        where: { id: clienteId },
+        data: {
+          nombre: `[ANONIMIZADO-${anonId}]`,
+          apellidos: '[ANONIMIZADO]',
+          dni: `ANON-${anonId}`,
+          domicilio: '[ELIMINADO]',
+          provincia: '[ELIMINADO]',
+          ciudad: '[ELIMINADO]',
+          fechaNacimiento: null,
+          idCarpetaDrive: null,
+          consentimientoRgpd: false,
+          consentimientoFecha: null,
+        },
+      }),
+      // Eliminar datos sanitarios (especial categoría Art. 9)
+      this.prisma.sanitario.deleteMany({ where: { clienteId } }),
+      // Eliminar familiares (datos de terceros)
+      this.prisma.familiar.deleteMany({ where: { clienteId } }),
+      // Eliminar historial de consentimientos
+      this.prisma.consentimientoRgpd.deleteMany({ where: { clienteId } }),
+    ]);
+
+    return { message: `Cliente ${clienteId} anonimizado correctamente`, anonimizadoEn: new Date().toISOString() };
+  }
 }

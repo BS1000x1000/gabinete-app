@@ -125,8 +125,8 @@ export class ClientesService {
             provincia: c.provincia,
             fechaAlta: new Date(c.fechaAlta),
             fechaInicio: c.fechaInicio ? new Date(c.fechaInicio) : new Date(),
-            autorizaDatosPersonales: true,
-            autorizaDatosImagen: true,
+            autorizaDatosPersonales: c.consentimientoRgpd ?? false,
+            autorizaDatosImagen: c.consentimientoRgpd ?? false,
             objetivosResumen: {
               total: c.objetivosGeneralesAsignados?.length || 0,
               activos:

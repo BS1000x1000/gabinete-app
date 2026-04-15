@@ -10,17 +10,23 @@ import {
   HttpCode,
   HttpStatus,
   Logger,
+  UseGuards,
 } from '@nestjs/common';
 import { ObjetivosGeneralesService } from './objetivos-generales.service';
 import { CreateObjetivoGeneralDto, UpdateObjetivoGeneralDto } from './dto/objetivo-general.dto';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/roles/roles.guard';
+import { Roles } from 'src/roles/roles.decorator';
 
 @Controller('objetivos-generales')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class ObjetivosGeneralesController {
   private readonly logger = new Logger(ObjetivosGeneralesController.name);
 
   constructor(private readonly objetivosGeneralesService: ObjetivosGeneralesService) {}
 
   @Post()
+  @Roles('ADMIN')
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() createObjetivoDto: CreateObjetivoGeneralDto) {
     this.logger.log(`Creando objetivo general: ${createObjetivoDto.titulo}`);
@@ -28,6 +34,7 @@ export class ObjetivosGeneralesController {
   }
 
   @Post('seed')
+  @Roles('ADMIN')
   @HttpCode(HttpStatus.CREATED)
   async seed() {
     this.logger.log('Creando objetivos generales por defecto');
@@ -54,6 +61,7 @@ export class ObjetivosGeneralesController {
   }
 
   @Patch(':id')
+  @Roles('ADMIN')
   async update(
     @Param('id') id: string,
     @Body() updateObjetivoDto: UpdateObjetivoGeneralDto,
@@ -63,6 +71,7 @@ export class ObjetivosGeneralesController {
   }
 
   @Delete(':id')
+  @Roles('ADMIN')
   @HttpCode(HttpStatus.OK)
   async remove(@Param('id') id: string) {
     this.logger.warn(`Eliminando objetivo general: ${id}`);

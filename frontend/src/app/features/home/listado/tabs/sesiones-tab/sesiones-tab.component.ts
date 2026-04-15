@@ -228,6 +228,7 @@ export class SesionesTabComponent implements OnInit {
       [EstadoSesion.COMPLETADA]: 'badge-completada',
       [EstadoSesion.CANCELADA_CON_AVISO]: 'badge-cancelada-aviso',
       [EstadoSesion.CANCELADA_SIN_AVISO]: 'badge-cancelada-sin-aviso',
+      [EstadoSesion.VACACIONES]: 'badge-vacaciones',
     };
     return map[estado] || 'bg-secondary';
   }
@@ -238,6 +239,7 @@ export class SesionesTabComponent implements OnInit {
       [EstadoSesion.COMPLETADA]: 'bi-check-circle-fill',
       [EstadoSesion.CANCELADA_CON_AVISO]: 'bi-x-circle',
       [EstadoSesion.CANCELADA_SIN_AVISO]: 'bi-x-circle-fill',
+      [EstadoSesion.VACACIONES]: 'bi-sun',
     };
     return map[estado] || 'bi-question-circle';
   }

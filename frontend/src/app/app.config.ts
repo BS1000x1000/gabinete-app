@@ -17,7 +17,6 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
     provideCharts(withDefaultRegisterables()),
-    provideHttpClient(),
     provideHttpClient(withInterceptors([authInterceptor])),
     importProvidersFrom(
       CalendarModule.forRoot({

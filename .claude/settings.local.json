@@ -24,7 +24,8 @@
       "Bash(xargs cat:*)",
       "Bash(npm audit:*)",
       "Bash(npm update:*)",
-      "Bash(read d:*)"
+      "Bash(read d:*)",
+      "Bash(node node_modules/.bin/jest --passWithNoTests)"
     ]
   },
   "hooks": {

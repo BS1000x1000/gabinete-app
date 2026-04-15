@@ -47,12 +47,13 @@ model Trabajador {
   rolId String @map("id_rol")
   rol   Rol    @relation(fields: [rolId], references: [id])
 
-  clientesAsignados  ClienteTrabajador[]
-  sesiones           Sesion[]
-  informes           Informe[]
-  registrosCreados   RegistroDiario[]
-  objetivosAsignados Objetivo[] @relation("ObjetivosAsignados")
-  notificaciones     Notificacion[]
+  clientesAsignados    ClienteTrabajador[]
+  sesiones             Sesion[]
+  informes             Informe[]
+  registrosCreados     RegistroDiario[]
+  objetivosAsignados   Objetivo[] @relation("ObjetivosAsignados")
+  notificaciones       Notificacion[]
+  consentimientosRgpd  ConsentimientoRgpd[]
 
   @@map("trabajadores")
 }
@@ -117,6 +118,7 @@ model Cliente {
   objetivosEspecificos        Objetivo[]
   bonos                       Bono[]
   notificaciones              Notificacion[]
+  consentimientosRgpd         ConsentimientoRgpd[]
 
   @@map("clientes")
 }
@@ -214,6 +216,7 @@ model Familiar {
   clienteId String  @map("id_cliente")
   cliente   Cliente @relation(fields: [clienteId], references: [id])
   bonos  Bono[]
+  consentimientosRgpd ConsentimientoRgpd[]
 
   createdAt DateTime @default(now()) @map("fecha_creacion")
   updatedAt DateTime @updatedAt @map("ultima_actualizacion")
@@ -588,6 +591,29 @@ model TokenRevocado {
 
   @@index([expiresAt])
   @@map("tokens_revocados")
+}
+
+// ============================================================
+// CONSENTIMIENTO RGPD (historico por cliente)
+// ============================================================
+
+model ConsentimientoRgpd {
+  id                  String   @id @default(uuid())
+  aceptado            Boolean  // true = acepta, false = revoca
+  versionTexto        String   @map("version_texto")       // ej: "v1.0-2026-04"
+  textoConsentimiento String   @db.Text @map("texto_consentimiento") // texto completo aceptado
+  fechaRegistro       DateTime @default(now()) @map("fecha_registro")
+  ipRegistro          String?  @map("ip_registro")         // si se recoge online
+
+  clienteId    String     @map("id_cliente")
+  cliente      Cliente    @relation(fields: [clienteId], references: [id])
+  familiarId   String     @map("id_familiar")              // tutor legal que consiente
+  familiar     Familiar   @relation(fields: [familiarId], references: [id])
+  trabajadorId String     @map("id_trabajador")            // quien lo registró
+  trabajador   Trabajador @relation(fields: [trabajadorId], references: [id])
+
+  @@index([clienteId])
+  @@map("consentimientos_rgpd")
 }
 
 // ============================================================

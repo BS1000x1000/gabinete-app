@@ -9,6 +9,7 @@ import * as bcrypt from 'bcrypt';
 import { TrabajadorService } from '../trabajador/trabajador.service';
 import { LoginDto } from '../trabajador/dto/login.dto';
 import { MotorReglasService } from '../notificaciones/motor-reglas.service';
+import { AuditService } from './audit.service';
 
 @Injectable()
 export class AuthService {
@@ -18,6 +19,7 @@ export class AuthService {
     private readonly trabajadorService: TrabajadorService,
     private readonly jwtService: JwtService,
     private readonly motorReglasService: MotorReglasService,
+    private readonly auditService: AuditService,
   ) {}
 
   /**
@@ -29,12 +31,14 @@ export class AuthService {
 
       if (!user) {
         this.logger.warn(`Intento de login fallido: usuario ${body.username} no encontrado`);
+        this.auditService.registrar({ evento: 'LOGIN_FAIL', username: body.username, metadata: { motivo: 'usuario_no_encontrado' } });
         return null;
       }
 
       // Verificar que el usuario está activo
       if (!user.activo) {
         this.logger.warn(`Intento de login con usuario desactivado: ${body.username}`);
+        this.auditService.registrar({ evento: 'LOGIN_FAIL', username: body.username, userId: user.id, metadata: { motivo: 'usuario_desactivado' } });
         return null;
       }
 
@@ -45,6 +49,7 @@ export class AuthService {
 
       if (!matchResult) {
         this.logger.warn(`Intento de login fallido: contraseña incorrecta para ${body.username}`);
+        this.auditService.registrar({ evento: 'LOGIN_FAIL', username: body.username, userId: user.id, metadata: { motivo: 'contrasena_incorrecta' } });
         return null;
       }
 
