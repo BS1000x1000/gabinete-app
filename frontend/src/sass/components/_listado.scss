@@ -869,3 +869,218 @@
   align-items: center;
   justify-content: center;
 }
+
+// =============================================
+// CONSENTIMIENTO RGPD — perfil-tab
+// =============================================
+
+.rgpd-estado {
+  margin-bottom: $spacing-md;
+
+  &-badge { margin-bottom: $spacing-sm; }
+}
+
+.rgpd-detalle {
+  background: $primary-ultra-light;
+  border-radius: $border-radius-sm;
+  padding: $spacing-sm $spacing-md;
+  margin-top: $spacing-sm;
+}
+
+.rgpd-aviso {
+  font-size: 0.8rem;
+  color: $warning;
+  background: lighten($warning, 42%);
+  border: 1px solid lighten($warning, 28%);
+  border-radius: $border-radius-sm;
+  padding: $spacing-xs $spacing-sm;
+  margin-top: $spacing-sm;
+}
+
+.rgpd-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-xs;
+  margin-bottom: $spacing-sm;
+}
+
+.btn-rgpd {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 14px;
+  border-radius: $border-radius-sm;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+
+  &:disabled { opacity: 0.55; cursor: not-allowed; }
+
+  &-primary {
+    background: $primary;
+    color: white;
+    border-color: $primary;
+    &:hover:not(:disabled) { background: darken($primary, 8%); }
+  }
+
+  &-danger {
+    background: white;
+    color: $danger;
+    border-color: lighten($danger, 20%);
+    &:hover:not(:disabled) { background: lighten($danger, 40%); }
+  }
+
+  &-ghost {
+    background: white;
+    color: $gray-600;
+    border-color: $border-color;
+    &:hover:not(:disabled) { background: $gray-50; color: $gray-800; }
+  }
+}
+
+// Formulario consentimiento
+.rgpd-form {
+  background: $gray-50;
+  border: 1px solid $border-color;
+  border-radius: $border-radius-lg;
+  padding: $spacing-md;
+  margin-bottom: $spacing-md;
+
+  &-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: $primary;
+    margin-bottom: $spacing-md;
+  }
+
+  &-field { margin-bottom: $spacing-md; }
+
+  &-label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: $gray-700;
+    margin-bottom: 4px;
+  }
+
+  &-hint {
+    font-size: 0.75rem;
+    margin-top: 4px;
+  }
+
+  &-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: $spacing-sm;
+    margin-top: $spacing-md;
+    padding-top: $spacing-sm;
+    border-top: 1px solid $border-color;
+  }
+}
+
+.rgpd-select {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid $border-color;
+  border-radius: $border-radius-sm;
+  font-size: 0.85rem;
+  background: white;
+  color: $gray-800;
+  outline: none;
+
+  &:focus { border-color: $primary; box-shadow: 0 0 0 2px rgba($primary, 0.12); }
+}
+
+.rgpd-texto-box {
+  background: white;
+  border: 1px solid $border-color;
+  border-radius: $border-radius-sm;
+  padding: $spacing-sm $spacing-md;
+  font-size: 0.78rem;
+  line-height: 1.7;
+  color: $gray-600;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.rgpd-form-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: $gray-700;
+  cursor: pointer;
+  margin-top: $spacing-sm;
+
+  input[type="checkbox"] {
+    margin-top: 2px;
+    accent-color: $primary;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+
+  label { cursor: pointer; line-height: 1.5; }
+}
+
+// Historial
+.rgpd-historial {
+  border-top: 1px dashed $border-color;
+  padding-top: $spacing-md;
+  margin-top: $spacing-sm;
+
+  &-title {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: $gray-500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: $spacing-sm;
+  }
+
+  &-item {
+    display: flex;
+    gap: $spacing-sm;
+    padding: $spacing-xs 0;
+    border-bottom: 1px solid $gray-100;
+
+    &:last-child { border-bottom: none; }
+
+    &.rgpd-historial-revocado .rgpd-historial-icono { color: $danger; }
+  }
+
+  &-icono {
+    font-size: 1rem;
+    color: $success;
+    margin-top: 1px;
+    flex-shrink: 0;
+  }
+
+  &-datos {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  &-estado {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: $gray-800;
+  }
+
+  &-fecha {
+    font-size: 0.75rem;
+    color: $gray-500;
+  }
+
+  &-familiar {
+    font-size: 0.8rem;
+    color: $gray-700;
+  }
+
+  &-trabajador {
+    font-size: 0.75rem;
+    color: $gray-400;
+  }
+}

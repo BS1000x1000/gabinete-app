@@ -2,6 +2,8 @@ import { Route } from '@angular/router';
 import { HomeComponent } from './home.component';
 import { roleGuard } from '../../shared/guards/role.guard';
 
+const ROLES_CLINICOS = ['ADMIN', 'PEDAGOGO', 'NEURO', 'LOGOPEDA'];
+
 export default [
   {
     path: '',
@@ -14,7 +16,7 @@ export default [
       { path: 'clientes',   loadComponent: () => import('../clientes/clientes.component') },
       { path: 'estadisticas', loadComponent: () => import('./estadisticas/estadisticas.component').then(m => m.EstadisticasComponent) },
       { path: 'trabajadores',     loadComponent: () => import('../trabajadores/trabajadores.component'),          canActivate: [roleGuard(['ADMIN', 'RECEP'])] },
-      { path: 'trabajadores/:id', loadChildren: () => import('../trabajadores/ficha/trabajador-ficha.routes'), canActivate: [roleGuard(['ADMIN', 'RECEP'])] },
+      { path: 'trabajadores/:id', loadChildren: () => import('../trabajadores/ficha/trabajador-ficha.routes'), canActivate: [roleGuard(ROLES_CLINICOS)] },
       { path: 'ajustes',    loadComponent: () => import('../ajustes/ajustes.component') },
     ]
   }

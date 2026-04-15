@@ -60,6 +60,26 @@ interface ObjetivoGeneralAsignado {
   };
 }
 
+export interface ConsentimientoRgpdBackend {
+  id: string;
+  aceptado: boolean;
+  versionTexto: string;
+  textoConsentimiento: string;
+  fechaRegistro: string;
+  ipRegistro?: string;
+  familiar: {
+    id: string;
+    nombre: string;
+    apellidos: string;
+    parentesco: string;
+  };
+  trabajador: {
+    id: string;
+    nombre: string;
+    apellidos: string;
+  };
+}
+
 // ========================================
 // INTERFAZ PRINCIPAL
 // ========================================

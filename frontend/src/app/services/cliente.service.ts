@@ -8,7 +8,7 @@ import {
   SanitarioData,
   ClienteData,
 } from '../interface/cliente-frontend.interface';
-import { ClienteDataBackend } from '../interface/cliente-backend.interface';
+import { ClienteDataBackend, ConsentimientoRgpdBackend } from '../interface/cliente-backend.interface';
 import {
   ClienteObjetivosResponse,
   EstadisticasObjetivos,
@@ -413,6 +413,25 @@ export class ClientesService {
         }),
         map(() => void 0),
       );
+  }
+
+  // ========================================
+  // RGPD — CONSENTIMIENTO
+  // ========================================
+
+  registrarConsentimiento(
+    clienteId: string,
+    dto: { familiarId: string; aceptado: boolean; versionTexto: string; textoConsentimiento: string },
+  ): Observable<ConsentimientoRgpdBackend> {
+    return this.http
+      .post<WrappedResponse<ConsentimientoRgpdBackend>>(`${this.api}/${clienteId}/consentimiento`, dto)
+      .pipe(map((res) => res.data ?? (res as any)));
+  }
+
+  getHistoricoConsentimientos(clienteId: string): Observable<ConsentimientoRgpdBackend[]> {
+    return this.http
+      .get<WrappedResponse<ConsentimientoRgpdBackend[]>>(`${this.api}/${clienteId}/consentimientos`)
+      .pipe(map((res) => res.data ?? (res as any)));
   }
 
   // ========================================

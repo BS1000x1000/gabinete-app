@@ -266,52 +266,157 @@
         <span class="perfil-card-icon" style="background: #fef9c3; color: #b45309;">
           <i class="bi bi-shield-check-fill"></i>
         </span>
-        <h3 class="perfil-card-title">Autorizaciones y RGPD</h3>
+        <h3 class="perfil-card-title">Consentimiento RGPD</h3>
       </div>
       <div class="perfil-card-body">
-        <div *ngIf="errorRgpd()" class="perfil-alert-chip chip-danger mb-2">
-          <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ errorRgpd() }}
-        </div>
 
-        <div class="dato-row">
-          <span class="dato-label">Consentimiento RGPD</span>
-          <span class="dato-valor d-flex align-items-center gap-2">
-            <span class="mini-badge" [class.badge-yes]="clienteRaw()?.consentimientoRgpd" [class.badge-no]="!clienteRaw()?.consentimientoRgpd">
-              {{ clienteRaw()?.consentimientoRgpd ? 'Otorgado' : 'Pendiente' }}
+        <!-- Estado del consentimiento -->
+        <div class="rgpd-estado">
+          <div class="rgpd-estado-badge">
+            <span class="mini-badge" [class.badge-yes]="tieneConsentimientoActivo" [class.badge-no]="!tieneConsentimientoActivo">
+              <i class="bi me-1" [class.bi-shield-check]="tieneConsentimientoActivo" [class.bi-shield-exclamation]="!tieneConsentimientoActivo"></i>
+              {{ tieneConsentimientoActivo ? 'Otorgado' : 'Pendiente' }}
             </span>
+          </div>
+
+          <!-- Detalle cuando hay consentimiento activo -->
+          <ng-container *ngIf="tieneConsentimientoActivo && ultimoConsentimientoActivo as c">
+            <div class="rgpd-detalle">
+              <div class="dato-row">
+                <span class="dato-label">Tutor legal</span>
+                <span class="dato-valor">{{ c.familiar.nombre }} {{ c.familiar.apellidos }}
+                  <span class="text-muted ms-1 small">({{ c.familiar.parentesco }})</span>
+                </span>
+              </div>
+              <div class="dato-row">
+                <span class="dato-label">Recogido por</span>
+                <span class="dato-valor">{{ c.trabajador.nombre }} {{ c.trabajador.apellidos }}
+                  · {{ c.fechaRegistro | date: 'dd/MM/yyyy' }}
+                </span>
+              </div>
+              <div class="dato-row">
+                <span class="dato-label">Versión</span>
+                <span class="dato-valor">{{ c.versionTexto }}</span>
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- Aviso cuando no hay consentimiento -->
+          <div *ngIf="!tieneConsentimientoActivo && !mostrarForm()" class="rgpd-aviso">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+            Sin consentimiento registrado. Obligatorio para tratar datos de salud (Art. 9 RGPD / LOPD-GDD Art. 7).
+          </div>
+        </div>
+
+        <!-- Acciones principales -->
+        <div *ngIf="!mostrarForm() && !mostrarConfirmRevocar()" class="rgpd-acciones">
+          <button *ngIf="!tieneConsentimientoActivo" class="btn-rgpd btn-rgpd-primary" type="button" (click)="abrirForm()">
+            <i class="bi bi-plus-circle me-1"></i> Registrar consentimiento
+          </button>
+          <button *ngIf="tieneConsentimientoActivo" class="btn-rgpd btn-rgpd-danger" type="button"
+            [disabled]="guardandoConsentimiento()"
+            (click)="abrirConfirmRevocar()">
+            <i class="bi bi-x-circle me-1"></i> Revocar
+          </button>
+          <button class="btn-rgpd btn-rgpd-ghost" type="button" (click)="toggleHistorial()">
+            <i class="bi" [class.bi-clock-history]="!mostrarHistorial()" [class.bi-chevron-up]="mostrarHistorial()"></i>
+            {{ mostrarHistorial() ? 'Ocultar historial' : 'Ver historial' }}
+            <span *ngIf="historico().length" class="count-badge ms-1">{{ historico().length }}</span>
+          </button>
+        </div>
+
+        <!-- ── Formulario de consentimiento ── -->
+        <div *ngIf="mostrarForm()" class="rgpd-form">
+          <div class="rgpd-form-title">
+            <i class="bi bi-pen-fill me-1"></i> Registrar consentimiento informado
+          </div>
+
+          <div *ngIf="errorConsentimiento()" class="perfil-alert-chip chip-danger mb-2">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ errorConsentimiento() }}
+          </div>
+
+          <div class="rgpd-form-field">
+            <label class="rgpd-form-label">Tutor legal que consiente *</label>
+            <select class="rgpd-select" [(ngModel)]="familiarSeleccionadoModel">
+              <option value="">Seleccionar familiar…</option>
+              <option *ngFor="let f of familiares()" [value]="f.id">
+                {{ f.nombre }} {{ f.apellidos }} — {{ f.parentesco }}
+              </option>
+            </select>
+            <p *ngIf="!familiares().length" class="rgpd-form-hint text-danger">
+              <i class="bi bi-exclamation-circle me-1"></i>
+              No hay familiares registrados. Añade primero un tutor legal en la sección Familia.
+            </p>
+          </div>
+
+          <div class="rgpd-form-field">
+            <label class="rgpd-form-label">Texto del consentimiento (versión {{ versionTexto }})</label>
+            <div class="rgpd-texto-box">{{ textoConsentimiento }}</div>
+          </div>
+
+          <div class="rgpd-form-check">
+            <input type="checkbox" id="chk-acepta" [checked]="checkAceptado()" (change)="checkAceptado.set(!checkAceptado())" />
+            <label for="chk-acepta">El tutor/a ha leído y acepta expresamente el texto anterior</label>
+          </div>
+
+          <div class="rgpd-form-actions">
+            <button class="btn-rgpd btn-rgpd-ghost" type="button" (click)="cancelarForm()">Cancelar</button>
             <button
-              class="perfil-edit-btn"
-              [disabled]="guardandoRgpd()"
-              (click)="toggleConsentimientoRgpd()"
-              type="button">
-              <span *ngIf="guardandoRgpd()" class="spinner-border spinner-border-sm" style="width:12px;height:12px"></span>
-              <i *ngIf="!guardandoRgpd()" class="bi" [class.bi-toggle-on]="clienteRaw()?.consentimientoRgpd" [class.bi-toggle-off]="!clienteRaw()?.consentimientoRgpd"></i>
-              {{ clienteRaw()?.consentimientoRgpd ? 'Revocar' : 'Otorgar' }}
+              class="btn-rgpd btn-rgpd-primary"
+              type="button"
+              [disabled]="!familiarSeleccionado() || !checkAceptado() || guardandoConsentimiento()"
+              (click)="confirmarConsentimiento()">
+              <span *ngIf="guardandoConsentimiento()" class="spinner-border spinner-border-sm me-1" style="width:12px;height:12px"></span>
+              <i *ngIf="!guardandoConsentimiento()" class="bi bi-check-circle me-1"></i>
+              Registrar consentimiento
             </button>
-          </span>
+          </div>
         </div>
 
-        <div *ngIf="clienteRaw()?.consentimientoFecha" class="dato-row">
-          <span class="dato-label">Fecha de consentimiento</span>
-          <span class="dato-valor">{{ clienteRaw()?.consentimientoFecha | date: 'dd/MM/yyyy' }}</span>
+        <!-- ── Confirmar revocación ── -->
+        <app-confirm-modal
+          *ngIf="mostrarConfirmRevocar()"
+          title="¿Revocar consentimiento?"
+          message="Se registrará la revocación del consentimiento RGPD. El responsable del tratamiento deberá gestionar las consecuencias conforme a la normativa."
+          confirmLabel="Sí, revocar"
+          confirmClass="btn-danger"
+          icon="bi-shield-x"
+          (confirmed)="confirmarRevocar()"
+          (cancelled)="cancelarRevocar()">
+        </app-confirm-modal>
+
+        <!-- ── Historial de consentimientos ── -->
+        <div *ngIf="mostrarHistorial()" class="rgpd-historial">
+          <div class="rgpd-historial-title">Historial de consentimientos</div>
+          <div *ngIf="cargandoHistorico()" class="perfil-empty">
+            <span class="spinner-border spinner-border-sm me-1"></span> Cargando…
+          </div>
+          <div *ngIf="!cargandoHistorico() && !historico().length" class="perfil-empty">
+            Sin registros de consentimiento.
+          </div>
+          <div *ngFor="let h of historico()" class="rgpd-historial-item" [class.rgpd-historial-revocado]="!h.aceptado">
+            <div class="rgpd-historial-icono">
+              <i class="bi" [class.bi-shield-check-fill]="h.aceptado" [class.bi-shield-x-fill]="!h.aceptado"></i>
+            </div>
+            <div class="rgpd-historial-datos">
+              <span class="rgpd-historial-estado">{{ h.aceptado ? 'Otorgado' : 'Revocado' }}</span>
+              <span class="rgpd-historial-fecha">{{ h.fechaRegistro | date: 'dd/MM/yyyy HH:mm' }}</span>
+              <span class="rgpd-historial-familiar">{{ h.familiar.nombre }} {{ h.familiar.apellidos }} ({{ h.familiar.parentesco }})</span>
+              <span class="rgpd-historial-trabajador">Recogido por: {{ h.trabajador.nombre }} {{ h.trabajador.apellidos }} · {{ h.versionTexto }}</span>
+            </div>
+          </div>
         </div>
 
-        <p class="text-muted small mt-2 mb-0" style="font-size: 0.72rem; line-height: 1.5;">
-          Tratamiento de datos de categoría especial (salud) conforme al Art. 9 LOPDGDD 3/2018.
-        </p>
-
-        <div *ngIf="auth.isAdmin() || auth.isRecep()" class="rgpd-export-row mt-3">
+        <!-- Portabilidad -->
+        <div *ngIf="auth.isAdmin() || auth.isRecep()" class="rgpd-export-row">
           <span class="dato-label">Portabilidad (Art. 20)</span>
-          <button
-            class="perfil-edit-btn rgpd-export-btn"
-            type="button"
-            [disabled]="exportando()"
-            (click)="exportarDatosRgpd()">
+          <button class="perfil-edit-btn rgpd-export-btn" type="button" [disabled]="exportando()" (click)="exportarDatosRgpd()">
             <span *ngIf="exportando()" class="spinner-border spinner-border-sm" style="width:12px;height:12px"></span>
             <i *ngIf="!exportando()" class="bi bi-download"></i>
             {{ exportando() ? 'Exportando…' : 'Exportar datos JSON' }}
           </button>
         </div>
+
       </div>
     </div>
 
