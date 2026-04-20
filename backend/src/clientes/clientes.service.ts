@@ -45,7 +45,7 @@ export class ClientesService {
             direccionColegio: createClienteDto.colegio.direccionColegio,
             ctoColegioUno: createClienteDto.colegio.ctoColegioUno,
             ctoTelefonoUno: createClienteDto.colegio.ctoTelefonoUno,
-            ctoEmailColegioUno: createClienteDto.colegio.ctoEmailColegioUno,
+            ctoEmailColegioUno: createClienteDto.colegio.ctoEmailColegioUno ?? '',
             ctoRelacionColegioUno:
               createClienteDto.colegio.ctoRelacionColegioUno,
             ctoColegioDos: createClienteDto.colegio.ctoColegioDos,
@@ -67,119 +67,102 @@ export class ClientesService {
       createClienteDto.fechaInicio!,
     ).toISOString();
 
-    // ✅ CREAR CLIENTE
-    const cliente = await this.prisma.cliente.create({
-      data: {
-        nombre: createClienteDto.nombre,
-        apellidos: createClienteDto.apellidos,
-        dni: createClienteDto.dni,
-        domicilio: createClienteDto.domicilio,
-        provincia: createClienteDto.provincia,
-        ciudad: createClienteDto.ciudad,
-        curso: createClienteDto.curso,
-        fechaNacimiento: fechaNacimientoISO,
-        fechaInicio: fechaInicioISO,
-        colegioId: colegioId,
-        idCarpetaDrive: createClienteDto.idCarpetaDrive,
-        consentimientoRgpd: createClienteDto.consentimientoRgpd ?? false,
-        consentimientoFecha: createClienteDto.consentimientoRgpd ? new Date() : null,
-        consentimientoTrabajadorId: createClienteDto.consentimientoRgpd ? (trabajadorId ?? null) : null,
+    // Crear cliente + asignaciones en una sola transacción (rollback automático si falla)
+    const clienteCreado = await this.prisma.$transaction(async (tx) => {
+      const cliente = await tx.cliente.create({
+        data: {
+          nombre: createClienteDto.nombre,
+          apellidos: createClienteDto.apellidos,
+          dni: createClienteDto.dni,
+          domicilio: createClienteDto.domicilio,
+          provincia: createClienteDto.provincia,
+          ciudad: createClienteDto.ciudad,
+          curso: createClienteDto.curso,
+          fechaNacimiento: fechaNacimientoISO,
+          fechaInicio: fechaInicioISO,
+          colegioId: colegioId,
+          idCarpetaDrive: createClienteDto.idCarpetaDrive,
+          consentimientoRgpd: createClienteDto.consentimientoRgpd ?? false,
+          consentimientoFecha: createClienteDto.consentimientoRgpd ? new Date() : null,
+          consentimientoTrabajadorId: createClienteDto.consentimientoRgpd ? (trabajadorId ?? null) : null,
 
-        // Familiares
-        contactosFamiliares: createClienteDto.familiares
-          ? {
-              create: createClienteDto.familiares.map((f) => ({
-                nombre: f.nombre,
-                apellidos: f.apellidos,
-                dni: f.dni || '',
-                parentesco: f.parentesco,
-                telefono: f.telefono,
-                email: f.email || '',
-                esResponsablePago: f.esResponsablePago ?? false,
-                esContactoPrincipal: f.esContactoPrincipal ?? false,
-                whatsapp: f.whatsapp ?? false,
-              })),
-            }
-          : undefined,
+          contactosFamiliares: createClienteDto.familiares
+            ? {
+                create: createClienteDto.familiares.map((f) => ({
+                  nombre: f.nombre,
+                  apellidos: f.apellidos,
+                  dni: f.dni || '',
+                  parentesco: f.parentesco,
+                  telefono: f.telefono,
+                  email: f.email || '',
+                  esResponsablePago: f.esResponsablePago ?? false,
+                  esContactoPrincipal: f.esContactoPrincipal ?? false,
+                  whatsapp: f.whatsapp ?? false,
+                })),
+              }
+            : undefined,
 
-        // ✅ Disponibilidad GENERAL del cliente
-        disponibilidad: createClienteDto.disponibilidad
-          ? {
-              create: createClienteDto.disponibilidad.map((d) => ({
-                diaSemana: d.diaSemana,
-                horaInicio: d.horaInicio,
-                horaFin: d.horaFin,
-              })),
-            }
-          : undefined,
+          disponibilidad: createClienteDto.disponibilidad
+            ? {
+                create: createClienteDto.disponibilidad.map((d) => ({
+                  diaSemana: d.diaSemana,
+                  horaInicio: d.horaInicio,
+                  horaFin: d.horaFin,
+                })),
+              }
+            : undefined,
 
-        // Datos sanitarios
-        sanitario: createClienteDto.datosSanitarios
-          ? {
-              create: {
-                diagnostico: createClienteDto.datosSanitarios.diagnostico || '',
-                centroSalud: createClienteDto.datosSanitarios.centroSalud || '',
-                tratamientos:
-                  createClienteDto.datosSanitarios.tratamientos || '',
-                medicacion: createClienteDto.datosSanitarios.medicacion || '',
-                alergias: createClienteDto.datosSanitarios.alergias || '',
-                adaptaciones:
-                  createClienteDto.datosSanitarios.adaptaciones ?? false,
-                tipoAdaptaciones:
-                  createClienteDto.datosSanitarios.tipoAdaptaciones || null,
-                especialistas:
-                  createClienteDto.datosSanitarios.especialistas ?? [],
-                apoyos: createClienteDto.datosSanitarios.apoyos ?? false,
+          sanitario: createClienteDto.datosSanitarios
+            ? {
+                create: {
+                  diagnostico: createClienteDto.datosSanitarios.diagnostico || '',
+                  centroSalud: createClienteDto.datosSanitarios.centroSalud || '',
+                  tratamientos: createClienteDto.datosSanitarios.tratamientos || '',
+                  medicacion: createClienteDto.datosSanitarios.medicacion || '',
+                  alergias: createClienteDto.datosSanitarios.alergias || '',
+                  adaptaciones: createClienteDto.datosSanitarios.adaptaciones ?? false,
+                  tipoAdaptaciones: createClienteDto.datosSanitarios.tipoAdaptaciones || null,
+                  especialistas: createClienteDto.datosSanitarios.especialistas ?? [],
+                  apoyos: createClienteDto.datosSanitarios.apoyos ?? false,
+                },
+              }
+            : undefined,
+
+          objetivosGeneralesAsignados: createClienteDto.objetivosGeneralesIds
+            ? {
+                create: createClienteDto.objetivosGeneralesIds.map((objId) => ({
+                  objetivoGeneralId: objId,
+                })),
+              }
+            : undefined,
+        },
+      });
+
+      if (createClienteDto.asignaciones?.length) {
+        for (const asignacion of createClienteDto.asignaciones) {
+          await tx.clienteTrabajador.create({
+            data: {
+              clienteId: cliente.id,
+              trabajadorId: asignacion.trabajadorId,
+              tipoTerapia: asignacion.tipoTerapia,
+              horarios: {
+                create: asignacion.horarios.map((h) => ({
+                  diaSemana: h.diaSemana,
+                  horaInicio: h.horaInicio,
+                  horaFin: h.horaFin,
+                })),
               },
-            }
-          : undefined,
-
-        // Objetivos generales
-        objetivosGeneralesAsignados: createClienteDto.objetivosGeneralesIds
-          ? {
-              create: createClienteDto.objetivosGeneralesIds.map((objId) => ({
-                objetivoGeneralId: objId,
-              })),
-            }
-          : undefined,
-      },
-      include: clienteInclude,
-    });
-
-    // ✅ NUEVO: Si viene asignación, crear relación con trabajador y horarios específicos
-    if (
-      createClienteDto.asignaciones &&
-      createClienteDto.asignaciones.length > 0
-    ) {
-      for (const asignacion of createClienteDto.asignaciones) {
-        await this.prisma.clienteTrabajador.create({
-          data: {
-            clienteId: cliente.id,
-            trabajadorId: asignacion.trabajadorId,
-            tipoTerapia: asignacion.tipoTerapia,
-            horarios: {
-              create: asignacion.horarios.map((h) => ({
-                diaSemana: h.diaSemana,
-                horaInicio: h.horaInicio,
-                horaFin: h.horaFin,
-              })),
             },
-          },
-        });
-
+          });
+        }
       }
-    }
-    // Retornar cliente con todas las relaciones
-    const clienteCreado = await this.prisma.cliente.findUnique({
-      where: { id: cliente.id },
-      include: clienteInclude,
+
+      return tx.cliente.findUniqueOrThrow({
+        where: { id: cliente.id },
+        include: clienteInclude,
+      });
     });
 
-    if (!clienteCreado) {
-      throw new Error('Error al recuperar el cliente recién creado');
-    }
-
-    // Retornar cliente con todas las relaciones
     return clienteCreado;
   }
 
@@ -964,28 +947,52 @@ export class ClientesService {
 
   // ── COLEGIO ───────────────────────────────────────────────
   async updateColegio(clienteId: string, data: any) {
-    // Obtener el colegioId actual del cliente
     const cliente = await this.prisma.cliente.findUnique({
       where: { id: clienteId },
       select: { colegioId: true },
     });
     if (!cliente) throw new NotFoundException(`Cliente ${clienteId} no encontrado`);
-    if (!cliente.colegioId) throw new NotFoundException('Este cliente no tiene colegio asignado');
+
+    const colegioData = {
+      ...(data.nombre               !== undefined && { nombre: data.nombre }),
+      ...(data.direccionColegio     !== undefined && { direccionColegio: data.direccionColegio }),
+      ...(data.ctoColegioUno        !== undefined && { ctoColegioUno: data.ctoColegioUno }),
+      ...(data.ctoTelefonoUno       !== undefined && { ctoTelefonoUno: data.ctoTelefonoUno }),
+      ...(data.ctoEmailColegioUno   !== undefined && { ctoEmailColegioUno: data.ctoEmailColegioUno }),
+      ...(data.ctoRelacionColegioUno!== undefined && { ctoRelacionColegioUno: data.ctoRelacionColegioUno }),
+      ...(data.ctoColegioDos        !== undefined && { ctoColegioDos: data.ctoColegioDos }),
+      ...(data.ctoTelefonoDos       !== undefined && { ctoTelefonoDos: data.ctoTelefonoDos }),
+      ...(data.ctoEmailColegioDos   !== undefined && { ctoEmailColegioDos: data.ctoEmailColegioDos }),
+      ...(data.ctoRelacionColegioDos!== undefined && { ctoRelacionColegioDos: data.ctoRelacionColegioDos }),
+    };
+
+    if (!cliente.colegioId) {
+      return await this.prisma.$transaction(async (tx) => {
+        const nuevoColegio = await tx.colegio.create({
+          data: {
+            nombre:               data.nombre               ?? '',
+            direccionColegio:     data.direccionColegio     ?? '',
+            ctoColegioUno:        data.ctoColegioUno        ?? '',
+            ctoTelefonoUno:       data.ctoTelefonoUno       ?? '',
+            ctoEmailColegioUno:   data.ctoEmailColegioUno   ?? '',
+            ctoRelacionColegioUno:data.ctoRelacionColegioUno ?? '',
+            ctoColegioDos:        data.ctoColegioDos        ?? null,
+            ctoTelefonoDos:       data.ctoTelefonoDos       ?? null,
+            ctoEmailColegioDos:   data.ctoEmailColegioDos   ?? null,
+            ctoRelacionColegioDos:data.ctoRelacionColegioDos ?? null,
+          },
+        });
+        await tx.cliente.update({
+          where: { id: clienteId },
+          data: { colegioId: nuevoColegio.id },
+        });
+        return nuevoColegio;
+      });
+    }
 
     return this.prisma.colegio.update({
       where: { id: cliente.colegioId },
-      data: {
-        ...(data.nombre               !== undefined && { nombre: data.nombre }),
-        ...(data.direccionColegio     !== undefined && { direccionColegio: data.direccionColegio }),
-        ...(data.ctoColegioUno        !== undefined && { ctoColegioUno: data.ctoColegioUno }),
-        ...(data.ctoTelefonoUno       !== undefined && { ctoTelefonoUno: data.ctoTelefonoUno }),
-        ...(data.ctoEmailColegioUno   !== undefined && { ctoEmailColegioUno: data.ctoEmailColegioUno }),
-        ...(data.ctoRelacionColegioUno!== undefined && { ctoRelacionColegioUno: data.ctoRelacionColegioUno }),
-        ...(data.ctoColegioDos        !== undefined && { ctoColegioDos: data.ctoColegioDos }),
-        ...(data.ctoTelefonoDos       !== undefined && { ctoTelefonoDos: data.ctoTelefonoDos }),
-        ...(data.ctoEmailColegioDos   !== undefined && { ctoEmailColegioDos: data.ctoEmailColegioDos }),
-        ...(data.ctoRelacionColegioDos!== undefined && { ctoRelacionColegioDos: data.ctoRelacionColegioDos }),
-      },
+      data: colegioData,
     });
   }
 

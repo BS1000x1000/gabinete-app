@@ -1,15 +1,16 @@
-import { 
-  IsString, 
-  IsOptional, 
-  IsEmail, 
-  IsDateString, 
-  IsArray, 
-  ValidateNested, 
-  IsBoolean, 
+import {
+  IsString,
+  IsOptional,
+  IsEmail,
+  IsDateString,
+  IsArray,
+  ValidateNested,
+  IsBoolean,
   IsUUID,
   IsInt,
   Max,
-  Min
+  Min,
+  ValidateIf
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { TipoSesion } from '@prisma/client';
@@ -37,8 +38,10 @@ export class ColegioDto {
   @IsString()
   ctoTelefonoUno: string;
 
+  @IsOptional()
+  @ValidateIf((_, v) => v !== '')
   @IsEmail()
-  ctoEmailColegioUno: string;
+  ctoEmailColegioUno?: string;
 
   @IsString()
   ctoRelacionColegioUno: string;
@@ -53,6 +56,7 @@ export class ColegioDto {
   ctoTelefonoDos?: string;
 
   @IsOptional()
+  @ValidateIf((_, v) => v !== '')
   @IsEmail()
   ctoEmailColegioDos?: string;
 
@@ -83,6 +87,7 @@ export class FamiliarDto {
   telefono: string;
 
   @IsOptional()
+  @ValidateIf((_, v) => v !== '')
   @IsEmail()
   email?: string;
 

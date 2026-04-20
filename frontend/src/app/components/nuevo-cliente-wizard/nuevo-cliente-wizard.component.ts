@@ -5,6 +5,7 @@ import {
   computed,
   Output,
   EventEmitter,
+  HostListener,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormGroup, ReactiveFormsModule, FormArray } from '@angular/forms';
@@ -15,11 +16,12 @@ import { WizardValidationService } from './forms/wizard-validation.service';
 import { WIZARD_STEPS, WizardStep } from './models/wizard-step.interface';
 import { TrabajadorService } from '../../services/trabajadores.service';
 import { EdadPipe } from '../../shared/pipes/edad.pipe';
+import { ConfirmModalComponent } from '../../shared/components/confirm-modal/confirm-modal.component';
 
 @Component({
   selector: 'app-nuevo-cliente-wizard',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, EdadPipe],
+  imports: [CommonModule, ReactiveFormsModule, EdadPipe, ConfirmModalComponent],
   providers: [WizardFormsService, WizardValidationService],
   templateUrl: './nuevo-cliente-wizard.component.html',
 })
@@ -36,7 +38,8 @@ export class NuevoClienteWizardComponent {
   pasoActual = signal(0);
   isSubmitting = signal(false);
   formChanged = signal(0);
-  pasos: WizardStep[] = [...WIZARD_STEPS];
+  pendingClose = signal(false);
+  pasos: WizardStep[] = WIZARD_STEPS.map(s => ({ ...s }));
 
   formDatosBasicos!: FormGroup;
   formColegio!: FormGroup;
@@ -90,7 +93,6 @@ export class NuevoClienteWizardComponent {
     this.formHorario = this.formsService.crearFormHorario();
     this.formAsignacion = this.formsService.crearFormAsignacion();
 
-    // Inicializar con una asignación vacía
     this.agregarAsignacion();
   }
 
@@ -271,7 +273,7 @@ export class NuevoClienteWizardComponent {
             direccionColegio: this.formColegio.value.direccionColegio || '',
             ctoColegioUno: this.formColegio.value.contactoUno || '',
             ctoTelefonoUno: this.formColegio.value.telefono || '',
-            ctoEmailColegioUno: this.formColegio.value.email || '',
+            ctoEmailColegioUno: this.formColegio.value.email || null,
             ctoRelacionColegioUno: 'Contacto',
             ctoColegioDos: this.formColegio.value.contactoDos || null,
             ctoTelefonoDos: this.formColegio.value.telefonoDos || null,
@@ -294,7 +296,7 @@ export class NuevoClienteWizardComponent {
           dni: contacto.dni || '',
           parentesco: contacto.parentesco,
           telefono: contacto.telefono,
-          email: contacto.email || '',
+          email: contacto.email || null,
           esResponsablePago: contacto.esPago || false,
           esContactoPrincipal: contacto.esPrincipal || false,
           whatsapp: false,
@@ -413,6 +415,35 @@ export class NuevoClienteWizardComponent {
     this.consentimientoMarcado.update((v) => !v);
   }
 
+  private tieneDatosIngresados(): boolean {
+    return (
+      this.pasoActual() > 0 ||
+      this.formDatosBasicos.dirty ||
+      this.formFamilia.dirty ||
+      this.formColegio.dirty ||
+      this.formSanitario.dirty ||
+      this.formHorario.dirty ||
+      this.formAsignacion.dirty
+    );
+  }
+
+  cerrarConConfirmacion() {
+    if (this.tieneDatosIngresados()) {
+      this.pendingClose.set(true);
+    } else {
+      this.cerrarModal();
+    }
+  }
+
+  onConfirmarCierre() { this.pendingClose.set(false); this.cerrarModal(); }
+  onCancelarCierre()  { this.pendingClose.set(false); }
+
+  @HostListener('document:keydown.escape', ['$event'])
+  onEscape(event: KeyboardEvent) {
+    event.stopPropagation();
+    if (!this.isSubmitting()) this.cerrarConConfirmacion();
+  }
+
   cerrarModal() {
     this.cerrar.emit();
   }
@@ -421,7 +452,6 @@ export class NuevoClienteWizardComponent {
     return this.formAsignacion.get('asignaciones') as FormArray;
   }
 
-  // ✅ NUEVO: Obtener disponibilidades del paso 4
   get disponibilidadesDisponibles() {
     return this.disponibilidades.value.map((d: any, index: number) => ({
       index,
@@ -432,7 +462,6 @@ export class NuevoClienteWizardComponent {
     }));
   }
 
-  // ✅ NUEVO: Agregar una nueva asignación
   agregarAsignacion() {
     this.asignaciones.push(this.formsService.crearAsignacionEspecifica());
 
@@ -458,24 +487,18 @@ export class NuevoClienteWizardComponent {
 
     const asignacion = this.asignaciones.at(asignacionIndex);
 
-    // Auto-rellenar con el horario completo
     asignacion.patchValue(
-      {
-        horaInicio: disponibilidad.horaInicio,
-        horaFin: disponibilidad.horaFin,
-      },
+      { horaInicio: disponibilidad.horaInicio, horaFin: disponibilidad.horaFin },
       { emitEvent: false },
-    ); // No emitir evento para evitar loops
+    );
   }
 
-  // ✅ NUEVO: Eliminar asignación
   eliminarAsignacion(index: number) {
     if (this.asignaciones.length > 1) {
       this.asignaciones.removeAt(index);
     }
   }
 
-  // ✅ NUEVO: Obtener datos del horario seleccionado
   getDisponibilidadSeleccionada(index: number) {
     const asignacion = this.asignaciones.at(index);
     const dispIndex = asignacion?.get('disponibilidadIndex')?.value;
@@ -491,7 +514,6 @@ export class NuevoClienteWizardComponent {
     return `${trabajador.nombre} ${trabajador.apellidos}`;
   }
 
-  // ✅ ALTERNATIVA: Si quieres solo el nombre
   getNombreTrabajadorCorto(trabajadorId: string): string {
     const trabajador = this.trabajadores().find((t) => t.id === trabajadorId);
     return trabajador?.nombre || '';

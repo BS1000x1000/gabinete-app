@@ -1,4 +1,4 @@
-<div class="wizard-overlay" (click)="cerrarModal()">
+<div class="wizard-overlay" (click)="cerrarConConfirmacion()">
   <div class="wizard-modal" (click)="$event.stopPropagation()">
     <!-- Header -->
     <div class="wizard-header">
@@ -395,7 +395,11 @@
                     class="form-control"
                     formControlName="nombreCompleto"
                     placeholder="Ej: Ana García López"
+                    [class.is-invalid]="contacto.get('nombreCompleto')?.invalid && contacto.get('nombreCompleto')?.touched"
                   />
+                  <div *ngIf="contacto.get('nombreCompleto')?.invalid && contacto.get('nombreCompleto')?.touched" class="invalid-feedback">
+                    El nombre completo es obligatorio
+                  </div>
                 </div>
 
                 <div class="col-md-6">
@@ -406,15 +410,22 @@
                     formControlName="dni"
                     placeholder="12345678A (opcional)"
                     maxlength="9"
+                    [class.is-invalid]="contacto.get('dni')?.invalid && contacto.get('dni')?.touched && contacto.get('dni')?.value"
                   />
-                  <small class="text-muted">Opcional</small>
+                  <div *ngIf="contacto.get('dni')?.hasError('pattern') && contacto.get('dni')?.touched" class="invalid-feedback">
+                    Formato inválido (8 dígitos + letra)
+                  </div>
                 </div>
 
                 <div class="col-md-6">
                   <label class="form-label"
                     >Parentesco <span class="text-danger">*</span></label
                   >
-                  <select class="form-select" formControlName="parentesco">
+                  <select
+                    class="form-select"
+                    formControlName="parentesco"
+                    [class.is-invalid]="contacto.get('parentesco')?.invalid && contacto.get('parentesco')?.touched"
+                  >
                     <option value="">Seleccionar...</option>
                     <option value="Madre">Madre</option>
                     <option value="Padre">Padre</option>
@@ -423,6 +434,9 @@
                     <option value="Tío/a">Tío/a</option>
                     <option value="Otro">Otro</option>
                   </select>
+                  <div *ngIf="contacto.get('parentesco')?.invalid && contacto.get('parentesco')?.touched" class="invalid-feedback">
+                    Selecciona el parentesco
+                  </div>
                 </div>
 
                 <div class="col-md-4">
@@ -435,7 +449,12 @@
                     formControlName="telefono"
                     placeholder="612345678"
                     maxlength="9"
+                    [class.is-invalid]="contacto.get('telefono')?.invalid && contacto.get('telefono')?.touched"
                   />
+                  <div *ngIf="contacto.get('telefono')?.invalid && contacto.get('telefono')?.touched" class="invalid-feedback">
+                    <span *ngIf="contacto.get('telefono')?.hasError('required')">El teléfono es obligatorio</span>
+                    <span *ngIf="contacto.get('telefono')?.hasError('pattern')">9 dígitos sin espacios</span>
+                  </div>
                 </div>
 
                 <div class="col-md-5">
@@ -894,13 +913,12 @@
                     </label>
                     <select class="form-select" formControlName="tipoTerapia">
                       <option value="">Seleccionar...</option>
-                      <option value="Pedagogía">Pedagogía</option>
-                      <option value="Neuropsicología">Neuropsicología</option>
-                      <option value="Logopedia">Logopedia</option>
-                      <option value="Psicología">Psicología</option>
-                      <option value="Refuerzo Educativo">
-                        Refuerzo Educativo
-                      </option>
+                      <option value="PEDAGOGIA">Pedagogía</option>
+                      <option value="NEUROPSICOLOGIA">Neuropsicología</option>
+                      <option value="LOGOPEDIA">Logopedia</option>
+                      <option value="TERAPIA_OCUPACIONAL">Ter. Ocupacional</option>
+                      <option value="EVALUACION">Evaluación</option>
+                      <option value="REUNION_COLEGIO">Reunión Colegio</option>
                     </select>
                   </div>
 
@@ -1236,7 +1254,7 @@
       <button
         class="btn btn-outline-secondary me-2"
         [disabled]="isSubmitting()"
-        (click)="cerrarModal()"
+        (click)="cerrarConConfirmacion()"
       >
         Cancelar
       </button>
@@ -1264,3 +1282,14 @@
     </div>
   </div>
 </div>
+
+<app-confirm-modal
+  *ngIf="pendingClose()"
+  title="¿Salir del formulario?"
+  message="Se perderán todos los datos introducidos. Esta acción no se puede deshacer."
+  confirmLabel="Salir"
+  confirmClass="btn-warning"
+  icon="bi-door-open"
+  (confirmed)="onConfirmarCierre()"
+  (cancelled)="onCancelarCierre()"
+></app-confirm-modal>
