@@ -16,6 +16,7 @@ import { RegistrosService } from '../../../services/registros.service';
 import { ClientesService } from '../../../services/cliente.service';
 import { ClienteDataBackend } from '../../../interface/cliente-backend.interface';
 import { ObjetivoGeneral } from '../../../interface/objetivo-general.interface';
+import { EtiquetaRegistro, ETIQUETAS_META, ETIQUETAS_OPCIONALES } from '../../../interface/registro-diario.interface';
 
 interface AreaConObjetivos {
   id: string;
@@ -39,10 +40,14 @@ export class DrawerRegistroComponent implements OnDestroy {
 
   readonly state = this.drawerSvc.state;
 
+  readonly etiquetasMeta = ETIQUETAS_META;
+  readonly etiquetasOpcionales = ETIQUETAS_OPCIONALES;
+
   // ── Datos de soporte ──────────────────────────────────
-  clientes          = signal<ClienteDataBackend[]>([]);
-  areaConObjetivos  = signal<AreaConObjetivos[]>([]);
-  objetivosSeleccionados = signal<Set<string>>(new Set());
+  clientes              = signal<ClienteDataBackend[]>([]);
+  areaConObjetivos      = signal<AreaConObjetivos[]>([]);
+  objetivosSeleccionados  = signal<Set<string>>(new Set());
+  etiquetasSeleccionadas  = signal<EtiquetaRegistro[]>([]);
 
   // ── Estado de UI ──────────────────────────────────────
   isSaving           = signal(false);
@@ -150,6 +155,16 @@ export class DrawerRegistroComponent implements OnDestroy {
     return this.objetivosSeleccionados().has(objetivoId);
   }
 
+  toggleEtiqueta(etiqueta: EtiquetaRegistro): void {
+    this.etiquetasSeleccionadas.update(prev =>
+      prev.includes(etiqueta) ? prev.filter(e => e !== etiqueta) : [...prev, etiqueta]
+    );
+  }
+
+  isEtiquetaSelected(etiqueta: EtiquetaRegistro): boolean {
+    return this.etiquetasSeleccionadas().includes(etiqueta);
+  }
+
   save(): void {
     if (this.form.invalid || this.isSaving()) return;
 
@@ -162,6 +177,7 @@ export class DrawerRegistroComponent implements OnDestroy {
       contenido:                    v.contenido!,
       fechaRegistro:                v.fechaRegistro ? new Date(v.fechaRegistro).toISOString() : undefined,
       sesionId:                     this.state().sesionId ?? undefined,
+      etiquetas:                    ['REGISTRO_DIARIO' as EtiquetaRegistro, ...this.etiquetasSeleccionadas()],
       objetivosGeneralesTrabajados: Array.from(this.objetivosSeleccionados()).map((id) => ({ objetivoGeneralId: id })),
     };
 
@@ -190,6 +206,7 @@ export class DrawerRegistroComponent implements OnDestroy {
   private reset(): void {
     this.form.reset({ fechaRegistro: this.hoy(), clienteId: '', contenido: '' });
     this.objetivosSeleccionados.set(new Set());
+    this.etiquetasSeleccionadas.set([]);
     this.areaConObjetivos.set([]);
     this.saveError.set(null);
     this.saveSuccess.set(false);

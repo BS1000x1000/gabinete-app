@@ -116,11 +116,11 @@ describe('ListadoComponent', () => {
     });
 
     it('la primera tab es Perfil', () => {
-      expect(component.workTabs[0].target).toBe('perfil');
+      expect(component.workTabs()[0].target).toBe('perfil');
     });
 
     it('la última tab es Documentos/informes', () => {
-      expect(component.workTabs[component.workTabs.length - 1].target).toBe('informes');
+      expect(component.workTabs()[component.workTabs().length - 1].target).toBe('informes');
     });
   });
 

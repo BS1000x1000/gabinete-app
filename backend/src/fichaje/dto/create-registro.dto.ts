@@ -4,9 +4,11 @@ import {
   IsDateString,
   IsArray,
   IsUUID,
+  IsEnum,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { EtiquetaRegistro } from '@prisma/client';
 
 export class ObjetivoTrabajadoDto {
   @IsUUID('4')
@@ -30,7 +32,12 @@ export class CreateRegistroDiarioDto {
 
   @IsOptional()
   @IsString()
-  sesionId?: string; // Para vincular el registro con una sesión específica
+  sesionId?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsEnum(EtiquetaRegistro, { each: true })
+  etiquetas?: EtiquetaRegistro[];
 
   @IsOptional()
   @IsArray()
@@ -42,6 +49,11 @@ export class CreateRegistroDiarioDto {
 export class UpdateRegistroDiarioDto {
   @IsString()
   contenido: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsEnum(EtiquetaRegistro, { each: true })
+  etiquetas?: EtiquetaRegistro[];
 
   @IsOptional()
   @IsArray()

@@ -27,6 +27,29 @@
         ></app-tiptap-editor>
       </div>
 
+      <!-- Selector de etiquetas -->
+      <div class="etiquetas-form-section">
+        <span class="etiquetas-form-label">
+          <i class="bi bi-tags"></i> Tipo de sesión
+        </span>
+        <div class="etiquetas-form-chips">
+          <span class="rd-tag rd-tag--registro-diario rd-tag--fixed">
+            <i class="bi bi-journal-text"></i> Registro Diario
+          </span>
+          @for (et of etiquetasOpcionales; track et) {
+            <button
+              type="button"
+              class="rd-tag rd-tag--selectable"
+              [ngClass]="[etiquetasMeta[et].cssClass, esEtiquetaSeleccionada(et) ? 'rd-tag--active' : '']"
+              (click)="toggleEtiquetaForm(et)"
+            >
+              <i class="bi" [ngClass]="etiquetasMeta[et].icon"></i>
+              {{ etiquetasMeta[et].label }}
+            </button>
+          }
+        </div>
+      </div>
+
       <!-- Sección de objetivos trabajados -->
       <div class="mb-3">
         <button
@@ -42,7 +65,6 @@
           </span>
         </button>
 
-        <!-- Panel de selección de objetivos -->
         <div *ngIf="mostrarObjetivos()" class="objetivos-panel">
           <p class="objetivos-panel__hint">
             <i class="bi bi-info-circle"></i>
@@ -59,10 +81,7 @@
               <span class="badge" [style.background-color]="grupo.color">{{ grupo.area }}</span>
             </div>
             <div class="area-grupo__objetivos">
-              <div
-                *ngFor="let objetivo of grupo.objetivos"
-                class="objetivo-card-wrap"
-              >
+              <div *ngFor="let objetivo of grupo.objetivos" class="objetivo-card-wrap">
                 <label
                   class="objetivo-card"
                   [class.selected]="esObjetivoSeleccionado(objetivo.objetivoGeneralId)"
@@ -130,22 +149,50 @@
   <!-- ── Historial de Registros ─────────────────────────────── -->
   <div class="registro-section">
 
-    <!-- Header con filtros -->
+    <!-- Header: filtros fila 1 (tiempo) -->
     <div class="historial-header">
       <h6 class="historial-title">
         <i class="bi bi-clock-history"></i>Historial de Actividad
       </h6>
-      <div class="filtro-pills">
-        @for (opcion of ["Todo", "Hoy", "Semana", "Mes"]; track opcion) {
-          <button
-            type="button"
-            (click)="filtro.set(opcion)"
-            class="filtro-pill"
-            [class.active]="filtro() === opcion"
+      <div class="rd-filters">
+        <!-- Fila 1: tiempo -->
+        <div class="rd-filter-row">
+          @for (opcion of ["Todo", "Hoy", "Semana", "Mes"]; track opcion) {
+            <button
+              type="button"
+              (click)="filtro.set(opcion)"
+              class="filtro-pill"
+              [class.active]="filtro() === opcion"
+            >
+              {{ opcion }}
+            </button>
+          }
+        </div>
+        <!-- Fila 2: etiqueta + objetivo -->
+        <div class="rd-filter-row">
+          <select
+            class="rd-filter-select"
+            [ngModel]="filtroEtiqueta()"
+            (ngModelChange)="filtroEtiqueta.set($event || null)"
           >
-            {{ opcion }}
-          </button>
-        }
+            <option [ngValue]="null">Todas las etiquetas</option>
+            @for (et of etiquetasOpcionales; track et) {
+              <option [ngValue]="et">{{ etiquetasMeta[et].label }}</option>
+            }
+            <option value="REGISTRO_DIARIO">Registro Diario</option>
+          </select>
+
+          <select
+            class="rd-filter-select"
+            [ngModel]="filtroObjetivoId()"
+            (ngModelChange)="filtroObjetivoId.set($event)"
+          >
+            <option value="">Todos los objetivos</option>
+            @for (obj of todosLosObjetivos(); track obj.objetivoGeneralId) {
+              <option [value]="obj.objetivoGeneralId">{{ obj.titulo }}</option>
+            }
+          </select>
+        </div>
       </div>
     </div>
 
@@ -157,52 +204,88 @@
           <p>No se encontraron registros para esta selección.</p>
         </div>
       } @else {
-        @for (reg of registrosFiltrados(); track reg.id) {
-          <div class="historial-item" [class.editando]="editandoId() === reg.id">
-            <div class="historial-item__meta">
-              <span class="historial-autor">
-                <i class="bi bi-person"></i>
-                {{ reg.trabajador?.nombre }} {{ reg.trabajador?.apellidos }}
-              </span>
-              <span class="historial-fecha">
-                <i class="bi bi-calendar3"></i>
-                {{ reg.fechaRegistro | date: "dd/MM/yyyy HH:mm" }}
-              </span>
-              <button
-                class="btn btn-link btn-sm p-0 ms-auto"
-                [class.text-primary]="editandoId() === reg.id"
-                [class.text-muted]="editandoId() !== reg.id"
-                (click)="editandoId() === reg.id ? cancelarEdicion() : editarRegistro(reg)"
-                type="button"
-                title="{{ editandoId() === reg.id ? 'Cancelar edición' : 'Editar registro' }}"
-              >
-                <i class="bi" [class.bi-pencil]="editandoId() !== reg.id" [class.bi-x-circle]="editandoId() === reg.id"></i>
-              </button>
-            </div>
-            <p class="historial-contenido" [innerHTML]="sanitizeHtml(reg.contenido)"></p>
-            <div *ngIf="reg.objetivosGeneralesTrabajados!.length > 0" class="historial-objetivos">
-              <span class="historial-objetivos__label">
-                <i class="bi bi-bullseye"></i>Objetivos trabajados:
-              </span>
-              <div class="historial-objetivos__badges">
-                <div
-                  *ngFor="let objTrabajado of reg.objetivosGeneralesTrabajados"
-                  class="objetivo-badge-item"
-                >
-                  <span
-                    class="badge"
-                    [style.background-color]="objTrabajado.objetivoGeneral.areaDesarrollo.color"
-                  >
-                    {{ objTrabajado.objetivoGeneral.titulo }}
+        <div class="rd-list">
+          @for (reg of registrosFiltrados(); track reg.id) {
+            @let expanded = isExpanded(reg.id!);
+            <div
+              class="rd-card"
+              [class.rd-card--editing]="editandoId() === reg.id"
+              [class.rd-card--ausencia]="reg.etiquetas?.includes('AUSENCIA')"
+            >
+              <!-- Header: etiquetas + meta + acciones -->
+              <div class="rd-card__header">
+                <div class="rd-card__tags">
+                  @for (et of (reg.etiquetas ?? defaultEtiquetas); track et) {
+                    <span class="rd-tag" [ngClass]="etiquetasMeta[et]?.cssClass">
+                      <i class="bi" [ngClass]="etiquetasMeta[et]?.icon"></i>
+                      {{ etiquetasMeta[et]?.label }}
+                    </span>
+                  }
+                </div>
+                <div class="rd-card__meta">
+                  <span class="rd-card__meta-author">
+                    <i class="bi bi-person"></i>
+                    {{ reg.trabajador?.nombre }} {{ reg.trabajador?.apellidos }}
                   </span>
-                  <span *ngIf="objTrabajado.notasRegistro" class="objetivo-badge-notas">
-                    {{ objTrabajado.notasRegistro }}
+                  <span class="rd-card__meta-date">
+                    <i class="bi bi-calendar3"></i>
+                    {{ reg.fechaRegistro | date: "dd/MM/yyyy · HH:mm" }}
                   </span>
+                  <div class="rd-card__actions">
+                    <button
+                      class="rd-card__action-btn"
+                      [class.rd-card__action-btn--active]="editandoId() === reg.id"
+                      (click)="editandoId() === reg.id ? cancelarEdicion() : editarRegistro(reg)"
+                      type="button"
+                      [title]="editandoId() === reg.id ? 'Cancelar edición' : 'Editar registro'"
+                    >
+                      <i class="bi" [class.bi-pencil]="editandoId() !== reg.id" [class.bi-x-circle]="editandoId() === reg.id"></i>
+                    </button>
+                  </div>
                 </div>
               </div>
+
+              <!-- Objetivos trabajados (siempre visible) -->
+              @if ((reg.objetivosGeneralesTrabajados ?? []).length > 0) {
+                <div class="rd-card__objectives">
+                  <span class="rd-card__objectives-label">
+                    <i class="bi bi-bullseye"></i> Objetivos trabajados
+                  </span>
+                  @for (objT of reg.objetivosGeneralesTrabajados; track objT.id) {
+                    <div class="rd-card__obj-item">
+                      <span
+                        class="rd-card__obj-badge"
+                        [style.background-color]="objT.objetivoGeneral.areaDesarrollo.color"
+                      >
+                        {{ objT.objetivoGeneral.titulo }}
+                      </span>
+                      @if (objT.notasRegistro) {
+                        <span class="rd-card__obj-notes">{{ objT.notasRegistro }}</span>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+
+              <!-- Contenido colapsable -->
+              <div class="rd-card__content">
+                <button
+                  type="button"
+                  class="rd-card__expand-btn"
+                  [class.open]="expanded"
+                  (click)="toggleExpand(reg.id!)"
+                >
+                  <i class="bi bi-chevron-down"></i>
+                  {{ expanded ? 'Ocultar registro' : 'Ver registro completo' }}
+                </button>
+                @if (expanded) {
+                  <div class="rd-card__prose" [innerHTML]="sanitizeHtml(reg.contenido)"></div>
+                }
+              </div>
+
             </div>
-          </div>
-        }
+          }
+        </div>
       }
     </div>
 

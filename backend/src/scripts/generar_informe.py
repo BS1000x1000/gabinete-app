@@ -192,9 +192,9 @@ def generar_pdf(datos: dict, ruta_salida: str):
     add = story.append
 
     # Cabecera
-    add(Paragraph('GABINETE PSICOPEDAGÓGICO', st['titulo_doc']))
+    add(Paragraph('GABINETE PEDAGÓGICO', st['titulo_doc']))
     add(Spacer(1, 0.2*cm))
-    tipo_texto = ('INFORME PSICOPEDAGÓGICO INICIAL'
+    tipo_texto = ('INFORME PEDAGÓGICO INICIAL'
                   if datos.get('tipo') == 'INICIAL'
                   else 'INFORME DE SEGUIMIENTO')
     add(Paragraph(tipo_texto, st['subtitulo']))

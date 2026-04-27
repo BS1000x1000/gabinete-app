@@ -78,7 +78,7 @@ function buildTableHtml(opts: {
     <tbody>${bodyRows}</tbody>
   </table>
   <p style="text-align:center;font-size:9px;color:#9ca3af;margin-top:12px;">
-    Documento confidencial — Gabinete Psicopedagógico · Generado el ${fmtFecha(new Date())}
+    Documento confidencial — Gabinete Pedagógico · Generado el ${fmtFecha(new Date())}
   </p>
 </body>
 </html>`;

@@ -311,6 +311,7 @@ model RegistroDiario {
   trabajadorId String     @map("id_trabajador")
   trabajador   Trabajador @relation(fields: [trabajadorId], references: [id])
 
+  etiquetas                    EtiquetaRegistro[]       @default([REGISTRO_DIARIO])
   createdAt                    DateTime                 @default(now()) @map("fecha_creacion")
   updatedAt                    DateTime                 @updatedAt @map("ultima_actualizacion")
   objetivosGeneralesTrabajados RegistroDiarioObjetivo[]
@@ -530,6 +531,19 @@ enum EstadoBono {
   ACTIVO
   CONSUMIDO
   CANCELADO
+}
+
+enum EtiquetaRegistro {
+  REGISTRO_DIARIO
+  AUSENCIA
+  COORDINACION_FAMILIA
+  COORDINACION_COLEGIO
+  PARTICIPACION_FAMILIA
+  COORDINACION_PROFESIONALES
+  REVISION_OBJETIVOS
+  EVALUACION_INICIAL
+  SESION_GRUPAL
+  ALTA_TEMPORAL
 }
 
 // ============================================================

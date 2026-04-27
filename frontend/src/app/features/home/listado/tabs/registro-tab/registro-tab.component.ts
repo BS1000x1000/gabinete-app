@@ -3,7 +3,6 @@ import {
   Component,
   computed,
   inject,
-  Input,
   signal,
   type OnInit,
 } from '@angular/core';
@@ -14,7 +13,13 @@ import { TiptapEditorComponent } from '../../../../../components/tiptap-editor/t
 import { ClientesService } from '../../../../../services/cliente.service';
 import { ActivatedRoute } from '@angular/router';
 import { TextCleanerService } from '../../../../../shared/utils/text-cleaner.service';
-import { CreateRegistroDiarioDto, RegistroDiario } from '../../../../../interface/registro-diario.interface';
+import {
+  CreateRegistroDiarioDto,
+  EtiquetaRegistro,
+  ETIQUETAS_META,
+  ETIQUETAS_OPCIONALES,
+  RegistroDiario,
+} from '../../../../../interface/registro-diario.interface';
 
 @Component({
   standalone: true,
@@ -28,6 +33,10 @@ export class RegistroTabComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private cleaner = inject(TextCleanerService);
 
+  readonly etiquetasMeta = ETIQUETAS_META;
+  readonly etiquetasOpcionales = ETIQUETAS_OPCIONALES;
+  readonly defaultEtiquetas: EtiquetaRegistro[] = ['REGISTRO_DIARIO'];
+
   sanitizeHtml(html: string): string {
     return this.cleaner.sanitizeHtml(html);
   }
@@ -38,26 +47,30 @@ export class RegistroTabComponent implements OnInit {
   filtro = signal('Todo');
   clienteId = signal<string>('');
 
+  // Etiquetas para el formulario de nuevo/editar registro
+  etiquetasSeleccionadas = signal<EtiquetaRegistro[]>([]);
+
+  // Filtros del historial
+  filtroEtiqueta = signal<EtiquetaRegistro | null>(null);
+  filtroObjetivoId = signal<string>('');
+
+  // Cards expandidas (Set de IDs)
+  expandedIds = signal<Set<string>>(new Set());
+
   objetivosNotasMap = signal<Record<string, string>>({});
   mostrarObjetivos = signal(false);
   editandoId = signal<string | null>(null);
 
-  // Registros y objetivos del cliente
   registros = this.fichajeSvc.registros;
   objetivosCliente = this.clientesSvc.objetivos;
 
-  // Computed para agrupar objetivos por área
   objetivosAgrupados = computed(() => {
     const objetivos = this.objetivosCliente()?.objetivos || [];
-
     const grupos = new Map<string, any[]>();
     objetivos.forEach((obj) => {
-      if (!grupos.has(obj.area)) {
-        grupos.set(obj.area, []);
-      }
+      if (!grupos.has(obj.area)) grupos.set(obj.area, []);
       grupos.get(obj.area)!.push(obj);
     });
-
     return Array.from(grupos.entries()).map(([area, objs]) => ({
       area,
       color: objs[0]?.color || '#6c757d',
@@ -65,34 +78,34 @@ export class RegistroTabComponent implements OnInit {
     }));
   });
 
+  // Lista plana de todos los objetivos del cliente (para el select de filtro)
+  todosLosObjetivos = computed(() => this.objetivosCliente()?.objetivos || []);
+
   registrosFiltrados = computed(() => {
-    const list = this.registros();
+    let list = this.registros();
     const filtroActual = this.filtro();
     const now = new Date();
 
-    if (filtroActual === 'Todo') return list;
+    if (filtroActual !== 'Todo') {
+      const semanaMs = new Date(now).setDate(now.getDate() - 7);
+      list = list.filter((r) => {
+        const fecha = new Date(r.fechaRegistro);
+        if (filtroActual === 'Hoy') return fecha.toDateString() === now.toDateString();
+        if (filtroActual === 'Semana') return fecha.getTime() >= semanaMs;
+        if (filtroActual === 'Mes') return fecha.getMonth() === now.getMonth() && fecha.getFullYear() === now.getFullYear();
+        return true;
+      });
+    }
 
-    return list.filter((r) => {
-      const fecha = new Date(r.fechaRegistro);
+    const et = this.filtroEtiqueta();
+    if (et) list = list.filter(r => r.etiquetas?.includes(et));
 
-      if (filtroActual === 'Hoy') {
-        return fecha.toDateString() === now.toDateString();
-      }
+    const objId = this.filtroObjetivoId();
+    if (objId) list = list.filter(r =>
+      r.objetivosGeneralesTrabajados?.some(o => o.objetivoGeneral.id === objId)
+    );
 
-      if (filtroActual === 'Semana') {
-        const sieteDiasAtras = new Date().setDate(now.getDate() - 7);
-        return fecha.getTime() >= sieteDiasAtras;
-      }
-
-      if (filtroActual === 'Mes') {
-        return (
-          fecha.getMonth() === now.getMonth() &&
-          fecha.getFullYear() === now.getFullYear()
-        );
-      }
-
-      return true;
-    });
+    return list;
   });
 
   objetivosSeleccionadosCount = computed(() => Object.keys(this.objetivosNotasMap()).length);
@@ -110,13 +123,8 @@ export class RegistroTabComponent implements OnInit {
 
   getRegistros() {
     const id = this.clienteId();
-    if (!id) {
-      console.error('No se pudo encontrar el ID del cliente');
-      return;
-    }
-
+    if (!id) return;
     this.fichajeSvc.getRegistrosByCliente(id).subscribe({
-      next: () => console.log('✅ Registros cargados'),
       error: (err) => console.error('❌ Error al cargar registros:', err),
     });
   }
@@ -124,39 +132,64 @@ export class RegistroTabComponent implements OnInit {
   getObjetivosCliente() {
     const id = this.clienteId();
     if (!id) return;
-
     this.clientesSvc.getObjetivosCliente(id).subscribe({
-      next: () => console.log('✅ Objetivos del cliente cargados'),
       error: (err) => console.error('❌ Error al cargar objetivos:', err),
     });
   }
 
-  // Toggle: añadir con notas vacías o eliminar del mapa
-  toggleObjetivo(objetivoId: string) {
-    this.objetivosNotasMap.update((prev) => {
-      const next = { ...prev };
-      if (objetivoId in next) {
-        delete next[objetivoId];
-      } else {
-        next[objetivoId] = '';
-      }
+  // ── Etiquetas del formulario ─────────────────────────────────
+
+  toggleEtiquetaForm(etiqueta: EtiquetaRegistro): void {
+    this.etiquetasSeleccionadas.update(prev =>
+      prev.includes(etiqueta) ? prev.filter(e => e !== etiqueta) : [...prev, etiqueta]
+    );
+  }
+
+  esEtiquetaSeleccionada(etiqueta: EtiquetaRegistro): boolean {
+    return this.etiquetasSeleccionadas().includes(etiqueta);
+  }
+
+  // ── Expand / collapse cards ──────────────────────────────────
+
+  toggleExpand(id: string): void {
+    this.expandedIds.update(set => {
+      const next = new Set(set);
+      next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
   }
 
-  // Actualizar las notas de un objetivo concreto
+  isExpanded(id: string): boolean {
+    return this.expandedIds().has(id);
+  }
+
+  // ── Objetivos del formulario ─────────────────────────────────
+
+  toggleObjetivo(objetivoId: string) {
+    this.objetivosNotasMap.update((prev) => {
+      const next = { ...prev };
+      if (objetivoId in next) delete next[objetivoId];
+      else next[objetivoId] = '';
+      return next;
+    });
+  }
+
   setNotasObjetivo(objetivoId: string, notas: string) {
     this.objetivosNotasMap.update((prev) => ({ ...prev, [objetivoId]: notas }));
   }
 
-  // Verificar si un objetivo está seleccionado
   esObjetivoSeleccionado(objetivoId: string): boolean {
     return objetivoId in this.objetivosNotasMap();
   }
 
+  // ── Edición ──────────────────────────────────────────────────
+
   editarRegistro(reg: RegistroDiario): void {
     this.editandoId.set(reg.id!);
     this.nuevoContenido.set(reg.contenido);
+
+    const etiquetasSinDefecto = (reg.etiquetas ?? []).filter(e => e !== 'REGISTRO_DIARIO') as EtiquetaRegistro[];
+    this.etiquetasSeleccionadas.set(etiquetasSinDefecto);
 
     const map: Record<string, string> = {};
     for (const obj of reg.objetivosGeneralesTrabajados ?? []) {
@@ -164,24 +197,26 @@ export class RegistroTabComponent implements OnInit {
     }
     this.objetivosNotasMap.set(map);
     this.mostrarObjetivos.set(Object.keys(map).length > 0);
-
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  private resetForm(): void {
+    this.nuevoContenido.set('');
+    this.objetivosNotasMap.set({});
+    this.etiquetasSeleccionadas.set([]);
+    this.mostrarObjetivos.set(false);
   }
 
   cancelarEdicion(): void {
     this.editandoId.set(null);
-    this.nuevoContenido.set('');
-    this.objetivosNotasMap.set({});
-    this.mostrarObjetivos.set(false);
+    this.resetForm();
   }
+
+  // ── Guardar ──────────────────────────────────────────────────
 
   async guardar() {
     const html = this.nuevoContenido() ?? '';
-    const textoPlano =
-      new DOMParser()
-        .parseFromString(html, 'text/html')
-        .body.textContent?.trim() ?? '';
-
+    const textoPlano = new DOMParser().parseFromString(html, 'text/html').body.textContent?.trim() ?? '';
     if (!textoPlano) {
       alert('Por favor, escribe el contenido del registro');
       return;
@@ -195,18 +230,17 @@ export class RegistroTabComponent implements OnInit {
       ...(map[id] ? { notasRegistro: map[id] } : {}),
     }));
 
+    const etiquetas = ['REGISTRO_DIARIO' as EtiquetaRegistro, ...this.etiquetasSeleccionadas()];
     const idEditando = this.editandoId();
 
     if (idEditando) {
       this.fichajeSvc.updateRegistro(idEditando, {
         contenido: this.cleaner.sanitizeInput(this.nuevoContenido()),
+        etiquetas,
         objetivosGeneralesTrabajados: objetivos.length > 0 ? objetivos : [],
       }).subscribe({
         next: () => {
-          this.editandoId.set(null);
-          this.nuevoContenido.set('');
-          this.objetivosNotasMap.set({});
-          this.mostrarObjetivos.set(false);
+          this.cancelarEdicion();
           this.cargando.set(false);
         },
         error: (err) => {
@@ -219,14 +253,13 @@ export class RegistroTabComponent implements OnInit {
       const nuevo: CreateRegistroDiarioDto = {
         clienteId: this.clienteId(),
         contenido: this.cleaner.sanitizeInput(this.nuevoContenido()),
+        etiquetas,
         objetivosGeneralesTrabajados: objetivos.length > 0 ? objetivos : undefined,
       };
 
       this.fichajeSvc.createRegistro(nuevo).subscribe({
         next: () => {
-          this.nuevoContenido.set('');
-          this.objetivosNotasMap.set({});
-          this.mostrarObjetivos.set(false);
+          this.resetForm();
           this.cargando.set(false);
         },
         error: (err) => {
@@ -240,8 +273,7 @@ export class RegistroTabComponent implements OnInit {
 
   limpiar() {
     this.editandoId.set(null);
-    this.nuevoContenido.set('');
-    this.objetivosNotasMap.set({});
+    this.resetForm();
   }
 }
 export default RegistroTabComponent;

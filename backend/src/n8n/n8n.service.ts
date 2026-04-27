@@ -56,7 +56,7 @@ export class N8nService {
     ${opts.htmlContenido}
   </div>
   <div class="footer">
-    Documento confidencial — Gabinete Psicopedagógico · Generado el ${new Date().toLocaleDateString('es-ES')}
+    Documento confidencial — Gabinete Pedagógico · Generado el ${new Date().toLocaleDateString('es-ES')}
   </div>
 </body>
 </html>`;

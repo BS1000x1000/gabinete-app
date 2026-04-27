@@ -65,11 +65,7 @@ export class FichajeController {
     @Body() updateDto: UpdateRegistroDiarioDto,
   ) {
     this.logger.log(`Actualizando registro: ${id}`);
-    return this.fichajeService.update(
-      id,
-      updateDto.contenido,
-      updateDto.objetivosGeneralesTrabajados,
-    );
+    return this.fichajeService.update(id, updateDto);
   }
 
   @Delete(':id')

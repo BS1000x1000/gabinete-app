@@ -374,6 +374,303 @@
 }
 
 // ==========================================
+// FILTROS — DOS FILAS
+// ==========================================
+.rd-filters {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+  align-items: flex-end;
+}
+
+.rd-filter-row {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  flex-wrap: wrap;
+}
+
+.rd-filter-select {
+  appearance: none;
+  background: $white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236b7280'/%3E%3C/svg%3E") no-repeat right 0.6rem center;
+  border: 1px solid rgba($primary, 0.2);
+  border-radius: $border-radius;
+  padding: 0.25rem 1.75rem 0.25rem 0.6rem;
+  font-size: $font-size-xs;
+  font-family: inherit;
+  color: $gray-700;
+  cursor: pointer;
+  transition: border-color $animation-duration-fast $animation-timing;
+  min-width: 140px;
+
+  &:focus {
+    outline: none;
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba($primary, 0.08);
+  }
+}
+
+// ==========================================
+// ETIQUETAS FORMULARIO (selector en form)
+// ==========================================
+.etiquetas-form-section {
+  margin-bottom: $spacing-md;
+}
+
+.etiquetas-form-label {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $gray-500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: $spacing-xs;
+}
+
+.etiquetas-form-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-xs;
+}
+
+// ==========================================
+// SISTEMA DE ETIQUETAS (rd-tag)
+// ==========================================
+.rd-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.6rem;
+  border-radius: $border-radius-full;
+  white-space: nowrap;
+}
+
+.rd-tag--fixed {
+  opacity: 0.8;
+  cursor: default;
+}
+
+.rd-tag--selectable {
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  opacity: 0.55;
+  transition: opacity $animation-duration-fast $animation-timing,
+              transform $animation-duration-fast $animation-timing;
+
+  &:hover { opacity: 0.85; transform: translateY(-1px); }
+  &.rd-tag--active { opacity: 1; border-color: currentColor; }
+}
+
+.rd-tag--registro-diario            { background: $primary-ultra-light; color: $primary; }
+.rd-tag--ausencia                   { background: $danger-light; color: $danger-dark; }
+.rd-tag--coordinacion-familia       { background: $info-light; color: $info-dark; }
+.rd-tag--coordinacion-colegio       { background: $success-light; color: $success-dark; }
+.rd-tag--participacion-familia      { background: $primary-light; color: $primary-dark; }
+.rd-tag--coordinacion-profesionales { background: $warning-light; color: $warning-dark; }
+.rd-tag--revision-objetivos         { background: $secondary-ultra-light; color: $secondary-dark; }
+.rd-tag--evaluacion-inicial         { background: $accent-light; color: $accent-dark; }
+.rd-tag--sesion-grupal              { background: $success-light; color: $success-dark; }
+.rd-tag--alta-temporal              { background: $gray-100; color: $gray-500; }
+
+// ==========================================
+// CARDS DE REGISTRO (rd-card)
+// ==========================================
+.rd-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: $spacing-md;
+  background: $gray-100;
+}
+
+.rd-card {
+  background: $white;
+  border: 1px solid rgba($primary, 0.10);
+  border-radius: $border-radius-lg;
+  box-shadow: 0 2px 8px rgba($primary, 0.05), 0 0 0 1px rgba($primary, 0.04);
+  padding: 1.125rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  transition: box-shadow 200ms ease, transform 200ms ease;
+
+  &:hover {
+    box-shadow: 0 4px 16px rgba($primary, 0.12), 0 0 0 1px rgba($primary, 0.08);
+    transform: translateY(-1px);
+  }
+
+  &.rd-card--editing {
+    border-color: rgba($primary, 0.35);
+    box-shadow: 0 0 0 3px rgba($primary, 0.10);
+  }
+
+  &.rd-card--ausencia {
+    background: $danger-light;
+  }
+}
+
+// Header de la card
+.rd-card__header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.rd-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.rd-card__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid $border-color-light;
+}
+
+.rd-card__meta-author {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $gray-700;
+  background: $gray-50;
+  border: 1px solid $border-color;
+  border-radius: $border-radius-full;
+  padding: 0.15rem 0.6rem;
+}
+
+.rd-card__meta-date {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: $font-size-xs;
+  color: $gray-400;
+  font-weight: $font-weight-semibold;
+}
+
+.rd-card__actions {
+  margin-left: auto;
+}
+
+.rd-card__action-btn {
+  background: none;
+  border: none;
+  color: $gray-400;
+  font-size: 0.875rem;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  border-radius: $border-radius;
+  transition: color $animation-duration-fast $animation-timing,
+              background $animation-duration-fast $animation-timing;
+
+  &:hover { color: $primary; background: $primary-ultra-light; }
+  &.rd-card__action-btn--active { color: $danger; }
+}
+
+// Zona objetivos (siempre visible)
+.rd-card__objectives {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid $border-color-light;
+}
+
+.rd-card__objectives-label {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $gray-400;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-bottom: 0.1rem;
+}
+
+.rd-card__obj-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.rd-card__obj-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.65rem;
+  border-radius: $border-radius-full;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $white;
+  width: fit-content;
+}
+
+.rd-card__obj-notes {
+  font-size: 0.75rem;
+  color: $gray-500;
+  font-style: italic;
+  line-height: 1.45;
+  padding-left: 0.75rem;
+  border-left: 2px solid rgba($primary, 0.25);
+  word-break: break-word;
+}
+
+// Zona contenido colapsable
+.rd-card__content {
+  padding-top: 0.5rem;
+  border-top: 1px solid $border-color-light;
+}
+
+.rd-card__expand-btn {
+  background: none;
+  border: none;
+  color: $primary;
+  font-size: 0.8rem;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0;
+
+  &:hover { color: $primary-dark; }
+
+  .bi {
+    transition: transform 200ms ease;
+  }
+
+  &.open .bi {
+    transform: rotate(180deg);
+  }
+}
+
+.rd-card__prose {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed $border-color;
+  font-size: $font-size-sm;
+  color: $gray-700;
+  line-height: 1.6;
+  animation: rdFadeSlide 180ms ease;
+}
+
+@keyframes rdFadeSlide {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+// ==========================================
 // OBJETIVO CARD WRAP + NOTAS INPUT
 // ==========================================
 .objetivo-card-wrap {

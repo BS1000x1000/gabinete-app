@@ -68,6 +68,29 @@
         class="dr-input-date">
     </div>
 
+    <!-- ─── SECCIÓN 2b: Tipo de sesión (etiquetas) ─── -->
+    <div class="dr-section">
+      <div class="dr-section-label">
+        <i class="bi bi-tags"></i>
+        <span>Tipo de sesión</span>
+      </div>
+      <div class="etiquetas-form-chips">
+        <span class="rd-tag rd-tag--registro-diario rd-tag--fixed">
+          <i class="bi bi-journal-text"></i> Registro Diario
+        </span>
+        <button
+          *ngFor="let et of etiquetasOpcionales"
+          type="button"
+          class="rd-tag rd-tag--selectable"
+          [ngClass]="[etiquetasMeta[et].cssClass, isEtiquetaSelected(et) ? 'rd-tag--active' : '']"
+          (click)="toggleEtiqueta(et)"
+        >
+          <i class="bi" [ngClass]="etiquetasMeta[et].icon"></i>
+          {{ etiquetasMeta[et].label }}
+        </button>
+      </div>
+    </div>
+
     <!-- ─── SECCIÓN 3: Contenido ─── -->
     <div class="dr-section dr-section--grow">
       <div class="dr-section-label">

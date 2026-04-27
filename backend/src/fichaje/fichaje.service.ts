@@ -4,12 +4,20 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { CreateRegistroDiarioDto, ObjetivoTrabajadoDto } from './dto/create-registro.dto';
+import { EtiquetaRegistro } from '@prisma/client';
+import { CreateRegistroDiarioDto, ObjetivoTrabajadoDto, UpdateRegistroDiarioDto } from './dto/create-registro.dto';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class FichajeService {
   constructor(private readonly prisma: PrismaService) {}
+
+  private buildEtiquetas(etiquetas?: EtiquetaRegistro[]): EtiquetaRegistro[] {
+    const base = etiquetas ?? [];
+    return base.includes(EtiquetaRegistro.REGISTRO_DIARIO)
+      ? base
+      : [EtiquetaRegistro.REGISTRO_DIARIO, ...base];
+  }
 
   private async validateObjetivos(objetivos: ObjetivoTrabajadoDto[]): Promise<void> {
     const ids = objetivos.map(o => o.objetivoGeneralId);
@@ -58,6 +66,7 @@ export class FichajeService {
           contenido: dto.contenido,
           clienteId: dto.clienteId,
           trabajadorId,
+          etiquetas: this.buildEtiquetas(dto.etiquetas),
           ...(dto.fechaRegistro && {
             fechaRegistro: new Date(dto.fechaRegistro),
           }),
@@ -85,11 +94,8 @@ export class FichajeService {
   }
 
   /* ---------- UPDATE ---------- */
-  async update(
-    id: string,
-    contenido: string,
-    objetivosGeneralesTrabajados?: ObjetivoTrabajadoDto[],
-  ): Promise<any> {
+  async update(id: string, dto: UpdateRegistroDiarioDto): Promise<any> {
+    const { contenido, objetivosGeneralesTrabajados, etiquetas } = dto;
     try {
       const registro = await this.prisma.registroDiario.findUnique({ where: { id } });
       if (!registro) throw new NotFoundException('Registro diario no encontrado');
@@ -98,7 +104,6 @@ export class FichajeService {
         await this.validateObjetivos(objetivosGeneralesTrabajados);
       }
 
-      // deleteMany + update en transacción para garantizar atomicidad
       return await this.prisma.$transaction(async (tx) => {
         if (objetivosGeneralesTrabajados !== undefined) {
           await tx.registroDiarioObjetivo.deleteMany({ where: { registroDiarioId: id } });
@@ -107,6 +112,7 @@ export class FichajeService {
           where: { id },
           data: {
             contenido,
+            ...(etiquetas !== undefined && { etiquetas: this.buildEtiquetas(etiquetas) }),
             ...(objetivosGeneralesTrabajados?.length && {
               objetivosGeneralesTrabajados: {
                 create: objetivosGeneralesTrabajados.map((obj) => ({
