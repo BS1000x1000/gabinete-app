@@ -13,6 +13,7 @@ import { TiptapEditorComponent } from '../../../../../components/tiptap-editor/t
 import { ClientesService } from '../../../../../services/cliente.service';
 import { ActivatedRoute } from '@angular/router';
 import { TextCleanerService } from '../../../../../shared/utils/text-cleaner.service';
+import { toggleInArray } from '../../../../../shared/utils/array.utils';
 import {
   CreateRegistroDiarioDto,
   EtiquetaRegistro,
@@ -140,9 +141,7 @@ export class RegistroTabComponent implements OnInit {
   // ── Etiquetas del formulario ─────────────────────────────────
 
   toggleEtiquetaForm(etiqueta: EtiquetaRegistro): void {
-    this.etiquetasSeleccionadas.update(prev =>
-      prev.includes(etiqueta) ? prev.filter(e => e !== etiqueta) : [...prev, etiqueta]
-    );
+    this.etiquetasSeleccionadas.update(prev => toggleInArray(prev, etiqueta));
   }
 
   esEtiquetaSeleccionada(etiqueta: EtiquetaRegistro): boolean {
@@ -230,7 +229,7 @@ export class RegistroTabComponent implements OnInit {
       ...(map[id] ? { notasRegistro: map[id] } : {}),
     }));
 
-    const etiquetas = ['REGISTRO_DIARIO' as EtiquetaRegistro, ...this.etiquetasSeleccionadas()];
+    const etiquetas: EtiquetaRegistro[] = ['REGISTRO_DIARIO', ...this.etiquetasSeleccionadas()];
     const idEditando = this.editandoId();
 
     if (idEditando) {

@@ -38,19 +38,18 @@ export function calcularEdad(fechaNacimiento: Date | string): number {
 /**
  * Calcula la edad completa en años, meses y días
  */
-export function calcularEdadTexto(fechaNacimiento: Date | string): { 
-  anios: number; meses: number; dias: number; texto: string 
+export function calcularEdadTexto(fechaNacimiento: Date | string): {
+  anios: number; meses: number; dias: number; texto: string
 } {
-  console.log(fechaNacimiento);
-  const fecha = typeof fechaNacimiento === 'string' 
-    ? new Date(fechaNacimiento) 
+  const fecha = typeof fechaNacimiento === 'string'
+    ? new Date(fechaNacimiento)
     : fechaNacimiento;
   const hoy = new Date();
-  
+
   let anios = hoy.getFullYear() - fecha.getFullYear();
   let meses = hoy.getMonth() - fecha.getMonth();
   let dias = hoy.getDate() - fecha.getDate();
-  
+
   if (dias < 0) {
     meses--;
     const ultimoDiaMesAnterior = new Date(hoy.getFullYear(), hoy.getMonth(), 0).getDate();
@@ -60,9 +59,6 @@ export function calcularEdadTexto(fechaNacimiento: Date | string): {
     anios--;
     meses += 12;
   }
-  console.log(anios);
-  console.log(meses);
-  console.log(dias);
   const partes: string[] = [];
   if (anios > 0) partes.push(anios === 1 ? '1 año' : `${anios} A`);
   if (meses > 0) partes.push(meses === 1 ? '1 mes' : `${meses} M`);

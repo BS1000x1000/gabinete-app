@@ -17,6 +17,7 @@ import { ClientesService } from '../../../services/cliente.service';
 import { ClienteDataBackend } from '../../../interface/cliente-backend.interface';
 import { ObjetivoGeneral } from '../../../interface/objetivo-general.interface';
 import { EtiquetaRegistro, ETIQUETAS_META, ETIQUETAS_OPCIONALES } from '../../../interface/registro-diario.interface';
+import { toggleInArray } from '../../utils/array.utils';
 
 interface AreaConObjetivos {
   id: string;
@@ -156,9 +157,7 @@ export class DrawerRegistroComponent implements OnDestroy {
   }
 
   toggleEtiqueta(etiqueta: EtiquetaRegistro): void {
-    this.etiquetasSeleccionadas.update(prev =>
-      prev.includes(etiqueta) ? prev.filter(e => e !== etiqueta) : [...prev, etiqueta]
-    );
+    this.etiquetasSeleccionadas.update(prev => toggleInArray(prev, etiqueta));
   }
 
   isEtiquetaSelected(etiqueta: EtiquetaRegistro): boolean {
@@ -177,7 +176,7 @@ export class DrawerRegistroComponent implements OnDestroy {
       contenido:                    v.contenido!,
       fechaRegistro:                v.fechaRegistro ? new Date(v.fechaRegistro).toISOString() : undefined,
       sesionId:                     this.state().sesionId ?? undefined,
-      etiquetas:                    ['REGISTRO_DIARIO' as EtiquetaRegistro, ...this.etiquetasSeleccionadas()],
+      etiquetas:                    (['REGISTRO_DIARIO', ...this.etiquetasSeleccionadas()] as EtiquetaRegistro[]),
       objetivosGeneralesTrabajados: Array.from(this.objetivosSeleccionados()).map((id) => ({ objetivoGeneralId: id })),
     };
 
