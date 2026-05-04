@@ -240,9 +240,7 @@ export class NuevoClienteWizardComponent {
 
   private cargarTrabajadores() {
     this.trabajadorSvc.getTrabajadores().subscribe({
-      next: () => {
-        console.log('✅ Trabajadores cargados para el wizard');
-      },
+      next: () => {},
       error: (err) => {
         console.error('❌ Error al cargar trabajadores:', err);
         alert('Error al cargar la lista de terapeutas');
@@ -330,7 +328,6 @@ export class NuevoClienteWizardComponent {
 
     this.clientesSvc.create(clienteData).subscribe({
       next: (nuevoCliente) => {
-        console.log('✅ Cliente creado:', nuevoCliente);
         this.finalizarCreacion(nuevoCliente);
       },
       error: (err) => {

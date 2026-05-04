@@ -221,6 +221,20 @@
   gap: $spacing-xs;
   font-size: $font-size-sm;
   color: $gray-400;
+  cursor: default;
+
+  .registro-form-date-input {
+    border: none;
+    background: transparent;
+    font-size: $font-size-sm;
+    color: $gray-400;
+    padding: 0;
+    cursor: pointer;
+    outline: none;
+
+    &:hover { color: $primary; }
+    &:focus { color: $primary; }
+  }
 }
 
 .registro-form-actions {

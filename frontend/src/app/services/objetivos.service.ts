@@ -47,7 +47,6 @@ export class ObjetivosService {
           next: (areas) => {
             this.areas.set(areas);
             this.isLoading.set(false);
-            console.log(`✅ ${areas.length} áreas de desarrollo cargadas`);
           },
           error: () => this.isLoading.set(false),
         })
@@ -78,7 +77,6 @@ export class ObjetivosService {
         map((res) => res.data || res),
         tap((nueva) => {
           this.areas.update((prev) => [...prev, nueva]);
-          console.log('✅ Área creada:', nueva.nombre);
         })
       );
   }
@@ -98,7 +96,6 @@ export class ObjetivosService {
           this.areas.update((prev) =>
             prev.map((a) => (a.id === id ? actualizada : a))
           );
-          console.log('✅ Área actualizada:', id);
         })
       );
   }
@@ -113,7 +110,6 @@ export class ObjetivosService {
         map((res) => res.data || res),
         tap(() => {
           this.areas.update((prev) => prev.filter((a) => a.id !== id));
-          console.log('🗑️ Área eliminada:', id);
         })
       );
   }
@@ -140,7 +136,6 @@ export class ObjetivosService {
           next: (objetivos) => {
             this.objetivosGenerales.set(objetivos);
             this.isLoading.set(false);
-            console.log(`✅ ${objetivos.length} objetivos generales cargados`);
           },
           error: () => this.isLoading.set(false),
         })
@@ -179,7 +174,6 @@ export class ObjetivosService {
         map((res) => res.data || res),
         tap((nuevo) => {
           this.objetivosGenerales.update((prev) => [...prev, nuevo]);
-          console.log('✅ Objetivo creado:', nuevo.titulo);
         })
       );
   }
@@ -199,7 +193,6 @@ export class ObjetivosService {
           this.objetivosGenerales.update((prev) =>
             prev.map((o) => (o.id === id ? actualizado : o))
           );
-          console.log('✅ Objetivo actualizado:', id);
         })
       );
   }
@@ -216,7 +209,6 @@ export class ObjetivosService {
           this.objetivosGenerales.update((prev) =>
             prev.filter((o) => o.id !== id)
           );
-          console.log('🗑️ Objetivo eliminado:', id);
         })
       );
   }

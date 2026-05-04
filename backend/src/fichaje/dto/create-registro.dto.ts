@@ -51,6 +51,10 @@ export class UpdateRegistroDiarioDto {
   contenido: string;
 
   @IsOptional()
+  @IsDateString()
+  fechaRegistro?: string;
+
+  @IsOptional()
   @IsArray()
   @IsEnum(EtiquetaRegistro, { each: true })
   etiquetas?: EtiquetaRegistro[];

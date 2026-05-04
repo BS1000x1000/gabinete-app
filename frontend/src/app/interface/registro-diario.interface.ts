@@ -84,6 +84,7 @@ export interface CreateRegistroDiarioDto {
 
 export interface UpdateRegistroDiarioDto {
   contenido?: string;
+  fechaRegistro?: string;
   etiquetas?: EtiquetaRegistro[];
   objetivosGeneralesTrabajados?: ObjetivoTrabajadoInput[];
 }

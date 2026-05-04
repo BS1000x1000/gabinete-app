@@ -46,16 +46,12 @@ export class LoginComponent {
       password: this.form.value.password
     };
 
-    console.log('🔐 Intentando login con:', credentials.username);
-
     this.auth.login(credentials).subscribe({
-      next: (response) => {
-        console.log('✅ Login exitoso:', response);
+      next: () => {
         this.loading.set(false);
-        
+
         // Pequeño delay para mejor UX
         setTimeout(() => {
-          console.log('🚀 Redirigiendo a /home');
           this.router.navigate(['/home']);
         }, 100);
       },

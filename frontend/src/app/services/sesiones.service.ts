@@ -47,7 +47,6 @@ export class SesionesService {
           next: (sesiones) => {
             this.sesiones.set(sesiones);
             this.isLoading.set(false);
-            console.log(`✅ ${sesiones.length} sesiones del cliente cargadas`);
           },
           error: () => this.isLoading.set(false),
         }),
@@ -76,9 +75,6 @@ export class SesionesService {
           next: (sesiones) => {
             this.sesiones.set(sesiones);
             this.isLoading.set(false);
-            console.log(
-              `✅ ${sesiones.length} sesiones del trabajador cargadas`,
-            );
           },
           error: () => this.isLoading.set(false),
         }),
@@ -102,7 +98,6 @@ export class SesionesService {
       map((res) => res.data || res),
       tap((nueva) => {
         this.sesiones.update((prev) => [...prev, nueva]);
-        console.log('✅ Sesión creada:', nueva.id);
       }),
     );
   }
@@ -121,7 +116,6 @@ export class SesionesService {
               s.id === id ? { ...s, estado: EstadoSesion.COMPLETADA } : s,
             ),
           );
-          console.log('✅ Sesión completada:', id);
         }),
       );
   }
@@ -140,7 +134,6 @@ export class SesionesService {
           this.sesiones.update((prev) =>
             prev.map((s) => (s.id === id ? sesionActualizada : s)),
           );
-          console.log('❌ Sesión cancelada:', id);
         }),
       );
   }
@@ -157,7 +150,6 @@ export class SesionesService {
           this.sesiones.update((prev) =>
             prev.map((s) => (s.id === id ? actualizada : s)),
           );
-          console.log('✅ Sesión actualizada:', id);
         }),
       );
   }
@@ -172,7 +164,6 @@ export class SesionesService {
         map((res) => res.data || res),
         tap(() => {
           this.sesiones.update((prev) => prev.filter((s) => s.id !== id));
-          console.log('🗑️ Sesión eliminada:', id);
         }),
       );
   }
@@ -195,9 +186,7 @@ export class SesionesService {
       .post<WrappedResponse<any>>(`${this.api}/generar`, dto)
       .pipe(
         map((res) => res.data || res),
-        tap((res) => {
-          console.log('✅ Sesiones generadas:', res);
-        }),
+        tap(() => {}),
       );
   }
 
@@ -216,11 +205,7 @@ export class SesionesService {
       >(`${this.api}/mi-calendario/diario`, { params })
       .pipe(
         map((res) => res.data || res),
-        tap((cal) => {
-          console.log('📅 Calendario diario cargado:', cal);
-          console.log(`   ${cal.diaSemana} ${cal.fechaFormateada}`);
-          console.log(`   ${cal.sesiones.length} sesiones`);
-        }),
+        tap(() => {}),
       );
   }
 

@@ -40,7 +40,6 @@ export class RegistrosService {
           next: (res) => {
             this.registros.set(res);
             this.isLoading.set(false);
-            console.log(`✅ ${res.length} registros del cliente cargados`);
           },
           error: () => this.isLoading.set(false)
         })
@@ -76,7 +75,6 @@ export class RegistrosService {
         map((res) => res.data || res),
         tap((nuevo) => {
           this.registros.update((prev) => [nuevo, ...prev]);
-          console.log('✅ Registro creado:', nuevo.id);
         })
       );
   }
@@ -94,7 +92,6 @@ export class RegistrosService {
           this.registros.update((prev) =>
             prev.map((r) => (r.id === id ? actualizado : r))
           );
-          console.log('✅ Registro actualizado:', id);
         })
       );
   }
@@ -109,7 +106,6 @@ export class RegistrosService {
         map((res) => res.data || res),
         tap(() => {
           this.registros.update((prev) => prev.filter((r) => r.id !== id));
-          console.log('🗑️ Registro eliminado:', id);
         })
       );
   }

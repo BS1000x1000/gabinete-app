@@ -51,9 +51,7 @@ export class ClientesService {
       .post<WrappedResponse<any>>(`${this.api}`, clienteData)
       .pipe(
         map((res) => res.data || res),
-        tap((cliente) => {
-          console.log('✅ Cliente creado:', cliente);
-        }),
+        tap(() => {}),
       );
   }
 
@@ -66,7 +64,7 @@ export class ClientesService {
       .patch<WrappedResponse<any>>(`${this.api}/${id}`, data)
       .pipe(
         map((res) => res.data || res),
-        tap(() => console.log('✅ Cliente actualizado:', id)),
+        tap(() => {}),
       );
   }
 
@@ -108,8 +106,6 @@ export class ClientesService {
           const colegioData = c.colegio || null;
           const sanitarioData = c.sanitario || null;
           this.contactosFamiliares.set(c.contactosFamiliares || []);
-
-          console.log('📦 Cliente cargado:', c);
 
           // Actualizar signal principal (cliente)
           this.cliente.set({
@@ -250,10 +246,6 @@ export class ClientesService {
         map((res) => res.data || res),
         tap((res) => {
           this.objetivos.set(res);
-          console.log(
-            '🎯 Objetivos del cliente cargados:',
-            res.objetivos.length,
-          );
         }),
       );
   }
@@ -271,8 +263,7 @@ export class ClientesService {
       >(`${this.api}/${clienteId}/objetivos-generales`, dto)
       .pipe(
         map((res) => res.data || res),
-        tap((res) => {
-          console.log('✅ Objetivos asignados:', res);
+        tap(() => {
           this.getObjetivosCliente(clienteId).subscribe();
         }),
       );
@@ -292,7 +283,6 @@ export class ClientesService {
       .pipe(
         map((res) => res.data || res),
         tap(() => {
-          console.log('❌ Objetivo desasignado');
           this.getObjetivosCliente(clienteId).subscribe();
         }),
       );
@@ -312,7 +302,6 @@ export class ClientesService {
         map((res) => res.data || res),
         tap((res) => {
           this.estadisticasObjetivos.set(res);
-          console.log('📊 Estadísticas de objetivos cargadas');
         }),
       );
   }
@@ -327,12 +316,7 @@ export class ClientesService {
       ) // ✅ Agregar WrappedResponse
       .pipe(
         map((res) => res.data || res), // ✅ Desempaquetar como los demás endpoints
-        tap((res) => {
-          console.log(
-            `🔍 Verificación DNI ${res.dni}:`,
-            res.disponible ? '✅ Disponible' : '❌ Ya existe',
-          );
-        }),
+        tap(() => {}),
       );
   }
 
@@ -358,7 +342,7 @@ export class ClientesService {
       >(`${this.api}/${clienteId}/asignar-trabajador`, body)
       .pipe(
         map((res) => res.data || res),
-        tap(() => console.log('✅ Terapeuta asignado')),
+        tap(() => {}),
       );
   }
 
@@ -392,7 +376,7 @@ export class ClientesService {
       >(`${this.api}/${clienteId}/asignaciones/${asignacionId}`)
       .pipe(
         map((res) => res.data || res),
-        tap(() => console.log(`❌ Asignación ${asignacionId} eliminada`)),
+        tap(() => {}),
       );
   }
 

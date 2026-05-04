@@ -50,7 +50,6 @@ export class DashboardService {
           next: (stats) => {
             this.estadisticas.set(stats);
             this.isLoading.set(false);
-            console.log('📊 Estadísticas generales cargadas');
           },
           error: () => this.isLoading.set(false),
         })
@@ -70,7 +69,6 @@ export class DashboardService {
           next: (stats) => {
             this.estadisticas.set(stats);
             this.isLoading.set(false);
-            console.log('📊 Mis estadísticas cargadas');
           },
           error: () => this.isLoading.set(false),
         })
@@ -132,7 +130,6 @@ export class DashboardService {
             this.resumenCompleto.set(resumen);
             this.estadisticas.set(resumen.estadisticas);
             this.isLoading.set(false);
-            console.log('📊 Resumen completo del dashboard cargado');
           },
           error: () => this.isLoading.set(false),
         })

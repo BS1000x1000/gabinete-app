@@ -1,4 +1,5 @@
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:3000/api'
+  // Cambiar 100.x.x.x por la IP de Tailscale de este PC (tailscale ip -4)
+  apiUrl: '/api'
 };

@@ -114,10 +114,15 @@
 
       <!-- Footer con botones -->
       <div class="registro-form-footer">
-        <span class="registro-form-date">
+        <label class="registro-form-date">
           <i class="bi bi-calendar3"></i>
-          {{ hoy | date: "dd/MM/yyyy" }}
-        </span>
+          <input
+            type="date"
+            class="registro-form-date-input"
+            [ngModel]="fechaEdicion()"
+            (ngModelChange)="fechaEdicion.set($event)"
+          >
+        </label>
         <div class="registro-form-actions">
           <button
             class="btn btn-outline-secondary btn-sm"

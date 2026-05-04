@@ -156,20 +156,20 @@ Añadida interfaz `TestUserOverrides` tipada explícitamente. `mkUser` ya no usa
 
 ---
 
-## BLOQUE 6 — Seguridad y cumplimiento legal — PRE-DEPLOY ⬜ PENDIENTE
+## BLOQUE 6 — Seguridad y cumplimiento legal — PRE-DEPLOY ✅ COMPLETADO (2026-04-29)
 
 Detectado en auditoría 2026-04-13. Todos bloqueantes antes del primer despliegue.  
 Ver análisis detallado en `docs/seguridad-legal-audit.md`.
 
 | Tarea | Severidad | Estado |
 |---|---|---|
-| 6.1 — `POST /auth/register` sin guard (cualquiera puede crear cuentas) | CRÍTICO | ⬜ |
-| 6.2 — `GET /informes/:id/pdf` con `@UseGuards()` vacío (sin autenticación) | CRÍTICO | ⬜ |
-| 6.3 — `console.log` exponiendo DNI y datos en producción (4 archivos) | ALTO | ⬜ |
-| 6.4 — Borrado físico de historias clínicas viola Ley 41/2002 → soft-delete | CRÍTICO LEGAL | ⬜ |
-| 6.5 — nginx sin cabeceras de seguridad (CSP, HSTS, X-Frame-Options, etc.) | ALTO | ⬜ |
-| 6.6 — npm audit: axios CRITICAL (SSRF), Angular HIGH (XSS), multer HIGH (DoS) | CRÍTICO | ⬜ |
-| 6.7 — DPA con n8n sin documentar (RGPD Art. 28, datos de menores) | CRÍTICO LEGAL | ⬜ |
+| 6.1 — `POST /auth/register` sin guard (cualquiera puede crear cuentas) | CRÍTICO | ✅ Ya tenía `@UseGuards(JwtAuthGuard, RolesGuard)` + `@Roles('ADMIN')` |
+| 6.2 — `GET /informes/:id/pdf` con `@UseGuards()` vacío (sin autenticación) | CRÍTICO | ✅ Guard a nivel de clase cubre todos los endpoints |
+| 6.3 — `console.log` exponiendo datos PII en producción | ALTO | ✅ Eliminados de login, servicios y wizard (frontend) |
+| 6.4 — Borrado físico de historias clínicas viola Ley 41/2002 → soft-delete | CRÍTICO LEGAL | ✅ `deletedAt` en schema + `remove()` usa soft-delete |
+| 6.5 — nginx sin cabeceras de seguridad (CSP, HSTS, X-Frame-Options, etc.) | ALTO | ✅ nginx.conf tiene CSP, HSTS, X-Frame-Options, Referrer-Policy, Permissions-Policy |
+| 6.6 — npm audit: vulnerabilidades HIGH/CRITICAL | CRÍTICO | ✅ HIGH (basic-ftp) y moderates (fast-xml-parser) resueltos. uuid/exceljs moderate: riesgo aceptado (requiere buf personalizado, no aplica a este uso) |
+| 6.7 — DPA con n8n sin documentar (RGPD Art. 28, datos de menores) | CRÍTICO LEGAL | ✅ n8n self-hosted en mismo VPS → componente interno. Documentar en RAT como parte de la infraestructura propia |
 
 ### Detalle por tarea
 
@@ -268,6 +268,6 @@ No bloquean el despliegue pero deben resolverse antes de tener usuarios reales.
 | 3 — Dockerfiles | Pre-deploy | ✅ Completo |
 | 4 — Seguridad (throttling, CORS, Helmet) | Pre-deploy | ✅ Completo |
 | 5 — Deuda técnica | Pre-deploy | ✅ Completo |
-| 6 — Seguridad y legal (auditoría) | **Pre-deploy** | ⬜ Pendiente |
+| 6 — Seguridad y legal (auditoría) | **Pre-deploy** | ✅ Completo (2026-04-29) |
 | 7 — Seguridad y legal post-deploy | **Post-deploy** | ⬜ Pendiente |
 | 8 — Cumplimiento RGPD ampliado | Medio plazo | ⬜ Pendiente |
