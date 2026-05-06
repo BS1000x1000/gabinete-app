@@ -203,6 +203,57 @@
 }
 
 // ==========================================
+// CAMPO PRÓXIMA SESIÓN (formulario)
+// ==========================================
+.proxima-sesion-field {
+  margin-top: $spacing-sm;
+}
+
+.proxima-sesion-label {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $gray-500;
+  margin-bottom: 0.3rem;
+
+  i { color: $secondary; }
+}
+
+.proxima-sesion-optional {
+  font-weight: $font-weight-normal;
+  color: $gray-400;
+  font-size: $font-size-xs;
+}
+
+.proxima-sesion-input {
+  width: 100%;
+  min-height: 60px;
+  padding: $spacing-xs $spacing-sm;
+  font-size: $font-size-sm;
+  font-family: inherit;
+  color: $gray-700;
+  background: $white;
+  border: 1.5px solid rgba($secondary, 0.3);
+  border-radius: $border-radius;
+  resize: vertical;
+  outline: none;
+  line-height: 1.5;
+  transition: border-color $animation-duration-fast $animation-timing;
+
+  &::placeholder {
+    color: $gray-400;
+    font-style: italic;
+  }
+
+  &:focus {
+    border-color: $secondary;
+    box-shadow: 0 0 0 3px rgba($secondary, 0.08);
+  }
+}
+
+// ==========================================
 // FOOTER DEL FORMULARIO
 // ==========================================
 .registro-form-footer {
@@ -637,6 +688,35 @@
   line-height: 1.45;
   padding-left: 0.75rem;
   border-left: 2px solid rgba($primary, 0.25);
+  word-break: break-word;
+}
+
+// Zona próxima sesión (siempre visible)
+.rd-card__proxima {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid $border-color-light;
+}
+
+.rd-card__proxima-label {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.rd-card__proxima-text {
+  font-size: $font-size-sm;
+  color: $gray-600;
+  line-height: 1.5;
+  padding-left: 0.75rem;
+  border-left: 2px solid rgba($secondary, 0.3);
   word-break: break-word;
 }
 

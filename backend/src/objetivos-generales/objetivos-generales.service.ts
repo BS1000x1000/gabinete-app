@@ -5,7 +5,10 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateObjetivoGeneralDto, UpdateObjetivoGeneralDto } from './dto/objetivo-general.dto';
+import {
+  CreateObjetivoGeneralDto,
+  UpdateObjetivoGeneralDto,
+} from './dto/objetivo-general.dto';
 
 @Injectable()
 export class ObjetivosGeneralesService {
@@ -22,7 +25,9 @@ export class ObjetivosGeneralesService {
       });
 
       if (!area) {
-        throw new NotFoundException(`Área con ID ${dto.areaDesarrolloId} no encontrada`);
+        throw new NotFoundException(
+          `Área con ID ${dto.areaDesarrolloId} no encontrada`,
+        );
       }
 
       return await this.prisma.objetivoGeneral.create({
@@ -37,7 +42,9 @@ export class ObjetivosGeneralesService {
       });
     } catch (err) {
       if (err instanceof NotFoundException) throw err;
-      throw new InternalServerErrorException(`Error al crear objetivo general: ${err.message}`);
+      throw new InternalServerErrorException(
+        `Error al crear objetivo general: ${err.message}`,
+      );
     }
   }
 
@@ -57,13 +64,12 @@ export class ObjetivosGeneralesService {
             },
           },
         },
-        orderBy: [
-          { areaDesarrollo: { orden: 'asc' } },
-          { titulo: 'asc' },
-        ],
+        orderBy: [{ areaDesarrollo: { orden: 'asc' } }, { titulo: 'asc' }],
       });
     } catch (err) {
-      throw new InternalServerErrorException(`Error al obtener objetivos: ${err.message}`);
+      throw new InternalServerErrorException(
+        `Error al obtener objetivos: ${err.message}`,
+      );
     }
   }
 
@@ -114,7 +120,9 @@ export class ObjetivosGeneralesService {
       return objetivo;
     } catch (err) {
       if (err instanceof NotFoundException) throw err;
-      throw new InternalServerErrorException(`Error al obtener objetivo: ${err.message}`);
+      throw new InternalServerErrorException(
+        `Error al obtener objetivo: ${err.message}`,
+      );
     }
   }
 
@@ -137,7 +145,9 @@ export class ObjetivosGeneralesService {
         });
 
         if (!area) {
-          throw new NotFoundException(`Área con ID ${dto.areaDesarrolloId} no encontrada`);
+          throw new NotFoundException(
+            `Área con ID ${dto.areaDesarrolloId} no encontrada`,
+          );
         }
       }
 
@@ -145,8 +155,12 @@ export class ObjetivosGeneralesService {
         where: { id },
         data: {
           ...(dto.titulo && { titulo: dto.titulo }),
-          ...(dto.descripcion !== undefined && { descripcion: dto.descripcion }),
-          ...(dto.areaDesarrolloId && { areaDesarrolloId: dto.areaDesarrolloId }),
+          ...(dto.descripcion !== undefined && {
+            descripcion: dto.descripcion,
+          }),
+          ...(dto.areaDesarrolloId && {
+            areaDesarrolloId: dto.areaDesarrolloId,
+          }),
           ...(dto.activo !== undefined && { activo: dto.activo }),
         },
         include: {
@@ -155,7 +169,9 @@ export class ObjetivosGeneralesService {
       });
     } catch (err) {
       if (err instanceof NotFoundException) throw err;
-      throw new InternalServerErrorException(`Error al actualizar objetivo: ${err.message}`);
+      throw new InternalServerErrorException(
+        `Error al actualizar objetivo: ${err.message}`,
+      );
     }
   }
 
@@ -189,10 +205,15 @@ export class ObjetivosGeneralesService {
         message: `Objetivo "${objetivo.titulo}" eliminado correctamente`,
       };
     } catch (err) {
-      if (err instanceof NotFoundException || err instanceof ConflictException) {
+      if (
+        err instanceof NotFoundException ||
+        err instanceof ConflictException
+      ) {
         throw err;
       }
-      throw new InternalServerErrorException(`Error al eliminar objetivo: ${err.message}`);
+      throw new InternalServerErrorException(
+        `Error al eliminar objetivo: ${err.message}`,
+      );
     }
   }
 
@@ -205,71 +226,106 @@ export class ObjetivosGeneralesService {
       const areas = await this.prisma.areaDesarrollo.findMany();
 
       if (areas.length === 0) {
-        throw new Error('Primero debes crear las áreas de desarrollo con POST /areas-desarrollo/seed');
+        throw new Error(
+          'Primero debes crear las áreas de desarrollo con POST /areas-desarrollo/seed',
+        );
       }
 
       const objetivosDefault: Record<string, string[]> = {
-        'Comprensión Lectora': [
-          'Comprensión Literal',
-          'Comprensión Inferencial',
-          'Comprensión Crítica',
-          'Comprensión Reorganizativa',
-        ],
-        'Expresión Escrita': [
-          'Caligrafía',
-          'Ortografía',
-          'Redacción de Textos',
-          'Composición Escrita',
-        ],
-        'Cálculo Matemático': [
-          'Operaciones Básicas',
-          'Cálculo Mental',
-          'Resolución de Problemas',
-          'Razonamiento Numérico',
-        ],
-        'Atención y Concentración': [
-          'Atención Sostenida',
-          'Atención Selectiva',
+        'Procesos Cognitivos Básicos': [
           'Atención Dividida',
-          'Control Atencional',
+          'Atención Sostenida',
+          'Atención Visual',
+          'Atención Auditiva',
+          'Memoria Episódica',
+          'Memoria Espacial',
+          'Memoria Procedimental',
+          'MLP Visual',
+          'MLP Auditiva',
+          'Visión Espacial'
         ],
         'Funciones Ejecutivas': [
-          'Planificación',
-          'Organización',
-          'Flexibilidad Cognitiva',
-          'Autorregulación',
+          'Memoria de Trabajo Visual',
+          'Memoria de Trabajo Auditiva',
+          'Memoria Semántica',
+          'Velocidad de Procesamiento',
           'Inhibición',
+          'Atención Selectiva',
+          'Control Atencional',
+          'Flexibilidad Cognitiva',
+          'Razonamiento',
+          'Planificación',
         ],
-        'Lenguaje Oral': [
+        'Lectura': [
+          'Conciencia Fonológica',
+          'Conciencia Fonémica',
+          'Conciencia Silábica',
+          'Conciencia Léxica',
+          'Correspondencia Grafema-Fonema',
+          'Lectura Ruta Léxica',
+          'Lectura Ruta Fonológica',
+          'Precisión Lectora',
+          'Velocidad Lectora',
+          'Fluidez Lectora',
+          'Entonación y Prosodia',
+          'Comprension Lectora',
+          'Comprensión Lectora de Instrucciones',
+          'Comprensión Lectora Literal',
+          'Comprensión Lectora Inferencial',
+        ],
+        'Escritura': [
+          'Correspondencia Fonema-Grafema',
+          'Tamaño y Forma de las Letras',
+          'Legibilidad',
+          'Velocidad de Escritura',
+          'Ortografía Natural',
+          'Ortografía Arbitraria',
+          'Ortografía Reglada',
+          'Signos de Puntuación',
+          'Construcción de Frases',
+          'Cohesión',
+          'Coherencia',
+          'Dictado',
+          'Copia Escrita',
+          'Expresión Escrita',
+        ],
+        'Lenguaje y Comunicación': [
+          'Comprensión Verbal',
           'Expresión Oral',
-          'Comprensión Oral',
+          'Narración',
           'Vocabulario',
-          'Articulación',
+          'Uso del Lenguaje para Pedir Ayuda',
+          'Uso del Lenguaje para Explicar Dificultades',
         ],
-        'Grafomotricidad': [
-          'Motricidad Fina',
-          'Coordinación Óculo-Manual',
-          'Trazo',
-          'Prensión',
+        'Matemáticas': [
+          'Comprensión de Consignas Matemáticas',
+          'Resolución de Problemas',
+          'Uso de Estrategias',
         ],
-        'Memoria': [
-          'Memoria a Corto Plazo',
-          'Memoria de Trabajo',
-          'Memoria a Largo Plazo',
-          'Memoria Visual',
+        'Técnicas de Estudio': [
+          'Hábito de Estudio',
+          'Organización del Contenido Curricular',
+          'Planificación de Tareas Académicas',
+          'Uso Funcional de la Agenda',
+          'Secuenciación de Tareas',
+          'Gestión del Tiempo y Pausas Funcionales',
+          'Inicio Autónomo',
+          'Persistencia ante la Dificultad',
+          'Lectura Comprensiva de Textos de Estudio',
+          'Síntesis y Organización de la Información',
+          'Identificación de Ideas Principales',
+          'Subrayado Funcional',
+          'Mapas Conceptuales',
+          'Jerarquización de Ideas Principales',
+          'Resúmenes',
+          'Representaciones Gráficas',
+          'Uso de Reglas Mnemotécnicas',
+          'Autoevaluación',
         ],
-        'Razonamiento Lógico': [
-          'Pensamiento Lógico',
-          'Secuencias',
-          'Clasificación',
-          'Analogías',
-        ],
-        'Habilidades Sociales': [
-          'Comunicación Interpersonal',
-          'Empatía',
-          'Resolución de Conflictos',
-          'Trabajo en Equipo',
-        ],
+        'Emociones': [
+          'Identificación Emociones',
+          'Expresión Emociones'
+        ]
       };
 
       const objetivosCreados: any = [];

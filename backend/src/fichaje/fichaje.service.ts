@@ -67,6 +67,7 @@ export class FichajeService {
           clienteId: dto.clienteId,
           trabajadorId,
           etiquetas: this.buildEtiquetas(dto.etiquetas),
+          ...(dto.proximaSesion !== undefined && { proximaSesion: dto.proximaSesion || null }),
           ...(dto.fechaRegistro && {
             fechaRegistro: new Date(dto.fechaRegistro),
           }),
@@ -95,7 +96,7 @@ export class FichajeService {
 
   /* ---------- UPDATE ---------- */
   async update(id: string, dto: UpdateRegistroDiarioDto): Promise<any> {
-    const { contenido, objetivosGeneralesTrabajados, etiquetas, fechaRegistro } = dto;
+    const { contenido, objetivosGeneralesTrabajados, etiquetas, fechaRegistro, proximaSesion } = dto;
     try {
       const registro = await this.prisma.registroDiario.findUnique({ where: { id } });
       if (!registro) throw new NotFoundException('Registro diario no encontrado');
@@ -112,6 +113,7 @@ export class FichajeService {
           where: { id },
           data: {
             contenido,
+            ...(proximaSesion !== undefined && { proximaSesion: proximaSesion || null }),
             ...(fechaRegistro && { fechaRegistro: new Date(fechaRegistro) }),
             ...(etiquetas !== undefined && { etiquetas: this.buildEtiquetas(etiquetas) }),
             ...(objetivosGeneralesTrabajados?.length && {

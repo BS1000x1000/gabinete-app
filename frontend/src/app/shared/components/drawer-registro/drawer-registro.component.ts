@@ -63,6 +63,7 @@ export class DrawerRegistroComponent implements OnDestroy {
     clienteId:     ['', Validators.required],
     contenido:     ['', [Validators.required, Validators.minLength(10)]],
     fechaRegistro: [this.hoy()],
+    proximaSesion: [''],
   });
 
   // Getters para evitar form.get() repetidos en template
@@ -174,6 +175,7 @@ export class DrawerRegistroComponent implements OnDestroy {
     const dto = {
       clienteId:                    v.clienteId!,
       contenido:                    v.contenido!,
+      proximaSesion:                v.proximaSesion || undefined,
       fechaRegistro:                v.fechaRegistro ? new Date(v.fechaRegistro).toISOString() : undefined,
       sesionId:                     this.state().sesionId ?? undefined,
       etiquetas:                    (['REGISTRO_DIARIO', ...this.etiquetasSeleccionadas()] as EtiquetaRegistro[]),
@@ -203,7 +205,7 @@ export class DrawerRegistroComponent implements OnDestroy {
   }
 
   private reset(): void {
-    this.form.reset({ fechaRegistro: this.hoy(), clienteId: '', contenido: '' });
+    this.form.reset({ fechaRegistro: this.hoy(), clienteId: '', contenido: '', proximaSesion: '' });
     this.objetivosSeleccionados.set(new Set());
     this.etiquetasSeleccionadas.set([]);
     this.areaConObjetivos.set([]);

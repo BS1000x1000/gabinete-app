@@ -179,7 +179,7 @@
 @mixin text-truncate {
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: wrap;
 }
 
 @mixin text-clamp($lines: 2) {

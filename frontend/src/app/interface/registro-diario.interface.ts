@@ -45,6 +45,7 @@ export interface RegistroDiario {
   id?: string;
   fechaRegistro: string;
   contenido: string;
+  proximaSesion?: string | null;
   etiquetas?: EtiquetaRegistro[];
   clienteId: string;
   trabajadorId: string;
@@ -76,6 +77,7 @@ export interface ObjetivoTrabajadoInput {
 export interface CreateRegistroDiarioDto {
   clienteId: string;
   contenido: string;
+  proximaSesion?: string;
   fechaRegistro?: string;
   sesionId?: string;
   etiquetas?: EtiquetaRegistro[];
@@ -84,6 +86,7 @@ export interface CreateRegistroDiarioDto {
 
 export interface UpdateRegistroDiarioDto {
   contenido?: string;
+  proximaSesion?: string;
   fechaRegistro?: string;
   etiquetas?: EtiquetaRegistro[];
   objetivosGeneralesTrabajados?: ObjetivoTrabajadoInput[];

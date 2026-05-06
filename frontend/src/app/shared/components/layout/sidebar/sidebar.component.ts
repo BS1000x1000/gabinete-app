@@ -44,7 +44,7 @@ export class SidebarComponent {
     }
     const id = this.auth.currentTrabajadorId();
     if (id) items.push({ label: 'Mi perfil', icon: 'bi-person-circle', route: `/home/trabajadores/${id}` });
-    items.push({ label: 'Ajustes', icon: 'bi-gear', route: '/home/ajustes' });
+    // items.push({ label: 'Ajustes', icon: 'bi-gear', route: '/home/ajustes' });
     return items;
   });
 

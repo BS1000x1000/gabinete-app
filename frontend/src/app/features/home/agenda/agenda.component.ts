@@ -154,7 +154,7 @@ export class AgendaComponent implements OnInit {
 
   // ── Grid semanal tipo Teams ──────────────────────────────────
   readonly HORA_INICIO = 8;
-  readonly HORA_FIN = 20;
+  readonly HORA_FIN = 22;
   readonly PX_POR_HORA = 64;
   readonly alturaGrid = (this.HORA_FIN - this.HORA_INICIO) * this.PX_POR_HORA;
   readonly horasCount = this.HORA_FIN - this.HORA_INICIO;

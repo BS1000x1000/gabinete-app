@@ -44,7 +44,7 @@ export class ListadoComponent implements OnInit, OnDestroy {
       { label: 'Bonos',      icon: 'bi-ticket-perforated', target: 'bonos'      },
     ];
     if (!this.auth.isRecep()) {
-      tabs.push({ label: 'Progreso', icon: 'bi-graph-up', target: 'progreso' });
+      tabs.push({ label: 'Registro', icon: 'bi-graph-up', target: 'progreso' });
     }
     tabs.push(
       { label: 'Terapeutas', icon: 'bi-people',            target: 'terapeutas' },

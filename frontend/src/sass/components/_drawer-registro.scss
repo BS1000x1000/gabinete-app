@@ -306,6 +306,18 @@ $dr-transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   font-weight: 700;
 }
 
+.dr-badge-optional {
+  margin-left: auto;
+  font-size: 10.5px;
+  color: $gray-400;
+  font-weight: 400;
+  font-style: italic;
+}
+
+.dr-textarea--sm {
+  min-height: 72px;
+}
+
 .dr-badge-count {
   margin-left: auto;
   background: $dr-primary;

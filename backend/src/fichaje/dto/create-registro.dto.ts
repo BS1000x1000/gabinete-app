@@ -27,6 +27,10 @@ export class CreateRegistroDiarioDto {
   contenido: string;
 
   @IsOptional()
+  @IsString()
+  proximaSesion?: string;
+
+  @IsOptional()
   @IsDateString()
   fechaRegistro?: string;
 
@@ -49,6 +53,10 @@ export class CreateRegistroDiarioDto {
 export class UpdateRegistroDiarioDto {
   @IsString()
   contenido: string;
+
+  @IsOptional()
+  @IsString()
+  proximaSesion?: string;
 
   @IsOptional()
   @IsDateString()

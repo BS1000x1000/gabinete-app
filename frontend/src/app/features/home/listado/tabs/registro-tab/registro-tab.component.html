@@ -112,6 +112,21 @@
         </div>
       </div>
 
+      <!-- Próxima sesión -->
+      <div class="proxima-sesion-field">
+        <label class="proxima-sesion-label">
+          <i class="bi bi-arrow-right-circle"></i>
+          Próxima sesión <span class="proxima-sesion-optional">(opcional)</span>
+        </label>
+        <textarea
+          class="proxima-sesion-input"
+          placeholder="¿Qué se trabajará en la próxima sesión?"
+          rows="2"
+          [ngModel]="proximaSesionTexto()"
+          (ngModelChange)="proximaSesionTexto.set($event)"
+        ></textarea>
+      </div>
+
       <!-- Footer con botones -->
       <div class="registro-form-footer">
         <label class="registro-form-date">
@@ -269,6 +284,16 @@
                       }
                     </div>
                   }
+                </div>
+              }
+
+              <!-- Próxima sesión (siempre visible si está relleno) -->
+              @if (reg.proximaSesion) {
+                <div class="rd-card__proxima">
+                  <span class="rd-card__proxima-label">
+                    <i class="bi bi-arrow-right-circle"></i> Próxima sesión
+                  </span>
+                  <span class="rd-card__proxima-text">{{ reg.proximaSesion }}</span>
                 </div>
               }
 

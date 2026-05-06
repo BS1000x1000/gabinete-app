@@ -44,6 +44,7 @@ export class RegistroTabComponent implements OnInit {
 
   nuevoContenido = signal('');
   fechaEdicion = signal<string>(this.todayStr());
+  proximaSesionTexto = signal<string>('');
   cargando = signal(false);
   filtro = signal('Todo');
   clienteId = signal<string>('');
@@ -191,6 +192,7 @@ export class RegistroTabComponent implements OnInit {
     this.editandoId.set(reg.id!);
     this.nuevoContenido.set(reg.contenido);
     this.fechaEdicion.set(reg.fechaRegistro.split('T')[0]);
+    this.proximaSesionTexto.set(reg.proximaSesion ?? '');
 
     const etiquetasSinDefecto = (reg.etiquetas ?? []).filter(e => e !== 'REGISTRO_DIARIO') as EtiquetaRegistro[];
     this.etiquetasSeleccionadas.set(etiquetasSinDefecto);
@@ -207,6 +209,7 @@ export class RegistroTabComponent implements OnInit {
   private resetForm(): void {
     this.nuevoContenido.set('');
     this.fechaEdicion.set(this.todayStr());
+    this.proximaSesionTexto.set('');
     this.objetivosNotasMap.set({});
     this.etiquetasSeleccionadas.set([]);
     this.mostrarObjetivos.set(false);
@@ -241,6 +244,7 @@ export class RegistroTabComponent implements OnInit {
     if (idEditando) {
       this.fichajeSvc.updateRegistro(idEditando, {
         contenido: this.cleaner.sanitizeInput(this.nuevoContenido()),
+        proximaSesion: this.proximaSesionTexto() || undefined,
         fechaRegistro: this.fechaEdicion(),
         etiquetas,
         objetivosGeneralesTrabajados: objetivos.length > 0 ? objetivos : [],
@@ -259,6 +263,7 @@ export class RegistroTabComponent implements OnInit {
       const nuevo: CreateRegistroDiarioDto = {
         clienteId: this.clienteId(),
         contenido: this.cleaner.sanitizeInput(this.nuevoContenido()),
+        proximaSesion: this.proximaSesionTexto() || undefined,
         fechaRegistro: this.fechaEdicion(),
         etiquetas,
         objetivosGeneralesTrabajados: objetivos.length > 0 ? objetivos : undefined,

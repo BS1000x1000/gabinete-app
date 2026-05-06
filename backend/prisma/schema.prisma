@@ -304,6 +304,7 @@ model RegistroDiario {
   id                  String   @id @default(uuid())
   fechaRegistro       DateTime @default(now()) @map("fecha_registro")
   contenido           String   @db.Text
+  proximaSesion       String?  @db.Text @map("proxima_sesion")
   compartirConFamilia Boolean  @default(true) @map("compartir_con_familia")
 
   clienteId    String     @map("id_cliente")
