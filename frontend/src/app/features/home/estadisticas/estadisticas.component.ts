@@ -4,13 +4,15 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BaseChartDirective } from 'ng2-charts';
 import type { ChartData, ChartOptions, Plugin } from 'chart.js';
-import { map } from 'rxjs';
+import { forkJoin, map } from 'rxjs';
 import { startOfWeek, startOfMonth, endOfDay, subMonths } from 'date-fns';
 
+import { formatMinutosHoras } from '../../../shared/utils/date';
 import { DashboardService } from '../../../services/dashboard.service';
 import { AuthService } from '../../../services/auth.service';
 import { environment } from '../../../../environments/environment.development';
 import { EstadisticasAvanzadas } from '../../../interface/dashboard.interface';
+import { ResumenHoras } from '../../../interface/evento-agenda.interface';
 
 type Rango = 'semana' | 'mes' | '3meses';
 
@@ -132,6 +134,15 @@ const BAR_OPTS: ChartOptions<'bar'> = {
 
 interface Trabajador { id: string; nombre: string; apellidos: string; }
 interface WrappedResponse<T> { data: T; }
+interface HorasTrabajadasResponse {
+  semanas: Array<{
+    semana: string;
+    labelSemana: string;
+    minutosClinicas: number;
+    minutosNoClinicas: number;
+  }>;
+  totales: ResumenHoras;
+}
 
 @Component({
   selector: 'app-estadisticas',
@@ -175,11 +186,33 @@ export class EstadisticasComponent implements OnInit {
   donutData = signal<ChartData<'doughnut'>>({ labels: [], datasets: [{ data: [], backgroundColor: [] }] });
   barData   = signal<ChartData<'bar'>>({ labels: [], datasets: [] });
 
+  // ── Horas trabajadas ─────────────────────────────────────────────────
+  horasData     = signal<HorasTrabajadasResponse | null>(null);
+  horasBarData  = signal<ChartData<'bar'>>({ labels: [], datasets: [] });
+  isLoadingHoras = signal(false);
+
   // ── Exponer opciones y plugins al template ─────────────────────────────
   readonly lineOpts   = LINE_OPTS;
   readonly donutOpts  = DONUT_OPTS;
   readonly barOpts    = BAR_OPTS;
   readonly donutPlugins: Plugin<'doughnut'>[] = [DONUT_CENTER_PLUGIN];
+
+  readonly horasBarOpts: ChartOptions<'bar'> = {
+    ...BAR_OPTS,
+    scales: {
+      ...BAR_OPTS.scales,
+      y: {
+        stacked: true,
+        border:  { display: false },
+        grid:    { color: '#f5f5f5' },
+        ticks:   {
+          font: { family: FONT, size: 11 },
+          color: '#9ca3af',
+          callback: (v) => `${v}h`,
+        },
+      },
+    },
+  };
 
   constructor() {
     effect(() => {
@@ -188,6 +221,11 @@ export class EstadisticasComponent implements OnInit {
       this.lineData.set(this.buildLine(d));
       this.donutData.set(this.buildDonut(d));
       this.barData.set(this.buildBar(d));
+    });
+    effect(() => {
+      const h = this.horasData();
+      if (!h) return;
+      this.horasBarData.set(this.buildHorasBar(h));
     });
   }
 
@@ -213,17 +251,34 @@ export class EstadisticasComponent implements OnInit {
   // ── Data loading ──────────────────────────────────────────────────────
   private cargar(): void {
     this.isLoading.set(true);
+    this.isLoadingHoras.set(true);
     this.datos.set(null);
+    this.horasData.set(null);
+
     const hasta = endOfDay(new Date());
     const desde = this.getDesde(this.rangoActivo());
     const tId   = this.trabajadorId || undefined;
+    const desdeStr = desde.toISOString().split('T')[0];
+    const hastaStr = hasta.toISOString().split('T')[0];
 
-    this.dashboardSvc
-      .getEstadisticasAvanzadas(desde, hasta, tId)
-      .subscribe({
-        next:  d  => { this.datos.set(d); this.isLoading.set(false); },
-        error: () => this.isLoading.set(false),
-      });
+    let horasUrl = `${environment.apiUrl}/dashboard/horas-trabajadas?desde=${desdeStr}&hasta=${hastaStr}`;
+    if (tId) horasUrl += `&trabajadorId=${tId}`;
+
+    forkJoin([
+      this.dashboardSvc.getEstadisticasAvanzadas(desde, hasta, tId),
+      this.http.get<{ data: HorasTrabajadasResponse }>(horasUrl).pipe(map(r => r.data)),
+    ]).subscribe({
+      next: ([d, h]) => {
+        this.datos.set(d);
+        this.horasData.set(h);
+        this.isLoading.set(false);
+        this.isLoadingHoras.set(false);
+      },
+      error: () => {
+        this.isLoading.set(false);
+        this.isLoadingHoras.set(false);
+      },
+    });
   }
 
   private getDesde(rango: Rango): Date {
@@ -279,6 +334,28 @@ export class EstadisticasComponent implements OnInit {
       ],
     };
   }
+
+  private buildHorasBar(h: HorasTrabajadasResponse): ChartData<'bar'> {
+    return {
+      labels: h.semanas.map(s => s.labelSemana),
+      datasets: [
+        {
+          label: 'Horas clínicas',
+          data: h.semanas.map(s => Math.round((s.minutosClinicas / 60) * 10) / 10),
+          backgroundColor: P,
+          borderRadius: 3,
+        },
+        {
+          label: 'Admin/Coordinación',
+          data: h.semanas.map(s => Math.round((s.minutosNoClinicas / 60) * 10) / 10),
+          backgroundColor: MUTED,
+          borderRadius: 3,
+        },
+      ],
+    };
+  }
+
+  readonly formatHoras = formatMinutosHoras;
 
   // ── View helpers ──────────────────────────────────────────────────────
   getInitials(nombre: string, apellidos: string): string {

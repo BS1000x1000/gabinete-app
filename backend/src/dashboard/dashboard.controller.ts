@@ -14,13 +14,17 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../roles/roles.guard';
 import { Roles } from '../roles/roles.decorator';
 import { ROLES_GESTION } from '../roles/roles.constants';
+import { EventosAgendaService } from '../eventos-agenda/eventos-agenda.service';
 
 @Controller('dashboard')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class DashboardController {
   private readonly logger = new Logger(DashboardController.name);
 
-  constructor(private readonly dashboardService: DashboardService) {}
+  constructor(
+    private readonly dashboardService: DashboardService,
+    private readonly eventosService: EventosAgendaService,
+  ) {}
 
   /**
    * Estadísticas generales del sistema — solo ADMIN y RECEP
@@ -120,6 +124,29 @@ export class DashboardController {
     const trabajadorId = canVerTodo ? trabajadorIdParam : req.user.userId;
     this.logger.log(`Obteniendo estadísticas avanzadas - scope: ${trabajadorId ?? 'global'}`);
     return this.dashboardService.getEstadisticasAvanzadas(desde, hasta, trabajadorId);
+  }
+
+  /**
+   * Horas trabajadas por semana — para el módulo de estadísticas
+   * ADMIN/RECEP: pueden filtrar por trabajadorId; terapeutas: solo sus propias horas
+   */
+  @Get('horas-trabajadas')
+  async getHorasTrabajadas(
+    @Req() req: any,
+    @Query('desde') desde: string,
+    @Query('hasta') hasta: string,
+    @Query('trabajadorId') trabajadorIdParam?: string,
+  ) {
+    if (!desde || !hasta) {
+      throw new BadRequestException('Los parámetros desde y hasta son obligatorios');
+    }
+    return this.eventosService.getHorasTrabajadasHistoricas(
+      req.user.userId,
+      req.user.rol,
+      desde,
+      hasta,
+      trabajadorIdParam,
+    );
   }
 
   /**

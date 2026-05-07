@@ -512,8 +512,7 @@
   font-weight: $font-weight-semibold;
   color: $gray-900;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+
   flex: 1;
   min-width: 0;
 }
@@ -1027,5 +1026,322 @@ $wg-time-col: 48px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  // Eventos de agenda (trabajo no clínico) — visual diferenciado
+  &__event--agenda {
+    background: color-mix(in srgb, var(--evento-color, #94a3b8) 12%, white) !important;
+    border-left-color: var(--evento-color, #94a3b8) !important;
+    color: var(--evento-color, #94a3b8) !important;
+    border-radius: 4px;
+
+    // Líneas diagonales sutiles para distinguirlo de sesiones clínicas
+    background-image: repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 6px,
+      color-mix(in srgb, var(--evento-color, #94a3b8) 6%, transparent) 6px,
+      color-mix(in srgb, var(--evento-color, #94a3b8) 6%, transparent) 7px
+    ) !important;
+
+    &:hover {
+      background: color-mix(in srgb, var(--evento-color, #94a3b8) 22%, white) !important;
+    }
+  }
+
+  &__event--compartido {
+    &::after {
+      content: '\F4D4';
+      font-family: 'bootstrap-icons';
+      position: absolute;
+      top: 3px;
+      right: 4px;
+      font-size: 0.6rem;
+      opacity: 0.7;
+    }
+  }
+}
+
+// ── Botón + Evento en toolbar de semana ──────────────────────
+
+.ag-wg-nav__evento-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: $border-radius-sm;
+  border: 1px solid $primary;
+  background: $primary-ultra-light;
+  color: $primary;
+  font-size: 0.78rem;
+  font-weight: $font-weight-semibold;
+  cursor: pointer;
+  transition: $transition-fast;
+  white-space: nowrap;
+
+  &:hover {
+    background: $primary-light;
+  }
+
+  i { font-size: 0.85rem; }
+}
+
+// ── Stat de horas en resumen semanal ─────────────────────────
+
+.ag-wg-stat--horas {
+  color: $primary;
+  font-weight: $font-weight-semibold;
+}
+
+// ── Modal evento de agenda ────────────────────────────────────
+
+.ag-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-md;
+  animation: fadeIn 0.15s ease;
+}
+
+.ag-modal {
+  background: $white;
+  border-radius: $border-radius-lg;
+  box-shadow: $shadow-xl;
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideUp 0.18s ease;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid $border-color-light;
+    flex-shrink: 0;
+  }
+
+  &__title {
+    font-size: 1rem;
+    font-weight: $font-weight-semibold;
+    color: $gray-900;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    i { color: $primary; }
+  }
+
+  &__close {
+    background: none;
+    border: none;
+    color: $gray-400;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: $border-radius-sm;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: $transition-fast;
+
+    &:hover {
+      background: $gray-100;
+      color: $gray-900;
+    }
+  }
+
+  &__body {
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    flex: 1;
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    position: relative;
+
+    &--date { flex: 1.5; }
+    &--time { flex: 1; }
+  }
+
+  &__row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  &__label {
+    font-size: 0.78rem;
+    font-weight: $font-weight-semibold;
+    color: $gray-500;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  &__input,
+  &__select,
+  &__textarea {
+    border: 1px solid $border-color;
+    border-radius: $border-radius-sm;
+    padding: 8px 10px;
+    font-size: 0.875rem;
+    color: $gray-900;
+    background: $white;
+    transition: $transition-fast;
+    width: 100%;
+    font-family: $font-family-base;
+
+    &:focus {
+      outline: none;
+      border-color: $primary;
+      box-shadow: 0 0 0 2px rgba($primary, 0.12);
+    }
+  }
+
+  &__select { cursor: pointer; }
+  &__textarea { resize: vertical; min-height: 60px; }
+
+  &__select-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+
+    .ag-modal__select {
+      appearance: none;
+      -webkit-appearance: none;
+      padding-left: 28px;
+      padding-right: 32px;
+      width: 100%;
+    }
+  }
+
+  &__tipo-dot {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 1;
+    flex-shrink: 0;
+  }
+
+  &__select-chevron {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.7rem;
+    color: $gray-400;
+    pointer-events: none;
+  }
+
+  &__participantes {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 160px;
+    overflow-y: auto;
+    border: 1px solid $border-color-light;
+    border-radius: $border-radius-sm;
+    padding: 8px;
+  }
+
+  &__participante-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: $border-radius-sm;
+    transition: $transition-fast;
+    font-size: 0.85rem;
+
+    &:hover { background: $primary-ultra-light; }
+
+    input[type="checkbox"] { cursor: pointer; }
+
+    &__avatar {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: $primary-light;
+      color: $primary;
+      font-size: 0.65rem;
+      font-weight: $font-weight-bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+  }
+
+  &__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-top: 1px solid $border-color-light;
+    flex-shrink: 0;
+    gap: 8px;
+  }
+
+  &__footer-actions {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+  }
+
+  &__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 7px 14px;
+    border-radius: $border-radius-sm;
+    font-size: 0.85rem;
+    font-weight: $font-weight-semibold;
+    cursor: pointer;
+    transition: $transition-fast;
+    border: 1px solid transparent;
+
+    &:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    &--primary {
+      background: $primary;
+      color: $white;
+      border-color: $primary;
+      &:hover:not(:disabled) { background: darken($primary, 8%); }
+    }
+
+    &--cancel {
+      background: $gray-100;
+      color: $gray-500;
+      border-color: $border-color;
+      &:hover:not(:disabled) { background: $border-color-light; }
+    }
+
+    &--danger {
+      background: transparent;
+      color: $danger;
+      border-color: lighten($danger, 30%);
+      &:hover:not(:disabled) { background: lighten($danger, 48%); }
+    }
   }
 }

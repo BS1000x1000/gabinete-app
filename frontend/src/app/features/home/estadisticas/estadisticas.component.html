@@ -177,4 +177,62 @@
     } <!-- /!isEmpty -->
   } <!-- /!isLoading -->
 
+  <!-- ── Sección: Horas trabajadas ─────────────────────────────────────── -->
+  <div class="est-horas-section">
+    <h2 class="est-horas-title">
+      <i class="bi bi-clock-history"></i>
+      Horas trabajadas
+    </h2>
+
+    @if (isLoadingHoras()) {
+      <div class="est-horas-loading">
+        <div class="spinner-border spinner-border-sm text-primary"></div>
+        <span>Calculando horas...</span>
+      </div>
+    } @else if (horasData()) {
+      <!-- Mini-cards de totales -->
+      <div class="horas-cards">
+        <div class="horas-card">
+          <div class="horas-card__value">{{ formatHoras(horasData()!.totales.totalMinutos) }}</div>
+          <div class="horas-card__label">Total período</div>
+          <div class="horas-card__sub">sesiones + eventos</div>
+        </div>
+        <div class="horas-card horas-card--clinica">
+          <div class="horas-card__value">{{ formatHoras(horasData()!.totales.horasClinicas * 60 + horasData()!.totales.minutosClinicas) }}</div>
+          <div class="horas-card__label">Horas clínicas</div>
+          <div class="horas-card__sub">sesiones completadas</div>
+        </div>
+        <div class="horas-card horas-card--admin">
+          <div class="horas-card__value">{{ formatHoras(horasData()!.totales.horasNoClinicas * 60 + horasData()!.totales.minutosNoClinicas) }}</div>
+          <div class="horas-card__label">No clínicas</div>
+          <div class="horas-card__sub">coordinación, admin, formación</div>
+        </div>
+      </div>
+
+      <!-- Gráfico de barras apiladas por semana -->
+      @if (horasData()!.semanas.length > 0) {
+        <div class="est-chart-card" style="margin-top: 16px">
+          <div class="chart-card-title">
+            <i class="bi bi-bar-chart-steps"></i>
+            Distribución semanal de horas
+          </div>
+          <div class="chart-wrap">
+            <canvas
+              baseChart
+              type="bar"
+              [data]="horasBarData()"
+              [options]="horasBarOpts"
+            ></canvas>
+          </div>
+        </div>
+      } @else {
+        <div class="est-chart-card" style="margin-top: 16px">
+          <div class="chart-empty">
+            <i class="bi bi-clock"></i> Sin eventos registrados en este período
+          </div>
+        </div>
+      }
+    }
+  </div>
+
 </div>

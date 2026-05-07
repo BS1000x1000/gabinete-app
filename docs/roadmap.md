@@ -76,6 +76,39 @@ Solo falta frontend: vista que muestre bonos con `pagado: false`, filtrable por 
 
 ---
 
+### Hito L — Bloques de administración recurrentes
+
+Cada terapeuta puede definir un horario semanal fijo de "Tiempo de Administración" (ej. lunes 16:00–17:00, martes y miércoles 10:00–12:00). Los bloques aparecen automáticamente en el calendario sin crearlos manualmente. Un día concreto se puede modificar desde la card de ese día sin afectar al patrón semanal.
+
+**Diseño — generación virtual en query time:**
+- Nuevo modelo `HorarioAdmin` en Prisma: `trabajadorId + diaSemana (1–7 ISO) + horaInicio + horaFin + titulo + activo`
+  - Mismo patrón que `DisponibilidadCliente` que ya existe en el schema
+- `EventoAgenda` recibe FK opcional `horarioAdminId` para marcar overrides (instancias de un día editadas)
+- `findByPeriodo` del servicio: genera instancias virtuales al vuelo para fechas sin override real — sin cron, sin bloat en BD, funciona para futuro infinito
+- Las instancias virtuales tienen `id: virtual_${ruleId}_${fecha}` y `esVirtual: true`
+- Al editar una virtual se crea un `EventoAgenda` real con `horarioAdminId`, que sustituye a la virtual en queries futuras
+
+**Nuevos endpoints:**
+- `GET/POST /horarios-admin` — CRUD de reglas (ADMIN ve todas, terapeutas solo las propias)
+- `PATCH/DELETE /horarios-admin/:id`
+
+**Frontend:**
+- Panel en `ajustes/` para gestionar el horario de admin (añadir/editar/eliminar slots por día de semana)
+- Cards virtuales en el calendario con icono `bi-arrow-repeat` que indica recurrencia
+- Al guardar una virtual editada → `POST /eventos-agenda` con `horarioAdminId` en lugar de `PATCH`
+
+**Archivos principales:**
+- `backend/prisma/schema.prisma` — modelo `HorarioAdmin` + FK en `EventoAgenda`
+- `backend/src/eventos-agenda/eventos-agenda.service.ts` — inyectar virtuales en `findByPeriodo`
+- `backend/src/horarios-admin/` (nuevo módulo)
+- `frontend/src/app/interface/evento-agenda.interface.ts` — `esVirtual?`, `horarioAdminId?`
+- `frontend/src/app/features/ajustes/` — panel de gestión
+- `frontend/src/app/features/home/agenda/agenda.component.ts` — render + override
+
+**Esfuerzo estimado:** ~10–12h (~1.5 días)
+
+---
+
 ### Hito P — Anamnesis estructurada en ficha cliente
 Cuando llega un nuevo cliente, la familia completa una anamnesis. Actualmente va a texto libre en el Informe INICIAL, suficiente para V1 pero pierde estructura.
 
@@ -168,6 +201,7 @@ PRE-DEPLOY
 
 CORTO PLAZO (post-deploy)
   K   Bonos sin cobrar           ~3-4h   🟡 operativo
+  L   Admin time recurrente      ~1.5d   🟢 workflow
   P   Anamnesis estructurada     ~1 día  🟡 clínico
   Q   Campo derivación           ~1-2h   🟢 informativo
 

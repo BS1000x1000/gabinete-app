@@ -1,6 +1,17 @@
 // utils/date.ts
 import { startOfWeek, addDays, setHours, setMinutes } from 'date-fns';
 
+export function isoToHHMM(iso: string): string {
+  const d = new Date(iso);
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
+export function formatMinutosHoras(minutos: number): string {
+  const h = Math.floor(minutos / 60);
+  const m = minutos % 60;
+  return m > 0 ? `${h}h ${m}m` : `${h}h`;
+}
+
 export const WEEK_START_HOUR = 8;
 export const WEEK_END_HOUR = 17;
 

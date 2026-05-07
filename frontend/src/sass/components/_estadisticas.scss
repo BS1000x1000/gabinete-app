@@ -301,4 +301,68 @@
       color: $gray-400;
     }
   }
+
+  // ── Sección Horas Trabajadas ──────────────────────────────
+  .est-horas-section {
+    margin-top: $spacing-lg;
+  }
+
+  .est-horas-title {
+    font-size: $font-size-base;
+    font-weight: $font-weight-semibold;
+    color: $gray-700;
+    margin-bottom: $spacing-md;
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+
+    i { color: $primary; }
+  }
+
+  .est-horas-loading {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    color: $gray-400;
+    font-size: $font-size-sm;
+    padding: $spacing-md 0;
+  }
+
+  .horas-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: $spacing-sm;
+    margin-bottom: $spacing-sm;
+
+    @media (max-width: 640px) { grid-template-columns: 1fr; }
+  }
+
+  .horas-card {
+    background: $bg-card;
+    border-radius: $border-radius-lg;
+    box-shadow: $shadow-card;
+    padding: $spacing-md $spacing-lg;
+
+    &__value {
+      font-size: $font-size-xl;
+      font-weight: $font-weight-bold;
+      color: $gray-700;
+    }
+
+    &__label {
+      font-size: $font-size-sm;
+      font-weight: $font-weight-semibold;
+      color: $gray-600;
+      margin-top: 2px;
+    }
+
+    &__sub {
+      font-size: 0.72rem;
+      color: $gray-400;
+      margin-top: 2px;
+    }
+
+    &--clinica .horas-card__value { color: $primary; }
+    &--admin   .horas-card__value { color: $gray-500; }
+  }
 }

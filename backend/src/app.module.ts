@@ -20,6 +20,7 @@ import { BonosModule } from './bonos/bonos.module';
 import { NotificacionesModule } from './notificaciones/notificaciones.module';
 import { ExportModule } from './export/export.module';
 import { N8nModule } from './n8n/n8n.module';
+import { EventosAgendaModule } from './eventos-agenda/eventos-agenda.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { N8nModule } from './n8n/n8n.module';
     NotificacionesModule,
     ExportModule,
     N8nModule,
+    EventosAgendaModule,
   ],
   controllers: [AppController],
   providers: [AppService],

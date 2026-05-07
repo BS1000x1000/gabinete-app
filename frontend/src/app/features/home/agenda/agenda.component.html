@@ -130,84 +130,121 @@
           }
 
         <!-- Estado vacío -->
-        } @else if (sesiones().length === 0) {
+        } @else if (todoDelDia().length === 0) {
           <div class="ag-empty">
             <div class="ag-empty__icon">
               <i class="bi bi-calendar-week"></i>
             </div>
-            <p class="ag-empty__title">Sin sesiones este día</p>
+            <p class="ag-empty__title">Sin actividad este día</p>
             <p class="ag-empty__sub">{{ fechaFormateada() }}</p>
           </div>
 
-        <!-- Tarjetas de sesión -->
+        <!-- Tarjetas de sesión y eventos mezclados por hora -->
         } @else {
-          @for (sesion of sesiones(); track sesion.id) {
-            <div
-              class="ag-card"
-              [class.ag-card--pasada]="sesion.temporal?.esPasada && sesion.estado === 'PROGRAMADA'"
-              [style.--tipo-color]="getTipoColor(sesion.tipoSesion)"
-            >
-              <!-- Columna de hora -->
-              <div class="ag-card-time">
-                <span class="ag-time-start">{{ sesion.horaInicio }}</span>
-                <span class="ag-time-sep">–</span>
-                <span class="ag-time-end">{{ sesion.horaFin }}</span>
-              </div>
+          @for (item of todoDelDia(); track item.id) {
 
-              <!-- Franja de color por tipo -->
-              <div class="ag-card-indicator"></div>
-
-              <!-- Contenido principal -->
-              <div class="ag-card-body">
-                <div class="ag-card-top">
-                  <span class="ag-client-name">
-                    {{ sesion.cliente.nombreCompleto || (sesion.cliente.nombre + ' ' + sesion.cliente.apellidos) }}
-                  </span>
-                  <span class="ag-estado ag-estado--{{ getEstadoClass(sesion.estado) }}">
-                    {{ ESTADO_SESION_LABELS[sesion.estado] ?? sesion.estado }}
-                  </span>
+            @if (item.kind === 'sesion') {
+              <div
+                class="ag-card"
+                [class.ag-card--pasada]="item.sesion.temporal?.esPasada && item.sesion.estado === 'PROGRAMADA'"
+                [style.--tipo-color]="getTipoColor(item.sesion.tipoSesion)"
+              >
+                <div class="ag-card-time">
+                  <span class="ag-time-start">{{ item.sesion.horaInicio }}</span>
+                  <span class="ag-time-sep">–</span>
+                  <span class="ag-time-end">{{ item.sesion.horaFin }}</span>
                 </div>
-                <div class="ag-card-sub">
-                  <span
-                    class="ag-tipo"
-                    [style.color]="getTipoColor(sesion.tipoSesion)"
-                    [style.background-color]="getTipoColor(sesion.tipoSesion) + '18'"
-                  >
-                    {{ TIPO_SESION_LABELS[sesion.tipoSesion] ?? sesion.tipoSesion }}
-                  </span>
-                  @if (sesion.cliente.curso) {
-                    <span class="ag-curso">{{ sesion.cliente.curso }}</span>
+                <div class="ag-card-indicator"></div>
+                <div class="ag-card-body">
+                  <div class="ag-card-top">
+                    <span class="ag-client-name">
+                      {{ item.sesion.cliente.nombreCompleto || (item.sesion.cliente.nombre + ' ' + item.sesion.cliente.apellidos) }}
+                    </span>
+                    <span class="ag-estado ag-estado--{{ getEstadoClass(item.sesion.estado) }}">
+                      {{ ESTADO_SESION_LABELS[item.sesion.estado] ?? item.sesion.estado }}
+                    </span>
+                  </div>
+                  <div class="ag-card-sub">
+                    <span
+                      class="ag-tipo"
+                      [style.color]="getTipoColor(item.sesion.tipoSesion)"
+                      [style.background-color]="getTipoColor(item.sesion.tipoSesion) + '18'"
+                    >
+                      {{ TIPO_SESION_LABELS[item.sesion.tipoSesion] ?? item.sesion.tipoSesion }}
+                    </span>
+                    @if (item.sesion.cliente.curso) {
+                      <span class="ag-curso">{{ item.sesion.cliente.curso }}</span>
+                    }
+                  </div>
+                </div>
+                <div class="ag-card-actions">
+                  @if (item.sesion.estado === 'PROGRAMADA') {
+                    <button
+                      class="ag-action ag-action--success"
+                      title="Completar sesión"
+                      (click)="abrirCompletar(item.sesion, $event)"
+                    >
+                      <i class="bi bi-check-circle"></i>
+                    </button>
+                    <button
+                      class="ag-action ag-action--danger"
+                      title="Cancelar sesión"
+                      (click)="abrirCancelar(item.sesion, $event)"
+                    >
+                      <i class="bi bi-x-circle"></i>
+                    </button>
                   }
+                  <button
+                    class="ag-action ag-action--neutral"
+                    title="Ver ficha del cliente"
+                    (click)="verCliente(item.sesion.clienteId, $event)"
+                  >
+                    <i class="bi bi-person"></i>
+                  </button>
                 </div>
               </div>
 
-              <!-- Acciones -->
-              <div class="ag-card-actions">
-                @if (sesion.estado === 'PROGRAMADA') {
+            } @else {
+              <div
+                class="ag-card ag-card--evento"
+                [style.--tipo-color]="getEventoColor(item.evento)"
+                (click)="abrirModalEditarEvento(item.evento, $event)"
+              >
+                <div class="ag-card-time">
+                  <span class="ag-time-start">{{ isoToHHMM(item.evento.fechaHoraInicio) }}</span>
+                  <span class="ag-time-sep">–</span>
+                  <span class="ag-time-end">{{ isoToHHMM(item.evento.fechaHoraFin) }}</span>
+                </div>
+                <div class="ag-card-indicator"></div>
+                <div class="ag-card-body">
+                  <div class="ag-card-top">
+                    <span class="ag-client-name">{{ item.evento.titulo }}</span>
+                  </div>
+                  <div class="ag-card-sub">
+                    <span
+                      class="ag-tipo"
+                      [style.color]="getEventoColor(item.evento)"
+                      [style.background-color]="getEventoColor(item.evento) + '18'"
+                    >
+                      {{ TIPO_EVENTO_CONFIG[item.evento.tipo]?.label }}
+                    </span>
+                    @if (item.evento.descripcion) {
+                      <span class="ag-curso">{{ item.evento.descripcion }}</span>
+                    }
+                  </div>
+                </div>
+                <div class="ag-card-actions">
                   <button
-                    class="ag-action ag-action--success"
-                    title="Completar sesión"
-                    (click)="abrirCompletar(sesion, $event)"
+                    class="ag-action ag-action--neutral"
+                    title="Editar evento"
+                    (click)="abrirModalEditarEvento(item.evento, $event)"
                   >
-                    <i class="bi bi-check-circle"></i>
+                    <i class="bi bi-pencil"></i>
                   </button>
-                  <button
-                    class="ag-action ag-action--danger"
-                    title="Cancelar sesión"
-                    (click)="abrirCancelar(sesion, $event)"
-                  >
-                    <i class="bi bi-x-circle"></i>
-                  </button>
-                }
-                <button
-                  class="ag-action ag-action--neutral"
-                  title="Ver ficha del cliente"
-                  (click)="verCliente(sesion.clienteId, $event)"
-                >
-                  <i class="bi bi-person"></i>
-                </button>
+                </div>
               </div>
-            </div>
+            }
+
           }
         }
 
@@ -233,6 +270,10 @@
         <button class="ag-wg-nav__btn" (click)="semanaSiguiente()" title="Semana siguiente">
           <i class="bi bi-chevron-right"></i>
         </button>
+        <button class="ag-wg-nav__evento-btn" (click)="abrirModalNuevoEvento()" title="Añadir evento">
+          <i class="bi bi-plus-lg"></i>
+          <span>Evento</span>
+        </button>
       </div>
 
       <!-- Stats rápidas de la semana -->
@@ -249,6 +290,12 @@
           <span class="ag-wg-stat">
             <i class="bi bi-people-fill"></i> {{ resumenSemana()!.clientesUnicos }}
           </span>
+          @if (resumenHoras() && resumenHoras()!.totalMinutos > 0) {
+            <span class="ag-wg-stat-sep">·</span>
+            <span class="ag-wg-stat ag-wg-stat--horas" title="Horas clínicas + no clínicas">
+              <i class="bi bi-clock"></i> {{ formatResumenHoras() }}
+            </span>
+          }
         </div>
       }
 
@@ -344,6 +391,27 @@
                       }
                     </div>
                   }
+
+                  <!-- Bloques de evento de agenda -->
+                  @for (evento of getEventosDelDia(dia.fecha); track evento.id) {
+                    <div
+                      class="ag-week-grid__event ag-week-grid__event--agenda"
+                      [class.ag-week-grid__event--compartido]="esEventoCompartido(evento)"
+                      [style.top.px]="getEventoTop(evento)"
+                      [style.height.px]="getEventoAltura(evento)"
+                      [style.--evento-color]="getEventoColor(evento)"
+                      (click)="$event.stopPropagation(); abrirModalEditarEvento(evento, $event)"
+                      [title]="evento.titulo + ' · ' + TIPO_EVENTO_CONFIG[evento.tipo]?.label"
+                    >
+                      <span class="ag-week-grid__event-time">{{ isoToHHMM(evento.fechaHoraInicio) }}–{{ isoToHHMM(evento.fechaHoraFin) }}</span>
+                      <span class="ag-week-grid__event-name">{{ evento.titulo }}</span>
+                      @if (getEventoAltura(evento) >= 44) {
+                        <span class="ag-week-grid__event-tipo">
+                          {{ TIPO_EVENTO_CONFIG[evento.tipo]?.label ?? evento.tipo }}
+                        </span>
+                      }
+                    </div>
+                  }
                 </div>
               }
 
@@ -358,5 +426,153 @@
 
   </div>
 </div>
+
+<!-- ── Modal crear/editar evento ────────────────────────── -->
+@if (mostrarModalEvento()) {
+  <div class="ag-modal-backdrop" (click)="cerrarModalEvento()">
+    <div class="ag-modal" (click)="$event.stopPropagation()">
+      <div class="ag-modal__header">
+        <h3 class="ag-modal__title">
+          <i class="bi bi-calendar-plus"></i>
+          {{ eventoEditando() ? 'Editar evento' : 'Nuevo evento' }}
+        </h3>
+        <button class="ag-modal__close" (click)="cerrarModalEvento()">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <div class="ag-modal__body">
+        <!-- Título -->
+        <div class="ag-modal__field">
+          <label class="ag-modal__label">Título *</label>
+          <input
+            class="ag-modal__input"
+            type="text"
+            placeholder="Ej. Reunión de equipo"
+            [value]="modalEventoForm().titulo"
+            (input)="updateModalForm({ titulo: $any($event.target).value })"
+            maxlength="200"
+          />
+        </div>
+
+        <!-- Tipo -->
+        <div class="ag-modal__field">
+          <label class="ag-modal__label">Tipo *</label>
+          <div class="ag-modal__select-wrap">
+            <span
+              class="ag-modal__tipo-dot"
+              [style.background-color]="TIPO_EVENTO_CONFIG[modalEventoForm().tipo]?.color"
+            ></span>
+            <select
+              class="ag-modal__select"
+              [value]="modalEventoForm().tipo"
+              (change)="updateModalForm({ tipo: $any($event.target).value })"
+            >
+              @for (tipo of tiposEvento; track tipo) {
+                <option [value]="tipo" [selected]="modalEventoForm().tipo === tipo">{{ TIPO_EVENTO_CONFIG[tipo].label }}</option>
+              }
+            </select>
+            <i class="bi bi-chevron-down ag-modal__select-chevron"></i>
+          </div>
+        </div>
+
+        <!-- Fecha y horas -->
+        <div class="ag-modal__row">
+          <div class="ag-modal__field ag-modal__field--date">
+            <label class="ag-modal__label">Fecha *</label>
+            <input
+              class="ag-modal__input"
+              type="date"
+              [value]="modalEventoForm().fecha"
+              (change)="updateModalForm({ fecha: $any($event.target).value })"
+            />
+          </div>
+          <div class="ag-modal__field ag-modal__field--time">
+            <label class="ag-modal__label">Inicio *</label>
+            <input
+              class="ag-modal__input"
+              type="time"
+              [value]="modalEventoForm().horaInicio"
+              (change)="updateModalForm({ horaInicio: $any($event.target).value })"
+            />
+          </div>
+          <div class="ag-modal__field ag-modal__field--time">
+            <label class="ag-modal__label">Fin *</label>
+            <input
+              class="ag-modal__input"
+              type="time"
+              [value]="modalEventoForm().horaFin"
+              (change)="updateModalForm({ horaFin: $any($event.target).value })"
+            />
+          </div>
+        </div>
+
+        <!-- Descripción -->
+        <div class="ag-modal__field">
+          <label class="ag-modal__label">Descripción</label>
+          <textarea
+            class="ag-modal__textarea"
+            placeholder="Opcional"
+            rows="2"
+            maxlength="1000"
+            [value]="modalEventoForm().descripcion"
+            (input)="updateModalForm({ descripcion: $any($event.target).value })"
+          ></textarea>
+        </div>
+
+        <!-- Participantes (solo ADMIN y tipo equipo) -->
+        @if (canAddParticipantes() && modalEventoForm().tipo === 'COORDINACION_EQUIPO') {
+          <div class="ag-modal__field">
+            <label class="ag-modal__label">
+              <i class="bi bi-people-fill"></i> Participantes
+            </label>
+            <div class="ag-modal__participantes">
+              @for (t of trabajadores(); track t.id) {
+                <label class="ag-modal__participante-chip">
+                  <input
+                    type="checkbox"
+                    [checked]="modalEventoForm().participantesIds.includes(t.id)"
+                    (change)="toggleParticipante(t.id)"
+                  />
+                  <span class="ag-modal__participante-chip__avatar">{{ getTrabajadorIniciales(t) }}</span>
+                  <span>{{ t.nombre }} {{ t.apellidos }}</span>
+                </label>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="ag-modal__footer">
+        @if (eventoEditando()) {
+          <button
+            class="ag-modal__btn ag-modal__btn--danger"
+            (click)="eliminarEvento(eventoEditando()!, $event)"
+            [disabled]="modalEventoGuardando()"
+          >
+            <i class="bi bi-trash"></i> Eliminar
+          </button>
+        }
+        <div class="ag-modal__footer-actions">
+          <button class="ag-modal__btn ag-modal__btn--cancel" (click)="cerrarModalEvento()">
+            Cancelar
+          </button>
+          <button
+            class="ag-modal__btn ag-modal__btn--primary"
+            (click)="guardarEvento()"
+            [disabled]="!modalEventoForm().titulo.trim() || !modalEventoForm().fecha || modalEventoGuardando()"
+          >
+            @if (modalEventoGuardando()) {
+              <span class="spinner-border spinner-border-sm"></span>
+            } @else {
+              <i class="bi bi-check-lg"></i>
+            }
+            {{ eventoEditando() ? 'Guardar cambios' : 'Crear evento' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
 
 <app-sesion-modales [onRefresh]="loadDia.bind(this)"></app-sesion-modales>

@@ -54,6 +54,8 @@ model Trabajador {
   objetivosAsignados   Objetivo[] @relation("ObjetivosAsignados")
   notificaciones       Notificacion[]
   consentimientosRgpd  ConsentimientoRgpd[]
+  eventosCreados       EventoAgenda[]       @relation("EventosCreados")
+  eventosParticipante  EventoParticipante[] @relation("EventosParticipante")
 
   @@map("trabajadores")
 }
@@ -630,6 +632,47 @@ model ConsentimientoRgpd {
 
   @@index([clienteId])
   @@map("consentimientos_rgpd")
+}
+
+// ============================================================
+// EVENTOS DE AGENDA (trabajo no clínico)
+// ============================================================
+
+enum TipoEvento {
+  COORDINACION_EQUIPO
+  COORDINACION_COLEGIO
+  COORDINACION_PROFESIONAL
+  TIEMPO_ADMINISTRACION
+  FORMACION
+  OTRO
+}
+
+model EventoAgenda {
+  id              String               @id @default(uuid())
+  titulo          String
+  descripcion     String?              @db.Text
+  fechaHoraInicio DateTime             @map("fecha_hora_inicio")
+  fechaHoraFin    DateTime             @map("fecha_hora_fin")
+  tipo            TipoEvento
+  creadoPorId     String               @map("creado_por_id")
+  creadoPor       Trabajador           @relation("EventosCreados", fields: [creadoPorId], references: [id])
+  participantes   EventoParticipante[]
+  createdAt       DateTime             @default(now()) @map("fecha_creacion")
+  updatedAt       DateTime             @updatedAt @map("ultima_actualizacion")
+
+  @@index([fechaHoraInicio])
+  @@index([creadoPorId])
+  @@map("eventos_agenda")
+}
+
+model EventoParticipante {
+  eventoId     String       @map("evento_id")
+  trabajadorId String       @map("trabajador_id")
+  evento       EventoAgenda @relation(fields: [eventoId], references: [id], onDelete: Cascade)
+  trabajador   Trabajador   @relation("EventosParticipante", fields: [trabajadorId], references: [id])
+
+  @@id([eventoId, trabajadorId])
+  @@map("evento_participantes")
 }
 
 // ============================================================

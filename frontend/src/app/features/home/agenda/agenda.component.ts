@@ -7,8 +7,11 @@ import {
   DestroyRef,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { forkJoin } from 'rxjs';
+import { startOfWeek } from 'date-fns';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../services/auth.service';
 import {
   EstadoSesion,
@@ -26,6 +29,15 @@ import {
   CalendarioSemanal,
 } from '../../../interface/calendario.interface';
 import { SesionModalesComponent } from '../../../components/sesiones-modales/sesiones-modales.component';
+import { isoToHHMM, formatMinutosHoras } from '../../../shared/utils/date';
+import { EventosAgendaService } from '../../../services/eventos-agenda.service';
+import {
+  EventoAgenda,
+  ResumenHoras,
+  TIPO_EVENTO_CONFIG,
+  CreateEventoDto,
+  TipoEvento,
+} from '../../../interface/evento-agenda.interface';
 
 const TIPO_COLORES: Record<string, string> = {
   PEDAGOGIA: '#7c6fd6',
@@ -39,7 +51,7 @@ const TIPO_COLORES: Record<string, string> = {
 @Component({
   selector: 'app-agenda',
   standalone: true,
-  imports: [CommonModule, SesionModalesComponent],
+  imports: [CommonModule, FormsModule, SesionModalesComponent],
   templateUrl: './agenda.component.html',
 })
 export class AgendaComponent implements OnInit {
@@ -49,6 +61,7 @@ export class AgendaComponent implements OnInit {
   private accionesSvc = inject(SesionAccionesService);
   private notifSvc = inject(NotificacionesService);
   private trabajadorSvc = inject(TrabajadorService);
+  private eventosSvc = inject(EventosAgendaService);
   private destroyRef = inject(DestroyRef);
 
   readonly TIPO_SESION_LABELS: any = TIPO_SESION_LABELS;
@@ -79,6 +92,64 @@ export class AgendaComponent implements OnInit {
   isLoadingSemana = signal(false);
   fechaSeleccionada = signal<Date>(new Date());
   bannerColapsado = signal(false);
+
+  // Eventos de agenda
+  readonly TIPO_EVENTO_CONFIG = TIPO_EVENTO_CONFIG;
+  readonly tiposEvento: TipoEvento[] = [
+    'COORDINACION_EQUIPO',
+    'COORDINACION_COLEGIO',
+    'COORDINACION_PROFESIONAL',
+    'TIEMPO_ADMINISTRACION',
+    'FORMACION',
+    'OTRO',
+  ];
+  eventosAgenda = signal<EventoAgenda[]>([]);
+  resumenHoras = signal<ResumenHoras | null>(null);
+  mostrarModalEvento = signal(false);
+  eventoEditando = signal<EventoAgenda | null>(null);
+
+  // Modal evento — form state
+  modalEventoForm = signal<{
+    titulo: string;
+    tipo: TipoEvento;
+    fecha: string;
+    horaInicio: string;
+    horaFin: string;
+    descripcion: string;
+    participantesIds: string[];
+  }>({
+    titulo: '',
+    tipo: 'OTRO',
+    fecha: '',
+    horaInicio: '09:00',
+    horaFin: '10:00',
+    descripcion: '',
+    participantesIds: [],
+  });
+  modalEventoGuardando = signal(false);
+
+  readonly canAddParticipantes = computed(() => this.auth.isAdmin());
+
+  readonly eventosPorFecha = computed(() => {
+    const map = new Map<string, EventoAgenda[]>();
+    for (const ev of this.eventosAgenda()) {
+      const fecha = ev.fechaHoraInicio.split('T')[0];
+      if (!map.has(fecha)) map.set(fecha, []);
+      map.get(fecha)!.push(ev);
+    }
+    return map;
+  });
+
+  readonly eventosDelDia = computed(() => {
+    const fechaISO = this.fechaISO();
+    return this.eventosAgenda().filter(ev => ev.fechaHoraInicio.startsWith(fechaISO));
+  });
+
+  readonly todoDelDia = computed(() => {
+    const sItems = this.sesiones().map(s => ({ kind: 'sesion' as const, id: s.id, sortKey: s.horaInicio, sesion: s }));
+    const eItems = this.eventosDelDia().map(e => ({ kind: 'evento' as const, id: e.id, sortKey: isoToHHMM(e.fechaHoraInicio), evento: e }));
+    return [...sItems, ...eItems].sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+  });
 
   // Alertas urgentes para el banner
   readonly alertasUrgentes = computed(() =>
@@ -227,12 +298,26 @@ export class AgendaComponent implements OnInit {
 
   loadSemana() {
     this.isLoadingSemana.set(true);
-    this.sesionesSvc
-      .getCalendarioSemanal(this.fechaISO(), this.trabajadorIdParam())
+    const fecha = this.fechaISO();
+    const trabajadorId = this.trabajadorIdParam();
+
+    const lunes = startOfWeek(new Date(fecha + 'T12:00:00'), { weekStartsOn: 1 });
+    const domingo = new Date(lunes);
+    domingo.setDate(domingo.getDate() + 6);
+    const desde = this.formatISO(lunes);
+    const hasta = this.formatISO(domingo);
+
+    forkJoin([
+      this.sesionesSvc.getCalendarioSemanal(fecha, trabajadorId),
+      this.eventosSvc.getEventosPeriodo(desde, hasta, trabajadorId),
+      this.eventosSvc.getResumenHoras(desde, hasta, trabajadorId),
+    ])
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (cal) => {
+        next: ([cal, eventos, horas]) => {
           this.calendarioSemanal.set(cal);
+          this.eventosAgenda.set(eventos);
+          this.resumenHoras.set(horas);
           this.isLoadingSemana.set(false);
         },
         error: () => this.isLoadingSemana.set(false),
@@ -321,6 +406,126 @@ export class AgendaComponent implements OnInit {
       .subscribe();
   }
 
+  // ── Eventos de agenda — grid ─────────────────────────────
+
+  getEventosDelDia(fechaISO: string): EventoAgenda[] {
+    return this.eventosPorFecha().get(fechaISO) ?? [];
+  }
+
+  getEventoTop(evento: EventoAgenda): number {
+    return this.calcularTop(this.isoToHHMM(evento.fechaHoraInicio));
+  }
+
+  getEventoAltura(evento: EventoAgenda): number {
+    const inicio = new Date(evento.fechaHoraInicio);
+    const fin = new Date(evento.fechaHoraFin);
+    const durMin = (fin.getTime() - inicio.getTime()) / 60000;
+    return this.calcularAltura(durMin);
+  }
+
+  getEventoColor(evento: EventoAgenda): string {
+    return TIPO_EVENTO_CONFIG[evento.tipo]?.color ?? '#94a3b8';
+  }
+
+  esEventoCompartido(evento: EventoAgenda): boolean {
+    return evento.participantes.length > 1;
+  }
+
+  isoToHHMM(iso: string): string { return isoToHHMM(iso); }
+
+  // ── Modal crear/editar evento ────────────────────────────
+
+  abrirModalNuevoEvento(fechaISO?: string, horaISO?: string) {
+    const fecha = fechaISO ?? this.fechaISO();
+    const hora = horaISO ? this.isoToHHMM(horaISO) : '09:00';
+    const [h, m] = hora.split(':').map(Number);
+    const horaFin = `${String(h + 1 < 24 ? h + 1 : h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    this.eventoEditando.set(null);
+    this.modalEventoForm.set({
+      titulo: '',
+      tipo: 'OTRO',
+      fecha,
+      horaInicio: hora,
+      horaFin,
+      descripcion: '',
+      participantesIds: [],
+    });
+    this.mostrarModalEvento.set(true);
+  }
+
+  abrirModalEditarEvento(evento: EventoAgenda, event: Event) {
+    event.stopPropagation();
+    this.eventoEditando.set(evento);
+    const fecha = evento.fechaHoraInicio.split('T')[0];
+    this.modalEventoForm.set({
+      titulo: evento.titulo,
+      tipo: evento.tipo,
+      fecha,
+      horaInicio: this.isoToHHMM(evento.fechaHoraInicio),
+      horaFin: this.isoToHHMM(evento.fechaHoraFin),
+      descripcion: evento.descripcion ?? '',
+      participantesIds: evento.participantes.map((p) => p.trabajador.id),
+    });
+    this.mostrarModalEvento.set(true);
+  }
+
+  cerrarModalEvento() {
+    this.mostrarModalEvento.set(false);
+    this.eventoEditando.set(null);
+    this.modalEventoGuardando.set(false);
+  }
+
+  guardarEvento() {
+    const form = this.modalEventoForm();
+    if (!form.titulo.trim() || !form.fecha || !form.horaInicio || !form.horaFin) return;
+
+    const dto: CreateEventoDto = {
+      titulo: form.titulo,
+      tipo: form.tipo,
+      fechaHoraInicio: `${form.fecha}T${form.horaInicio}:00`,
+      fechaHoraFin: `${form.fecha}T${form.horaFin}:00`,
+      descripcion: form.descripcion || undefined,
+      participantesIds: form.participantesIds.length ? form.participantesIds : undefined,
+    };
+
+    this.modalEventoGuardando.set(true);
+    const editando = this.eventoEditando();
+    const op$ = editando ? this.eventosSvc.update(editando.id, dto) : this.eventosSvc.create(dto);
+
+    op$.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => { this.cerrarModalEvento(); this.loadSemana(); },
+        error: () => this.modalEventoGuardando.set(false),
+      });
+  }
+
+  eliminarEvento(evento: EventoAgenda, event: Event) {
+    event.stopPropagation();
+    if (!confirm(`¿Eliminar "${evento.titulo}"?`)) return;
+    this.eventosSvc
+      .delete(evento.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({ next: () => this.loadSemana() });
+  }
+
+  updateModalForm(patch: Partial<ReturnType<typeof this.modalEventoForm>>) {
+    this.modalEventoForm.update((f) => ({ ...f, ...patch }));
+  }
+
+  toggleParticipante(id: string) {
+    this.modalEventoForm.update((f) => {
+      const ids = f.participantesIds.includes(id)
+        ? f.participantesIds.filter((i) => i !== id)
+        : [...f.participantesIds, id];
+      return { ...f, participantesIds: ids };
+    });
+  }
+
+  formatResumenHoras(): string {
+    const r = this.resumenHoras();
+    return r ? formatMinutosHoras(r.totalMinutos) : '';
+  }
+
   // ── Helpers UI ───────────────────────────────────────────
 
   getTipoColor(tipo: string): string {
@@ -345,7 +550,8 @@ export class AgendaComponent implements OnInit {
   }
 
   private formatISO(fecha: Date): string {
-    return fecha.toISOString().split('T')[0];
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${fecha.getFullYear()}-${pad(fecha.getMonth() + 1)}-${pad(fecha.getDate())}`;
   }
 }
 
