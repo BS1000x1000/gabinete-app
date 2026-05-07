@@ -169,7 +169,7 @@ describe('AuthController', () => {
   // ── changePassword ────────────────────────────────────────────────────────
   describe('changePassword()', () => {
     it('delega al servicio con userId y contraseñas', async () => {
-      const body = { oldPassword: 'vieja', newPassword: 'Nueva123!' };
+      const body = { passwordActual: 'vieja', passwordNueva: 'Nueva123!' };
       const expected = { message: 'Contraseña actualizada' };
       authService.changePassword.mockResolvedValue(expected);
 

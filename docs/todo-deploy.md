@@ -207,18 +207,18 @@ cd frontend && npm update @angular/core @angular/common   # XSS HIGH
 
 ---
 
-## BLOQUE 7 — Seguridad y legal — POST-DEPLOY (primeras 2-4 semanas) ⬜ PENDIENTE
+## BLOQUE 7 — Seguridad y legal — POST-DEPLOY ✅ CÓDIGO COMPLETO (2026-05-06)
 
 No bloquean el despliegue pero deben resolverse antes de tener usuarios reales.
 
 | Tarea | Prioridad | Estado |
 |---|---|---|
-| 7.1 — Sanitización XSS en editor Tiptap (DOMPurify) | ALTA | ⬜ |
-| 7.2 — Reset token no debe exponerse en respuesta `forgot-password` | ALTA | ⬜ |
-| 7.3 — `/health` expone info de infraestructura sin auth | MEDIA | ⬜ |
-| 7.4 — Redactar Registro de Actividades de Tratamiento (RAT) | ALTA LEGAL | ⬜ |
-| 7.5 — Política de retención de datos documentada | ALTA LEGAL | ⬜ |
-| 7.6 — Limpiar `console.log` del backend (reemplazar por NestJS Logger) | MEDIA | ⬜ |
+| 7.1 — Sanitización XSS en editor Tiptap (DOMPurify) | ALTA | ✅ `TextCleanerService` + `sanitizeHtml()` en `[innerHTML]` |
+| 7.2 — Reset token no debe exponerse en respuesta `forgot-password` | ALTA | ✅ Solo mensaje genérico en respuesta, sin token |
+| 7.3 — `/health` expone info de infraestructura sin auth | MEDIA | ✅ Solo devuelve `{ status: 'ok' }` |
+| 7.4 — Redactar Registro de Actividades de Tratamiento (RAT) | ALTA LEGAL | ⬜ Documento físico — no es código |
+| 7.5 — Política de retención de datos documentada | ALTA LEGAL | ⬜ Documento físico — no es código |
+| 7.6 — Limpiar `console.log` del backend (reemplazar por NestJS Logger) | MEDIA | ✅ Cero `console.log` en `backend/src/` |
 
 ### Detalle por tarea
 
@@ -269,5 +269,5 @@ No bloquean el despliegue pero deben resolverse antes de tener usuarios reales.
 | 4 — Seguridad (throttling, CORS, Helmet) | Pre-deploy | ✅ Completo |
 | 5 — Deuda técnica | Pre-deploy | ✅ Completo |
 | 6 — Seguridad y legal (auditoría) | **Pre-deploy** | ✅ Completo (2026-04-29) |
-| 7 — Seguridad y legal post-deploy | **Post-deploy** | ⬜ Pendiente |
+| 7 — Seguridad y legal post-deploy | **Post-deploy** | ✅ Código completo · ⬜ RAT + política de retención (docs físicos) |
 | 8 — Cumplimiento RGPD ampliado | Medio plazo | ⬜ Pendiente |

@@ -176,9 +176,10 @@ export class AuthController {
   }
 
   /**
-   * Cambiar contrasena (requiere estar autenticado y conocer la contrasena actual)
+   * Cambiar contrasena propia (solo ADMIN — no requiere contrasena actual)
    */
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   @Post('change-password')
   @HttpCode(HttpStatus.OK)
   async changePassword(@Request() req, @Body() body: ChangePasswordDto) {

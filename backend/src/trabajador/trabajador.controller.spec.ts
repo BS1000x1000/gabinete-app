@@ -16,6 +16,10 @@ const mockTrabajador = (overrides: Record<string, any> = {}) => ({
   ...overrides,
 });
 
+const mockReq = (overrides: Record<string, any> = {}) => ({
+  user: { userId: 'admin-1', rol: 'ADMIN', ...overrides },
+});
+
 const makeTrabajadorServiceMock = () => ({
   create: jest.fn(),
   findAll: jest.fn(),
@@ -26,6 +30,7 @@ const makeTrabajadorServiceMock = () => ({
   desasignarCliente: jest.fn(),
   update: jest.fn(),
   cambiarPassword: jest.fn(),
+  setPasswordAdmin: jest.fn(),
   reactivar: jest.fn(),
   remove: jest.fn(),
 });
@@ -98,7 +103,7 @@ describe('TrabajadorController', () => {
     it('devuelve el trabajador si existe', async () => {
       service.findOne.mockResolvedValue(mockTrabajador());
 
-      const result = await controller.findOne('trabajador-1');
+      const result = await controller.findOne('trabajador-1', mockReq());
 
       expect(result).toBeDefined();
     });
@@ -106,7 +111,7 @@ describe('TrabajadorController', () => {
     it('lanza NotFoundException si no existe', async () => {
       service.findOne.mockResolvedValue(null);
 
-      await expect(controller.findOne('no-existe')).rejects.toThrow(NotFoundException);
+      await expect(controller.findOne('no-existe', mockReq())).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -116,7 +121,7 @@ describe('TrabajadorController', () => {
       const clientes = [{ id: 'cliente-1', nombre: 'Ana' }];
       service.getClientesAsignados.mockResolvedValue(clientes);
 
-      const result = await controller.getClientesAsignados('trabajador-1');
+      const result = await controller.getClientesAsignados('trabajador-1', mockReq());
 
       expect(service.getClientesAsignados).toHaveBeenCalledWith('trabajador-1');
       expect(result).toEqual(clientes);
@@ -169,18 +174,17 @@ describe('TrabajadorController', () => {
     });
   });
 
-  // ── cambiarPassword ───────────────────────────────────────────────────────
+  // ── cambiarPassword (admin) ───────────────────────────────────────────────
   describe('cambiarPassword()', () => {
-    it('delega al servicio con id y contraseñas', async () => {
-      const expected = { message: 'Contraseña cambiada' };
-      service.cambiarPassword.mockResolvedValue(expected);
+    it('delega a setPasswordAdmin con id y nueva contraseña', async () => {
+      const expected = { message: 'Contraseña actualizada correctamente' };
+      service.setPasswordAdmin.mockResolvedValue(expected);
 
       const result = await controller.cambiarPassword('trabajador-1', {
-        passwordActual: 'vieja',
         passwordNueva: 'Nueva123!',
       });
 
-      expect(service.cambiarPassword).toHaveBeenCalledWith('trabajador-1', 'vieja', 'Nueva123!');
+      expect(service.setPasswordAdmin).toHaveBeenCalledWith('trabajador-1', 'Nueva123!');
       expect(result).toEqual(expected);
     });
   });

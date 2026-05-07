@@ -49,6 +49,7 @@ export interface UpdateTrabajadorPayload {
   telefono?: string;
   numeroColegiado?: string;
   especialidad?: string;
+  fechaContratacion?: string;
   rolId?: string;
 }
 

@@ -1,13 +1,8 @@
-import { IsString, IsNotEmpty, MinLength, MaxLength, Matches } from 'class-validator';
+import { IsString, MinLength, MaxLength, Matches } from 'class-validator';
 import { PASSWORD_REGEX, PASSWORD_MSG } from './password-validators';
 
-export class ChangePasswordDto {
+export class AdminSetPasswordDto {
   @IsString()
-  @IsNotEmpty()
-  passwordActual: string;
-
-  @IsString()
-  @IsNotEmpty()
   @MinLength(8)
   @MaxLength(100)
   @Matches(PASSWORD_REGEX, { message: PASSWORD_MSG })

@@ -15,6 +15,7 @@ interface EditForm {
   telefono: string;
   especialidad: string;
   numeroColegiado: string;
+  fechaContratacion: string;
 }
 
 @Component({
@@ -41,6 +42,7 @@ export class TrabajadorPerfilTabComponent implements OnInit, OnDestroy {
   readonly form = signal<EditForm>({
     nombre: '', apellidos: '', email: '',
     telefono: '', especialidad: '', numeroColegiado: '',
+    fechaContratacion: '',
   });
 
   ngOnInit(): void {
@@ -73,12 +75,13 @@ export class TrabajadorPerfilTabComponent implements OnInit, OnDestroy {
     const t = this.trabajador();
     if (!t) return;
     this.form.set({
-      nombre:          t.nombre         ?? '',
-      apellidos:       t.apellidos      ?? '',
-      email:           t.email          ?? '',
-      telefono:        t.telefono       ?? '',
-      especialidad:    t.especialidad   ?? '',
-      numeroColegiado: t.numeroColegiado ?? '',
+      nombre:           t.nombre            ?? '',
+      apellidos:        t.apellidos         ?? '',
+      email:            t.email             ?? '',
+      telefono:         t.telefono          ?? '',
+      especialidad:     t.especialidad      ?? '',
+      numeroColegiado:  t.numeroColegiado   ?? '',
+      fechaContratacion: t.fechaContratacion ? t.fechaContratacion.slice(0, 10) : '',
     });
     this.error.set(null);
     this.exito.set(null);
@@ -105,12 +108,13 @@ export class TrabajadorPerfilTabComponent implements OnInit, OnDestroy {
     this.error.set(null);
 
     const payload: UpdateTrabajadorPayload = {
-      nombre:          f.nombre.trim(),
-      apellidos:       f.apellidos.trim(),
-      email:           f.email.trim(),
-      telefono:        f.telefono.trim()        || undefined,
-      especialidad:    f.especialidad.trim()    || undefined,
-      numeroColegiado: f.numeroColegiado.trim() || undefined,
+      nombre:            f.nombre.trim(),
+      apellidos:         f.apellidos.trim(),
+      email:             f.email.trim(),
+      telefono:          f.telefono.trim()          || undefined,
+      especialidad:      f.especialidad.trim()      || undefined,
+      numeroColegiado:   f.numeroColegiado.trim()   || undefined,
+      fechaContratacion: f.fechaContratacion.trim()  || undefined,
     };
 
     this.trabajadorSvc.updateTrabajador(this.trabajadorId, payload).subscribe({

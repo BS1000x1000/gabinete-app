@@ -176,6 +176,16 @@
               />
             </div>
 
+            <div class="col-sm-6">
+              <label class="form-label">Fecha de incorporación</label>
+              <input
+                type="date"
+                class="form-control form-control-sm"
+                [value]="form().fechaContratacion"
+                (input)="updateField('fechaContratacion', $any($event.target).value)"
+              />
+            </div>
+
           </div>
         </div>
 

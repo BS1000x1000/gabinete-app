@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal, OnInit } from '@angular/core';
+import { Component, computed, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import {
@@ -21,6 +21,12 @@ interface FormTrabajador {
   rolId: string;
 }
 
+interface CredencialesGeneradas {
+  username: string;
+  password: string;
+  nombreCompleto: string;
+}
+
 type FiltroEstado = 'activos' | 'inactivos' | 'todos';
 
 @Component({
@@ -29,34 +35,27 @@ type FiltroEstado = 'activos' | 'inactivos' | 'todos';
   imports: [CommonModule],
   templateUrl: './trabajadores.component.html',
 })
-export class TrabajadoresComponent implements OnInit {
+export class TrabajadoresComponent implements OnInit, OnDestroy {
   private trabajadorSvc = inject(TrabajadorService);
   private router = inject(Router);
 
-  // Estado de carga
   isLoading = signal(false);
   guardando = signal(false);
 
-  // Datos
   trabajadores = signal<Trabajador[]>([]);
   roles = signal<Rol[]>([]);
 
-  // Modal
   mostrarModal = signal(false);
   modoModal = signal<'crear' | 'editar'>('crear');
   trabajadorEditandoId = signal<string | null>(null);
   errorModal = signal<string | null>(null);
 
-  // Confirmación de desactivación
   confirmDesactivar = signal<Trabajador | null>(null);
 
-  // Filtros
   busqueda = signal('');
   filtroRol = signal('todos');
   filtroEstado = signal<FiltroEstado>('activos');
-  mostrarInactivos = signal(false);
 
-  // Formulario
   form = signal<FormTrabajador>({
     nombre: '',
     apellidos: '',
@@ -69,7 +68,12 @@ export class TrabajadoresComponent implements OnInit {
     rolId: '',
   });
 
-  // Computed
+  // P1 — auto-generación de credenciales
+  usernameEditadoManualmente = signal(false);
+  credencialesParaMostrar = signal<CredencialesGeneradas | null>(null);
+  copiado = signal(false);
+  private copiadoTimer: ReturnType<typeof setTimeout> | null = null;
+
   trabajadoresFiltrados = computed(() => {
     const query = this.busqueda().toLowerCase().trim();
     const rol = this.filtroRol();
@@ -81,12 +85,9 @@ export class TrabajadoresComponent implements OnInit {
         const email = t.email.toLowerCase();
         if (!nombre.includes(query) && !email.includes(query)) return false;
       }
-
       if (rol !== 'todos' && t.rol?.id !== rol) return false;
-
       if (estado === 'activos' && !t.activo) return false;
       if (estado === 'inactivos' && t.activo) return false;
-
       return true;
     });
   });
@@ -116,18 +117,76 @@ export class TrabajadoresComponent implements OnInit {
     });
   }
 
-  // ─── Modal ─────────────────────────────────────────────────
+  // ─── P1: Generación de credenciales ───────────────────────────
+
+  private normalizarTexto(s: string): string {
+    return s.toLowerCase()
+      .normalize('NFD')
+      .replace(/\p{M}/gu, '')
+      .replace(/[^a-z]/g, '');
+  }
+
+  generarUsername(nombre: string, apellidos: string): string {
+    const inicial = this.normalizarTexto(nombre.trim()[0] ?? '');
+    const partes = apellidos.trim().split(/\s+/);
+    const primero = this.normalizarTexto(partes[0] ?? '');
+    const segundo = this.normalizarTexto(partes[1] ?? '');
+
+    if (!inicial || !primero) return '';
+
+    const base = inicial + primero;
+    const existentes = new Set(
+      this.trabajadores().map((t) => t.username?.toLowerCase()).filter(Boolean),
+    );
+
+    if (!existentes.has(base) || !segundo) return base;
+    return base + segundo;
+  }
+
+  generarPasswordSegura(): string {
+    const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const lower = 'abcdefghjkmnpqrstuvwxyz';
+    const digits = '23456789';
+    const special = '!@#$%&*';
+    const all = upper + lower + digits + special;
+
+    const required = [
+      upper[Math.floor(Math.random() * upper.length)],
+      upper[Math.floor(Math.random() * upper.length)],
+      lower[Math.floor(Math.random() * lower.length)],
+      lower[Math.floor(Math.random() * lower.length)],
+      digits[Math.floor(Math.random() * digits.length)],
+      digits[Math.floor(Math.random() * digits.length)],
+      special[Math.floor(Math.random() * special.length)],
+      all[Math.floor(Math.random() * all.length)],
+    ];
+
+    return required.sort(() => Math.random() - 0.5).join('');
+  }
+
+  regenerarPassword() {
+    const pwd = this.generarPasswordSegura();
+    this.form.update((f) => ({ ...f, password: pwd }));
+  }
+
+  onUsernameInput(value: string) {
+    this.form.update((f) => ({ ...f, username: value }));
+    this.usernameEditadoManualmente.set(true);
+  }
+
+  // ─── Modal ─────────────────────────────────────────────────────
 
   abrirCrear() {
     this.modoModal.set('crear');
     this.trabajadorEditandoId.set(null);
     this.errorModal.set(null);
+    this.usernameEditadoManualmente.set(false);
     this.form.set({
       nombre: '',
       apellidos: '',
       username: '',
       email: '',
-      password: '',
+      password: this.generarPasswordSegura(),
       telefono: '',
       numeroColegiado: '',
       especialidad: '',
@@ -162,7 +221,17 @@ export class TrabajadoresComponent implements OnInit {
   }
 
   updateFormField(field: keyof FormTrabajador, value: string) {
-    this.form.update((f) => ({ ...f, [field]: value }));
+    this.form.update((f) => {
+      const updated = { ...f, [field]: value };
+      if ((field === 'nombre' || field === 'apellidos') && !this.usernameEditadoManualmente()) {
+        const nombre = field === 'nombre' ? value : f.nombre;
+        const apellidos = field === 'apellidos' ? value : f.apellidos;
+        if (nombre.trim() && apellidos.trim()) {
+          updated.username = this.generarUsername(nombre, apellidos);
+        }
+      }
+      return updated;
+    });
   }
 
   guardar() {
@@ -178,8 +247,8 @@ export class TrabajadoresComponent implements OnInit {
         this.errorModal.set('El usuario debe tener al menos 3 caracteres.');
         return;
       }
-      if (!f.password || f.password.length < 6) {
-        this.errorModal.set('La contraseña debe tener al menos 6 caracteres.');
+      if (!f.password || f.password.length < 8) {
+        this.errorModal.set('La contraseña debe tener al menos 8 caracteres.');
         return;
       }
     }
@@ -200,10 +269,17 @@ export class TrabajadoresComponent implements OnInit {
         rolId: f.rolId,
       };
 
+      const credencialesAGuardar = {
+        username: f.username.trim(),
+        password: f.password,
+        nombreCompleto: `${f.nombre.trim()} ${f.apellidos.trim()}`,
+      };
+
       this.trabajadorSvc.createTrabajador(payload).subscribe({
         next: (res: any) => {
           this.trabajadores.update((lista) => [res.data, ...lista]);
           this.cerrarModal();
+          this.credencialesParaMostrar.set(credencialesAGuardar);
           this.guardando.set(false);
         },
         error: (err: any) => {
@@ -241,7 +317,29 @@ export class TrabajadoresComponent implements OnInit {
     }
   }
 
-  // ─── Toggle activo ─────────────────────────────────────────
+  // ─── Overlay credenciales ──────────────────────────────────────
+
+  cerrarCredenciales() {
+    this.credencialesParaMostrar.set(null);
+    this.copiado.set(false);
+  }
+
+  copiarCredenciales() {
+    const c = this.credencialesParaMostrar();
+    if (!c) return;
+    const texto = `Usuario: ${c.username}\nContraseña: ${c.password}`;
+    navigator.clipboard.writeText(texto).then(() => {
+      this.copiado.set(true);
+      if (this.copiadoTimer) clearTimeout(this.copiadoTimer);
+      this.copiadoTimer = setTimeout(() => this.copiado.set(false), 2500);
+    });
+  }
+
+  ngOnDestroy(): void {
+    if (this.copiadoTimer) clearTimeout(this.copiadoTimer);
+  }
+
+  // ─── Toggle activo ─────────────────────────────────────────────
 
   pedirConfirmDesactivar(t: Trabajador, event: Event) {
     event.stopPropagation();
@@ -277,27 +375,19 @@ export class TrabajadoresComponent implements OnInit {
     });
   }
 
-  // ─── Navegación ────────────────────────────────────────────
+  // ─── Navegación ────────────────────────────────────────────────
 
   verFicha(t: Trabajador) {
     this.router.navigate(['/home/trabajadores', t.id]);
   }
 
-  // ─── Filtros ───────────────────────────────────────────────
+  // ─── Filtros ───────────────────────────────────────────────────
 
-  onBusquedaChange(value: string) {
-    this.busqueda.set(value);
-  }
+  onBusquedaChange(value: string) { this.busqueda.set(value); }
+  onFiltroRolChange(value: string) { this.filtroRol.set(value); }
+  onFiltroEstadoChange(value: FiltroEstado) { this.filtroEstado.set(value); }
 
-  onFiltroRolChange(value: string) {
-    this.filtroRol.set(value);
-  }
-
-  onFiltroEstadoChange(value: FiltroEstado) {
-    this.filtroEstado.set(value);
-  }
-
-  // ─── Helpers ───────────────────────────────────────────────
+  // ─── Helpers ───────────────────────────────────────────────────
 
   getInitials(t: Trabajador): string {
     return `${t.nombre?.charAt(0) ?? ''}${t.apellidos?.charAt(0) ?? ''}`.toUpperCase();

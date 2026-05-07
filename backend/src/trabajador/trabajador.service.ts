@@ -58,6 +58,8 @@ export class TrabajadorService {
           email: dto.email,
           telefono: dto.telefono,
           img: dto.img,
+          numeroColegiado: dto.numeroColegiado,
+          especialidad: dto.especialidad,
           fechaContratacion: dto.fechaContratacion
             ? new Date(dto.fechaContratacion)
             : null,
@@ -536,6 +538,24 @@ export class TrabajadorService {
       throw new InternalServerErrorException(
         `Error al cambiar contraseña: ${err.message}`,
       );
+    }
+  }
+
+  /**
+   * Establecer contraseña sin validar la actual (solo ADMIN)
+   */
+  async setPasswordAdmin(id: string, passwordNueva: string): Promise<{ message: string }> {
+    try {
+      const trabajador = await this.prisma.trabajador.findUnique({ where: { id } });
+      if (!trabajador) {
+        throw new NotFoundException(`Trabajador con ID ${id} no encontrado`);
+      }
+      const hash = await bcrypt.hash(passwordNueva, this.SALT_ROUNDS);
+      await this.prisma.trabajador.update({ where: { id }, data: { passwordHash: hash } });
+      return { message: 'Contraseña actualizada correctamente' };
+    } catch (err) {
+      if (err instanceof NotFoundException) throw err;
+      throw new InternalServerErrorException(`Error al actualizar contraseña: ${err.message}`);
     }
   }
 

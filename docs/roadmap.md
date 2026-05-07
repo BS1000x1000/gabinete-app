@@ -36,16 +36,9 @@ Estado: Funcionalidad core completa. Bloqueantes pendientes son ops/infra y un p
 
 ---
 
-### Hito O3 — Tipo de informe ALTA
-**Motivación:** Gap clínico real. Cuando un cliente termina el tratamiento, el informe de alta documenta logros, estado al cierre y recomendaciones post-tratamiento.
+### Hito O3 — Tipo de informe ALTA ✅ COMPLETADO
 
-**Qué hacer:**
-- Añadir `ALTA` al enum `TipoInforme` en schema Prisma
-- Nueva migración: `npx prisma migrate dev --name add_tipo_informe_alta`
-- Frontend: añadir opción en selector de tipo
-- Secciones propias: resumen del proceso, logros alcanzados, recomendaciones de continuidad
-
-**Esfuerzo estimado:** ~1-2h
+`ALTA` ya existe en el enum `TipoInforme` del schema. Frontend: `TIPOS = ['INICIAL', 'SEGUIMIENTO', 'ALTA']`, `SECCIONES_ALTA` importadas y el editor las usa correctamente.
 
 ---
 
@@ -170,7 +163,7 @@ Cuando un niño tiene PEDAGOGO + NEURO + LOGOPEDA necesitan coordinarse. Hoy com
 PRE-DEPLOY
   O1  PDF informes → R2          ~4-6h   🔴 legal
   O2  Cambio contraseña perfil   ~2-3h   🟡 seguridad
-  O3  Tipo informe ALTA          ~1-2h   🟡 clínico
+  O3  Tipo informe ALTA          ✅ completado
   ─── DEPLOY ──────────────────  ~1 día  🔴 bloqueante
 
 CORTO PLAZO (post-deploy)

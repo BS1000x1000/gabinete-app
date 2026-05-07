@@ -1,7 +1,5 @@
 import { IsEmail, IsString, MinLength, MaxLength, Matches } from 'class-validator';
-
-const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/;
-const PASSWORD_MSG = 'La contrasena debe tener minimo 8 caracteres, una mayuscula, una minuscula y un numero';
+import { PASSWORD_REGEX, PASSWORD_MSG } from '../../trabajador/dto/password-validators';
 
 export class ForgotPasswordDto {
   @IsEmail()

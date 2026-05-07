@@ -61,6 +61,7 @@ export class MotorReglasService {
       this._reglaInformeEnBorrador(trabajadorId, cliente, now, baseUrl),
       this._reglaSesionSinBono(trabajadorId, cliente, now, baseUrl),
       this._reglaConsentimientoRgpdPendiente(trabajadorId, cliente, baseUrl),
+      this._reglaSinRegistrosRecientes(trabajadorId, cliente, now, baseUrl),
     ]);
   }
 
@@ -343,6 +344,46 @@ export class MotorReglasService {
       mensaje: `El cliente no ha otorgado el consentimiento de tratamiento de datos (Art. 9 LOPDGDD). Obtén la autorización antes de continuar el tratamiento.`,
       accionUrl: `${baseUrl}/perfil`,
       reglaOrigen: 'CONSENTIMIENTO_RGPD_PENDIENTE',
+      clienteId: cliente.id,
+      referenciaId: cliente.id,
+      trabajadorId,
+    });
+  }
+
+  // ─── Regla 11: Sin registros diarios en 14+ días ─────────────────────────
+  private async _reglaSinRegistrosRecientes(
+    trabajadorId: string,
+    cliente: any,
+    now: Date,
+    baseUrl: string,
+  ) {
+    if (!cliente.activo) return;
+
+    const ultimoRegistro = await this.prisma.registroDiario.findFirst({
+      where: { clienteId: cliente.id, trabajadorId },
+      orderBy: { fechaRegistro: 'desc' },
+      select: { fechaRegistro: true },
+    });
+
+    let dias: number | null = null;
+    if (ultimoRegistro) {
+      dias = this._diffDias(ultimoRegistro.fechaRegistro, now);
+      if (dias < 14) return;
+    } else {
+      // Nuevo cliente sin ningún registro — solo alertar si lleva 14+ días activo
+      if (!cliente.fechaInicio) return;
+      if (this._diffDias(cliente.fechaInicio, now) < 14) return;
+    }
+
+    await this.notificacionesSvc.crearSiNoExiste({
+      tipo: 'SIN_REGISTROS_RECIENTES',
+      prioridad: 'BAJA',
+      titulo: `Sin registros recientes — ${cliente.nombre} ${cliente.apellidos}`,
+      mensaje: dias !== null
+        ? `Llevas ${dias} días sin añadir un registro de sesión para este cliente.`
+        : `No hay ningún registro de sesión para este cliente.`,
+      accionUrl: `${baseUrl}/progreso`,
+      reglaOrigen: 'SIN_REGISTROS_RECIENTES',
       clienteId: cliente.id,
       referenciaId: cliente.id,
       trabajadorId,

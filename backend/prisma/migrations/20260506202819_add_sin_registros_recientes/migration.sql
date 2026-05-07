@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "TipoNotificacion" ADD VALUE 'SIN_REGISTROS_RECIENTES';
