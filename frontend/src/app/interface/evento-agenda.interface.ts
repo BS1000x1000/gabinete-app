@@ -19,6 +19,8 @@ export interface EventoAgenda {
   }>;
   createdAt: string;
   updatedAt: string;
+  esVirtual?: boolean;
+  horarioAdminId?: string;
 }
 
 export interface CreateEventoDto {
@@ -28,6 +30,7 @@ export interface CreateEventoDto {
   fechaHoraFin: string;
   descripcion?: string;
   participantesIds?: string[];
+  horarioAdminId?: string;
 }
 
 export interface UpdateEventoDto {

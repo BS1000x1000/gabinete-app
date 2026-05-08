@@ -69,6 +69,7 @@ export class TrabajadorFichaComponent implements OnInit, OnDestroy {
     const tabs: WorkTab[] = [
       { label: 'Perfil',    icon: 'bi-person-badge',  target: 'perfil'   },
       { label: 'Clientes',  icon: 'bi-people',         target: 'clientes' },
+      { label: 'Horario',   icon: 'bi-arrow-repeat',   target: 'horario'  },
     ];
     if (this.auth.isAdmin()) {
       tabs.push({ label: 'Acceso', icon: 'bi-shield-lock', target: 'acceso' });

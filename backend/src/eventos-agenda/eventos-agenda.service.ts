@@ -4,7 +4,7 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
-import { startOfISOWeek, endOfISOWeek, getISOWeekYear, getISOWeek } from 'date-fns';
+import { startOfISOWeek, endOfISOWeek, getISOWeekYear, getISOWeek, getISODay } from 'date-fns';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateEventoDto } from './dto/create-evento.dto';
 import { UpdateEventoDto } from './dto/update-evento.dto';
@@ -95,6 +95,7 @@ export class EventosAgendaService {
         fechaHoraFin: fin,
         tipo: dto.tipo,
         creadoPorId: creadorId,
+        horarioAdminId: dto.horarioAdminId ?? null,
         participantes: {
           create: [creadorId, ...extraParticipantes].map((id) => ({ trabajadorId: id })),
         },
@@ -111,22 +112,72 @@ export class EventosAgendaService {
     trabajadorIdFiltro?: string,
   ) {
     const filtroId = this.resolveFilterId(userId, rol, trabajadorIdFiltro);
+    const desdeDate = new Date(desde);
+    const hastaDate = new Date(hasta);
 
-    const registros = await this.prisma.eventoParticipante.findMany({
-      where: {
-        trabajadorId: filtroId,
-        evento: {
-          fechaHoraInicio: { gte: new Date(desde) },
-          fechaHoraFin: { lte: new Date(hasta) },
+    const [registros, reglas] = await Promise.all([
+      this.prisma.eventoParticipante.findMany({
+        where: {
+          trabajadorId: filtroId,
+          evento: {
+            fechaHoraInicio: { gte: desdeDate },
+            fechaHoraFin: { lte: hastaDate },
+          },
         },
-      },
-      include: {
-        evento: { include: PARTICIPANTE_SELECT },
-      },
-      orderBy: { evento: { fechaHoraInicio: 'asc' } },
-    });
+        include: {
+          evento: { include: PARTICIPANTE_SELECT },
+        },
+        orderBy: { evento: { fechaHoraInicio: 'asc' } },
+      }),
+      this.prisma.horarioAdmin.findMany({
+        where: { trabajadorId: filtroId, activo: true },
+        include: { trabajador: { select: { id: true, nombre: true, apellidos: true } } },
+      }),
+    ]);
 
-    return registros.map((r) => r.evento);
+    const eventosReales = registros.map((r) => r.evento);
+
+    if (reglas.length === 0) {
+      return eventosReales;
+    }
+
+    const overridesExistentes = new Set(
+      eventosReales
+        .filter((e) => e.horarioAdminId)
+        .map((e) => `${e.horarioAdminId}_${e.fechaHoraInicio.toISOString().slice(0, 10)}`),
+    );
+
+    type EventoResult = (typeof eventosReales)[number] & { esVirtual?: boolean };
+    const virtuales: EventoResult[] = [];
+    const cursor = new Date(desdeDate);
+    while (cursor <= hastaDate) {
+      const dayOfWeek = getISODay(cursor);
+      const fechaKey = cursor.toISOString().slice(0, 10);
+      for (const regla of reglas) {
+        if (regla.diaSemana === dayOfWeek && !overridesExistentes.has(`${regla.id}_${fechaKey}`)) {
+          virtuales.push({
+            id: `virtual_${regla.id}_${fechaKey}`,
+            titulo: regla.titulo,
+            descripcion: null,
+            fechaHoraInicio: new Date(`${fechaKey}T${regla.horaInicio}:00`),
+            fechaHoraFin: new Date(`${fechaKey}T${regla.horaFin}:00`),
+            tipo: 'TIEMPO_ADMINISTRACION' as const,
+            creadoPorId: regla.trabajadorId,
+            horarioAdminId: regla.id,
+            creadoPor: regla.trabajador,
+            participantes: [{ eventoId: '', trabajadorId: regla.trabajadorId, trabajador: regla.trabajador }],
+            createdAt: desdeDate,
+            updatedAt: desdeDate,
+            esVirtual: true,
+          } as EventoResult);
+        }
+      }
+      cursor.setDate(cursor.getDate() + 1);
+    }
+
+    return [...eventosReales, ...virtuales].sort(
+      (a, b) => a.fechaHoraInicio.getTime() - b.fechaHoraInicio.getTime(),
+    );
   }
 
   async findOne(id: string, userId: string, rol: string) {

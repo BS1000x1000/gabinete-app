@@ -207,8 +207,9 @@
             } @else {
               <div
                 class="ag-card ag-card--evento"
+                [class.ag-card--virtual]="item.evento.esVirtual"
                 [style.--tipo-color]="getEventoColor(item.evento)"
-                (click)="abrirModalEditarEvento(item.evento, $event)"
+                (click)="abrirModalEvento(item.evento, $event)"
               >
                 <div class="ag-card-time">
                   <span class="ag-time-start">{{ isoToHHMM(item.evento.fechaHoraInicio) }}</span>
@@ -219,6 +220,9 @@
                 <div class="ag-card-body">
                   <div class="ag-card-top">
                     <span class="ag-client-name">{{ item.evento.titulo }}</span>
+                    @if (item.evento.esVirtual) {
+                      <i class="bi bi-arrow-repeat ag-virtual-icon" title="Recurrente"></i>
+                    }
                   </div>
                   <div class="ag-card-sub">
                     <span
@@ -234,13 +238,15 @@
                   </div>
                 </div>
                 <div class="ag-card-actions">
-                  <button
-                    class="ag-action ag-action--neutral"
-                    title="Editar evento"
-                    (click)="abrirModalEditarEvento(item.evento, $event)"
-                  >
-                    <i class="bi bi-pencil"></i>
-                  </button>
+                  @if (!item.evento.esVirtual) {
+                    <button
+                      class="ag-action ag-action--neutral"
+                      title="Editar evento"
+                      (click)="abrirModalEvento(item.evento, $event)"
+                    >
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                  }
                 </div>
               </div>
             }
@@ -397,14 +403,20 @@
                     <div
                       class="ag-week-grid__event ag-week-grid__event--agenda"
                       [class.ag-week-grid__event--compartido]="esEventoCompartido(evento)"
+                      [class.ag-week-grid__event--virtual]="evento.esVirtual"
                       [style.top.px]="getEventoTop(evento)"
                       [style.height.px]="getEventoAltura(evento)"
                       [style.--evento-color]="getEventoColor(evento)"
-                      (click)="$event.stopPropagation(); abrirModalEditarEvento(evento, $event)"
-                      [title]="evento.titulo + ' · ' + TIPO_EVENTO_CONFIG[evento.tipo]?.label"
+                      (click)="abrirModalEvento(evento, $event)"
+                      [title]="evento.titulo + ' · ' + TIPO_EVENTO_CONFIG[evento.tipo]?.label + (evento.esVirtual ? ' (recurrente)' : '')"
                     >
                       <span class="ag-week-grid__event-time">{{ isoToHHMM(evento.fechaHoraInicio) }}–{{ isoToHHMM(evento.fechaHoraFin) }}</span>
-                      <span class="ag-week-grid__event-name">{{ evento.titulo }}</span>
+                      <span class="ag-week-grid__event-name">
+                        {{ evento.titulo }}
+                        @if (evento.esVirtual) {
+                          <i class="bi bi-arrow-repeat ag-virtual-icon-sm"></i>
+                        }
+                      </span>
                       @if (getEventoAltura(evento) >= 44) {
                         <span class="ag-week-grid__event-tipo">
                           {{ TIPO_EVENTO_CONFIG[evento.tipo]?.label ?? evento.tipo }}

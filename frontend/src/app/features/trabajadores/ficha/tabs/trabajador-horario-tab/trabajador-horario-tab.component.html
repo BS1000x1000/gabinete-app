@@ -1,0 +1,201 @@
+<div class="perfil-tab" *ngIf="!cargandoReglas()">
+
+  <!-- Cabecera de sección -->
+  <div class="trab-section-hdr mb-3">
+    <span class="trab-section-title">
+      <i class="bi bi-arrow-repeat me-2"></i>Horario de administración recurrente
+    </span>
+    @if (puedeEditar() && !mostrarFormNueva()) {
+      <button class="btn btn-sm btn-primary" type="button" (click)="abrirFormNueva()">
+        <i class="bi bi-plus-lg me-1"></i>Añadir bloque
+      </button>
+    }
+  </div>
+
+  <p class="text-muted small mb-3">
+    @if (puedeEditar()) {
+      Bloques que se repiten automáticamente en el calendario. Haz clic en uno para editarlo solo para ese día.
+    } @else {
+      Bloques de tiempo de administración configurados para este profesional.
+    }
+  </p>
+
+  <!-- Error -->
+  @if (errorReglas()) {
+    <div class="alert alert-danger py-2 mb-3">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ errorReglas() }}
+      <button type="button" class="btn-close float-end" (click)="errorReglas.set(null)"></button>
+    </div>
+  }
+
+  <!-- Card principal -->
+  <div class="perfil-card">
+    <div class="perfil-card-hdr">
+      <span class="perfil-card-icon" style="background: #ede9fc; color: #7c6fd6;">
+        <i class="bi bi-calendar-week-fill"></i>
+      </span>
+      <h3 class="perfil-card-title">Bloques configurados</h3>
+    </div>
+    <div class="perfil-card-body">
+
+      <!-- Estado vacío -->
+      @if (reglasPorDia().length === 0 && !mostrarFormNueva()) {
+        <div class="horarios-empty">
+          <i class="bi bi-calendar2-x"></i>
+          <span>No hay bloques recurrentes configurados.</span>
+        </div>
+      }
+
+      <!-- Lista de reglas agrupadas por día -->
+      @if (reglasPorDia().length > 0) {
+        <div class="horarios-lista">
+          @for (grupo of reglasPorDia(); track grupo.dia) {
+            <div class="horarios-dia-grupo">
+              <span class="horarios-dia-label">{{ grupo.label }}</span>
+              <div class="horarios-dia-reglas">
+                @for (regla of grupo.reglas; track regla.id) {
+
+                  @if (puedeEditar() && reglaEditando()?.id === regla.id) {
+                    <!-- Modo edición inline -->
+                    <div class="horarios-regla horarios-regla--editando">
+                      <input
+                        type="time"
+                        class="form-control horarios-input-time"
+                        [value]="formEditar().horaInicio"
+                        (change)="setFormEditar('horaInicio', $any($event.target).value)"
+                      />
+                      <span class="horarios-sep">–</span>
+                      <input
+                        type="time"
+                        class="form-control horarios-input-time"
+                        [value]="formEditar().horaFin"
+                        (change)="setFormEditar('horaFin', $any($event.target).value)"
+                      />
+                      <input
+                        type="text"
+                        class="form-control horarios-input-titulo"
+                        placeholder="Título (opcional)"
+                        [value]="formEditar().titulo"
+                        (input)="setFormEditar('titulo', $any($event.target).value)"
+                      />
+                      <div class="horarios-regla-actions">
+                        <button class="horarios-btn horarios-btn--save" (click)="guardarEdicion()" [disabled]="guardandoRegla()" title="Guardar">
+                          <i class="bi bi-check-lg"></i>
+                        </button>
+                        <button class="horarios-btn horarios-btn--cancel" (click)="cancelarEdicion()" title="Cancelar">
+                          <i class="bi bi-x-lg"></i>
+                        </button>
+                      </div>
+                    </div>
+
+                  } @else {
+                    <!-- Vista normal -->
+                    <div class="horarios-regla">
+                      <span class="horarios-regla-hora">{{ regla.horaInicio }} – {{ regla.horaFin }}</span>
+                      <span class="horarios-regla-titulo">{{ regla.titulo }}</span>
+                      @if (puedeEditar()) {
+                        <div class="horarios-regla-actions">
+                          <button class="horarios-btn horarios-btn--edit" (click)="iniciarEdicion(regla)" title="Editar">
+                            <i class="bi bi-pencil"></i>
+                          </button>
+                          <button class="horarios-btn horarios-btn--delete" (click)="eliminarRegla(regla.id)" title="Eliminar" [disabled]="pendingDeleteId() === regla.id">
+                            <i class="bi bi-trash"></i>
+                          </button>
+                        </div>
+                      }
+                    </div>
+                  }
+
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Formulario nueva regla -->
+      @if (mostrarFormNueva()) {
+        <div class="horarios-form-nueva">
+          <p class="horarios-form-nueva__label">Selecciona los días:</p>
+          <div class="horarios-dias-selector">
+            @for (dia of diasSemana; track dia) {
+              <button
+                type="button"
+                class="horarios-dia-btn"
+                [class.horarios-dia-btn--activo]="formNueva().diasSeleccionados.includes(dia)"
+                (click)="toggleDia(dia)"
+              >
+                {{ DIA_SEMANA_LABELS[dia].slice(0, 2) }}
+              </button>
+            }
+          </div>
+
+          <div class="horarios-form-nueva__fila">
+            <div class="horarios-form-nueva__campo">
+              <label class="form-label form-label-sm">Hora inicio</label>
+              <input
+                type="time"
+                class="form-control form-control-sm"
+                [value]="formNueva().horaInicio"
+                (change)="setFormNueva('horaInicio', $any($event.target).value)"
+              />
+            </div>
+            <div class="horarios-form-nueva__campo">
+              <label class="form-label form-label-sm">Hora fin</label>
+              <input
+                type="time"
+                class="form-control form-control-sm"
+                [value]="formNueva().horaFin"
+                (change)="setFormNueva('horaFin', $any($event.target).value)"
+              />
+            </div>
+            <div class="horarios-form-nueva__campo horarios-form-nueva__campo--titulo">
+              <label class="form-label form-label-sm">Título (opcional)</label>
+              <input
+                type="text"
+                class="form-control form-control-sm"
+                placeholder="Tiempo de Administración"
+                [value]="formNueva().titulo"
+                (input)="setFormNueva('titulo', $any($event.target).value)"
+              />
+            </div>
+          </div>
+
+          <div class="horarios-form-nueva__actions">
+            <button
+              type="button"
+              class="btn btn-primary btn-sm"
+              (click)="guardarNuevasReglas()"
+              [disabled]="guardandoRegla() || !formNueva().diasSeleccionados.length"
+            >
+              <span *ngIf="guardandoRegla()" class="spinner-border spinner-border-sm me-1"></span>
+              <i *ngIf="!guardandoRegla()" class="bi bi-plus-lg me-1"></i>
+              Añadir
+            </button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" (click)="cancelarFormNueva()">
+              Cancelar
+            </button>
+          </div>
+        </div>
+      }
+
+    </div>
+  </div>
+
+</div>
+
+<!-- Loader -->
+<div *ngIf="cargandoReglas()" class="d-flex justify-content-center py-5">
+  <div class="spinner-border text-primary" role="status"></div>
+</div>
+
+<app-confirm-modal
+  *ngIf="pendingDeleteId()"
+  title="Eliminar bloque recurrente"
+  message="¿Eliminar este bloque? Desaparecerá del calendario a partir de ahora."
+  confirmLabel="Eliminar"
+  confirmClass="btn-danger"
+  icon="bi-trash"
+  (confirmed)="onConfirmarEliminar()"
+  (cancelled)="onCancelarEliminar()"
+></app-confirm-modal>

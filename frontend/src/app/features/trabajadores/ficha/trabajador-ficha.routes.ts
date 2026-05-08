@@ -12,6 +12,7 @@ export default [
       { path: '', redirectTo: 'perfil', pathMatch: 'full' },
       { path: 'perfil',   loadComponent: () => import('./tabs/trabajador-perfil-tab/trabajador-perfil-tab.component') },
       { path: 'clientes', loadComponent: () => import('./tabs/trabajador-clientes-tab/trabajador-clientes-tab.component') },
+      { path: 'horario',  loadComponent: () => import('./tabs/trabajador-horario-tab/trabajador-horario-tab.component') },
       { path: 'acceso',   loadComponent: () => import('./tabs/trabajador-acceso-tab/trabajador-acceso-tab.component'), canActivate: [roleGuard(['ADMIN'])] },
     ],
   },

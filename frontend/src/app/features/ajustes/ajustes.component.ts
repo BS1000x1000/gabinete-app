@@ -1,6 +1,5 @@
 import { Component, inject, signal, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { TrabajadorService } from '../../services/trabajadores.service';
@@ -10,7 +9,7 @@ type PasswordForm = { passwordActual: string; passwordNueva: string; confirmar: 
 @Component({
   standalone: true,
   selector: 'app-ajustes',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule],
   templateUrl: './ajustes.component.html',
 })
 export default class AjustesComponent implements OnDestroy {

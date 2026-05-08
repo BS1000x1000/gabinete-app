@@ -8,6 +8,7 @@ import {
   IsArray,
   IsUUID,
 } from 'class-validator';
+
 import { TipoEvento } from '@prisma/client';
 
 export class CreateEventoDto {
@@ -34,4 +35,8 @@ export class CreateEventoDto {
   @IsUUID('4', { each: true })
   @IsOptional()
   participantesIds?: string[];
+
+  @IsString()
+  @IsOptional()
+  horarioAdminId?: string;
 }

@@ -56,6 +56,7 @@ model Trabajador {
   consentimientosRgpd  ConsentimientoRgpd[]
   eventosCreados       EventoAgenda[]       @relation("EventosCreados")
   eventosParticipante  EventoParticipante[] @relation("EventosParticipante")
+  horariosAdmin        HorarioAdmin[]
 
   @@map("trabajadores")
 }
@@ -657,6 +658,8 @@ model EventoAgenda {
   creadoPorId     String               @map("creado_por_id")
   creadoPor       Trabajador           @relation("EventosCreados", fields: [creadoPorId], references: [id])
   participantes   EventoParticipante[]
+  horarioAdminId  String?              @map("horario_admin_id")
+  horarioAdmin    HorarioAdmin?        @relation(fields: [horarioAdminId], references: [id], onDelete: SetNull)
   createdAt       DateTime             @default(now()) @map("fecha_creacion")
   updatedAt       DateTime             @updatedAt @map("ultima_actualizacion")
 
@@ -673,6 +676,23 @@ model EventoParticipante {
 
   @@id([eventoId, trabajadorId])
   @@map("evento_participantes")
+}
+
+model HorarioAdmin {
+  id           String       @id @default(uuid())
+  trabajadorId String       @map("trabajador_id")
+  trabajador   Trabajador   @relation(fields: [trabajadorId], references: [id])
+  diaSemana    Int          @map("dia_semana")   // 1=Lun, 2=Mar, ..., 7=Dom (ISO)
+  horaInicio   String       @map("hora_inicio")  // "HH:mm"
+  horaFin      String       @map("hora_fin")     // "HH:mm"
+  titulo       String       @default("Tiempo de Administración")
+  activo       Boolean      @default(true)
+  createdAt    DateTime     @default(now()) @map("fecha_creacion")
+  updatedAt    DateTime     @updatedAt @map("ultima_actualizacion")
+  overrides    EventoAgenda[]
+
+  @@index([trabajadorId])
+  @@map("horarios_admin")
 }
 
 // ============================================================

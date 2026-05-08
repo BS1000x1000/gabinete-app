@@ -117,6 +117,7 @@ export class AgendaComponent implements OnInit {
     horaFin: string;
     descripcion: string;
     participantesIds: string[];
+    horarioAdminId: string | null;
   }>({
     titulo: '',
     tipo: 'OTRO',
@@ -125,6 +126,7 @@ export class AgendaComponent implements OnInit {
     horaFin: '10:00',
     descripcion: '',
     participantesIds: [],
+    horarioAdminId: null,
   });
   modalEventoGuardando = signal(false);
 
@@ -449,22 +451,24 @@ export class AgendaComponent implements OnInit {
       horaFin,
       descripcion: '',
       participantesIds: [],
+      horarioAdminId: null,
     });
     this.mostrarModalEvento.set(true);
   }
 
-  abrirModalEditarEvento(evento: EventoAgenda, event: Event) {
+  abrirModalEvento(evento: EventoAgenda, event: Event) {
     event.stopPropagation();
-    this.eventoEditando.set(evento);
     const fecha = evento.fechaHoraInicio.split('T')[0];
+    this.eventoEditando.set(evento.esVirtual ? null : evento);
     this.modalEventoForm.set({
       titulo: evento.titulo,
       tipo: evento.tipo,
       fecha,
       horaInicio: this.isoToHHMM(evento.fechaHoraInicio),
       horaFin: this.isoToHHMM(evento.fechaHoraFin),
-      descripcion: evento.descripcion ?? '',
-      participantesIds: evento.participantes.map((p) => p.trabajador.id),
+      descripcion: evento.esVirtual ? '' : (evento.descripcion ?? ''),
+      participantesIds: evento.esVirtual ? [] : evento.participantes.map((p) => p.trabajador.id),
+      horarioAdminId: evento.esVirtual ? (evento.horarioAdminId ?? null) : null,
     });
     this.mostrarModalEvento.set(true);
   }
@@ -486,6 +490,7 @@ export class AgendaComponent implements OnInit {
       fechaHoraFin: `${form.fecha}T${form.horaFin}:00`,
       descripcion: form.descripcion || undefined,
       participantesIds: form.participantesIds.length ? form.participantesIds : undefined,
+      horarioAdminId: form.horarioAdminId ?? undefined,
     };
 
     this.modalEventoGuardando.set(true);
