@@ -108,6 +108,17 @@
                     Sin bono
                   </div>
                 }
+                @if (sesion.modalidad === 'ONLINE') {
+                  <button
+                    class="btn-meet btn-meet--dashboard"
+                    [disabled]="!sesion.urlVideollamada"
+                    [title]="sesion.urlVideollamada ? 'Iniciar videollamada de Meet' : 'Configura tu sala en Ajustes'"
+                    (click)="abrirVideollamada(sesion.urlVideollamada, $event)"
+                  >
+                    <i class="bi bi-camera-video"></i>
+                    Meet
+                  </button>
+                }
                 @if (st?.esProgramada) {
                   @if (procesandoId() === sesion.id) {
                     <div class="sesion-acciones">

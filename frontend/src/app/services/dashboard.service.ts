@@ -168,6 +168,16 @@ export class DashboardService {
       .pipe(map((res) => res.data || res));
   }
 
+  getHorasHistoricas<T>(desde: Date, hasta: Date, trabajadorId?: string): Observable<T> {
+    let params = new HttpParams()
+      .set('desde', desde.toISOString())
+      .set('hasta', hasta.toISOString());
+    if (trabajadorId) params = params.set('trabajadorId', trabajadorId);
+    return this.http
+      .get<WrappedResponse<T>>(`${this.api}/horas-trabajadas`, { params })
+      .pipe(map((res) => res.data));
+  }
+
   // ========================================
   // HELPERS
   // ========================================

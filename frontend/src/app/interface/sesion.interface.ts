@@ -2,18 +2,21 @@
  * Interfaz para las sesiones (antes horarios)
  * Coincide con el modelo Sesion del backend
  */
+export type ModalidadSesion = 'PRESENCIAL' | 'ONLINE';
+
 export interface SesionData {
   id: string;
   fechaHoraInicio: string; // ISO string
   fechaHoraFin: string;
   estado: EstadoSesion;
   tipoSesion: TipoSesion;
+  modalidad?: ModalidadSesion;
   notas?: string;
   objetivosTrabajados?: string; // Texto libre de objetivos
-  
+
   clienteId: string;
   trabajadorId: string;
-  
+
   // Relaciones populadas
   cliente: {
     id: string;
@@ -21,11 +24,12 @@ export interface SesionData {
     apellidos: string;
     curso?: string;
   };
-  
+
   trabajador?: {
     id: string;
     nombre: string;
     apellidos: string;
+    urlVideollamada?: string;
   };
   
   // Campo local para UI

@@ -15,6 +15,7 @@ export const sesionInclude = {
       nombre: true,
       apellidos: true,
       email: true,
+      urlVideollamada: true,
     },
   },
 } as const;

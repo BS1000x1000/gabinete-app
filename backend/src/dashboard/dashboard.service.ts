@@ -411,6 +411,7 @@ export class DashboardService {
                 },
               },
             },
+            trabajador: { select: { urlVideollamada: true } },
           },
           orderBy: { fechaHoraInicio: 'asc' },
         }),
@@ -543,6 +544,8 @@ export class DashboardService {
         horaFin: s.fechaHoraFin,
         estado: s.estado,
         tipoSesion: s.tipoSesion,
+        modalidad: s.modalidad,
+        urlVideollamada: s.trabajador.urlVideollamada,
         cliente: {
           id: s.cliente.id,
           nombre: s.cliente.nombre,

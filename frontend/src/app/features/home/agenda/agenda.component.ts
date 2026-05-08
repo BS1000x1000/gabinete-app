@@ -16,6 +16,7 @@ import { AuthService } from '../../../services/auth.service';
 import {
   EstadoSesion,
   TipoSesion,
+  ModalidadSesion,
   SesionData,
   TIPO_SESION_LABELS,
   ESTADO_SESION_LABELS,
@@ -30,9 +31,11 @@ import {
 } from '../../../interface/calendario.interface';
 import { SesionModalesComponent } from '../../../components/sesiones-modales/sesiones-modales.component';
 import { isoToHHMM, formatMinutosHoras } from '../../../shared/utils/date';
+import { abrirEnlaceExterno } from '../../../shared/utils/url.utils';
 import { EventosAgendaService } from '../../../services/eventos-agenda.service';
 import {
   EventoAgenda,
+  ModalidadEvento,
   ResumenHoras,
   TIPO_EVENTO_CONFIG,
   CreateEventoDto,
@@ -112,6 +115,7 @@ export class AgendaComponent implements OnInit {
   modalEventoForm = signal<{
     titulo: string;
     tipo: TipoEvento;
+    modalidad: ModalidadEvento;
     fecha: string;
     horaInicio: string;
     horaFin: string;
@@ -121,6 +125,7 @@ export class AgendaComponent implements OnInit {
   }>({
     titulo: '',
     tipo: 'OTRO',
+    modalidad: 'PRESENCIAL',
     fecha: '',
     horaInicio: '09:00',
     horaFin: '10:00',
@@ -178,9 +183,11 @@ export class AgendaComponent implements OnInit {
       fechaHoraFin: this.parseHoraToDate(cal.fecha, s.horaFin).toISOString(),
       estado: s.estado as EstadoSesion,
       tipoSesion: s.tipoSesion as TipoSesion,
+      modalidad: s.modalidad,
       cliente: s.cliente,
       clienteId: s.cliente.id,
       trabajadorId: this.auth.currentTrabajadorId() ?? '',
+      urlVideollamada: s.urlVideollamada,
       notas: s.notas,
       temporal: s.temporal,
     }));
@@ -446,6 +453,7 @@ export class AgendaComponent implements OnInit {
     this.modalEventoForm.set({
       titulo: '',
       tipo: 'OTRO',
+      modalidad: 'PRESENCIAL',
       fecha,
       horaInicio: hora,
       horaFin,
@@ -463,6 +471,7 @@ export class AgendaComponent implements OnInit {
     this.modalEventoForm.set({
       titulo: evento.titulo,
       tipo: evento.tipo,
+      modalidad: evento.modalidad ?? 'PRESENCIAL',
       fecha,
       horaInicio: this.isoToHHMM(evento.fechaHoraInicio),
       horaFin: this.isoToHHMM(evento.fechaHoraFin),
@@ -486,6 +495,7 @@ export class AgendaComponent implements OnInit {
     const dto: CreateEventoDto = {
       titulo: form.titulo,
       tipo: form.tipo,
+      modalidad: form.modalidad,
       fechaHoraInicio: `${form.fecha}T${form.horaInicio}:00`,
       fechaHoraFin: `${form.fecha}T${form.horaFin}:00`,
       descripcion: form.descripcion || undefined,
@@ -530,6 +540,8 @@ export class AgendaComponent implements OnInit {
     const r = this.resumenHoras();
     return r ? formatMinutosHoras(r.totalMinutos) : '';
   }
+
+  readonly abrirVideollamada = abrirEnlaceExterno;
 
   // ── Helpers UI ───────────────────────────────────────────
 

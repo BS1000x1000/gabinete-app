@@ -51,6 +51,36 @@
     }
   }
 
+  .est-refresh-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: $border-radius;
+    border: 1.5px solid $primary-light;
+    background: transparent;
+    color: $primary;
+    cursor: pointer;
+    transition: $transition-fast;
+    flex-shrink: 0;
+
+    i { font-size: 1rem; display: block; }
+
+    &:hover {
+      background: $primary-ultra-light;
+      border-color: $primary;
+    }
+
+    &.spinning i {
+      animation: est-spin 0.7s linear infinite;
+    }
+  }
+
+  @keyframes est-spin {
+    to { transform: rotate(360deg); }
+  }
+
   .est-terapeuta-select {
     margin-left: auto;
     max-width: 220px;
@@ -302,21 +332,63 @@
     }
   }
 
-  // ── Sección Horas Trabajadas ──────────────────────────────
-  .est-horas-section {
-    margin-top: $spacing-lg;
+  // ── Sección Jornada Laboral ───────────────────────────────
+  .est-jornada-section {
+    margin-top: calc($spacing-lg * 1.5);
+    padding-top: $spacing-lg;
+    border-top: 2px solid $primary-ultra-light;
   }
 
-  .est-horas-title {
-    font-size: $font-size-base;
-    font-weight: $font-weight-semibold;
-    color: $gray-700;
-    margin-bottom: $spacing-md;
+  .est-jornada-header {
     display: flex;
     align-items: center;
-    gap: $spacing-xs;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: $spacing-md;
+    margin-bottom: $spacing-lg;
 
-    i { color: $primary; }
+    &__left {
+      display: flex;
+      align-items: center;
+      gap: $spacing-md;
+    }
+
+    &__icon {
+      font-size: 1.5rem;
+      color: $primary;
+      flex-shrink: 0;
+    }
+
+    &__title {
+      font-size: $font-size-lg;
+      font-weight: $font-weight-bold;
+      color: $gray-900;
+      margin: 0 0 2px;
+      line-height: 1.3;
+    }
+
+    &__sub {
+      font-size: $font-size-xs;
+      color: $gray-500;
+      margin: 0;
+    }
+  }
+
+  .est-jornada-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: $border-radius-full;
+    background: #ecfdf5;
+    color: #059669;
+    border: 1px solid #a7f3d0;
+    font-size: 0.72rem;
+    font-weight: $font-weight-semibold;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+
+    i { font-size: 0.8rem; }
   }
 
   .est-horas-loading {
@@ -328,6 +400,179 @@
     padding: $spacing-md 0;
   }
 
+  // ── KPI cards jornada ──────────────────────────────────────
+  .jornada-kpis {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: $spacing-md;
+    margin-bottom: $spacing-lg;
+
+    @media (max-width: 768px) { grid-template-columns: 1fr; }
+  }
+
+  .jornada-kpi {
+    background: $bg-card;
+    border-radius: $border-radius-lg;
+    box-shadow: $shadow-card;
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    border-left: 3px solid transparent;
+    transition: $transition-base;
+
+    &:hover { box-shadow: $shadow-hover; }
+
+    &--total {
+      border-left-color: $primary;
+
+      .jornada-kpi__icon { background: $primary-ultra-light; color: $primary; }
+      .jornada-kpi__value { color: $primary; }
+    }
+
+    &--clinica {
+      border-left-color: $success;
+
+      .jornada-kpi__icon { background: $success-light; color: $success-dark; }
+      .jornada-kpi__value { color: $success-dark; }
+    }
+
+    &--noclinica {
+      border-left-color: #6b7280;
+
+      .jornada-kpi__icon { background: #f3f4f6; color: #4b5563; }
+      .jornada-kpi__value { color: #4b5563; }
+    }
+
+    &__icon {
+      width: 44px;
+      height: 44px;
+      border-radius: $border-radius;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    &__body { flex: 1; min-width: 0; }
+
+    &__value {
+      font-size: 1.625rem;
+      font-weight: $font-weight-extrabold;
+      line-height: 1;
+      margin-bottom: 0.2rem;
+    }
+
+    &__label {
+      font-size: $font-size-xs;
+      font-weight: $font-weight-semibold;
+      color: $gray-700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    &__sub {
+      font-size: 0.7rem;
+      color: $gray-400;
+      margin-top: 1px;
+    }
+  }
+
+  // ── Contenido principal: 2 columnas ───────────────────────
+  .jornada-content-row {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: $spacing-md;
+
+    @media (max-width: 1100px) { grid-template-columns: 1fr; }
+  }
+
+  .jornada-chart-card {
+    // Hereda .est-chart-card
+  }
+
+  .jornada-desglose-card {
+    // Hereda .est-chart-card — altura auto
+    .chart-wrap { height: auto; }
+  }
+
+  // ── Lista de desglose por actividad ───────────────────────
+  .jornada-desglose-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    padding-top: 0.25rem;
+  }
+
+  .jornada-desglose-item {
+    &__top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.35rem;
+    }
+
+    &__label {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: $font-size-sm;
+      color: $gray-700;
+      font-weight: $font-weight-medium;
+      min-width: 0;
+      flex: 1;
+
+      i { font-size: 0.85rem; flex-shrink: 0; }
+
+      span:last-child {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+
+    &__dot {
+      display: none; // solo como fallback si el icon no carga
+    }
+
+    &__right {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-shrink: 0;
+      margin-left: 0.5rem;
+    }
+
+    &__time {
+      font-size: $font-size-sm;
+      font-weight: $font-weight-semibold;
+      color: $gray-800;
+    }
+
+    &__pct {
+      font-size: 0.72rem;
+      color: $gray-400;
+      min-width: 28px;
+      text-align: right;
+    }
+  }
+
+  .jornada-desglose-bar {
+    height: 5px;
+    background: $primary-ultra-light;
+    border-radius: $border-radius-full;
+    overflow: hidden;
+
+    &__fill {
+      height: 100%;
+      border-radius: $border-radius-full;
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      opacity: 0.85;
+    }
+  }
+
+  // ── Horas legacy (eliminar si ya no se usan) ──────────────
   .horas-cards {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -335,34 +580,5 @@
     margin-bottom: $spacing-sm;
 
     @media (max-width: 640px) { grid-template-columns: 1fr; }
-  }
-
-  .horas-card {
-    background: $bg-card;
-    border-radius: $border-radius-lg;
-    box-shadow: $shadow-card;
-    padding: $spacing-md $spacing-lg;
-
-    &__value {
-      font-size: $font-size-xl;
-      font-weight: $font-weight-bold;
-      color: $gray-700;
-    }
-
-    &__label {
-      font-size: $font-size-sm;
-      font-weight: $font-weight-semibold;
-      color: $gray-600;
-      margin-top: 2px;
-    }
-
-    &__sub {
-      font-size: 0.72rem;
-      color: $gray-400;
-      margin-top: 2px;
-    }
-
-    &--clinica .horas-card__value { color: $primary; }
-    &--admin   .horas-card__value { color: $gray-500; }
   }
 }

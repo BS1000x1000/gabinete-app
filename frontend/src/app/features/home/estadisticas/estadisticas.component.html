@@ -23,6 +23,10 @@
         }
       </select>
     }
+
+    <button class="est-refresh-btn" [class.spinning]="isLoading() || isLoadingHoras()" (click)="cargar()" title="Actualizar datos">
+      <i class="bi bi-arrow-clockwise"></i>
+    </button>
   </div>
 
   <!-- ══ SKELETON ══════════════════════════════════════════════════════════ -->
@@ -177,12 +181,22 @@
     } <!-- /!isEmpty -->
   } <!-- /!isLoading -->
 
-  <!-- ── Sección: Horas trabajadas ─────────────────────────────────────── -->
-  <div class="est-horas-section">
-    <h2 class="est-horas-title">
-      <i class="bi bi-clock-history"></i>
-      Horas trabajadas
-    </h2>
+  <!-- ══ SECCIÓN JORNADA LABORAL ══════════════════════════════════════════ -->
+  <div class="est-jornada-section">
+
+    <div class="est-jornada-header">
+      <div class="est-jornada-header__left">
+        <i class="bi bi-briefcase-fill est-jornada-header__icon"></i>
+        <div>
+          <h2 class="est-jornada-header__title">Registro de jornada</h2>
+          <p class="est-jornada-header__sub">Tiempo total trabajado en el período · clínico y no clínico</p>
+        </div>
+      </div>
+      <span class="est-jornada-badge">
+        <i class="bi bi-shield-check"></i>
+        Uso legal / inspección laboral
+      </span>
+    </div>
 
     @if (isLoadingHoras()) {
       <div class="est-horas-loading">
@@ -190,45 +204,97 @@
         <span>Calculando horas...</span>
       </div>
     } @else if (horasData()) {
-      <!-- Mini-cards de totales -->
-      <div class="horas-cards">
-        <div class="horas-card">
-          <div class="horas-card__value">{{ formatHoras(horasData()!.totales.totalMinutos) }}</div>
-          <div class="horas-card__label">Total período</div>
-          <div class="horas-card__sub">sesiones + eventos</div>
+
+      <!-- KPI cards -->
+      <div class="jornada-kpis">
+        <div class="jornada-kpi jornada-kpi--total">
+          <div class="jornada-kpi__icon"><i class="bi bi-clock-fill"></i></div>
+          <div class="jornada-kpi__body">
+            <div class="jornada-kpi__value">{{ formatHoras(horasData()!.totales.totalMinutos) }}</div>
+            <div class="jornada-kpi__label">Jornada total</div>
+          </div>
         </div>
-        <div class="horas-card horas-card--clinica">
-          <div class="horas-card__value">{{ formatHoras(horasData()!.totales.horasClinicas * 60 + horasData()!.totales.minutosClinicas) }}</div>
-          <div class="horas-card__label">Horas clínicas</div>
-          <div class="horas-card__sub">sesiones completadas</div>
+        <div class="jornada-kpi jornada-kpi--clinica">
+          <div class="jornada-kpi__icon"><i class="bi bi-heart-pulse-fill"></i></div>
+          <div class="jornada-kpi__body">
+            <div class="jornada-kpi__value">
+              {{ formatHoras(horasData()!.totales.horasClinicas * 60 + horasData()!.totales.minutosClinicas) }}
+            </div>
+            <div class="jornada-kpi__label">Tiempo clínico</div>
+            <div class="jornada-kpi__sub">sesiones completadas</div>
+          </div>
         </div>
-        <div class="horas-card horas-card--admin">
-          <div class="horas-card__value">{{ formatHoras(horasData()!.totales.horasNoClinicas * 60 + horasData()!.totales.minutosNoClinicas) }}</div>
-          <div class="horas-card__label">No clínicas</div>
-          <div class="horas-card__sub">coordinación, admin, formación</div>
+        <div class="jornada-kpi jornada-kpi--noclinica">
+          <div class="jornada-kpi__icon"><i class="bi bi-calendar2-week-fill"></i></div>
+          <div class="jornada-kpi__body">
+            <div class="jornada-kpi__value">
+              {{ formatHoras(horasData()!.totales.horasNoClinicas * 60 + horasData()!.totales.minutosNoClinicas) }}
+            </div>
+            <div class="jornada-kpi__label">Tiempo no clínico</div>
+            <div class="jornada-kpi__sub">coordinación · admin · formación</div>
+          </div>
         </div>
       </div>
 
-      <!-- Gráfico de barras apiladas por semana -->
-      @if (horasData()!.semanas.length > 0) {
-        <div class="est-chart-card" style="margin-top: 16px">
-          <div class="chart-card-title">
-            <i class="bi bi-bar-chart-steps"></i>
-            Distribución semanal de horas
+      <!-- Contenido principal: gráfico + desglose -->
+      @if (horasData()!.semanas.length > 0 || desgloseConPorcentaje().length > 0) {
+        <div class="jornada-content-row">
+
+          <!-- Gráfico semanal -->
+          <div class="est-chart-card jornada-chart-card">
+            <div class="chart-card-title">
+              <i class="bi bi-bar-chart-steps"></i>
+              Distribución semanal
+            </div>
+            <div class="chart-wrap">
+              @if (horasData()!.semanas.length > 0) {
+                <canvas baseChart type="bar" [data]="horasBarData()" [options]="horasBarOpts"></canvas>
+              } @else {
+                <div class="chart-empty"><i class="bi bi-clock"></i> Sin datos</div>
+              }
+            </div>
           </div>
-          <div class="chart-wrap">
-            <canvas
-              baseChart
-              type="bar"
-              [data]="horasBarData()"
-              [options]="horasBarOpts"
-            ></canvas>
+
+          <!-- Desglose por tipo -->
+          <div class="est-chart-card jornada-desglose-card">
+            <div class="chart-card-title">
+              <i class="bi bi-list-ul"></i>
+              Desglose por actividad
+            </div>
+            @if (desgloseConPorcentaje().length > 0) {
+              <div class="jornada-desglose-list">
+                @for (item of desgloseConPorcentaje(); track item.tipo) {
+                  <div class="jornada-desglose-item">
+                    <div class="jornada-desglose-item__top">
+                      <div class="jornada-desglose-item__label">
+                        <span class="jornada-desglose-item__dot" [style.background]="item.config.color"></span>
+                        <i class="bi {{ item.config.icon }}" [style.color]="item.config.color"></i>
+                        <span>{{ item.config.label }}</span>
+                      </div>
+                      <div class="jornada-desglose-item__right">
+                        <span class="jornada-desglose-item__time">{{ formatMinutos(item.minutos) }}</span>
+                        <span class="jornada-desglose-item__pct">{{ item.pct }}%</span>
+                      </div>
+                    </div>
+                    <div class="jornada-desglose-bar">
+                      <div class="jornada-desglose-bar__fill"
+                           [style.width.%]="item.pct"
+                           [style.background]="item.config.color">
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="chart-empty"><i class="bi bi-list"></i> Sin actividades</div>
+            }
           </div>
+
         </div>
       } @else {
         <div class="est-chart-card" style="margin-top: 16px">
           <div class="chart-empty">
-            <i class="bi bi-clock"></i> Sin eventos registrados en este período
+            <i class="bi bi-clock"></i> Sin actividad registrada en este período
           </div>
         </div>
       }

@@ -8,7 +8,7 @@ import {
   IsArray,
   IsUUID,
 } from 'class-validator';
-import { TipoEvento } from '@prisma/client';
+import { TipoEvento, ModalidadEvento } from '@prisma/client';
 
 export class UpdateEventoDto {
   @IsString()
@@ -38,4 +38,8 @@ export class UpdateEventoDto {
   @IsUUID('4', { each: true })
   @IsOptional()
   participantesIds?: string[];
+
+  @IsEnum(ModalidadEvento)
+  @IsOptional()
+  modalidad?: ModalidadEvento;
 }

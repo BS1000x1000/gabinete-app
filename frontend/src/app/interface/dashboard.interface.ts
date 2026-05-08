@@ -104,6 +104,8 @@ export interface SesionDashboard {
   horaFin: string;
   estado: EstadoSesion;
   tipoSesion: TipoSesion;
+  modalidad?: 'PRESENCIAL' | 'ONLINE';
+  urlVideollamada?: string | null;
   cliente: { id: string; nombre: string; apellidos: string };
   bonoActivo: { id: string; sesionesConsumidas: number; totalSesiones: number } | null;
 }

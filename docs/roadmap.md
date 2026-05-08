@@ -1,6 +1,6 @@
 # Roadmap — Gabinete Pedagógico
 
-Actualizado: 2026-04-10  
+Actualizado: 2026-05-08
 Estado: Funcionalidad core completa. Bloqueantes pendientes son ops/infra y un puñado de features de alta prioridad clínica/legal.
 
 > Versión resumida también en `/ROADMAP.md` en la raíz del repo.
@@ -133,20 +133,33 @@ Cuando llega un nuevo cliente, la familia completa una anamnesis. Actualmente va
 
 ---
 
+### Hito M — Videollamadas Google Meet en sesiones y eventos
+Cada terapeuta guarda su URL fija de Google Meet en su perfil. Las sesiones y eventos con modalidad `ONLINE` muestran un botón "Iniciar videollamada" en agenda y dashboard que abre directamente esa sala.
+
+**Stack:** Google Workspace ya contratado — cero coste e integración API. Detalle completo en [hito-m-videollamadas-meet.md](hito-m-videollamadas-meet.md).
+
+**Esfuerzo:** ~5-6h
+
+---
+
 ## FASE MEDIO PLAZO (1-3 meses post-deploy)
 
-### Hito R — Facturación básica (generación de facturas PDF)
-Las familias necesitan factura para deducciones fiscales. El gabinete necesita numeración correlativa para su contabilidad.
+### Hito R — Suscripciones mensuales, facturación de autónomos y bloque administrativo
+**Objetivo de despliegue: septiembre 2026.**
 
-**Contexto fiscal España:**  
-Los servicios de psicología, logopedia y pedagogía terapéutica pueden estar **exentos de IVA** (Art. 20.1.3 LIVA). Verificar con gestor antes de implementar.
+Migración de bonos prepago a **cuota mensual fija** por familia. **Cada terapeuta opera como autónomo independiente** con su propio NIF y numeración fiscal correlativa. Genera contratos, sesiones automáticas (con festivos por provincia y vacaciones del trabajador), facturas mensuales con PDF en R2 y email automático a la familia.
 
-**Qué hacer:**
-- Modelo `Factura` en Prisma: número correlativo, fecha, clienteId, bonoId, importe, IVA/exención, estado
-- Generar PDF (mismo sistema Puppeteer) + subir a R2
-- Vista en bonos-tab: "Generar factura" para bonos pagados
+**Sub-fases (~3 semanas total):**
+- **R1** Contratos + datos fiscales (~3 días)
+- **R2** Festivos + vacaciones + generación sesiones (~3 días)
+- **R3** Facturas + cron + PDF + R2 (~4 días)
+- **R4** Email automático Resend (~1 día)
+- **R5** Frontend bloque Administración (~3 días)
+- **R6** Migración bonos → contratos (~1 día)
 
-**Para V1:** Las facturas se generan manualmente fuera de la app. No bloquea nada.
+**Contexto fiscal España:** servicios de psicología, logopedia y pedagogía terapéutica suelen estar **exentos de IVA** (Art. 20.1.3 LIVA). Verificar con gestor antes de productivizar.
+
+Detalle completo en [hito-r-suscripciones-facturacion.md](hito-r-suscripciones-facturacion.md).
 
 ---
 
@@ -201,12 +214,14 @@ PRE-DEPLOY
 
 CORTO PLAZO (post-deploy)
   K   Bonos sin cobrar           ~3-4h   🟡 operativo
-  L   Admin time recurrente      ~1.5d   🟢 workflow
+  L   Admin time recurrente      ~1.5d   🟢 workflow ✅ completado
   P   Anamnesis estructurada     ~1 día  🟡 clínico
   Q   Campo derivación           ~1-2h   🟢 informativo
+  M   Videollamadas Meet         ~5-6h   🟢 operativo
 
 MEDIO PLAZO
-  R   Facturación PDF            ~2 días 🟡 fiscal
+  R   Suscripciones + facturación + bloque administrativo
+                                 ~3 sem  🔴 fiscal · objetivo septiembre 2026
   S   Derecho al olvido RGPD     ~4h     🔴 legal
   T   Notas de equipo            ~1 día  🟢 coordinación
 

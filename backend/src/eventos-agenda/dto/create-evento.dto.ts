@@ -9,7 +9,7 @@ import {
   IsUUID,
 } from 'class-validator';
 
-import { TipoEvento } from '@prisma/client';
+import { TipoEvento, ModalidadEvento } from '@prisma/client';
 
 export class CreateEventoDto {
   @IsString()
@@ -39,4 +39,8 @@ export class CreateEventoDto {
   @IsString()
   @IsOptional()
   horarioAdminId?: string;
+
+  @IsEnum(ModalidadEvento)
+  @IsOptional()
+  modalidad?: ModalidadEvento;
 }

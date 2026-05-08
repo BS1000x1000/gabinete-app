@@ -1,12 +1,14 @@
-import { 
-  IsString, 
-  IsEmail, 
-  IsOptional, 
-  IsBoolean, 
+import {
+  IsString,
+  IsEmail,
+  IsOptional,
+  IsBoolean,
+  IsUrl,
   MinLength,
   MaxLength,
   Matches,
-  IsUUID 
+  IsUUID,
+  ValidateIf,
 } from 'class-validator';
 
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/;
@@ -128,4 +130,11 @@ export class UpdateTrabajadorDto {
   @IsOptional()
   @IsBoolean()
   activo?: boolean;
+
+  @IsOptional()
+  @ValidateIf((o) => !!o.urlVideollamada)
+  @IsUrl({ require_protocol: true, protocols: ['https'] }, {
+    message: 'Debe ser una URL HTTPS válida (ej: https://meet.google.com/abc-defg-hij)',
+  })
+  urlVideollamada?: string;
 }

@@ -178,6 +178,17 @@
                   </div>
                 </div>
                 <div class="ag-card-actions">
+                  @if (item.sesion.modalidad === 'ONLINE') {
+                    <button
+                      class="btn-meet"
+                      [disabled]="!item.sesion.urlVideollamada"
+                      [title]="item.sesion.urlVideollamada ? 'Iniciar videollamada de Meet' : 'Configura tu sala en Ajustes'"
+                      (click)="abrirVideollamada(item.sesion.urlVideollamada, $event)"
+                    >
+                      <i class="bi bi-camera-video"></i>
+                      Iniciar
+                    </button>
+                  }
                   @if (item.sesion.estado === 'PROGRAMADA') {
                     <button
                       class="ag-action ag-action--success"
@@ -238,6 +249,17 @@
                   </div>
                 </div>
                 <div class="ag-card-actions">
+                  @if (item.evento.modalidad === 'ONLINE') {
+                    <button
+                      class="btn-meet"
+                      [disabled]="!item.evento.creadoPor?.urlVideollamada"
+                      [title]="item.evento.creadoPor?.urlVideollamada ? 'Iniciar videollamada de Meet' : 'Configura tu sala en Ajustes'"
+                      (click)="abrirVideollamada(item.evento.creadoPor?.urlVideollamada, $event)"
+                    >
+                      <i class="bi bi-camera-video"></i>
+                      Iniciar
+                    </button>
+                  }
                   @if (!item.evento.esVirtual) {
                     <button
                       class="ag-action ag-action--neutral"
@@ -386,6 +408,13 @@
                       (click)="$event.stopPropagation(); irADia(dia.fecha)"
                       [title]="(sesion.cliente.nombreCompleto || sesion.cliente.nombre + ' ' + sesion.cliente.apellidos) + ' · ' + sesion.horaInicio + '–' + sesion.horaFin"
                     >
+                      @if (sesion.modalidad === 'ONLINE') {
+                        <i
+                          class="bi bi-camera-video ag-week-grid__event-online-icon"
+                          [title]="sesion.urlVideollamada ? 'Online — clic para abrir Meet' : 'Online (sin URL configurada)'"
+                          (click)="$event.stopPropagation(); abrirVideollamada(sesion.urlVideollamada, $event)"
+                        ></i>
+                      }
                       <span class="ag-week-grid__event-time">{{ sesion.horaInicio }}–{{ sesion.horaFin }}</span>
                       <span class="ag-week-grid__event-name">
                         {{ sesion.cliente.nombreCompleto || sesion.cliente.nombre + ' ' + sesion.cliente.apellidos }}
@@ -485,6 +514,29 @@
               }
             </select>
             <i class="bi bi-chevron-down ag-modal__select-chevron"></i>
+          </div>
+        </div>
+
+        <!-- Modalidad -->
+        <div class="ag-modal__field">
+          <label class="ag-modal__label">Modalidad</label>
+          <div class="ag-modal__toggle">
+            <button
+              type="button"
+              class="ag-modal__toggle-btn"
+              [class.ag-modal__toggle-btn--active]="modalEventoForm().modalidad === 'PRESENCIAL'"
+              (click)="updateModalForm({ modalidad: 'PRESENCIAL' })"
+            >
+              <i class="bi bi-building"></i> Presencial
+            </button>
+            <button
+              type="button"
+              class="ag-modal__toggle-btn"
+              [class.ag-modal__toggle-btn--active]="modalEventoForm().modalidad === 'ONLINE'"
+              (click)="updateModalForm({ modalidad: 'ONLINE' })"
+            >
+              <i class="bi bi-camera-video"></i> Online
+            </button>
           </div>
         </div>
 

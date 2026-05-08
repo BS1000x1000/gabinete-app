@@ -52,6 +52,20 @@ export class TrabajadorController {
     return this.trabajadorService.findByRol(rolId);
   }
 
+  @Get('me')
+  async getMe(@Req() req: any) {
+    this.logger.log(`GET /trabajadores/me - userId: ${req.user.userId}`);
+    const trabajador = await this.trabajadorService.findOne(req.user.userId);
+    if (!trabajador) throw new NotFoundException('Trabajador no encontrado');
+    return trabajador;
+  }
+
+  @Patch('me')
+  async updateMe(@Req() req: any, @Body() dto: UpdateTrabajadorDto) {
+    this.logger.log(`PATCH /trabajadores/me - userId: ${req.user.userId}`);
+    return this.trabajadorService.update(req.user.userId, dto);
+  }
+
   @Get(':id')
   async findOne(@Param('id') id: string, @Req() req: any) {
     this.logger.log(`Buscando trabajador con ID: ${id}`);

@@ -11,10 +11,10 @@ import { UpdateEventoDto } from './dto/update-evento.dto';
 
 // Inner select shared across top-level and nested includes
 const PARTICIPANTE_SELECT = {
-  creadoPor: { select: { id: true, nombre: true, apellidos: true } },
+  creadoPor: { select: { id: true, nombre: true, apellidos: true, urlVideollamada: true } },
   participantes: {
     include: {
-      trabajador: { select: { id: true, nombre: true, apellidos: true } },
+      trabajador: { select: { id: true, nombre: true, apellidos: true, urlVideollamada: true } },
     },
   },
 } as const;
@@ -67,7 +67,7 @@ export class EventosAgendaService {
           },
         },
         include: {
-          evento: { select: { fechaHoraInicio: true, fechaHoraFin: true } },
+          evento: { select: { fechaHoraInicio: true, fechaHoraFin: true, tipo: true } },
         },
       }),
     ]);
@@ -94,6 +94,7 @@ export class EventosAgendaService {
         fechaHoraInicio: inicio,
         fechaHoraFin: fin,
         tipo: dto.tipo,
+        modalidad: dto.modalidad,
         creadoPorId: creadorId,
         horarioAdminId: dto.horarioAdminId ?? null,
         participantes: {
@@ -131,7 +132,7 @@ export class EventosAgendaService {
       }),
       this.prisma.horarioAdmin.findMany({
         where: { trabajadorId: filtroId, activo: true },
-        include: { trabajador: { select: { id: true, nombre: true, apellidos: true } } },
+        include: { trabajador: { select: { id: true, nombre: true, apellidos: true, urlVideollamada: true } } },
       }),
     ]);
 
@@ -207,12 +208,14 @@ export class EventosAgendaService {
       titulo?: string;
       descripcion?: string;
       tipo?: typeof dto.tipo;
+      modalidad?: typeof dto.modalidad;
       fechaHoraInicio?: Date;
       fechaHoraFin?: Date;
     } = {};
     if (dto.titulo !== undefined) data.titulo = dto.titulo;
     if (dto.descripcion !== undefined) data.descripcion = dto.descripcion;
     if (dto.tipo !== undefined) data.tipo = dto.tipo;
+    if (dto.modalidad !== undefined) data.modalidad = dto.modalidad;
     if (dto.fechaHoraInicio !== undefined) data.fechaHoraInicio = new Date(dto.fechaHoraInicio);
     if (dto.fechaHoraFin !== undefined) data.fechaHoraFin = new Date(dto.fechaHoraFin);
 
@@ -299,10 +302,13 @@ export class EventosAgendaService {
       semanaMap.get(key)!.minutosClinicas += diffMin(s.fechaHoraInicio, s.fechaHoraFin);
     }
 
+    const tipoMap = new Map<string, number>();
     for (const ep of eventosParticipante) {
       const key = getKey(ep.evento.fechaHoraInicio);
       if (!semanaMap.has(key)) semanaMap.set(key, { minutosClinicas: 0, minutosNoClinicas: 0, label: getLabel(ep.evento.fechaHoraInicio) });
-      semanaMap.get(key)!.minutosNoClinicas += diffMin(ep.evento.fechaHoraInicio, ep.evento.fechaHoraFin);
+      const min = diffMin(ep.evento.fechaHoraInicio, ep.evento.fechaHoraFin);
+      semanaMap.get(key)!.minutosNoClinicas += min;
+      tipoMap.set(ep.evento.tipo, (tipoMap.get(ep.evento.tipo) ?? 0) + min);
     }
 
     const semanas = Array.from(semanaMap.entries())
@@ -312,7 +318,12 @@ export class EventosAgendaService {
     const totalClin = semanas.reduce((a, s) => a + s.minutosClinicas, 0);
     const totalNoClin = semanas.reduce((a, s) => a + s.minutosNoClinicas, 0);
 
-    return { semanas, totales: buildTotales(totalClin, totalNoClin) };
+    if (totalClin > 0) tipoMap.set('SESION_CLINICA', totalClin);
+    const desgloseTipo = Array.from(tipoMap.entries())
+      .map(([tipo, minutos]) => ({ tipo, minutos }))
+      .sort((a, b) => b.minutos - a.minutos);
+
+    return { semanas, totales: buildTotales(totalClin, totalNoClin), desgloseTipo };
   }
 
   async getResumenHoras(

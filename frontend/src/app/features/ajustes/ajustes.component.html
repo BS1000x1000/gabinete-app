@@ -23,6 +23,67 @@
       </div>
     </div>
 
+    <!-- ══ Card: Videollamada ══════════════════════════════════════ -->
+    <div class="card border-0 shadow-sm rounded-3 bg-white ajustes-card">
+      <div class="ajustes-card-header">
+        <i class="bi bi-camera-video me-2"></i>Videollamada
+      </div>
+      <div class="ajustes-card-body">
+        <p class="ajustes-section-desc">
+          Pega aquí la URL de tu sala personal de Google Meet.
+          Aparecerá como botón en cada sesión o evento marcado como online.
+        </p>
+
+        <div *ngIf="exitoUrl()" class="alert alert-success ajustes-alert d-flex align-items-center gap-2 mb-4">
+          <i class="bi bi-check-circle-fill"></i>
+          <span>URL guardada correctamente.</span>
+        </div>
+
+        <div *ngIf="errorUrl()" class="alert alert-danger ajustes-alert d-flex align-items-center gap-2 mb-4">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+          <span>{{ errorUrl() }}</span>
+        </div>
+
+        <div class="ajustes-form">
+          <div class="ajustes-field">
+            <label class="ajustes-label">URL de tu sala Meet</label>
+            <div class="ajustes-meet-input-wrap">
+              <i class="bi bi-camera-video ajustes-meet-icon"></i>
+              <input
+                type="url"
+                class="form-control ajustes-input ajustes-input--meet"
+                placeholder="https://meet.google.com/abc-defg-hij"
+                [value]="urlVideollamada()"
+                (input)="urlVideollamada.set($any($event.target).value); errorUrl.set(null)"
+              />
+            </div>
+            <span *ngIf="urlVideollamada() && !urlValida()" class="ajustes-hint text-danger">
+              <i class="bi bi-exclamation-circle me-1"></i>Debe ser una URL de Google Meet
+            </span>
+            <span class="ajustes-hint text-muted">
+              Crea o copia tu sala en
+              <a href="https://meet.google.com/new" target="_blank" rel="noopener noreferrer" class="ajustes-meet-link">
+                meet.google.com/new <i class="bi bi-box-arrow-up-right" style="font-size:0.7em"></i>
+              </a>
+            </span>
+          </div>
+
+          <div class="ajustes-actions">
+            <button
+              type="button"
+              class="btn ajustes-submit-btn ajustes-meet-btn"
+              (click)="guardarUrl()"
+              [disabled]="guardandoUrl() || (!urlValida())"
+            >
+              <span *ngIf="guardandoUrl()" class="spinner-border spinner-border-sm me-2"></span>
+              <i *ngIf="!guardandoUrl()" class="bi bi-floppy me-2"></i>
+              {{ guardandoUrl() ? 'Guardando...' : 'Guardar URL' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- ══ Card: Seguridad ═══════════════════════════════════════ -->
     <div class="card border-0 shadow-sm rounded-3 bg-white ajustes-card">
       <div class="ajustes-card-header">

@@ -418,6 +418,7 @@ export class TrabajadorService {
           }),
           ...(dto.rolId && { rolId: dto.rolId }),
           ...(dto.activo !== undefined && { activo: dto.activo }),
+          ...(dto.urlVideollamada !== undefined && { urlVideollamada: dto.urlVideollamada || null }),
         },
         include: trabajadorInclude,
       });

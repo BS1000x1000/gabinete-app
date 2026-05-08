@@ -5,6 +5,8 @@ export interface SesionCalendario {
   duracion: number;
   estado: string;
   tipoSesion: string;
+  modalidad?: 'PRESENCIAL' | 'ONLINE';
+  urlVideollamada?: string | null;
   cliente: {
     id: string;
     nombre: string;

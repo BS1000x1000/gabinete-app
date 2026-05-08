@@ -6,6 +6,8 @@ export type TipoEvento =
   | 'FORMACION'
   | 'OTRO';
 
+export type ModalidadEvento = 'PRESENCIAL' | 'ONLINE';
+
 export interface EventoAgenda {
   id: string;
   titulo: string;
@@ -13,9 +15,10 @@ export interface EventoAgenda {
   fechaHoraInicio: string;
   fechaHoraFin: string;
   tipo: TipoEvento;
-  creadoPor: { id: string; nombre: string; apellidos: string };
+  modalidad?: ModalidadEvento;
+  creadoPor: { id: string; nombre: string; apellidos: string; urlVideollamada?: string };
   participantes: Array<{
-    trabajador: { id: string; nombre: string; apellidos: string };
+    trabajador: { id: string; nombre: string; apellidos: string; urlVideollamada?: string };
   }>;
   createdAt: string;
   updatedAt: string;
@@ -31,6 +34,7 @@ export interface CreateEventoDto {
   descripcion?: string;
   participantesIds?: string[];
   horarioAdminId?: string;
+  modalidad?: ModalidadEvento;
 }
 
 export interface UpdateEventoDto {
@@ -40,6 +44,7 @@ export interface UpdateEventoDto {
   fechaHoraFin?: string;
   descripcion?: string;
   participantesIds?: string[];
+  modalidad?: ModalidadEvento;
 }
 
 export interface ResumenHoras {

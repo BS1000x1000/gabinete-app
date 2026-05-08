@@ -34,6 +34,16 @@ const TIPO_CONFIG: Record<string, { label: string; color: string }> = {
   REUNION_COLEGIO:     { label: 'Reunión colegio',  color: TEAL },
 };
 
+const TIPO_JORNADA_CONFIG: Record<string, { label: string; color: string; icon: string }> = {
+  SESION_CLINICA:           { label: 'Sesiones clínicas',       color: P,       icon: 'bi-heart-pulse' },
+  COORDINACION_EQUIPO:      { label: 'Coordinación equipo',     color: '#8b5cf6', icon: 'bi-people-fill' },
+  COORDINACION_COLEGIO:     { label: 'Coordinación colegio',    color: '#0ea5e9', icon: 'bi-building' },
+  COORDINACION_PROFESIONAL: { label: 'Coordinación profesional',color: TEAL,    icon: 'bi-person-lines-fill' },
+  TIEMPO_ADMINISTRACION:    { label: 'Administración',          color: '#6b7280', icon: 'bi-clipboard2-check' },
+  FORMACION:                { label: 'Formación',               color: WARN,    icon: 'bi-mortarboard' },
+  OTRO:                     { label: 'Otro',                    color: MUTED,   icon: 'bi-calendar-event' },
+};
+
 // Plugin: texto central en el donut
 const DONUT_CENTER_PLUGIN: Plugin<'doughnut'> = {
   id: 'donutCenter',
@@ -134,6 +144,8 @@ const BAR_OPTS: ChartOptions<'bar'> = {
 
 interface Trabajador { id: string; nombre: string; apellidos: string; }
 interface WrappedResponse<T> { data: T; }
+interface DesgloseTipoItem { tipo: string; minutos: number; }
+
 interface HorasTrabajadasResponse {
   semanas: Array<{
     semana: string;
@@ -142,6 +154,7 @@ interface HorasTrabajadasResponse {
     minutosNoClinicas: number;
   }>;
   totales: ResumenHoras;
+  desgloseTipo: DesgloseTipoItem[];
 }
 
 @Component({
@@ -187,9 +200,21 @@ export class EstadisticasComponent implements OnInit {
   barData   = signal<ChartData<'bar'>>({ labels: [], datasets: [] });
 
   // ── Horas trabajadas ─────────────────────────────────────────────────
-  horasData     = signal<HorasTrabajadasResponse | null>(null);
-  horasBarData  = signal<ChartData<'bar'>>({ labels: [], datasets: [] });
+  horasData      = signal<HorasTrabajadasResponse | null>(null);
+  horasBarData   = signal<ChartData<'bar'>>({ labels: [], datasets: [] });
   isLoadingHoras = signal(false);
+
+  readonly desgloseConPorcentaje = computed(() => {
+    const h = this.horasData();
+    if (!h?.desgloseTipo?.length) return [];
+    const total = h.desgloseTipo.reduce((a, d) => a + d.minutos, 0);
+    if (total === 0) return [];
+    return h.desgloseTipo.map(d => ({
+      ...d,
+      pct: Math.round((d.minutos / total) * 100),
+      config: TIPO_JORNADA_CONFIG[d.tipo] ?? { label: d.tipo, color: MUTED, icon: 'bi-circle' },
+    }));
+  });
 
   // ── Exponer opciones y plugins al template ─────────────────────────────
   readonly lineOpts   = LINE_OPTS;
@@ -249,7 +274,7 @@ export class EstadisticasComponent implements OnInit {
   onTrabajadorChange(): void { this.cargar(); }
 
   // ── Data loading ──────────────────────────────────────────────────────
-  private cargar(): void {
+  cargar(): void {
     this.isLoading.set(true);
     this.isLoadingHoras.set(true);
     this.datos.set(null);
@@ -258,15 +283,10 @@ export class EstadisticasComponent implements OnInit {
     const hasta = endOfDay(new Date());
     const desde = this.getDesde(this.rangoActivo());
     const tId   = this.trabajadorId || undefined;
-    const desdeStr = desde.toISOString().split('T')[0];
-    const hastaStr = hasta.toISOString().split('T')[0];
-
-    let horasUrl = `${environment.apiUrl}/dashboard/horas-trabajadas?desde=${desdeStr}&hasta=${hastaStr}`;
-    if (tId) horasUrl += `&trabajadorId=${tId}`;
 
     forkJoin([
       this.dashboardSvc.getEstadisticasAvanzadas(desde, hasta, tId),
-      this.http.get<{ data: HorasTrabajadasResponse }>(horasUrl).pipe(map(r => r.data)),
+      this.dashboardSvc.getHorasHistoricas<HorasTrabajadasResponse>(desde, hasta, tId),
     ]).subscribe({
       next: ([d, h]) => {
         this.datos.set(d);
@@ -356,6 +376,13 @@ export class EstadisticasComponent implements OnInit {
   }
 
   readonly formatHoras = formatMinutosHoras;
+
+  formatMinutos(min: number): string {
+    const h = Math.floor(min / 60);
+    const m = min % 60;
+    if (h === 0) return `${m}m`;
+    return m > 0 ? `${h}h ${m}m` : `${h}h`;
+  }
 
   // ── View helpers ──────────────────────────────────────────────────────
   getInitials(nombre: string, apellidos: string): string {

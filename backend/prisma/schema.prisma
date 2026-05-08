@@ -38,6 +38,7 @@ model Trabajador {
   numeroColegiado      String?   @map("numero_colegiado")
   especialidad         String?
   fechaContratacion    DateTime? @map("fecha_contratacion")
+  urlVideollamada      String?   @map("url_videollamada")
   activo               Boolean   @default(true)
   resetPasswordToken   String?   @map("reset_password_token")
   resetPasswordExpires DateTime? @map("reset_password_expires")
@@ -176,15 +177,16 @@ model DisponibilidadClienteTrabajador {
 }
 
 model Sesion {
-  id                  String       @id @default(uuid())
-  fechaHoraInicio     DateTime     @map("fecha_hora_inicio")
-  fechaHoraFin        DateTime     @map("fecha_hora_fin")
-  estado              EstadoSesion @default(PROGRAMADA)
-  tipoSesion          TipoSesion   @default(PEDAGOGIA)
-  notas               String?      @db.Text
-  objetivosTrabajados String?      @db.Text
-  createdAt           DateTime     @default(now()) @map("fecha_creacion")
-  updatedAt           DateTime     @updatedAt @map("ultima_actualizacion")
+  id                  String          @id @default(uuid())
+  fechaHoraInicio     DateTime        @map("fecha_hora_inicio")
+  fechaHoraFin        DateTime        @map("fecha_hora_fin")
+  estado              EstadoSesion    @default(PROGRAMADA)
+  tipoSesion          TipoSesion      @default(PEDAGOGIA)
+  modalidad           ModalidadSesion @default(PRESENCIAL)
+  notas               String?         @db.Text
+  objetivosTrabajados String?         @db.Text
+  createdAt           DateTime        @default(now()) @map("fecha_creacion")
+  updatedAt           DateTime        @updatedAt @map("ultima_actualizacion")
 
   clienteId    String     @map("id_cliente")
   cliente      Cliente    @relation(fields: [clienteId], references: [id])
@@ -655,6 +657,7 @@ model EventoAgenda {
   fechaHoraInicio DateTime             @map("fecha_hora_inicio")
   fechaHoraFin    DateTime             @map("fecha_hora_fin")
   tipo            TipoEvento
+  modalidad       ModalidadEvento      @default(PRESENCIAL)
   creadoPorId     String               @map("creado_por_id")
   creadoPor       Trabajador           @relation("EventosCreados", fields: [creadoPorId], references: [id])
   participantes   EventoParticipante[]
@@ -693,6 +696,20 @@ model HorarioAdmin {
 
   @@index([trabajadorId])
   @@map("horarios_admin")
+}
+
+// ============================================================
+// MODALIDAD VIDEOLLAMADA
+// ============================================================
+
+enum ModalidadSesion {
+  PRESENCIAL
+  ONLINE
+}
+
+enum ModalidadEvento {
+  PRESENCIAL
+  ONLINE
 }
 
 // ============================================================

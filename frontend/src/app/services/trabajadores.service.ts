@@ -15,6 +15,7 @@ export interface Trabajador {
   numeroColegiado?: string;
   especialidad?: string;
   fechaContratacion?: string;
+  urlVideollamada?: string;
   rol: {
     id: string;
     nombreRol: string;
@@ -51,6 +52,11 @@ export interface UpdateTrabajadorPayload {
   especialidad?: string;
   fechaContratacion?: string;
   rolId?: string;
+  urlVideollamada?: string;
+}
+
+export interface UpdateMePayload {
+  urlVideollamada?: string | null;
 }
 
 export interface ClienteAsignado {
@@ -125,6 +131,14 @@ export class TrabajadorService {
 
   getClientesAsignados(id: string) {
     return this.http.get<WrappedResponse<ClienteAsignado[]>>(`${this.api}/${id}/clientes`);
+  }
+
+  updateMe(payload: UpdateMePayload) {
+    return this.http.patch<WrappedResponse<Trabajador>>(`${this.api}/me`, payload);
+  }
+
+  getMe() {
+    return this.http.get<WrappedResponse<Trabajador>>(`${this.api}/me`);
   }
 
   cambiarPassword(id: string, passwordActual: string, passwordNueva: string) {

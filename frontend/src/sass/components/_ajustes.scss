@@ -190,3 +190,47 @@
   border-radius: 0.5rem;
   padding: 0.55rem 1.25rem;
 }
+
+// ── Meet — campo de videollamada ─────────────────────────────
+
+.ajustes-meet-input-wrap {
+  position: relative;
+
+  .ajustes-meet-icon {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #00897b;
+    font-size: 0.9rem;
+    pointer-events: none;
+  }
+
+  .ajustes-input--meet {
+    padding-left: 2.3rem;
+    padding-right: 0.75rem;
+  }
+}
+
+.ajustes-meet-btn {
+  background: #00897b;
+  color: white;
+  border: none;
+
+  &:hover:not(:disabled) {
+    background: #00796b;
+    color: white;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+  }
+}
+
+.ajustes-meet-link {
+  color: #00897b;
+  text-decoration: none;
+  font-weight: 500;
+
+  &:hover { text-decoration: underline; }
+}

@@ -1344,4 +1344,93 @@ $wg-time-col: 48px;
       &:hover:not(:disabled) { background: lighten($danger, 48%); }
     }
   }
+
+  // Toggle de modalidad (Presencial / Online)
+  &__toggle {
+    display: flex;
+    border: 1px solid $border-color;
+    border-radius: $border-radius-sm;
+    overflow: hidden;
+    width: fit-content;
+  }
+
+  &__toggle-btn {
+    padding: 6px 14px;
+    font-size: 0.8rem;
+    font-weight: $font-weight-medium;
+    background: $white;
+    color: $gray-500;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: $transition-fast;
+
+    & + & {
+      border-left: 1px solid $border-color;
+    }
+
+    &--active {
+      background: $primary;
+      color: $white;
+    }
+
+    &:not(&--active):hover {
+      background: $primary-ultra-light;
+      color: $primary;
+    }
+  }
+}
+
+// ── Botón Meet (verde Google Meet) ───────────────────────────
+
+.btn-meet {
+  background: #00897b;
+  color: $white;
+  font-size: 0.72rem;
+  font-weight: $font-weight-semibold;
+  padding: 0.2rem 0.55rem;
+  border-radius: $border-radius-sm;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: 0.01em;
+  transition: background 0.15s ease, opacity 0.15s ease;
+
+  i { font-size: 0.75rem; }
+
+  &:hover:not(:disabled) {
+    background: #00796b;
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  &--dashboard {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+  }
+}
+
+// ── Icono de cámara en bloque semanal (grid) ─────────────────
+
+.ag-week-grid__event-online-icon {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  font-size: 0.65rem;
+  opacity: 0.75;
+  z-index: 2;
+  cursor: pointer;
+
+  &:hover {
+    opacity: 1;
+  }
 }

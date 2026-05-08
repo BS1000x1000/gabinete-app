@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { EstadoSesion, TipoSesion } from '@prisma/client';
+import { EstadoSesion, TipoSesion, ModalidadSesion } from '@prisma/client';
 import { GenerarSesionesDto } from './dto/generar-sesiones.dto';
 import { CompletarSesionDto } from './dto/completar-sesion.dto';
 import { SesionWithRelations, sesionInclude } from './sesiones.types';
@@ -291,6 +291,7 @@ export class SesionesService {
       fechaHoraInicio: Date;
       fechaHoraFin: Date;
       tipoSesion: TipoSesion;
+      modalidad: ModalidadSesion;
       notas: string;
     }>,
   ) {
@@ -351,6 +352,7 @@ export class SesionesService {
               id: true,
               nombre: true,
               apellidos: true,
+              urlVideollamada: true,
             },
           },
         },
@@ -405,11 +407,13 @@ export class SesionesService {
             ),
             estado: sesion.estado,
             tipoSesion: sesion.tipoSesion,
+            modalidad: sesion.modalidad,
             cliente: {
               id: sesion.cliente.id,
               nombreCompleto: `${sesion.cliente.nombre} ${sesion.cliente.apellidos}`,
               curso: sesion.cliente.curso,
             },
+            urlVideollamada: sesion.trabajador?.urlVideollamada,
             notas: sesion.notas,
           })),
         });
@@ -498,6 +502,9 @@ export class SesionesService {
               curso: true,
             },
           },
+          trabajador: {
+            select: { urlVideollamada: true },
+          },
         },
         orderBy: {
           fechaHoraInicio: 'asc',
@@ -546,6 +553,8 @@ export class SesionesService {
             ),
             estado: sesion.estado,
             tipoSesion: sesion.tipoSesion,
+            modalidad: sesion.modalidad,
+            urlVideollamada: sesion.trabajador?.urlVideollamada,
             cliente: {
               id: sesion.cliente.id,
               nombre: sesion.cliente.nombre,

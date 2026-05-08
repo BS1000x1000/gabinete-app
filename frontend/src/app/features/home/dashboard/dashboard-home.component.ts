@@ -2,6 +2,7 @@ import { Component, inject, computed, OnInit, signal, DestroyRef } from '@angula
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NgClass } from '@angular/common';
 import { Router } from '@angular/router';
+import { abrirEnlaceExterno } from '../../../shared/utils/url.utils';
 import { DashboardService } from '../../../services/dashboard.service';
 import { SesionesService } from '../../../services/sesiones.service';
 import { EstadoSesion, TipoSesion, TIPO_SESION_LABELS } from '../../../interface/sesion.interface';
@@ -188,4 +189,6 @@ export class DashboardHomeComponent implements OnInit {
     $event.stopPropagation();
     this.cancelandoId.set(null);
   }
+
+  readonly abrirVideollamada = abrirEnlaceExterno;
 }
