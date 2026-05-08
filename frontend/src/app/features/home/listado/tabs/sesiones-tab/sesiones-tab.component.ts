@@ -188,7 +188,7 @@ export class SesionesTabComponent implements OnInit {
   }
 
   abrirDetalle(sesion: SesionData, event?: Event) {
-    this.accionesSvc.abrirDetalle(sesion, event);
+    this.accionesSvc.abrirDetalle(sesion, event, () => this.cargarSesiones());
   }
 
   // Para abrir desde el modal de detalle (sin event)

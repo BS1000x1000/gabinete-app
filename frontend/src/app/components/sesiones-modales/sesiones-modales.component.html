@@ -303,6 +303,34 @@
           <span class="detalle-valor">{{ ESTADO_SESION_LABELS[accionesSvc.sesionDetalle()!.estado] ?? accionesSvc.sesionDetalle()!.estado }}</span>
         </div>
 
+        <div class="detalle-item">
+          <span class="detalle-label"><i class="bi bi-camera-video me-1"></i>Modalidad</span>
+          @if (accionesSvc.sesionDetalle()!.estado === 'PROGRAMADA') {
+            <div class="detalle-toggle">
+              <button
+                class="detalle-toggle__btn"
+                [class.detalle-toggle__btn--active]="accionesSvc.sesionDetalle()!.modalidad !== 'ONLINE'"
+                [disabled]="accionesSvc.guardandoModalidad()"
+                (click)="accionesSvc.cambiarModalidad('PRESENCIAL')"
+              >
+                <i class="bi bi-building"></i> Presencial
+              </button>
+              <button
+                class="detalle-toggle__btn"
+                [class.detalle-toggle__btn--active]="accionesSvc.sesionDetalle()!.modalidad === 'ONLINE'"
+                [disabled]="accionesSvc.guardandoModalidad()"
+                (click)="accionesSvc.cambiarModalidad('ONLINE')"
+              >
+                <i class="bi bi-camera-video"></i> Online
+              </button>
+            </div>
+          } @else {
+            <span class="detalle-valor">
+              {{ MODALIDAD_LABELS[accionesSvc.sesionDetalle()!.modalidad ?? 'PRESENCIAL'] }}
+            </span>
+          }
+        </div>
+
         <div class="detalle-item detalle-full" *ngIf="accionesSvc.sesionDetalle()!.notas">
           <span class="detalle-label"><i class="bi bi-chat-text me-1"></i>Notas</span>
           <div class="detalle-notas">{{ accionesSvc.sesionDetalle()!.notas }}</div>
@@ -317,6 +345,16 @@
     </div>
 
     <div class="modal-card-footer">
+      @if (accionesSvc.sesionDetalle()!.modalidad === 'ONLINE') {
+        <button
+          class="btn-meet btn-sm"
+          [disabled]="!accionesSvc.sesionDetalle()!.trabajador?.urlVideollamada"
+          [title]="accionesSvc.sesionDetalle()!.trabajador?.urlVideollamada ? 'Iniciar videollamada' : 'Configura tu sala en Ajustes'"
+          (click)="abrirEnlace(accionesSvc.sesionDetalle()!.trabajador?.urlVideollamada, $event)"
+        >
+          <i class="bi bi-camera-video me-1"></i>Iniciar Meet
+        </button>
+      }
       <ng-container *ngIf="accionesSvc.sesionDetalle()!.estado === 'PROGRAMADA'">
         <button
           class="btn btn-outline-success btn-sm"

@@ -656,6 +656,45 @@
   white-space: pre-wrap;
 }
 
+.detalle-toggle {
+  display: flex;
+  border: 1px solid $border-color;
+  border-radius: $border-radius-sm;
+  overflow: hidden;
+  width: fit-content;
+
+  &__btn {
+    padding: 5px 12px;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-medium;
+    background: $white;
+    color: $gray-500;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: $transition-fast;
+
+    & + & { border-left: 1px solid $border-color; }
+
+    &--active {
+      background: $primary;
+      color: $white;
+    }
+
+    &:not(&--active):hover:not(:disabled) {
+      background: $primary-ultra-light;
+      color: $primary;
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+}
+
 // ==========================================
 // ANIMACIONES
 // ==========================================

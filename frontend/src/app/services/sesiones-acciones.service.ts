@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { SesionesService } from './sesiones.service';
-import { SesionData } from '../interface/sesion.interface';
+import { SesionData, ModalidadSesion } from '../interface/sesion.interface';
 
 @Injectable({ providedIn: 'root' })
 export class SesionAccionesService {
@@ -24,11 +24,13 @@ export class SesionAccionesService {
 
     // ── Modal detalle ──
   sesionDetalle = signal<SesionData | null>(null);
+  guardandoModalidad = signal(false);
 
   // Callbacks de refresco
   private onCompletadaCallback?: () => void;
   private onCanceladaCallback?: () => void;
   private onReprogramadaCallback?: () => void;
+  private onDetalleChangedCallback?: () => void;
 
   // ══════════════════════════════════════════
   // COMPLETAR
@@ -150,10 +152,36 @@ export class SesionAccionesService {
     });
   }
 
-  abrirDetalle(sesion: SesionData, event?: Event) {
-  event?.stopPropagation();
-  this.sesionDetalle.set(sesion);
-}
+  abrirDetalle(sesion: SesionData, event?: Event, onChanged?: () => void) {
+    event?.stopPropagation();
+    this.sesionDetalle.set(sesion);
+    this.onDetalleChangedCallback = onChanged;
+  }
+
+  cambiarModalidad(modalidad: ModalidadSesion) {
+    const sesion = this.sesionDetalle();
+    if (!sesion || sesion.modalidad === modalidad) return;
+    this.guardandoModalidad.set(true);
+    this.sesionesSvc.updateSesion(sesion.id, { modalidad }).subscribe({
+      next: () => {
+        this.sesionDetalle.set({ ...sesion, modalidad });
+        this.guardandoModalidad.set(false);
+        this.onDetalleChangedCallback?.();
+      },
+      error: () => this.guardandoModalidad.set(false),
+    });
+  }
+
+  toggleModalidadSesion(sesion: SesionData, event: Event, onToggled?: () => void) {
+    event.stopPropagation();
+    if (this.guardandoModalidad()) return;
+    const nuevaModalidad: ModalidadSesion = sesion.modalidad === 'ONLINE' ? 'PRESENCIAL' : 'ONLINE';
+    this.guardandoModalidad.set(true);
+    this.sesionesSvc.updateSesion(sesion.id, { modalidad: nuevaModalidad }).subscribe({
+      next: () => { this.guardandoModalidad.set(false); onToggled?.(); },
+      error: (err) => { console.error('❌ Error cambiando modalidad:', err); this.guardandoModalidad.set(false); },
+    });
+  }
 
 cerrarDetalle() {
   this.sesionDetalle.set(null);

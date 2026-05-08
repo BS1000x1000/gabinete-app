@@ -189,6 +189,15 @@
                       Iniciar
                     </button>
                   }
+                  @if (item.sesion.estado === 'PROGRAMADA' && item.sesion.modalidad !== 'ONLINE') {
+                    <button
+                      class="ag-action ag-action--neutral"
+                      title="Marcar como online"
+                      (click)="toggleModalidad(item.sesion, $event)"
+                    >
+                      <i class="bi bi-camera-video-off"></i>
+                    </button>
+                  }
                   @if (item.sesion.estado === 'PROGRAMADA') {
                     <button
                       class="ag-action ag-action--success"

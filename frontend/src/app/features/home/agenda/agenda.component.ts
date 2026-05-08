@@ -543,6 +543,10 @@ export class AgendaComponent implements OnInit {
 
   readonly abrirVideollamada = abrirEnlaceExterno;
 
+  toggleModalidad(sesion: SesionData, event: Event) {
+    this.accionesSvc.toggleModalidadSesion(sesion, event, () => this.loadDia());
+  }
+
   // ── Helpers UI ───────────────────────────────────────────
 
   getTipoColor(tipo: string): string {

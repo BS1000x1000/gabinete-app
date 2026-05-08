@@ -63,6 +63,11 @@ export enum TipoSesion {
   REUNION_COLEGIO = 'REUNION_COLEGIO'
 }
 
+export const MODALIDAD_LABELS: Record<ModalidadSesion, string> = {
+  PRESENCIAL: 'Presencial',
+  ONLINE:     'Online',
+};
+
 export const TIPO_SESION_LABELS: Record<TipoSesion, string> = {
   [TipoSesion.PEDAGOGIA]:          'Pedagogía',
   [TipoSesion.NEUROPSICOLOGIA]:    'Neuropsicología',
