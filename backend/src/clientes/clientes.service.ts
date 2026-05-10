@@ -1051,7 +1051,7 @@ export class ClientesService {
 
   // ── DATOS PAGADOR (FACTURACIÓN) ──────────────────────────
 
-  async updateDatosPagador(clienteId: string, data: any) {
+  async updateDatosPagador(clienteId: string, data: import('./dto/update-datos-pagador.dto').UpdateDatosPagadorDto) {
     const cliente = await this.prisma.cliente.findUnique({ where: { id: clienteId } });
     if (!cliente) throw new NotFoundException(`Cliente ${clienteId} no encontrado`);
 

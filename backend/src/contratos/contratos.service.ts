@@ -5,7 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { EstadoSesion } from '@prisma/client';
+import { EstadoContrato, EstadoSesion } from '@prisma/client';
 import { CreateContratoDto } from './dto/create-contrato.dto';
 import { UpdateContratoDto } from './dto/update-contrato.dto';
 
@@ -30,7 +30,7 @@ export class ContratosService {
         clienteId: dto.clienteId,
         trabajadorId,
         tipoSesion: dto.tipoSesion,
-        estado: { in: ['ACTIVO', 'BORRADOR'] },
+        estado: { in: [EstadoContrato.ACTIVO, EstadoContrato.BORRADOR] },
       },
     });
     if (existente) {
@@ -52,7 +52,7 @@ export class ContratosService {
         fechaInicio: new Date(dto.fechaInicio),
         fechaFin: dto.fechaFin ? new Date(dto.fechaFin) : null,
         notas: dto.notas,
-        estado: 'ACTIVO',
+        estado: EstadoContrato.ACTIVO,
       },
       include: CONTRATO_INCLUDE,
     });
@@ -99,7 +99,7 @@ export class ContratosService {
     if (!contrato) throw new NotFoundException(`Contrato ${id} no encontrado`);
     this.checkAcceso(contrato, user);
 
-    if (contrato.estado === 'FINALIZADO') {
+    if (contrato.estado === EstadoContrato.FINALIZADO) {
       throw new BadRequestException('No se puede editar un contrato finalizado');
     }
 
@@ -123,33 +123,29 @@ export class ContratosService {
     if (!contrato) throw new NotFoundException(`Contrato ${id} no encontrado`);
     this.checkAcceso(contrato, user);
 
-    if (contrato.estado === 'FINALIZADO') {
+    if (contrato.estado === EstadoContrato.FINALIZADO) {
       throw new BadRequestException('El contrato ya está finalizado');
     }
 
     const ahora = new Date();
 
-    await this.prisma.$transaction([
-      // Cancelar sesiones futuras vinculadas al contrato
+    const [, contratoFinalizado] = await this.prisma.$transaction([
       this.prisma.sesion.updateMany({
         where: {
           contratoId: id,
           fechaHoraInicio: { gt: ahora },
-          estado: 'PROGRAMADA',
+          estado: EstadoSesion.PROGRAMADA,
         },
         data: { estado: EstadoSesion.CANCELADA_CON_AVISO },
       }),
-      // Marcar contrato como finalizado
       this.prisma.contratoServicio.update({
         where: { id },
-        data: { estado: 'FINALIZADO', fechaFin: ahora },
+        data: { estado: EstadoContrato.FINALIZADO, fechaFin: ahora },
+        include: CONTRATO_INCLUDE,
       }),
     ]);
 
-    return this.prisma.contratoServicio.findUnique({
-      where: { id },
-      include: CONTRATO_INCLUDE,
-    });
+    return contratoFinalizado;
   }
 
   private checkAcceso(

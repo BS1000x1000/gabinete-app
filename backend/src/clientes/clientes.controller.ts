@@ -16,6 +16,7 @@ import {
 } from '@nestjs/common';
 import { ClientesService } from './clientes.service';
 import { CreateClienteDto } from './dto/create-cliente.dto';
+import { UpdateDatosPagadorDto } from './dto/update-datos-pagador.dto';
 import { clienteInclude, ClienteWithRelations } from './clientes.types';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { TipoSesion } from '@prisma/client';
@@ -279,9 +280,9 @@ export class ClientesController {
   // ── DATOS PAGADOR (FACTURACIÓN) ──────────────────────────
 
   @Patch(':id/datos-pagador')
-  async updateDatosPagador(@Param('id') id: string, @Body() body: any) {
+  async updateDatosPagador(@Param('id') id: string, @Body() dto: UpdateDatosPagadorDto) {
     this.logger.log(`💶 PATCH /api/clientes/${id}/datos-pagador`);
-    return this.clientesService.updateDatosPagador(id, body);
+    return this.clientesService.updateDatosPagador(id, dto);
   }
 
   // ── CONSENTIMIENTO RGPD ───────────────────────────────────

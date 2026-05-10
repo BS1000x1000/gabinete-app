@@ -13,17 +13,15 @@ import { ContratosService } from '../../../../../services/contratos.service';
 import { TrabajadorService } from '../../../../../services/trabajadores.service';
 import { AuthService } from '../../../../../services/auth.service';
 import { ContratoServicio, CreateContratoPayload } from '../../../../../interface/contrato.interface';
-import { TipoSesion } from '../../../../../interface/sesion.interface';
+import { TipoSesion, TIPO_SESION_LABELS } from '../../../../../interface/sesion.interface';
 
 const DIAS = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
-const TIPO_LABEL: Record<string, string> = {
-  PEDAGOGIA: 'Pedagogía',
-  NEUROPSICOLOGIA: 'Neuropsicología',
-  LOGOPEDIA: 'Logopedia',
-  TERAPIA_OCUPACIONAL: 'T. Ocupacional',
-  EVALUACION: 'Evaluación',
-  REUNION_COLEGIO: 'Reunión colegio',
+const ESTADO_LABEL: Record<string, string> = {
+  ACTIVO: 'Activo',
+  BORRADOR: 'Borrador',
+  SUSPENDIDO: 'Suspendido',
+  FINALIZADO: 'Finalizado',
 };
 
 const TIPO_COLOR: Record<string, string> = {
@@ -45,6 +43,20 @@ interface NuevoContratoForm {
   duracionMinutos: number | null;
   fechaInicio: string;
   notas: string;
+}
+
+function emptyForm(trabajadorId = ''): NuevoContratoForm {
+  return {
+    tipoSesion: '',
+    trabajadorId,
+    cuotaMensual: null,
+    diaSemana: '',
+    horaInicio: '',
+    horaFin: '',
+    duracionMinutos: null,
+    fechaInicio: '',
+    notas: '',
+  };
 }
 
 @Component({
@@ -233,19 +245,19 @@ interface NuevoContratoForm {
       <!-- Tipo de terapia -->
       <div class="ct-field">
         <label class="ct-label">Tipo de terapia *</label>
-        <select class="ct-select" [(ngModel)]="form().tipoSesion" (ngModelChange)="patchForm('tipoSesion', $event)">
+        <select class="ct-select" [ngModel]="form().tipoSesion" (ngModelChange)="patchForm('tipoSesion', $event)">
           <option value="">Seleccionar tipo…</option>
           <option value="PEDAGOGIA">Pedagogía</option>
           <option value="NEUROPSICOLOGIA">Neuropsicología</option>
           <option value="LOGOPEDIA">Logopedia</option>
-          <option value="TERAPIA_OCUPACIONAL">T. Ocupacional</option>
+          <option value="TERAPIA_OCUPACIONAL">Ter. Ocupacional</option>
         </select>
       </div>
 
       <!-- Terapeuta (solo ADMIN) -->
       <div *ngIf="auth.isAdmin()" class="ct-field">
         <label class="ct-label">Terapeuta *</label>
-        <select class="ct-select" [(ngModel)]="form().trabajadorId" (ngModelChange)="patchForm('trabajadorId', $event)">
+        <select class="ct-select" [ngModel]="form().trabajadorId" (ngModelChange)="patchForm('trabajadorId', $event)">
           <option value="">Seleccionar terapeuta…</option>
           <option *ngFor="let t of trabajadorSvc.trabajadores()" [value]="t.id">
             {{ t.nombre }} {{ t.apellidos }}<span *ngIf="t.especialidad"> — {{ t.especialidad }}</span>
@@ -271,7 +283,7 @@ interface NuevoContratoForm {
         <!-- Día de semana -->
         <div class="ct-field">
           <label class="ct-label">Día *</label>
-          <select class="ct-select" [(ngModel)]="form().diaSemana" (ngModelChange)="patchForm('diaSemana', $event)">
+          <select class="ct-select" [ngModel]="form().diaSemana" (ngModelChange)="patchForm('diaSemana', $event)">
             <option value="">Día…</option>
             <option [value]="1">Lunes</option>
             <option [value]="2">Martes</option>
@@ -393,17 +405,7 @@ export class ContratosTabComponent implements OnInit {
     ),
   );
 
-  private _form = signal<NuevoContratoForm>({
-    tipoSesion: '',
-    trabajadorId: '',
-    cuotaMensual: null,
-    diaSemana: '',
-    horaInicio: '',
-    horaFin: '',
-    duracionMinutos: null,
-    fechaInicio: '',
-    notas: '',
-  });
+  private _form = signal<NuevoContratoForm>(emptyForm());
 
   readonly form = this._form.asReadonly();
 
@@ -426,17 +428,8 @@ export class ContratosTabComponent implements OnInit {
   }
 
   abrirModal(): void {
-    this._form.set({
-      tipoSesion: '',
-      trabajadorId: this.auth.isAdmin() ? '' : (this.auth.currentTrabajadorId() ?? ''),
-      cuotaMensual: null,
-      diaSemana: '',
-      horaInicio: '',
-      horaFin: '',
-      duracionMinutos: null,
-      fechaInicio: '',
-      notas: '',
-    });
+    const prefillId = this.auth.isAdmin() ? '' : (this.auth.currentTrabajadorId() ?? '');
+    this._form.set(emptyForm(prefillId));
     this.errorModal.set(null);
     this.modalAbierto.set(true);
   }
@@ -533,22 +526,10 @@ export class ContratosTabComponent implements OnInit {
 
   // ── Helpers de presentación ──
   diaLabel(n: number): string { return DIAS[n] ?? ''; }
-  tipoLabel(t: string): string { return TIPO_LABEL[t] ?? t; }
+  tipoLabel(t: string): string { return TIPO_SESION_LABELS[t as TipoSesion] ?? t; }
   tipoColor(t: string): string { return TIPO_COLOR[t] ?? '#6b7280'; }
-  tipoBg(t: string): string {
-    const hex = TIPO_COLOR[t] ?? '#6b7280';
-    return hex + '18';
-  }
-
-  estadoLabel(e: string): string {
-    const map: Record<string, string> = {
-      ACTIVO: 'Activo',
-      BORRADOR: 'Borrador',
-      SUSPENDIDO: 'Suspendido',
-      FINALIZADO: 'Finalizado',
-    };
-    return map[e] ?? e;
-  }
+  tipoBg(t: string): string { return (TIPO_COLOR[t] ?? '#6b7280') + '18'; }
+  estadoLabel(e: string): string { return ESTADO_LABEL[e] ?? e; }
 }
 
 export default ContratosTabComponent;
