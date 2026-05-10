@@ -252,3 +252,156 @@
 .ajustes-field-full {
   grid-column: 1 / -1;
 }
+
+// ── Vacaciones ────────────────────────────────────────────────
+
+.vac-loading {
+  font-size: 0.875rem;
+  color: $gray-500;
+  padding: 0.75rem 0;
+}
+
+.vac-empty {
+  font-size: 0.85rem;
+  color: $gray-500;
+  padding: 0.75rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.vac-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.6rem 0.85rem;
+  border-radius: 0.5rem;
+  background: $primary-ultra-light;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.vac-item-main {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.vac-item-dates {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: $gray-800;
+}
+
+.vac-item-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.5rem;
+  background: rgba($primary, 0.12);
+  color: $primary;
+  border-radius: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.vac-item-motivo {
+  font-size: 0.8rem;
+  color: $gray-500;
+}
+
+.vac-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.vac-del-btn {
+  background: none;
+  border: none;
+  color: $gray-500;
+  padding: 0.3rem 0.4rem;
+  border-radius: 0.35rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: color 0.15s, background 0.15s;
+
+  &:hover { color: $danger; background: rgba($danger, 0.08); }
+  &:disabled { opacity: 0.55; cursor: not-allowed; }
+}
+
+.vac-confirm {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.vac-confirm-yes {
+  background: $danger;
+  color: #fff;
+  border: none;
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover { background: darken(#ef4444, 8%); }
+}
+
+.vac-confirm-no {
+  background: none;
+  border: 1px solid $gray-300;
+  color: $gray-700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.3rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+
+  &:hover { background: $primary-ultra-light; }
+}
+
+.vac-form-card {
+  margin-top: 1rem;
+  border: 1px solid $primary-light;
+  border-radius: $border-radius-lg;
+  overflow: hidden;
+}
+
+.vac-form-header {
+  padding: 0.6rem 1rem;
+  background: $primary-ultra-light;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: $primary;
+}
+
+.vac-form-body {
+  padding: 1rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+
+  @media (max-width: 540px) { grid-template-columns: 1fr; }
+}
+
+.vac-form-full { grid-column: 1 / -1; }
+
+.vac-error {
+  grid-column: 1 / -1;
+  font-size: 0.82rem;
+  color: $danger;
+  background: rgba($danger, 0.07);
+  border-radius: 0.4rem;
+  padding: 0.4rem 0.7rem;
+}
+
+.vac-form-actions {
+  grid-column: 1 / -1;
+  padding-top: 0.1rem;
+}

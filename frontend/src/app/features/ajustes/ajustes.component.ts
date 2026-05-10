@@ -4,10 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { TrabajadorService } from '../../services/trabajadores.service';
+import { VacacionesService } from '../../services/vacaciones.service';
 
 type PasswordForm = { passwordActual: string; passwordNueva: string; confirmar: string };
+type VacForm = { fechaInicio: string; fechaFin: string; motivo: string };
 
 const MEET_URL_REGEX = /^https:\/\/meet\.google\.com\/.+/;
+const EMPTY_VAC = (): VacForm => ({ fechaInicio: '', fechaFin: '', motivo: '' });
 
 @Component({
   standalone: true,
@@ -18,6 +21,7 @@ const MEET_URL_REGEX = /^https:\/\/meet\.google\.com\/.+/;
 export default class AjustesComponent implements OnInit, OnDestroy {
   readonly auth = inject(AuthService);
   private trabajadoresSvc = inject(TrabajadorService);
+  readonly vacacionesSvc = inject(VacacionesService);
 
   form      = signal<PasswordForm>({ passwordActual: '', passwordNueva: '', confirmar: '' });
   guardando = signal(false);
@@ -48,10 +52,25 @@ export default class AjustesComponent implements OnInit, OnDestroy {
   errorFiscal       = signal<string | null>(null);
   private exitoFiscalTimer: ReturnType<typeof setTimeout> | null = null;
 
+  // Vacaciones
+  readonly misVacaciones    = this.vacacionesSvc.misVacaciones;
+  cargandoVacaciones        = signal(false);
+  guardandoVacacion         = signal(false);
+  eliminandoVacacionId      = signal<string | null>(null);
+  confirmEliminarVacacionId = signal<string | null>(null);
+  vacForm                   = signal<VacForm>(EMPTY_VAC());
+  errorVac                  = signal<string | null>(null);
+
   private exitoTimer: ReturnType<typeof setTimeout> | null = null;
   private exitoUrlTimer: ReturnType<typeof setTimeout> | null = null;
 
   ngOnInit(): void {
+    if (!this.auth.isRecep()) {
+      this.cargandoVacaciones.set(true);
+      this.vacacionesSvc.getMisVacaciones()
+        .pipe(finalize(() => this.cargandoVacaciones.set(false)))
+        .subscribe();
+    }
     this.trabajadoresSvc.getMe().subscribe({
       next: (res) => {
         const d = res.data;
@@ -75,6 +94,54 @@ export default class AjustesComponent implements OnInit, OnDestroy {
     if (this.exitoTimer !== null) clearTimeout(this.exitoTimer);
     if (this.exitoUrlTimer !== null) clearTimeout(this.exitoUrlTimer);
     if (this.exitoFiscalTimer !== null) clearTimeout(this.exitoFiscalTimer);
+  }
+
+  diasPeriodo(inicio: string, fin: string): number {
+    const ms = new Date(fin).getTime() - new Date(inicio).getTime();
+    return Math.round(ms / 86_400_000) + 1;
+  }
+
+  patchVac<K extends keyof VacForm>(k: K, v: string): void {
+    this.vacForm.update(f => ({ ...f, [k]: v }));
+    this.errorVac.set(null);
+  }
+
+  agregarVacaciones(): void {
+    const { fechaInicio, fechaFin, motivo } = this.vacForm();
+    if (!fechaInicio || !fechaFin) {
+      this.errorVac.set('Las fechas de inicio y fin son obligatorias.');
+      return;
+    }
+    if (fechaFin < fechaInicio) {
+      this.errorVac.set('La fecha de fin no puede ser anterior al inicio.');
+      return;
+    }
+    this.guardandoVacacion.set(true);
+    this.errorVac.set(null);
+    this.vacacionesSvc.crear({ fechaInicio, fechaFin, motivo: motivo || undefined })
+      .pipe(finalize(() => this.guardandoVacacion.set(false)))
+      .subscribe({
+        next: () => this.vacForm.set(EMPTY_VAC()),
+        error: (err: any) => {
+          this.errorVac.set(err?.error?.message ?? 'Error al añadir el periodo.');
+        },
+      });
+  }
+
+  pedirConfirmarVacacion(id: string): void {
+    this.confirmEliminarVacacionId.set(id);
+  }
+
+  cancelarConfirmarVacacion(): void {
+    this.confirmEliminarVacacionId.set(null);
+  }
+
+  eliminarVacaciones(id: string): void {
+    this.eliminandoVacacionId.set(id);
+    this.confirmEliminarVacacionId.set(null);
+    this.vacacionesSvc.eliminar(id)
+      .pipe(finalize(() => this.eliminandoVacacionId.set(null)))
+      .subscribe();
   }
 
   patchFiscal<K extends keyof ReturnType<typeof this.datosFiscales>>(k: K, v: any): void {

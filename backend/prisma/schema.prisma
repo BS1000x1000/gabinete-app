@@ -70,6 +70,7 @@ model Trabajador {
   eventosParticipante  EventoParticipante[] @relation("EventosParticipante")
   horariosAdmin        HorarioAdmin[]
   contratosServicio    ContratoServicio[]
+  periodosVacaciones   PeriodoVacaciones[]
 
   @@map("trabajadores")
 }
@@ -772,6 +773,44 @@ model ContratoServicio {
   @@index([trabajadorId])
   @@index([estado])
   @@map("contratos_servicio")
+}
+
+// ============================================================
+// FESTIVOS Y VACACIONES (Hito R2)
+// ============================================================
+
+enum AmbitoFestivo {
+  NACIONAL
+  AUTONOMICO
+  LOCAL
+}
+
+model Festivo {
+  id          String        @id @default(uuid())
+  fecha       DateTime
+  descripcion String
+  ambito      AmbitoFestivo
+  ccaa        String?
+  provincia   String?
+  anio        Int           @map("anio")
+
+  @@index([anio])
+  @@index([fecha])
+  @@map("festivos")
+}
+
+model PeriodoVacaciones {
+  id           String   @id @default(uuid())
+  trabajadorId String   @map("id_trabajador")
+  fechaInicio  DateTime @map("fecha_inicio")
+  fechaFin     DateTime @map("fecha_fin")
+  motivo       String?
+  createdAt    DateTime @default(now()) @map("fecha_creacion")
+
+  trabajador Trabajador @relation(fields: [trabajadorId], references: [id])
+
+  @@index([trabajadorId])
+  @@map("periodos_vacaciones")
 }
 
 // ============================================================

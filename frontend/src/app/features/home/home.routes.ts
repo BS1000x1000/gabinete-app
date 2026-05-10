@@ -18,6 +18,7 @@ export default [
       { path: 'trabajadores',     loadComponent: () => import('../trabajadores/trabajadores.component'),          canActivate: [roleGuard(['ADMIN', 'RECEP'])] },
       { path: 'trabajadores/:id', loadChildren: () => import('../trabajadores/ficha/trabajador-ficha.routes'), canActivate: [roleGuard(ROLES_CLINICOS)] },
       { path: 'ajustes',    loadComponent: () => import('../ajustes/ajustes.component') },
+      { path: 'administracion/festivos', loadComponent: () => import('./administracion/festivos/festivos.component'), canActivate: [roleGuard(['ADMIN'])] },
     ]
   }
 ] as Route[];

@@ -5,9 +5,17 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { EstadoContrato, EstadoSesion } from '@prisma/client';
+import { AmbitoFestivo, EstadoContrato, EstadoSesion, TipoSesion } from '@prisma/client';
 import { CreateContratoDto } from './dto/create-contrato.dto';
 import { UpdateContratoDto } from './dto/update-contrato.dto';
+import {
+  addMonths,
+  añosCubiertos,
+  combinarFechaHora,
+  esFestivo,
+  enVacaciones,
+  generarFechasRecurrentes,
+} from './contratos.utils';
 
 const CONTRATO_INCLUDE = {
   cliente: { select: { id: true, nombre: true, apellidos: true } },
@@ -39,7 +47,7 @@ export class ContratosService {
       );
     }
 
-    return this.prisma.contratoServicio.create({
+    const contrato = await this.prisma.contratoServicio.create({
       data: {
         clienteId: dto.clienteId,
         trabajadorId,
@@ -56,6 +64,65 @@ export class ContratosService {
       },
       include: CONTRATO_INCLUDE,
     });
+
+    // Generar sesiones en background — no bloquea la respuesta
+    this.generarSesionesContrato(contrato.id).catch(err =>
+      console.error(`Error generando sesiones para contrato ${contrato.id}:`, err),
+    );
+
+    return contrato;
+  }
+
+  async generarSesionesContrato(contratoId: string): Promise<number> {
+    const contrato = await this.prisma.contratoServicio.findUniqueOrThrow({
+      where: { id: contratoId },
+      include: { cliente: { select: { provincia: true } } },
+    });
+
+    const fechaInicio = contrato.fechaInicio;
+    const fechaFin = contrato.fechaFin ?? addMonths(fechaInicio, 12);
+
+    const todasFechas = generarFechasRecurrentes(fechaInicio, fechaFin, contrato.diaSemana);
+    if (todasFechas.length === 0) return 0;
+
+    const anos = añosCubiertos(fechaInicio, fechaFin);
+    const provincia = contrato.cliente.provincia;
+
+    const festivos = await this.prisma.festivo.findMany({
+      where: {
+        anio: { in: anos },
+        OR: [
+          { ambito: AmbitoFestivo.NACIONAL },
+          { ambito: AmbitoFestivo.AUTONOMICO, ccaa: provincia },
+          { ambito: AmbitoFestivo.LOCAL, provincia },
+        ],
+      },
+    });
+
+    const vacaciones = await this.prisma.periodoVacaciones.findMany({
+      where: { trabajadorId: contrato.trabajadorId },
+    });
+
+    const fechasValidas = todasFechas.filter(
+      f => !esFestivo(f, festivos) && !enVacaciones(f, vacaciones),
+    );
+
+    if (fechasValidas.length === 0) return 0;
+
+    await this.prisma.sesion.createMany({
+      data: fechasValidas.map(f => ({
+        clienteId: contrato.clienteId,
+        trabajadorId: contrato.trabajadorId,
+        contratoId: contrato.id,
+        tipoSesion: contrato.tipoSesion as TipoSesion,
+        fechaHoraInicio: combinarFechaHora(f, contrato.horaInicio),
+        fechaHoraFin: combinarFechaHora(f, contrato.horaFin),
+        estado: EstadoSesion.PROGRAMADA,
+      })),
+      skipDuplicates: true,
+    });
+
+    return fechasValidas.length;
   }
 
   async findAll(user: { userId: string; rol: string }) {

@@ -23,6 +23,8 @@ import { N8nModule } from './n8n/n8n.module';
 import { EventosAgendaModule } from './eventos-agenda/eventos-agenda.module';
 import { HorariosAdminModule } from './horarios-admin/horarios-admin.module';
 import { ContratosModule } from './contratos/contratos.module';
+import { FestivosModule } from './festivos/festivos.module';
+import { VacacionesModule } from './vacaciones/vacaciones.module';
 
 @Module({
   imports: [
@@ -56,6 +58,8 @@ import { ContratosModule } from './contratos/contratos.module';
     EventosAgendaModule,
     HorariosAdminModule,
     ContratosModule,
+    FestivosModule,
+    VacacionesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

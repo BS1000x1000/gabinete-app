@@ -183,6 +183,98 @@
       </div>
     </div>
 
+    <!-- ══ Card: Mis vacaciones ══════════════════════════════════ -->
+    <div *ngIf="!auth.isRecep()" class="card border-0 shadow-sm rounded-3 bg-white ajustes-card ajustes-card-wide">
+      <div class="ajustes-card-header">
+        <i class="bi bi-sun me-2"></i>Mis vacaciones
+      </div>
+      <div class="ajustes-card-body">
+        <p class="ajustes-section-desc">
+          Registra tus periodos de vacaciones. Se usarán para evitar generar sesiones en esas fechas.
+        </p>
+
+        <!-- Loading -->
+        <div *ngIf="cargandoVacaciones()" class="vac-loading">
+          <span class="spinner-border spinner-border-sm me-2"></span>Cargando...
+        </div>
+
+        <!-- Lista de periodos -->
+        <ng-container *ngIf="!cargandoVacaciones()">
+          <div *ngIf="misVacaciones().length === 0" class="vac-empty">
+            <i class="bi bi-calendar2-x"></i>
+            No tienes periodos de vacaciones registrados.
+          </div>
+
+          <div *ngFor="let v of misVacaciones()" class="vac-item">
+            <div class="vac-item-main">
+              <span class="vac-item-dates">
+                <i class="bi bi-calendar-range me-1"></i>
+                {{ v.fechaInicio | date:'dd/MM/yyyy' }} → {{ v.fechaFin | date:'dd/MM/yyyy' }}
+              </span>
+              <span class="vac-item-badge">{{ diasPeriodo(v.fechaInicio, v.fechaFin) }} días</span>
+              <span *ngIf="v.motivo" class="vac-item-motivo">{{ v.motivo }}</span>
+            </div>
+            <div class="vac-item-actions">
+              <div *ngIf="confirmEliminarVacacionId() === v.id" class="vac-confirm">
+                <span>¿Eliminar?</span>
+                <button class="vac-confirm-yes" (click)="eliminarVacaciones(v.id)">Sí</button>
+                <button class="vac-confirm-no" (click)="cancelarConfirmarVacacion()">No</button>
+              </div>
+              <button
+                *ngIf="confirmEliminarVacacionId() !== v.id"
+                class="vac-del-btn"
+                (click)="pedirConfirmarVacacion(v.id)"
+                title="Eliminar periodo"
+                [disabled]="eliminandoVacacionId() === v.id"
+              >
+                <span *ngIf="eliminandoVacacionId() === v.id" class="spinner-border spinner-border-sm"></span>
+                <i *ngIf="eliminandoVacacionId() !== v.id" class="bi bi-trash"></i>
+              </button>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- Formulario añadir -->
+        <div class="vac-form-card">
+          <div class="vac-form-header">
+            <i class="bi bi-plus-circle me-2"></i>Añadir periodo
+          </div>
+          <div class="vac-form-body">
+            <div>
+              <label class="ajustes-label">Fecha inicio *</label>
+              <input type="date" class="form-control ajustes-input"
+                [ngModel]="vacForm().fechaInicio"
+                (ngModelChange)="patchVac('fechaInicio', $event)" />
+            </div>
+            <div>
+              <label class="ajustes-label">Fecha fin *</label>
+              <input type="date" class="form-control ajustes-input"
+                [ngModel]="vacForm().fechaFin"
+                (ngModelChange)="patchVac('fechaFin', $event)" />
+            </div>
+            <div class="vac-form-full">
+              <label class="ajustes-label">Motivo <span class="text-muted">(opcional)</span></label>
+              <input type="text" class="form-control ajustes-input"
+                placeholder="Vacaciones de verano…"
+                [ngModel]="vacForm().motivo"
+                (ngModelChange)="patchVac('motivo', $event)" />
+            </div>
+            <div *ngIf="errorVac()" class="vac-error">
+              <i class="bi bi-exclamation-triangle me-1"></i>{{ errorVac() }}
+            </div>
+            <div class="vac-form-actions">
+              <button class="btn ajustes-submit-btn btn-primary" (click)="agregarVacaciones()" [disabled]="guardandoVacacion()">
+                <span *ngIf="guardandoVacacion()" class="spinner-border spinner-border-sm me-2"></span>
+                <i *ngIf="!guardandoVacacion()" class="bi bi-plus-circle me-2"></i>
+                {{ guardandoVacacion() ? 'Guardando...' : 'Añadir periodo' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
     <!-- ══ Card: Seguridad ═══════════════════════════════════════ -->
     <div class="card border-0 shadow-sm rounded-3 bg-white ajustes-card">
       <div class="ajustes-card-header">
