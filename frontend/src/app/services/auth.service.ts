@@ -83,7 +83,7 @@ export class AuthService {
           // JWT es HttpOnly — el browser lo gestiona automáticamente
           // SSE también usa la cookie (withCredentials: true)
           this.notificacionesSvc.cargar().subscribe();
-          this.notificacionesSvc.conectarSSE();
+          // this.notificacionesSvc.conectarSSE();
         } else {
           console.error('❌ No se recibió información del usuario del backend');
         }

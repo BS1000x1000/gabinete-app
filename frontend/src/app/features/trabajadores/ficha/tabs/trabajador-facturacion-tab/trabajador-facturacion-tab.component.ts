@@ -5,7 +5,6 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { finalize } from 'rxjs';
 import { TrabajadorService } from '../../../../../services/trabajadores.service';
-import { AuthService } from '../../../../../services/auth.service';
 
 type FiscalForm = {
   nifFiscal: string;
@@ -26,7 +25,6 @@ type FiscalForm = {
   templateUrl: './trabajador-facturacion-tab.component.html',
 })
 export class TrabajadorFacturacionTabComponent implements OnInit, OnDestroy {
-  readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly trabajadorSvc = inject(TrabajadorService);
   private readonly destroyRef = inject(DestroyRef);

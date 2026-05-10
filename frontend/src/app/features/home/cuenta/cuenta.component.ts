@@ -1,6 +1,6 @@
-import { Component, inject, signal, OnDestroy } from '@angular/core';
+import { Component, DestroyRef, inject, signal, OnDestroy } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
-import { AuthService } from '../../../services/auth.service';
 import { TrabajadorService } from '../../../services/trabajadores.service';
 import { finalize } from 'rxjs';
 
@@ -13,8 +13,8 @@ type PasswordForm = { passwordActual: string; passwordNueva: string; confirmar: 
   templateUrl: './cuenta.component.html',
 })
 export default class CuentaComponent implements OnDestroy {
-  readonly auth = inject(AuthService);
   private readonly trabajadoresSvc = inject(TrabajadorService);
+  private readonly destroyRef = inject(DestroyRef);
 
   form      = signal<PasswordForm>({ passwordActual: '', passwordNueva: '', confirmar: '' });
   guardando = signal(false);
@@ -57,7 +57,7 @@ export default class CuentaComponent implements OnDestroy {
     this.error.set(null);
 
     this.trabajadoresSvc.cambiarPasswordPropio(passwordActual, passwordNueva)
-      .pipe(finalize(() => this.guardando.set(false)))
+      .pipe(finalize(() => this.guardando.set(false)), takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
           this.form.set({ passwordActual: '', passwordNueva: '', confirmar: '' });

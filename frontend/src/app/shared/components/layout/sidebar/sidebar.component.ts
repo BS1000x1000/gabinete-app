@@ -69,6 +69,7 @@ export class SidebarComponent {
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
+    if (!this.dropdownAbierto()) return;
     const target = event.target as HTMLElement;
     if (!target.closest('.sidebar-profile-dropdown-wrap')) {
       this.dropdownAbierto.set(false);

@@ -31,7 +31,7 @@ export class HomeComponent implements OnInit {
   ngOnInit() {
     this.notificacionesSvc.cargar().subscribe();
     // Reconectar SSE si el usuario ya tiene sesión activa (recarga de página)
-    this.notificacionesSvc.conectarSSE();
+    // this.notificacionesSvc.conectarSSE();
   }
 
   toggleMobileSidebar() {
