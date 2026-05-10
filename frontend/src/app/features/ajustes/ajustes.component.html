@@ -200,18 +200,18 @@
 
         <!-- Lista de periodos -->
         <ng-container *ngIf="!cargandoVacaciones()">
-          <div *ngIf="misVacaciones().length === 0" class="vac-empty">
+          <div *ngIf="vacacionesConDias().length === 0" class="vac-empty">
             <i class="bi bi-calendar2-x"></i>
             No tienes periodos de vacaciones registrados.
           </div>
 
-          <div *ngFor="let v of misVacaciones()" class="vac-item">
+          <div *ngFor="let v of vacacionesConDias()" class="vac-item">
             <div class="vac-item-main">
               <span class="vac-item-dates">
                 <i class="bi bi-calendar-range me-1"></i>
                 {{ v.fechaInicio | date:'dd/MM/yyyy' }} → {{ v.fechaFin | date:'dd/MM/yyyy' }}
               </span>
-              <span class="vac-item-badge">{{ diasPeriodo(v.fechaInicio, v.fechaFin) }} días</span>
+              <span class="vac-item-badge">{{ v.dias }} días</span>
               <span *ngIf="v.motivo" class="vac-item-motivo">{{ v.motivo }}</span>
             </div>
             <div class="vac-item-actions">

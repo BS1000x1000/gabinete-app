@@ -28,7 +28,7 @@ const EMPTY_FORM = (): FormFestivo => ({
   templateUrl: './festivos.component.html',
 })
 export default class FestivosAdminComponent implements OnInit {
-  readonly festivosSvc = inject(FestivosService);
+  private readonly festivosSvc = inject(FestivosService);
 
   anioActivo        = signal(new Date().getFullYear());
   mostrarFormulario = signal(false);
@@ -111,6 +111,12 @@ export default class FestivosAdminComponent implements OnInit {
         },
       });
   }
+
+  readonly AMBITO_LABEL: Record<AmbitoFestivo, string> = {
+    NACIONAL: 'Nacional',
+    AUTONOMICO: 'Autonómico',
+    LOCAL: 'Local',
+  };
 
   pedirConfirmar(id: string): void {
     this.confirmEliminarId.set(id);

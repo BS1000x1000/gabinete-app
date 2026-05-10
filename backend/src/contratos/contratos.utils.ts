@@ -5,14 +5,12 @@ export function generarFechasRecurrentes(
   fechaFin: Date,
   diaSemanaISO: number, // 1=Lun..7=Dom
 ): Date[] {
-  // ISO 1=Lun→JS 1, ISO 7=Dom→JS 0
   const jsDia = diaSemanaISO % 7;
 
-  // Empezar desde noon para evitar problemas de DST
+  // noon avoids DST edge cases when incrementing by day
   const actual = new Date(fechaInicio);
   actual.setHours(12, 0, 0, 0);
 
-  // Avanzar al primer día de la semana que coincida
   while (actual.getDay() !== jsDia) {
     actual.setDate(actual.getDate() + 1);
   }

@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnDestroy, OnInit } from '@angular/core';
+import { Component, computed, inject, signal, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
@@ -21,7 +21,7 @@ const EMPTY_VAC = (): VacForm => ({ fechaInicio: '', fechaFin: '', motivo: '' })
 export default class AjustesComponent implements OnInit, OnDestroy {
   readonly auth = inject(AuthService);
   private trabajadoresSvc = inject(TrabajadorService);
-  readonly vacacionesSvc = inject(VacacionesService);
+  private readonly vacacionesSvc = inject(VacacionesService);
 
   form      = signal<PasswordForm>({ passwordActual: '', passwordNueva: '', confirmar: '' });
   guardando = signal(false);
@@ -52,8 +52,14 @@ export default class AjustesComponent implements OnInit, OnDestroy {
   errorFiscal       = signal<string | null>(null);
   private exitoFiscalTimer: ReturnType<typeof setTimeout> | null = null;
 
-  // Vacaciones
-  readonly misVacaciones    = this.vacacionesSvc.misVacaciones;
+  readonly vacacionesConDias = computed(() =>
+    this.vacacionesSvc.misVacaciones().map(v => ({
+      ...v,
+      dias: Math.round(
+        (new Date(v.fechaFin).getTime() - new Date(v.fechaInicio).getTime()) / 86_400_000,
+      ) + 1,
+    })),
+  );
   cargandoVacaciones        = signal(false);
   guardandoVacacion         = signal(false);
   eliminandoVacacionId      = signal<string | null>(null);
@@ -94,11 +100,6 @@ export default class AjustesComponent implements OnInit, OnDestroy {
     if (this.exitoTimer !== null) clearTimeout(this.exitoTimer);
     if (this.exitoUrlTimer !== null) clearTimeout(this.exitoUrlTimer);
     if (this.exitoFiscalTimer !== null) clearTimeout(this.exitoFiscalTimer);
-  }
-
-  diasPeriodo(inicio: string, fin: string): number {
-    const ms = new Date(fin).getTime() - new Date(inicio).getTime();
-    return Math.round(ms / 86_400_000) + 1;
   }
 
   patchVac<K extends keyof VacForm>(k: K, v: string): void {

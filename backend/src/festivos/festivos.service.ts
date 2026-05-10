@@ -3,7 +3,6 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AmbitoFestivo } from '@prisma/client';
 import { CreateFestivoDto } from './dto/create-festivo.dto';
 
-// Festivos nacionales fijos de España (fechas no variables)
 const FESTIVOS_FIJOS = [
   { mes: 1,  dia: 1,  descripcion: 'Año Nuevo' },
   { mes: 1,  dia: 6,  descripcion: 'Epifanía del Señor' },
@@ -23,8 +22,7 @@ function calcularViernesSanto(anio: number): Date {
   const c = anio % 7;
   const d = (19 * a + 24) % 30;
   const e = (2 * b + 4 * c + 6 * d + 5) % 7;
-  const pascua = new Date(anio, 2, 22 + d + e); // Mes 2 = Marzo
-  // Viernes Santo = Pascua - 2 días
+  const pascua = new Date(anio, 2, 22 + d + e);
   return new Date(pascua.getTime() - 2 * 24 * 60 * 60 * 1000);
 }
 
@@ -86,7 +84,7 @@ export class FestivosService {
 
     const result = await this.prisma.festivo.createMany({
       data: todos,
-      skipDuplicates: false,
+      skipDuplicates: true,
     });
 
     return { importados: result.count, omitidos: todos.length - result.count };

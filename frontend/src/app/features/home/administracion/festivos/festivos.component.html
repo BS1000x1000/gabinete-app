@@ -75,7 +75,7 @@
                 [class.festivos-badge-autonomico]="f.ambito === 'AUTONOMICO'"
                 [class.festivos-badge-local]="f.ambito === 'LOCAL'"
               >
-                {{ f.ambito === 'NACIONAL' ? 'Nacional' : f.ambito === 'AUTONOMICO' ? 'Autonómico' : 'Local' }}
+                {{ AMBITO_LABEL[f.ambito] }}
               </span>
             </td>
             <td>

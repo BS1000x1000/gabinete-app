@@ -5,7 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { AmbitoFestivo, EstadoContrato, EstadoSesion, TipoSesion } from '@prisma/client';
+import { AmbitoFestivo, EstadoContrato, EstadoSesion } from '@prisma/client';
 import { CreateContratoDto } from './dto/create-contrato.dto';
 import { UpdateContratoDto } from './dto/update-contrato.dto';
 import {
@@ -65,7 +65,6 @@ export class ContratosService {
       include: CONTRATO_INCLUDE,
     });
 
-    // Generar sesiones en background — no bloquea la respuesta
     this.generarSesionesContrato(contrato.id).catch(err =>
       console.error(`Error generando sesiones para contrato ${contrato.id}:`, err),
     );
@@ -88,20 +87,21 @@ export class ContratosService {
     const anos = añosCubiertos(fechaInicio, fechaFin);
     const provincia = contrato.cliente.provincia;
 
-    const festivos = await this.prisma.festivo.findMany({
-      where: {
-        anio: { in: anos },
-        OR: [
-          { ambito: AmbitoFestivo.NACIONAL },
-          { ambito: AmbitoFestivo.AUTONOMICO, ccaa: provincia },
-          { ambito: AmbitoFestivo.LOCAL, provincia },
-        ],
-      },
-    });
-
-    const vacaciones = await this.prisma.periodoVacaciones.findMany({
-      where: { trabajadorId: contrato.trabajadorId },
-    });
+    const [festivos, vacaciones] = await Promise.all([
+      this.prisma.festivo.findMany({
+        where: {
+          anio: { in: anos },
+          OR: [
+            { ambito: AmbitoFestivo.NACIONAL },
+            { ambito: AmbitoFestivo.AUTONOMICO, ccaa: provincia },
+            { ambito: AmbitoFestivo.LOCAL, provincia },
+          ],
+        },
+      }),
+      this.prisma.periodoVacaciones.findMany({
+        where: { trabajadorId: contrato.trabajadorId },
+      }),
+    ]);
 
     const fechasValidas = todasFechas.filter(
       f => !esFestivo(f, festivos) && !enVacaciones(f, vacaciones),
@@ -114,7 +114,7 @@ export class ContratosService {
         clienteId: contrato.clienteId,
         trabajadorId: contrato.trabajadorId,
         contratoId: contrato.id,
-        tipoSesion: contrato.tipoSesion as TipoSesion,
+        tipoSesion: contrato.tipoSesion,
         fechaHoraInicio: combinarFechaHora(f, contrato.horaInicio),
         fechaHoraFin: combinarFechaHora(f, contrato.horaFin),
         estado: EstadoSesion.PROGRAMADA,

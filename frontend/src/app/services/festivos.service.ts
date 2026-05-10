@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { tap, map } from 'rxjs/operators';
+import { tap, map, switchMap } from 'rxjs/operators';
 import { environment } from '../../environments/environment.development';
 import { Festivo, CreateFestivoPayload } from '../interface/festivo.interface';
 
@@ -42,7 +42,7 @@ export class FestivosService {
     return this.http.post<{ importados: number; omitidos: number }>(
       `${this.api}/importar-nacionales/${anio}`, {},
     ).pipe(
-      tap(() => this.getFestivos(anio).subscribe()),
+      switchMap(() => this.getFestivos(anio)),
     );
   }
 

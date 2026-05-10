@@ -4,8 +4,7 @@ import { CreateVacacionesDto } from './dto/create-vacaciones.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../roles/roles.guard';
 import { Roles } from '../roles/roles.decorator';
-
-const ROLES_CLINICOS = ['ADMIN', 'PEDAGOGO', 'NEURO', 'LOGOPEDA'];
+import { ROLES_CLINICOS } from '../roles/roles.constants';
 
 @Controller('vacaciones')
 @UseGuards(JwtAuthGuard, RolesGuard)
