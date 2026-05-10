@@ -4,12 +4,16 @@ import {
   IsOptional,
   IsBoolean,
   IsUrl,
+  IsNumber,
+  Min,
+  Max,
   MinLength,
   MaxLength,
   Matches,
   IsUUID,
   ValidateIf,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/;
 const PASSWORD_MSG = 'La contrasena debe tener minimo 8 caracteres, una mayuscula, una minuscula y un numero';
@@ -137,4 +141,53 @@ export class UpdateTrabajadorDto {
     message: 'Debe ser una URL HTTPS válida (ej: https://meet.google.com/abc-defg-hij)',
   })
   urlVideollamada?: string;
+}
+
+export class DatosFiscalesDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  nifFiscal?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  nombreFiscal?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  direccionFiscal?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(10)
+  codigoPostalFiscal?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  ciudadFiscal?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  provinciaFiscal?: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(/^[A-Z]{2}\d{2}[\dA-Z]{1,30}$/, { message: 'Formato IBAN no válido' })
+  iban?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @Max(100)
+  retencionIrpf?: number;
+
+  @IsOptional()
+  @IsEmail()
+  @MaxLength(200)
+  emailFacturacion?: string;
 }

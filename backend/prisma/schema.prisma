@@ -45,6 +45,17 @@ model Trabajador {
   createdAt            DateTime  @default(now()) @map("fecha_creacion")
   updatedAt            DateTime  @updatedAt @map("ultima_actualizacion")
 
+  // Datos fiscales del autónomo (Hito R)
+  nifFiscal           String?  @map("nif_fiscal")
+  nombreFiscal        String?  @map("nombre_fiscal")
+  direccionFiscal     String?  @map("direccion_fiscal") @db.Text
+  codigoPostalFiscal  String?  @map("codigo_postal_fiscal")
+  ciudadFiscal        String?  @map("ciudad_fiscal")
+  provinciaFiscal     String?  @map("provincia_fiscal")
+  iban                String?
+  retencionIrpf       Decimal? @db.Decimal(4, 2) @map("retencion_irpf")
+  emailFacturacion    String?  @map("email_facturacion")
+
   rolId String @map("id_rol")
   rol   Rol    @relation(fields: [rolId], references: [id])
 
@@ -58,6 +69,7 @@ model Trabajador {
   eventosCreados       EventoAgenda[]       @relation("EventosCreados")
   eventosParticipante  EventoParticipante[] @relation("EventosParticipante")
   horariosAdmin        HorarioAdmin[]
+  contratosServicio    ContratoServicio[]
 
   @@map("trabajadores")
 }
@@ -108,6 +120,14 @@ model Cliente {
   createdAt            DateTime  @default(now()) @map("fecha_creacion")
   updatedAt            DateTime  @updatedAt @map("ultima_actualizacion")
 
+  // Datos del pagador/tutor para facturación (Hito R)
+  nifTutorPagador      String?  @map("nif_tutor_pagador")
+  nombreTutorPagador   String?  @map("nombre_tutor_pagador")
+  direccionFiscalTutor String?  @map("direccion_fiscal_tutor") @db.Text
+  codigoPostalTutor    String?  @map("codigo_postal_tutor")
+  ciudadTutor          String?  @map("ciudad_tutor")
+  emailFacturacion     String?  @map("email_facturacion_cliente")
+
   colegioId String?  @map("id_colegio")
   colegio   Colegio? @relation(fields: [colegioId], references: [id])
 
@@ -123,6 +143,7 @@ model Cliente {
   bonos                       Bono[]
   notificaciones              Notificacion[]
   consentimientosRgpd         ConsentimientoRgpd[]
+  contratosServicio           ContratoServicio[]
 
   @@map("clientes")
 }
@@ -194,6 +215,8 @@ model Sesion {
   trabajador   Trabajador @relation(fields: [trabajadorId], references: [id])
   bonoId  String?  @map("id_bono")
   bono    Bono?    @relation(fields: [bonoId], references: [id])
+  contratoId  String?           @map("id_contrato")
+  contrato    ContratoServicio? @relation("SesionesContrato", fields: [contratoId], references: [id])
 
   @@index([clienteId])
   @@index([trabajadorId])
@@ -710,6 +733,45 @@ enum ModalidadSesion {
 enum ModalidadEvento {
   PRESENCIAL
   ONLINE
+}
+
+// ============================================================
+// CONTRATOS DE SERVICIO (Hito R)
+// ============================================================
+
+enum EstadoContrato {
+  BORRADOR
+  ACTIVO
+  SUSPENDIDO
+  FINALIZADO
+}
+
+model ContratoServicio {
+  id              String         @id @default(uuid())
+  clienteId       String         @map("id_cliente")
+  trabajadorId    String         @map("id_trabajador")
+  tipoSesion      TipoSesion
+  cuotaMensual    Decimal        @db.Decimal(10, 2) @map("cuota_mensual")
+  diaSemana       Int            @map("dia_semana")       // 1=Lun..7=Dom (ISO)
+  horaInicio      String         @map("hora_inicio")      // "HH:mm"
+  horaFin         String         @map("hora_fin")
+  duracionMinutos Int            @map("duracion_minutos")
+  fechaInicio     DateTime       @map("fecha_inicio")
+  fechaFin        DateTime?      @map("fecha_fin")        // null = indefinido
+  estado          EstadoContrato @default(ACTIVO)
+  notas           String?        @db.Text
+  fechaFirma      DateTime       @default(now()) @map("fecha_firma")
+  createdAt       DateTime       @default(now()) @map("fecha_creacion")
+  updatedAt       DateTime       @updatedAt      @map("ultima_actualizacion")
+
+  cliente    Cliente    @relation(fields: [clienteId], references: [id])
+  trabajador Trabajador @relation(fields: [trabajadorId], references: [id])
+  sesiones   Sesion[]   @relation("SesionesContrato")
+
+  @@index([clienteId])
+  @@index([trabajadorId])
+  @@index([estado])
+  @@map("contratos_servicio")
 }
 
 // ============================================================

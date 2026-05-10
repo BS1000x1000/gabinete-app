@@ -45,6 +45,7 @@ export class ListadoComponent implements OnInit, OnDestroy {
     ];
     if (!this.auth.isRecep()) {
       tabs.push({ label: 'Registro', icon: 'bi-graph-up', target: 'progreso' });
+      tabs.push({ label: 'Contratos', icon: 'bi-file-earmark-ruled', target: 'contratos' });
     }
     tabs.push(
       { label: 'Terapeutas', icon: 'bi-people',            target: 'terapeutas' },

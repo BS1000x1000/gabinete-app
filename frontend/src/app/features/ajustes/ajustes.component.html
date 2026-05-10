@@ -84,6 +84,105 @@
       </div>
     </div>
 
+    <!-- ══ Card: Datos fiscales ══════════════════════════════════ -->
+    <div *ngIf="!auth.isRecep()" class="card border-0 shadow-sm rounded-3 bg-white ajustes-card ajustes-card-wide">
+      <div class="ajustes-card-header">
+        <i class="bi bi-receipt me-2"></i>Mis datos fiscales
+      </div>
+      <div class="ajustes-card-body">
+        <p class="ajustes-section-desc">
+          Datos necesarios para emitir facturas como autónomo. Aparecerán en el encabezado de cada factura mensual.
+        </p>
+
+        <div *ngIf="exitoFiscal()" class="alert alert-success ajustes-alert d-flex align-items-center gap-2 mb-3">
+          <i class="bi bi-check-circle-fill"></i><span>Datos fiscales guardados correctamente.</span>
+        </div>
+        <div *ngIf="errorFiscal()" class="alert alert-danger ajustes-alert d-flex align-items-center gap-2 mb-3">
+          <i class="bi bi-exclamation-triangle-fill"></i><span>{{ errorFiscal() }}</span>
+        </div>
+
+        <div class="ajustes-fiscal-grid">
+
+          <div class="ajustes-field">
+            <label class="ajustes-label">NIF fiscal</label>
+            <input type="text" class="form-control ajustes-input" placeholder="12345678A"
+              [ngModel]="datosFiscales().nifFiscal"
+              (ngModelChange)="patchFiscal('nifFiscal', $event)" />
+          </div>
+
+          <div class="ajustes-field">
+            <label class="ajustes-label">Nombre fiscal / razón social</label>
+            <input type="text" class="form-control ajustes-input" placeholder="Tu nombre como aparece en facturas"
+              [ngModel]="datosFiscales().nombreFiscal"
+              (ngModelChange)="patchFiscal('nombreFiscal', $event)" />
+          </div>
+
+          <div class="ajustes-field ajustes-field-full">
+            <label class="ajustes-label">Dirección fiscal completa</label>
+            <textarea class="form-control ajustes-input" rows="2" placeholder="Calle, número, piso, ciudad, CP"
+              [ngModel]="datosFiscales().direccionFiscal"
+              (ngModelChange)="patchFiscal('direccionFiscal', $event)"></textarea>
+          </div>
+
+          <div class="ajustes-field">
+            <label class="ajustes-label">Código postal</label>
+            <input type="text" class="form-control ajustes-input" placeholder="28001"
+              [ngModel]="datosFiscales().codigoPostalFiscal"
+              (ngModelChange)="patchFiscal('codigoPostalFiscal', $event)" />
+          </div>
+
+          <div class="ajustes-field">
+            <label class="ajustes-label">Ciudad</label>
+            <input type="text" class="form-control ajustes-input" placeholder="Madrid"
+              [ngModel]="datosFiscales().ciudadFiscal"
+              (ngModelChange)="patchFiscal('ciudadFiscal', $event)" />
+          </div>
+
+          <div class="ajustes-field">
+            <label class="ajustes-label">Provincia</label>
+            <input type="text" class="form-control ajustes-input" placeholder="Madrid"
+              [ngModel]="datosFiscales().provinciaFiscal"
+              (ngModelChange)="patchFiscal('provinciaFiscal', $event)" />
+          </div>
+
+          <div class="ajustes-field">
+            <label class="ajustes-label">IBAN</label>
+            <input type="text" class="form-control ajustes-input" placeholder="ES00 0000 0000 0000 0000 0000"
+              [ngModel]="datosFiscales().iban"
+              (ngModelChange)="patchFiscal('iban', $event)" />
+          </div>
+
+          <div class="ajustes-field">
+            <label class="ajustes-label">% Retención IRPF</label>
+            <input type="number" class="form-control ajustes-input" min="0" max="100" step="0.01" placeholder="0"
+              [ngModel]="datosFiscales().retencionIrpf"
+              (ngModelChange)="patchFiscal('retencionIrpf', +$event)" />
+            <span class="ajustes-hint text-muted">Para particulares (familias) suele ser 0%</span>
+          </div>
+
+          <div class="ajustes-field ajustes-field-full">
+            <label class="ajustes-label">Email de facturación</label>
+            <input type="email" class="form-control ajustes-input" placeholder="facturacion@tudominio.com"
+              [ngModel]="datosFiscales().emailFacturacion"
+              (ngModelChange)="patchFiscal('emailFacturacion', $event)" />
+            <span class="ajustes-hint text-muted">Vacío = se usa tu email principal de la cuenta</span>
+          </div>
+
+        </div>
+
+        <div class="ajustes-actions mt-3">
+          <button type="button" class="btn ajustes-submit-btn" style="background:#db2777;color:#fff;"
+            (click)="guardarDatosFiscales()"
+            [disabled]="guardandoFiscal()">
+            <span *ngIf="guardandoFiscal()" class="spinner-border spinner-border-sm me-2"></span>
+            <i *ngIf="!guardandoFiscal()" class="bi bi-floppy me-2"></i>
+            {{ guardandoFiscal() ? 'Guardando...' : 'Guardar datos fiscales' }}
+          </button>
+        </div>
+
+      </div>
+    </div>
+
     <!-- ══ Card: Seguridad ═══════════════════════════════════════ -->
     <div class="card border-0 shadow-sm rounded-3 bg-white ajustes-card">
       <div class="ajustes-card-header">

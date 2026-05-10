@@ -259,6 +259,117 @@
     </div>
 
     <!-- ══════════════════════════════
+         FACTURACIÓN — DATOS DEL PAGADOR
+    ══════════════════════════════ -->
+    <div *ngIf="!auth.isRecep()" class="perfil-card perfil-card-full">
+      <div class="perfil-card-hdr">
+        <span class="perfil-card-icon" style="background: #fce7f3; color: #db2777;">
+          <i class="bi bi-receipt"></i>
+        </span>
+        <h3 class="perfil-card-title">Facturación</h3>
+        <button *ngIf="!editandoPagador()" class="perfil-edit-btn" (click)="abrirEditarPagador()" type="button">
+          <i class="bi bi-pencil"></i> Editar
+        </button>
+      </div>
+      <div class="perfil-card-body">
+
+        <!-- Alerta éxito -->
+        <div *ngIf="exitoPagador()" class="perfil-alert-chip chip-success mb-2">
+          <i class="bi bi-check-circle-fill me-1"></i> Datos del pagador actualizados
+        </div>
+
+        <!-- Modo lectura -->
+        <ng-container *ngIf="!editandoPagador()">
+          <div *ngIf="!clienteRaw()?.nifTutorPagador && !clienteRaw()?.nombreTutorPagador" class="perfil-empty">
+            <i class="bi bi-receipt mb-2 d-block fs-4 opacity-25"></i>
+            Sin datos de facturación registrados
+          </div>
+          <div *ngIf="clienteRaw()?.nifTutorPagador" class="dato-row">
+            <span class="dato-label">NIF pagador</span>
+            <span class="dato-valor">{{ clienteRaw()?.nifTutorPagador }}</span>
+          </div>
+          <div *ngIf="clienteRaw()?.nombreTutorPagador" class="dato-row">
+            <span class="dato-label">Nombre</span>
+            <span class="dato-valor">{{ clienteRaw()?.nombreTutorPagador }}</span>
+          </div>
+          <div *ngIf="clienteRaw()?.direccionFiscalTutor" class="dato-row">
+            <span class="dato-label">Dirección</span>
+            <span class="dato-valor">{{ clienteRaw()?.direccionFiscalTutor }}</span>
+          </div>
+          <div *ngIf="clienteRaw()?.codigoPostalTutor || clienteRaw()?.ciudadTutor" class="dato-row">
+            <span class="dato-label">C.P. / Ciudad</span>
+            <span class="dato-valor">
+              {{ clienteRaw()?.codigoPostalTutor }}<span *ngIf="clienteRaw()?.ciudadTutor"> — {{ clienteRaw()?.ciudadTutor }}</span>
+            </span>
+          </div>
+          <div *ngIf="clienteRaw()?.emailFacturacion" class="dato-row">
+            <span class="dato-label">Email factura</span>
+            <span class="dato-valor">{{ clienteRaw()?.emailFacturacion }}</span>
+          </div>
+        </ng-container>
+
+        <!-- Modo edición -->
+        <div *ngIf="editandoPagador()" class="pagador-form">
+          <div *ngIf="errorPagador()" class="perfil-alert-chip chip-danger mb-2">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ errorPagador() }}
+          </div>
+
+          <div class="pagador-grid">
+            <div class="pagador-field">
+              <label class="pagador-label">NIF del tutor pagador</label>
+              <input type="text" class="form-control pagador-input" placeholder="12345678A"
+                [ngModel]="pagadorForm().nifTutorPagador"
+                (ngModelChange)="patchPagador('nifTutorPagador', $event)" />
+            </div>
+            <div class="pagador-field">
+              <label class="pagador-label">Nombre completo del tutor</label>
+              <input type="text" class="form-control pagador-input" placeholder="Nombre Apellidos"
+                [ngModel]="pagadorForm().nombreTutorPagador"
+                (ngModelChange)="patchPagador('nombreTutorPagador', $event)" />
+            </div>
+            <div class="pagador-field pagador-field-full">
+              <label class="pagador-label">Dirección fiscal</label>
+              <textarea class="form-control pagador-input" rows="2" placeholder="Calle, número, piso…"
+                [ngModel]="pagadorForm().direccionFiscalTutor"
+                (ngModelChange)="patchPagador('direccionFiscalTutor', $event)"></textarea>
+            </div>
+            <div class="pagador-field">
+              <label class="pagador-label">Código postal</label>
+              <input type="text" class="form-control pagador-input" placeholder="28001"
+                [ngModel]="pagadorForm().codigoPostalTutor"
+                (ngModelChange)="patchPagador('codigoPostalTutor', $event)" />
+            </div>
+            <div class="pagador-field">
+              <label class="pagador-label">Ciudad</label>
+              <input type="text" class="form-control pagador-input" placeholder="Madrid"
+                [ngModel]="pagadorForm().ciudadTutor"
+                (ngModelChange)="patchPagador('ciudadTutor', $event)" />
+            </div>
+            <div class="pagador-field pagador-field-full">
+              <label class="pagador-label">Email de facturación</label>
+              <input type="email" class="form-control pagador-input" placeholder="email@familia.com"
+                [ngModel]="pagadorForm().emailFacturacion"
+                (ngModelChange)="patchPagador('emailFacturacion', $event)" />
+              <span class="pagador-hint">Si se deja vacío, se usará el email principal del familiar</span>
+            </div>
+          </div>
+
+          <div class="pagador-actions">
+            <button class="btn-rgpd btn-rgpd-ghost" type="button" (click)="cancelarEditarPagador()">Cancelar</button>
+            <button class="btn-rgpd btn-rgpd-primary" type="button"
+              [disabled]="guardandoPagador()"
+              (click)="guardarPagador()">
+              <span *ngIf="guardandoPagador()" class="spinner-border spinner-border-sm me-1" style="width:12px;height:12px"></span>
+              <i *ngIf="!guardandoPagador()" class="bi bi-floppy me-1"></i>
+              {{ guardandoPagador() ? 'Guardando…' : 'Guardar datos' }}
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════
          AUTORIZACIONES (full width)
     ══════════════════════════════ -->
     <div class="perfil-card perfil-card-full">

@@ -22,6 +22,7 @@ import { ExportModule } from './export/export.module';
 import { N8nModule } from './n8n/n8n.module';
 import { EventosAgendaModule } from './eventos-agenda/eventos-agenda.module';
 import { HorariosAdminModule } from './horarios-admin/horarios-admin.module';
+import { ContratosModule } from './contratos/contratos.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { HorariosAdminModule } from './horarios-admin/horarios-admin.module';
     N8nModule,
     EventosAgendaModule,
     HorariosAdminModule,
+    ContratosModule,
   ],
   controllers: [AppController],
   providers: [AppService],

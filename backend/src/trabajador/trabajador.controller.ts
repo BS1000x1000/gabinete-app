@@ -16,7 +16,7 @@ import {
   Req,
 } from '@nestjs/common';
 import { TrabajadorService } from './trabajador.service';
-import { CreateTrabajadorDto, UpdateTrabajadorDto } from './dto/trabajador.dto';
+import { CreateTrabajadorDto, UpdateTrabajadorDto, DatosFiscalesDto } from './dto/trabajador.dto';
 import { AdminSetPasswordDto } from './dto/admin-set-password.dto';
 import { TipoSesion } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -64,6 +64,12 @@ export class TrabajadorController {
   async updateMe(@Req() req: any, @Body() dto: UpdateTrabajadorDto) {
     this.logger.log(`PATCH /trabajadores/me - userId: ${req.user.userId}`);
     return this.trabajadorService.update(req.user.userId, dto);
+  }
+
+  @Patch('me/datos-fiscales')
+  async updateDatosFiscales(@Req() req: any, @Body() dto: DatosFiscalesDto) {
+    this.logger.log(`PATCH /trabajadores/me/datos-fiscales - userId: ${req.user.userId}`);
+    return this.trabajadorService.updateDatosFiscales(req.user.userId, dto);
   }
 
   @Get(':id')

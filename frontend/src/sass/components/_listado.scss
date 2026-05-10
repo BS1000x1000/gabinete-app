@@ -1084,3 +1084,66 @@
     color: $gray-400;
   }
 }
+
+// ── Sección Facturación / Datos pagador ──────────────────────
+
+.pagador-form {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.pagador-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+
+  @media (max-width: 640px) { grid-template-columns: 1fr; }
+}
+
+.pagador-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+
+  &.pagador-field-full { grid-column: 1 / -1; }
+}
+
+.pagador-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: $gray-700;
+}
+
+.pagador-input {
+  font-size: 0.84rem;
+  border-radius: 0.5rem;
+  border: 1px solid $border-color;
+  padding: 0.45rem 0.7rem;
+  transition: border-color 0.15s;
+
+  &:focus {
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba($primary, 0.1);
+    outline: none;
+  }
+}
+
+.pagador-hint {
+  font-size: 0.74rem;
+  color: $gray-400;
+  margin-top: 0.15rem;
+}
+
+.pagador-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  padding-top: 0.25rem;
+}
+
+.chip-success {
+  background: rgba($success, 0.1);
+  color: darken($success, 10%);
+  border: 1px solid rgba($success, 0.2);
+}

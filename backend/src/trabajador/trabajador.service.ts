@@ -6,7 +6,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { CreateTrabajadorDto, UpdateTrabajadorDto } from './dto/trabajador.dto';
+import { CreateTrabajadorDto, UpdateTrabajadorDto, DatosFiscalesDto } from './dto/trabajador.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { trabajadorInclude, TrabajadorSafe } from './trabajador.types';
 import { TipoSesion } from '@prisma/client';
@@ -597,6 +597,27 @@ export class TrabajadorService {
         resetPasswordExpires: { gt: new Date() },
       },
     });
+  }
+
+  async updateDatosFiscales(id: string, dto: DatosFiscalesDto): Promise<TrabajadorSafe> {
+    const trabajador = await this.prisma.trabajador.findUnique({ where: { id } });
+    if (!trabajador) throw new NotFoundException(`Trabajador con ID ${id} no encontrado`);
+
+    return this.prisma.trabajador.update({
+      where: { id },
+      data: {
+        ...(dto.nifFiscal !== undefined && { nifFiscal: dto.nifFiscal }),
+        ...(dto.nombreFiscal !== undefined && { nombreFiscal: dto.nombreFiscal }),
+        ...(dto.direccionFiscal !== undefined && { direccionFiscal: dto.direccionFiscal }),
+        ...(dto.codigoPostalFiscal !== undefined && { codigoPostalFiscal: dto.codigoPostalFiscal }),
+        ...(dto.ciudadFiscal !== undefined && { ciudadFiscal: dto.ciudadFiscal }),
+        ...(dto.provinciaFiscal !== undefined && { provinciaFiscal: dto.provinciaFiscal }),
+        ...(dto.iban !== undefined && { iban: dto.iban }),
+        ...(dto.retencionIrpf !== undefined && { retencionIrpf: dto.retencionIrpf }),
+        ...(dto.emailFacturacion !== undefined && { emailFacturacion: dto.emailFacturacion }),
+      },
+      include: trabajadorInclude,
+    }) as unknown as TrabajadorSafe;
   }
 
   /**

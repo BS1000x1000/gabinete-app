@@ -16,6 +16,16 @@ export interface Trabajador {
   especialidad?: string;
   fechaContratacion?: string;
   urlVideollamada?: string;
+  // Datos fiscales del autónomo (Hito R)
+  nifFiscal?: string;
+  nombreFiscal?: string;
+  direccionFiscal?: string;
+  codigoPostalFiscal?: string;
+  ciudadFiscal?: string;
+  provinciaFiscal?: string;
+  iban?: string;
+  retencionIrpf?: number;
+  emailFacturacion?: string;
   rol: {
     id: string;
     nombreRol: string;
@@ -135,6 +145,20 @@ export class TrabajadorService {
 
   updateMe(payload: UpdateMePayload) {
     return this.http.patch<WrappedResponse<Trabajador>>(`${this.api}/me`, payload);
+  }
+
+  updateDatosFiscales(payload: {
+    nifFiscal?: string;
+    nombreFiscal?: string;
+    direccionFiscal?: string;
+    codigoPostalFiscal?: string;
+    ciudadFiscal?: string;
+    provinciaFiscal?: string;
+    iban?: string;
+    retencionIrpf?: number;
+    emailFacturacion?: string;
+  }) {
+    return this.http.patch<WrappedResponse<Trabajador>>(`${this.api}/me/datos-fiscales`, payload);
   }
 
   getMe() {

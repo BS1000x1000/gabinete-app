@@ -1049,6 +1049,25 @@ export class ClientesService {
     });
   }
 
+  // ── DATOS PAGADOR (FACTURACIÓN) ──────────────────────────
+
+  async updateDatosPagador(clienteId: string, data: any) {
+    const cliente = await this.prisma.cliente.findUnique({ where: { id: clienteId } });
+    if (!cliente) throw new NotFoundException(`Cliente ${clienteId} no encontrado`);
+
+    return this.prisma.cliente.update({
+      where: { id: clienteId },
+      data: {
+        ...(data.nifTutorPagador      !== undefined && { nifTutorPagador: data.nifTutorPagador }),
+        ...(data.nombreTutorPagador   !== undefined && { nombreTutorPagador: data.nombreTutorPagador }),
+        ...(data.direccionFiscalTutor !== undefined && { direccionFiscalTutor: data.direccionFiscalTutor }),
+        ...(data.codigoPostalTutor    !== undefined && { codigoPostalTutor: data.codigoPostalTutor }),
+        ...(data.ciudadTutor          !== undefined && { ciudadTutor: data.ciudadTutor }),
+        ...(data.emailFacturacion     !== undefined && { emailFacturacion: data.emailFacturacion }),
+      },
+    });
+  }
+
   // ── ANONIMIZACION (Art. 17 RGPD + Ley 41/2002) ───────────
 
   async anonimizarCliente(clienteId: string) {

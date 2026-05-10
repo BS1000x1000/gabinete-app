@@ -14,6 +14,7 @@ import { ClienteDrawerComponent } from '../../../../../shared/components/cliente
 import { ConfirmModalComponent } from '../../../../../shared/components/confirm-modal/confirm-modal.component';
 import { AuthService } from '../../../../../services/auth.service';
 import { ConsentimientoRgpdBackend } from '../../../../../interface/cliente-backend.interface';
+import { finalize } from 'rxjs';
 
 export const TEXTO_CONSENTIMIENTO = `Don/Doña _______________, en calidad de padre/madre/tutor legal del menor, \
 CONSIENTE expresamente el tratamiento de los datos de salud del menor por parte del gabinete, \
@@ -44,6 +45,61 @@ export class PerfilTabComponent implements OnInit {
   readonly familiares   = this.clientesSvc.contactosFamiliares;
   readonly colegio      = this.clientesSvc.colegio;
   readonly sanitario    = this.clientesSvc.sanitario;
+
+  // ── Sección Facturación (datos pagador) ─────────────
+  editandoPagador    = signal(false);
+  guardandoPagador   = signal(false);
+  exitoPagador       = signal(false);
+  errorPagador       = signal<string | null>(null);
+
+  pagadorForm = signal({
+    nifTutorPagador:      '',
+    nombreTutorPagador:   '',
+    direccionFiscalTutor: '',
+    codigoPostalTutor:    '',
+    ciudadTutor:          '',
+    emailFacturacion:     '',
+  });
+
+  abrirEditarPagador(): void {
+    const raw = this.clienteRaw();
+    this.pagadorForm.set({
+      nifTutorPagador:      raw?.nifTutorPagador      ?? '',
+      nombreTutorPagador:   raw?.nombreTutorPagador   ?? '',
+      direccionFiscalTutor: raw?.direccionFiscalTutor ?? '',
+      codigoPostalTutor:    raw?.codigoPostalTutor    ?? '',
+      ciudadTutor:          raw?.ciudadTutor           ?? '',
+      emailFacturacion:     raw?.emailFacturacion      ?? '',
+    });
+    this.errorPagador.set(null);
+    this.editandoPagador.set(true);
+  }
+
+  cancelarEditarPagador(): void {
+    this.editandoPagador.set(false);
+  }
+
+  guardarPagador(): void {
+    this.guardandoPagador.set(true);
+    this.errorPagador.set(null);
+    this.clientesSvc.updateDatosPagador(this.clienteId, this.pagadorForm())
+      .pipe(finalize(() => this.guardandoPagador.set(false)))
+      .subscribe({
+        next: () => {
+          this.editandoPagador.set(false);
+          this.exitoPagador.set(true);
+          this.clientesSvc.loadAll(this.clienteId).subscribe();
+          setTimeout(() => this.exitoPagador.set(false), 3000);
+        },
+        error: (err: any) => {
+          this.errorPagador.set(err?.error?.message ?? 'Error al guardar los datos del pagador');
+        },
+      });
+  }
+
+  patchPagador<K extends keyof ReturnType<typeof this.pagadorForm>>(k: K, v: string): void {
+    this.pagadorForm.update(f => ({ ...f, [k]: v }));
+  }
 
   // ── RGPD legacy ────────────────────────────────────
   guardandoRgpd = signal(false);

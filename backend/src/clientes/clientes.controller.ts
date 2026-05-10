@@ -276,6 +276,14 @@ export class ClientesController {
     return this.clientesService.desasignarObjetivoGeneral(id, objetivoId);
   }
 
+  // ── DATOS PAGADOR (FACTURACIÓN) ──────────────────────────
+
+  @Patch(':id/datos-pagador')
+  async updateDatosPagador(@Param('id') id: string, @Body() body: any) {
+    this.logger.log(`💶 PATCH /api/clientes/${id}/datos-pagador`);
+    return this.clientesService.updateDatosPagador(id, body);
+  }
+
   // ── CONSENTIMIENTO RGPD ───────────────────────────────────
 
   /**

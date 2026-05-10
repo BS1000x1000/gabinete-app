@@ -216,6 +216,20 @@ export class ClientesService {
       .pipe(map((res) => res.data || res));
   }
 
+  // ── DATOS PAGADOR (FACTURACIÓN) ──────────────────────────
+  updateDatosPagador(clienteId: string, data: {
+    nifTutorPagador?: string;
+    nombreTutorPagador?: string;
+    direccionFiscalTutor?: string;
+    codigoPostalTutor?: string;
+    ciudadTutor?: string;
+    emailFacturacion?: string;
+  }): Observable<any> {
+    return this.http
+      .patch<WrappedResponse<any>>(`${this.api}/${clienteId}/datos-pagador`, data)
+      .pipe(map((res) => res.data || res));
+  }
+
   // ── SANITARIO ─────────────────────────────────────────────
   updateSanitario(clienteId: string, data: any): Observable<any> {
     return this.http

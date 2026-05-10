@@ -139,6 +139,14 @@ export interface ClienteDataBackend {
     horaFin: string; // "18:00"
   }[];
   
+  // Datos del pagador/tutor para facturación (Hito R)
+  nifTutorPagador?: string | null;
+  nombreTutorPagador?: string | null;
+  direccionFiscalTutor?: string | null;
+  codigoPostalTutor?: string | null;
+  ciudadTutor?: string | null;
+  emailFacturacion?: string | null;
+
   // Timestamps
   createdAt: string;
   updatedAt: string;

@@ -39,6 +39,12 @@ export default [
         loadComponent: () =>
           import('./tabs/informes-tab/informes-tab.component'),
       },
+      {
+        path: 'contratos',
+        canActivate: [roleGuard(ROLES_CLINICOS)],
+        loadComponent: () =>
+          import('./tabs/contratos-tab/contratos-tab.component'),
+      },
 
       // ── Rutas de soporte (no aparecen en el tab bar) ──
       {
