@@ -25,7 +25,11 @@
       "Bash(npm audit:*)",
       "Bash(npm update:*)",
       "Bash(read d:*)",
-      "Bash(node node_modules/.bin/jest --passWithNoTests)"
+      "Bash(node node_modules/.bin/jest --passWithNoTests)",
+      "Bash(New-Item -ItemType Directory -Force -Path \"E:\\\\Programming\\\\PROYECTS\\\\PROPIOS\\\\gabinete-app\\\\frontend\\\\src\\\\app\\\\features\\\\trabajadores\\\\ficha\\\\tabs\\\\trabajador-vacaciones-tab\")",
+      "Bash(Out-Null)",
+      "Bash(New-Item -ItemType Directory -Force -Path \"E:\\\\Programming\\\\PROYECTS\\\\PROPIOS\\\\gabinete-app\\\\frontend\\\\src\\\\app\\\\features\\\\trabajadores\\\\ficha\\\\tabs\\\\trabajador-facturacion-tab\")",
+      "Bash(New-Item -ItemType Directory -Force -Path \"E:\\\\Programming\\\\PROYECTS\\\\PROPIOS\\\\gabinete-app\\\\frontend\\\\src\\\\app\\\\features\\\\home\\\\cuenta\")"
     ]
   },
   "hooks": {

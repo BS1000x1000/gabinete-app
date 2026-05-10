@@ -1,0 +1,139 @@
+// ============================================================
+// TRABAJADOR TABS — Estilos comunes a los nuevos tabs
+// ============================================================
+
+// Descripción intro del tab
+.trab-tab-desc {
+  font-size: 0.85rem;
+  color: $gray-500;
+  margin-bottom: 1.25rem;
+  line-height: 1.6;
+}
+
+// Loading inline
+.trab-tab-loading {
+  font-size: 0.875rem;
+  color: $gray-500;
+  padding: 1.5rem 0;
+  display: flex;
+  align-items: center;
+}
+
+// Botón guardar facturación
+.trab-facturacion-save-btn {
+  background: #db2777;
+  color: #fff;
+  border: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  padding: 0.45rem 1.1rem;
+
+  &:hover:not(:disabled) {
+    background: darken(#db2777, 8%);
+    color: #fff;
+  }
+
+  &:disabled { opacity: 0.55; }
+}
+
+// Sección añadir vacaciones
+.vac-add-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+// Botón añadir vacaciones
+.vac-add-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: $primary;
+  background: $primary-ultra-light;
+  border: 1px solid $primary-light;
+  border-radius: 0.5rem;
+  padding: 0.45rem 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+
+  &:hover { background: $primary-light; border-color: rgba($primary, 0.35); }
+}
+
+// Picker + motivo sección
+.vac-picker-section {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.vac-motivo-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+// Estado verificando
+.vac-checking {
+  font-size: 0.82rem;
+  color: $gray-500;
+  display: flex;
+  align-items: center;
+}
+
+// Bloque de conflictos
+.vac-conflicto-warning {
+  background: rgba($danger, 0.06);
+  border: 1px solid rgba($danger, 0.18);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.82rem;
+}
+
+.vac-conflicto-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  color: $danger;
+  margin-bottom: 0.5rem;
+}
+
+.vac-conflicto-section {
+  margin-top: 0.35rem;
+}
+
+.vac-conflicto-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: $gray-700;
+  margin-top: 0.2rem;
+  font-size: 0.8rem;
+
+  i { color: $danger; }
+}
+
+// Sin conflictos
+.vac-sin-conflictos {
+  font-size: 0.82rem;
+  color: $success;
+  display: flex;
+  align-items: center;
+  background: rgba($success, 0.07);
+  border-radius: 0.4rem;
+  padding: 0.4rem 0.7rem;
+}
+
+// Perfil — link de Meet
+.perfil-meet-link {
+  color: #00897b;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+
+  &:hover { text-decoration: underline; }
+}

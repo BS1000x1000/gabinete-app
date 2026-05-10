@@ -8,6 +8,8 @@ import {
 } from '../../../../../services/trabajadores.service';
 import { AuthService } from '../../../../../services/auth.service';
 
+const MEET_URL_REGEX = /^https:\/\/meet\.google\.com\/.+/;
+
 interface EditForm {
   nombre: string;
   apellidos: string;
@@ -16,6 +18,7 @@ interface EditForm {
   especialidad: string;
   numeroColegiado: string;
   fechaContratacion: string;
+  urlVideollamada: string;
 }
 
 @Component({
@@ -42,7 +45,7 @@ export class TrabajadorPerfilTabComponent implements OnInit, OnDestroy {
   readonly form = signal<EditForm>({
     nombre: '', apellidos: '', email: '',
     telefono: '', especialidad: '', numeroColegiado: '',
-    fechaContratacion: '',
+    fechaContratacion: '', urlVideollamada: '',
   });
 
   ngOnInit(): void {
@@ -82,6 +85,7 @@ export class TrabajadorPerfilTabComponent implements OnInit, OnDestroy {
       especialidad:     t.especialidad      ?? '',
       numeroColegiado:  t.numeroColegiado   ?? '',
       fechaContratacion: t.fechaContratacion ? t.fechaContratacion.slice(0, 10) : '',
+      urlVideollamada:  t.urlVideollamada   ?? '',
     });
     this.error.set(null);
     this.exito.set(null);
@@ -107,6 +111,13 @@ export class TrabajadorPerfilTabComponent implements OnInit, OnDestroy {
     this.guardando.set(true);
     this.error.set(null);
 
+    const url = f.urlVideollamada.trim();
+    if (url && !MEET_URL_REGEX.test(url)) {
+      this.error.set('La URL de Meet debe tener el formato https://meet.google.com/...');
+      this.guardando.set(false);
+      return;
+    }
+
     const payload: UpdateTrabajadorPayload = {
       nombre:            f.nombre.trim(),
       apellidos:         f.apellidos.trim(),
@@ -115,6 +126,7 @@ export class TrabajadorPerfilTabComponent implements OnInit, OnDestroy {
       especialidad:      f.especialidad.trim()      || undefined,
       numeroColegiado:   f.numeroColegiado.trim()   || undefined,
       fechaContratacion: f.fechaContratacion.trim()  || undefined,
+      urlVideollamada:   url || null,
     };
 
     this.trabajadorSvc.updateTrabajador(this.trabajadorId, payload).subscribe({

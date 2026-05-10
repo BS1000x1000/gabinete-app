@@ -1,0 +1,81 @@
+<div class="vp-container">
+
+  <!-- ── Navegación de mes ─────────────────────────────── -->
+  <div class="vp-header">
+    <button class="vp-nav-btn" (click)="mesAnterior()" title="Mes anterior">
+      <i class="bi bi-chevron-left"></i>
+    </button>
+    <span class="vp-mes-label">{{ mesLabel() }}</span>
+    <button class="vp-nav-btn" (click)="mesSiguiente()" title="Mes siguiente">
+      <i class="bi bi-chevron-right"></i>
+    </button>
+  </div>
+
+  <!-- ── Cabecera días semana ──────────────────────────── -->
+  <div class="vp-weekdays">
+    @for (d of DIAS_SEMANA; track d) {
+      <span class="vp-weekday">{{ d }}</span>
+    }
+  </div>
+
+  <!-- ── Cuadrícula de días ────────────────────────────── -->
+  <div class="vp-grid" (mouseleave)="onMouseLeave()">
+    @for (dia of dias(); track dia.fecha) {
+      <button
+        type="button"
+        class="vp-day"
+        [class.vp-day--fuera]="dia.fuera"
+        [class.vp-day--festivo]="dia.esFestivo && !dia.fuera"
+        [class.vp-day--vacacion]="dia.esVacExistente && !dia.fuera"
+        [class.vp-day--hoy]="dia.esHoy && !dia.fuera"
+        [class.vp-day--inicio]="!dia.fuera && isDiaInicio(dia.fecha)"
+        [class.vp-day--fin]="!dia.fuera && isDiaFin(dia.fecha) && rangoFin()"
+        [class.vp-day--hover-fin]="!dia.fuera && isDiaFin(dia.fecha) && !rangoFin()"
+        [class.vp-day--rango]="!dia.fuera && isDiaEnRango(dia.fecha)"
+        [disabled]="dia.esFestivo || dia.fuera"
+        [title]="dia.esFestivo ? 'Festivo: ' + dia.festivoDesc : (dia.esVacExistente ? 'Ya tienes vacaciones' : '')"
+        (click)="clickDia(dia)"
+        (mouseenter)="onMouseEnter(dia)"
+      >
+        <span class="vp-day__num">{{ dia.numero }}</span>
+        @if (dia.esFestivo && !dia.fuera) {
+          <span class="vp-day__festivo-dot"></span>
+        }
+      </button>
+    }
+  </div>
+
+  <!-- ── Rango seleccionado ────────────────────────────── -->
+  @if (rangoInicio()) {
+    <div class="vp-rango-info" [class.vp-rango-info--completo]="rangoFin()">
+      <i class="bi bi-calendar-range"></i>
+      {{ rangoLabel() }}
+    </div>
+  }
+
+  <!-- ── Error de selección ────────────────────────────── -->
+  @if (errorPicker()) {
+    <div class="vp-error">
+      <i class="bi bi-exclamation-triangle me-1"></i>
+      {{ errorPicker() }}
+    </div>
+  }
+
+  <!-- ── Leyenda + limpiar ─────────────────────────────── -->
+  <div class="vp-footer">
+    <div class="vp-legend">
+      <span class="vp-legend-item">
+        <span class="vp-legend-dot vp-legend-dot--festivo"></span>Festivo
+      </span>
+      <span class="vp-legend-item">
+        <span class="vp-legend-dot vp-legend-dot--vacacion"></span>Vacaciones ya registradas
+      </span>
+    </div>
+    @if (rangoInicio()) {
+      <button type="button" class="vp-clear-btn" (click)="limpiar()">
+        <i class="bi bi-x-circle me-1"></i>Limpiar
+      </button>
+    }
+  </div>
+
+</div>

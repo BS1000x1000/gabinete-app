@@ -961,9 +961,9 @@ $wg-time-col: 48px;
     cursor: pointer;
     transition: background $animation-duration-fast $animation-timing;
 
-    &:hover {
-      background: rgba($primary, 0.012);
-    }
+    // &:hover {
+    //   background: rgba($primary, 0.012);
+    // }
 
     &--today {
       background: rgba($primary, 0.018);
@@ -974,26 +974,26 @@ $wg-time-col: 48px;
     }
 
     &--festivo {
-      background: rgba($danger, 0.04);
+      background: rgba($gray-500, 0.04);
       background-image: repeating-linear-gradient(
         -45deg,
         transparent,
         transparent 6px,
-        rgba($danger, 0.5) 6px,
-        rgba($danger, 0.4) 12px
+        rgba($gray-500, 0.1) 6px,
+        rgba($gray-500, 0.4) 12px
       );
     }
 
     &--vacacion:not(&--festivo) {
-      background: rgba($secondary, 0.04);
+      background: rgba($gray-500, 0.04);
       background-image: repeating-linear-gradient(
         -45deg,
         transparent,
         transparent 6px,
-        rgba($secondary, 0.5) 6px,
-        rgba($secondary, 0.4) 12px
+        rgba($gray-500, 0.1) 6px,
+        rgba($gray-500, 0.4) 12px
       );
-      &:hover { background-color: rgba($secondary, 0.06); }
+
     }
   }
 

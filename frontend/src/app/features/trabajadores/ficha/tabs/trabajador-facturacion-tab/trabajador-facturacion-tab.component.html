@@ -1,0 +1,101 @@
+<div class="perfil-tab">
+
+  <!-- Cabecera -->
+  <div class="trab-section-hdr mb-3">
+    <span class="trab-section-title">
+      <i class="bi bi-receipt me-2"></i>Datos fiscales
+    </span>
+  </div>
+
+  <p class="trab-tab-desc">
+    Datos para la emisión de facturas como autónomo. Aparecen en el encabezado de cada factura mensual.
+  </p>
+
+  <div *ngIf="exito()" class="trab-alert-exito mb-3">
+    <i class="bi bi-check-circle-fill me-2"></i>Datos fiscales guardados correctamente.
+  </div>
+  <div *ngIf="error()" class="alert alert-danger py-2 mb-3">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error() }}
+    <button type="button" class="btn-close float-end" (click)="error.set(null)"></button>
+  </div>
+
+  <div class="ajustes-fiscal-grid">
+
+    <div class="ajustes-field">
+      <label class="ajustes-label">NIF fiscal</label>
+      <input type="text" class="form-control ajustes-input" placeholder="12345678A"
+        [ngModel]="form().nifFiscal"
+        (ngModelChange)="patch('nifFiscal', $event)" />
+    </div>
+
+    <div class="ajustes-field">
+      <label class="ajustes-label">Nombre fiscal / razón social</label>
+      <input type="text" class="form-control ajustes-input" placeholder="Nombre como aparece en facturas"
+        [ngModel]="form().nombreFiscal"
+        (ngModelChange)="patch('nombreFiscal', $event)" />
+    </div>
+
+    <div class="ajustes-field ajustes-field-full">
+      <label class="ajustes-label">Dirección fiscal completa</label>
+      <textarea class="form-control ajustes-input" rows="2" placeholder="Calle, número, piso, ciudad, CP"
+        [ngModel]="form().direccionFiscal"
+        (ngModelChange)="patch('direccionFiscal', $event)"></textarea>
+    </div>
+
+    <div class="ajustes-field">
+      <label class="ajustes-label">Código postal</label>
+      <input type="text" class="form-control ajustes-input" placeholder="28001"
+        [ngModel]="form().codigoPostalFiscal"
+        (ngModelChange)="patch('codigoPostalFiscal', $event)" />
+    </div>
+
+    <div class="ajustes-field">
+      <label class="ajustes-label">Ciudad</label>
+      <input type="text" class="form-control ajustes-input" placeholder="Madrid"
+        [ngModel]="form().ciudadFiscal"
+        (ngModelChange)="patch('ciudadFiscal', $event)" />
+    </div>
+
+    <div class="ajustes-field">
+      <label class="ajustes-label">Provincia</label>
+      <input type="text" class="form-control ajustes-input" placeholder="Madrid"
+        [ngModel]="form().provinciaFiscal"
+        (ngModelChange)="patch('provinciaFiscal', $event)" />
+    </div>
+
+    <div class="ajustes-field">
+      <label class="ajustes-label">IBAN</label>
+      <input type="text" class="form-control ajustes-input" placeholder="ES00 0000 0000 0000 0000 0000"
+        [ngModel]="form().iban"
+        (ngModelChange)="patch('iban', $event)" />
+    </div>
+
+    <div class="ajustes-field">
+      <label class="ajustes-label">% Retención IRPF</label>
+      <input type="number" class="form-control ajustes-input" min="0" max="100" step="0.01" placeholder="0"
+        [ngModel]="form().retencionIrpf"
+        (ngModelChange)="patch('retencionIrpf', +$event)" />
+      <span class="ajustes-hint text-muted">Para particulares (familias) suele ser 0%</span>
+    </div>
+
+    <div class="ajustes-field ajustes-field-full">
+      <label class="ajustes-label">Email de facturación</label>
+      <input type="email" class="form-control ajustes-input" placeholder="facturacion@tudominio.com"
+        [ngModel]="form().emailFacturacion"
+        (ngModelChange)="patch('emailFacturacion', $event)" />
+      <span class="ajustes-hint text-muted">Vacío = se usa el email principal de la cuenta</span>
+    </div>
+
+  </div>
+
+  <div class="mt-3">
+    <button type="button" class="btn btn-sm trab-facturacion-save-btn"
+      (click)="guardar()"
+      [disabled]="guardando()">
+      <span *ngIf="guardando()" class="spinner-border spinner-border-sm me-2"></span>
+      <i *ngIf="!guardando()" class="bi bi-floppy me-2"></i>
+      {{ guardando() ? 'Guardando...' : 'Guardar datos fiscales' }}
+    </button>
+  </div>
+
+</div>

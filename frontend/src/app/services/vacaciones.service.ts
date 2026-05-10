@@ -1,8 +1,8 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { tap, map } from 'rxjs/operators';
 import { environment } from '../../environments/environment.development';
-import { PeriodoVacaciones, CreateVacacionesPayload } from '../interface/vacaciones.interface';
+import { PeriodoVacaciones, CreateVacacionesPayload, ConflictoVacaciones } from '../interface/vacaciones.interface';
 
 @Injectable({ providedIn: 'root' })
 export class VacacionesService {
@@ -21,6 +21,14 @@ export class VacacionesService {
     );
   }
 
+  /** Carga vacaciones de un trabajador concreto (ADMIN o propio) */
+  getVacacionesDe(trabajadorId: string) {
+    const params = new HttpParams().set('trabajadorId', trabajadorId);
+    return this.http.get<PeriodoVacaciones[]>(`${this.api}/mis-vacaciones`, { params }).pipe(
+      map(data => Array.isArray(data) ? data : (data as any)?.data ?? []),
+    );
+  }
+
   crear(payload: CreateVacacionesPayload) {
     return this.http.post<PeriodoVacaciones>(this.api, payload).pipe(
       tap(item => {
@@ -32,10 +40,37 @@ export class VacacionesService {
     );
   }
 
+  /** Crea un periodo de vacaciones para un trabajador concreto (ADMIN o propio) */
+  crearPara(trabajadorId: string, payload: CreateVacacionesPayload) {
+    const params = new HttpParams().set('trabajadorId', trabajadorId);
+    return this.http.post<PeriodoVacaciones>(this.api, payload, { params }).pipe(
+      map(item => (item as any)?.data ?? item),
+    );
+  }
+
   eliminar(id: string) {
     return this.http.delete(`${this.api}/${id}`).pipe(
       tap(() => this._misVacaciones.update(list => list.filter(v => v.id !== id))),
       map(() => void 0),
+    );
+  }
+
+  verificarConflictos(desde: string, hasta: string) {
+    return this.http.get<ConflictoVacaciones>(
+      `${this.api}/verificar-conflictos?desde=${desde}&hasta=${hasta}`,
+    ).pipe(
+      map(data => (data as any)?.data ?? data),
+    );
+  }
+
+  /** Verifica conflictos para un trabajador concreto (ADMIN o propio) */
+  verificarConflictosDe(trabajadorId: string, desde: string, hasta: string) {
+    const params = new HttpParams()
+      .set('desde', desde)
+      .set('hasta', hasta)
+      .set('trabajadorId', trabajadorId);
+    return this.http.get<ConflictoVacaciones>(`${this.api}/verificar-conflictos`, { params }).pipe(
+      map(data => (data as any)?.data ?? data),
     );
   }
 }

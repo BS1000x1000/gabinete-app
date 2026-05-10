@@ -12,3 +12,22 @@ export interface CreateVacacionesPayload {
   fechaFin: string;
   motivo?: string;
 }
+
+export interface ConflictoSesion {
+  id: string;
+  fecha: string;
+  cliente: string;
+  tipoSesion: string;
+}
+
+export interface ConflictoEvento {
+  id: string;
+  fecha: string;
+  titulo: string;
+  tipo: string;
+}
+
+export interface ConflictoVacaciones {
+  sesiones: ConflictoSesion[];
+  eventos: ConflictoEvento[];
+}

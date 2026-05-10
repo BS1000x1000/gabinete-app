@@ -67,10 +67,14 @@ export class TrabajadorFichaComponent implements OnInit, OnDestroy {
 
   readonly tabs = computed<WorkTab[]>(() => {
     const tabs: WorkTab[] = [
-      { label: 'Perfil',    icon: 'bi-person-badge',  target: 'perfil'   },
-      { label: 'Clientes',  icon: 'bi-people',         target: 'clientes' },
-      { label: 'Horario',   icon: 'bi-arrow-repeat',   target: 'horario'  },
+      { label: 'Perfil',      icon: 'bi-person-badge',  target: 'perfil'      },
+      { label: 'Clientes',    icon: 'bi-people',         target: 'clientes'    },
+      { label: 'Horario',     icon: 'bi-arrow-repeat',   target: 'horario'     },
+      { label: 'Vacaciones',  icon: 'bi-sun',            target: 'vacaciones'  },
     ];
+    if (!this.auth.isRecep()) {
+      tabs.push({ label: 'Facturación', icon: 'bi-receipt', target: 'facturacion' });
+    }
     if (this.auth.isAdmin()) {
       tabs.push({ label: 'Acceso', icon: 'bi-shield-lock', target: 'acceso' });
     }

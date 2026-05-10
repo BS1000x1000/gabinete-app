@@ -2,7 +2,7 @@ import { Route } from '@angular/router';
 import { HomeComponent } from './home.component';
 import { roleGuard } from '../../shared/guards/role.guard';
 
-const ROLES_CLINICOS = ['ADMIN', 'PEDAGOGO', 'NEURO', 'LOGOPEDA'];
+const ROLES_FICHA = ['ADMIN', 'PEDAGOGO', 'NEURO', 'LOGOPEDA', 'RECEP'];
 
 export default [
   {
@@ -16,8 +16,9 @@ export default [
       { path: 'clientes',   loadComponent: () => import('../clientes/clientes.component') },
       { path: 'estadisticas', loadComponent: () => import('./estadisticas/estadisticas.component').then(m => m.EstadisticasComponent) },
       { path: 'trabajadores',     loadComponent: () => import('../trabajadores/trabajadores.component'),          canActivate: [roleGuard(['ADMIN', 'RECEP'])] },
-      { path: 'trabajadores/:id', loadChildren: () => import('../trabajadores/ficha/trabajador-ficha.routes'), canActivate: [roleGuard(ROLES_CLINICOS)] },
-      { path: 'ajustes',    loadComponent: () => import('../ajustes/ajustes.component') },
+      { path: 'trabajadores/:id', loadChildren: () => import('../trabajadores/ficha/trabajador-ficha.routes'), canActivate: [roleGuard(ROLES_FICHA)] },
+      { path: 'cuenta',     loadComponent: () => import('./cuenta/cuenta.component') },
+      { path: 'ajustes',    redirectTo: 'cuenta', pathMatch: 'full' },
       { path: 'administracion/festivos', loadComponent: () => import('./administracion/festivos/festivos.component'), canActivate: [roleGuard(['ADMIN'])] },
     ]
   }

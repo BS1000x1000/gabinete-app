@@ -1,6 +1,7 @@
-import { Component, inject, computed } from '@angular/core';
+import { Component, inject, computed, signal, HostListener } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { Router } from '@angular/router';
+import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../../services/auth.service';
 import { RegistroDrawerService } from '../../../../services/registro-drawer.service';
 import { NuevaSesionModalService } from '../../../../services/nueva-sesion-modal.service';
@@ -20,7 +21,7 @@ interface QuickAction {
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive],
+  imports: [RouterLink, RouterLinkActive, CommonModule],
   templateUrl: './sidebar.component.html',
 })
 export class SidebarComponent {
@@ -32,6 +33,8 @@ export class SidebarComponent {
   userInitials = this.auth.userInitials;
   userName     = this.auth.userName;
   userRole     = this.auth.userRole;
+
+  readonly dropdownAbierto = signal(false);
 
   readonly navItems = computed<NavItem[]>(() => {
     const items: NavItem[] = [
@@ -45,9 +48,6 @@ export class SidebarComponent {
     if (this.auth.isAdmin()) {
       items.push({ label: 'Festivos', icon: 'bi-calendar2-check', route: '/home/administracion/festivos' });
     }
-    const id = this.auth.currentTrabajadorId();
-    if (id) items.push({ label: 'Mi perfil', icon: 'bi-person-circle', route: `/home/trabajadores/${id}` });
-    items.push({ label: 'Ajustes', icon: 'bi-gear', route: '/home/ajustes' });
     return items;
   });
 
@@ -61,6 +61,23 @@ export class SidebarComponent {
     }
     return actions;
   });
+
+  readonly miPerfilRoute = computed(() => {
+    const id = this.auth.currentTrabajadorId();
+    return id ? `/home/trabajadores/${id}` : null;
+  });
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.sidebar-profile-dropdown-wrap')) {
+      this.dropdownAbierto.set(false);
+    }
+  }
+
+  toggleDropdown(): void {
+    this.dropdownAbierto.update(v => !v);
+  }
 
   handleQuickAction(action: string): void {
     switch (action) {
@@ -77,6 +94,7 @@ export class SidebarComponent {
   }
 
   logout(): void {
+    this.dropdownAbierto.set(false);
     this.auth.logout();
   }
 }

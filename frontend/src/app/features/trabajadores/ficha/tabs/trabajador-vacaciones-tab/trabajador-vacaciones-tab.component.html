@@ -1,0 +1,137 @@
+<div class="perfil-tab">
+
+  <!-- Cargando -->
+  <div *ngIf="cargando()" class="trab-tab-loading">
+    <span class="spinner-border spinner-border-sm me-2"></span>Cargando vacaciones...
+  </div>
+
+  <ng-container *ngIf="!cargando()">
+
+    <!-- Cabecera -->
+    <div class="trab-section-hdr mb-3">
+      <span class="trab-section-title">
+        <i class="bi bi-sun me-2"></i>Periodos de vacaciones
+      </span>
+    </div>
+
+    <p class="trab-tab-desc">
+      Periodos de vacaciones registrados. Se usan para evitar generar sesiones en esas fechas.
+    </p>
+
+    <!-- Lista -->
+    <div *ngIf="vacacionesConDias().length === 0" class="vac-empty">
+      <i class="bi bi-calendar2-x"></i>
+      No hay periodos de vacaciones registrados.
+    </div>
+
+    <div *ngFor="let v of vacacionesConDias()" class="vac-item">
+      <div class="vac-item-main">
+        <span class="vac-item-dates">
+          <i class="bi bi-calendar-range me-1"></i>
+          {{ v.fechaInicio | date:'dd/MM/yyyy' }} → {{ v.fechaFin | date:'dd/MM/yyyy' }}
+        </span>
+        <span class="vac-item-badge">{{ v.dias }} días</span>
+        <span *ngIf="v.motivo" class="vac-item-motivo">{{ v.motivo }}</span>
+      </div>
+      <div class="vac-item-actions">
+        <div *ngIf="confirmEliminarId() === v.id" class="vac-confirm">
+          <span>¿Eliminar?</span>
+          <button class="vac-confirm-yes" (click)="eliminar(v.id)">Sí</button>
+          <button class="vac-confirm-no" (click)="cancelarConfirmar()">No</button>
+        </div>
+        <button
+          *ngIf="confirmEliminarId() !== v.id"
+          class="vac-del-btn"
+          (click)="pedirConfirmar(v.id)"
+          title="Eliminar periodo"
+          [disabled]="eliminandoId() === v.id"
+        >
+          <span *ngIf="eliminandoId() === v.id" class="spinner-border spinner-border-sm"></span>
+          <i *ngIf="eliminandoId() !== v.id" class="bi bi-trash"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Botón añadir + picker -->
+    <div class="vac-add-section mt-3">
+      <button
+        type="button"
+        class="vac-add-toggle-btn"
+        (click)="mostrarPicker.set(!mostrarPicker()); errorVac.set(null); conflicto.set(null)"
+      >
+        <i class="bi" [class.bi-calendar-plus]="!mostrarPicker()" [class.bi-x-circle]="mostrarPicker()"></i>
+        {{ mostrarPicker() ? 'Cancelar' : 'Añadir período de vacaciones' }}
+      </button>
+
+      <div *ngIf="mostrarPicker()" class="vac-picker-section">
+
+        <app-vac-picker
+          [vacaciones]="vacaciones()"
+          (rangoChange)="onRangoSeleccionado($event)"
+        />
+
+        <div class="vac-motivo-field">
+          <label class="ajustes-label">Motivo <span class="text-muted">(opcional)</span></label>
+          <input type="text" class="form-control ajustes-input"
+            placeholder="Vacaciones de verano…"
+            [ngModel]="vacForm().motivo"
+            (ngModelChange)="patchVac('motivo', $event)" />
+        </div>
+
+        <!-- Verificando -->
+        <div *ngIf="verificando()" class="vac-checking">
+          <span class="spinner-border spinner-border-sm me-2"></span>
+          Verificando disponibilidad…
+        </div>
+
+        <!-- Conflictos -->
+        <div *ngIf="conflicto() && (conflicto()!.sesiones.length > 0 || conflicto()!.eventos.length > 0)" class="vac-conflicto-warning">
+          <div class="vac-conflicto-header">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            No se pueden registrar vacaciones en este período
+          </div>
+          <div *ngIf="conflicto()!.sesiones.length > 0" class="vac-conflicto-section">
+            <strong>{{ conflicto()!.sesiones.length }} sesión{{ conflicto()!.sesiones.length !== 1 ? 'es' : '' }} programadas:</strong>
+            <div *ngFor="let s of conflicto()!.sesiones" class="vac-conflicto-item">
+              <i class="bi bi-calendar-x"></i>
+              {{ formatFecha(s.fecha) }} — {{ s.cliente }}
+            </div>
+          </div>
+          <div *ngIf="conflicto()!.eventos.length > 0" class="vac-conflicto-section">
+            <strong>{{ conflicto()!.eventos.length }} evento{{ conflicto()!.eventos.length !== 1 ? 's' : '' }}:</strong>
+            <div *ngFor="let e of conflicto()!.eventos" class="vac-conflicto-item">
+              <i class="bi bi-calendar-event"></i>
+              {{ formatFecha(e.fecha) }} — {{ e.titulo }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Sin conflictos -->
+        <div *ngIf="conflicto() && conflicto()!.sesiones.length === 0 && conflicto()!.eventos.length === 0 && vacForm().fechaInicio" class="vac-sin-conflictos">
+          <i class="bi bi-check-circle-fill me-1"></i>
+          Sin sesiones ni eventos en el período — puedes confirmar.
+        </div>
+
+        <!-- Error -->
+        <div *ngIf="errorVac()" class="vac-error mt-2">
+          <i class="bi bi-exclamation-triangle me-1"></i>{{ errorVac() }}
+        </div>
+
+        <div class="vac-form-actions">
+          <button
+            class="btn btn-primary btn-sm"
+            (click)="agregarVacaciones()"
+            [disabled]="guardando() || verificando() || !vacForm().fechaInicio || hayConflictos()"
+          >
+            <span *ngIf="guardando()" class="spinner-border spinner-border-sm me-2"></span>
+            <i *ngIf="!guardando()" class="bi bi-check-circle me-2"></i>
+            {{ guardando() ? 'Guardando…' : 'Confirmar vacaciones' }}
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+  </ng-container>
+
+</div>

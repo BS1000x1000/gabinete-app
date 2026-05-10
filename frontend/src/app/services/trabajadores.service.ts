@@ -62,7 +62,7 @@ export interface UpdateTrabajadorPayload {
   especialidad?: string;
   fechaContratacion?: string;
   rolId?: string;
-  urlVideollamada?: string;
+  urlVideollamada?: string | null;
 }
 
 export interface UpdateMePayload {
@@ -165,11 +165,35 @@ export class TrabajadorService {
     return this.http.get<WrappedResponse<Trabajador>>(`${this.api}/me`);
   }
 
+  /** Cambia la contraseña del trabajador autenticado (verifica contraseña actual) */
+  cambiarPasswordPropio(passwordActual: string, passwordNueva: string) {
+    return this.http.patch<WrappedResponse<{ message: string }>>(`${this.api}/me/cambiar-password`, {
+      passwordActual,
+      passwordNueva,
+    });
+  }
+
+  /** Cambia la contraseña de cualquier trabajador sin verificar la actual (solo ADMIN) */
   cambiarPassword(id: string, passwordActual: string, passwordNueva: string) {
     return this.http.patch<WrappedResponse<{ message: string }>>(`${this.api}/${id}/cambiar-password`, {
       passwordActual,
       passwordNueva,
     });
+  }
+
+  /** Actualiza datos fiscales de un trabajador concreto (self o ADMIN) */
+  updateDatosFiscalesDe(id: string, payload: {
+    nifFiscal?: string;
+    nombreFiscal?: string;
+    direccionFiscal?: string;
+    codigoPostalFiscal?: string;
+    ciudadFiscal?: string;
+    provinciaFiscal?: string;
+    iban?: string;
+    retencionIrpf?: number;
+    emailFacturacion?: string;
+  }) {
+    return this.http.patch<WrappedResponse<Trabajador>>(`${this.api}/${id}/datos-fiscales`, payload);
   }
 
   asignarCliente(trabajadorId: string, clienteId: string, tipoTerapia: TipoSesion) {

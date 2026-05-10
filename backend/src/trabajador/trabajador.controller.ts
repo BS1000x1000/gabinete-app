@@ -72,6 +72,12 @@ export class TrabajadorController {
     return this.trabajadorService.updateDatosFiscales(req.user.userId, dto);
   }
 
+  @Patch('me/cambiar-password')
+  async cambiarPasswordMe(@Req() req: any, @Body() body: { passwordActual: string; passwordNueva: string }) {
+    this.logger.log(`PATCH /trabajadores/me/cambiar-password - userId: ${req.user.userId}`);
+    return this.trabajadorService.cambiarPassword(req.user.userId, body.passwordActual, body.passwordNueva);
+  }
+
   @Get(':id')
   async findOne(@Param('id') id: string, @Req() req: any) {
     this.logger.log(`Buscando trabajador con ID: ${id}`);
@@ -117,6 +123,15 @@ export class TrabajadorController {
   ) {
     this.logger.log(`Desasignando cliente ${clienteId} del trabajador ${trabajadorId}`);
     return this.trabajadorService.desasignarCliente(trabajadorId, clienteId);
+  }
+
+  @Patch(':id/datos-fiscales')
+  async updateDatosFiscalesDe(@Param('id') id: string, @Req() req: any, @Body() dto: DatosFiscalesDto) {
+    this.logger.log(`PATCH /trabajadores/${id}/datos-fiscales - userId: ${req.user.userId}`);
+    if (req.user.rol !== 'ADMIN' && req.user.userId !== id) {
+      throw new ForbiddenException('No tienes permiso para editar los datos fiscales de este trabajador');
+    }
+    return this.trabajadorService.updateDatosFiscales(id, dto);
   }
 
   @Patch(':id')

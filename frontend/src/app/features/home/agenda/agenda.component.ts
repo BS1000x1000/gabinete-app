@@ -120,9 +120,16 @@ export class AgendaComponent implements OnInit {
   });
 
   esDiaVacaciones(fechaISO: string): boolean {
-    return this.vacacionesSvc.misVacaciones().some(
-      v => fechaISO >= v.fechaInicio.split('T')[0] && fechaISO <= v.fechaFin.split('T')[0],
-    );
+    return this.vacacionesSvc.misVacaciones().some(v => {
+      const inicio = this.isoToLocalDateStr(v.fechaInicio);
+      const fin = this.isoToLocalDateStr(v.fechaFin);
+      return fechaISO >= inicio && fechaISO <= fin;
+    });
+  }
+
+  private isoToLocalDateStr(iso: string): string {
+    const d = new Date(iso);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
 
   private cargarFestivosAnio(anio: number): void {

@@ -96,6 +96,17 @@
                 {{ trabajador()?.fechaContratacion ? (trabajador()!.fechaContratacion | date:'dd/MM/yyyy') : '—' }}
               </span>
             </div>
+            <div class="dato-row">
+              <span class="dato-label">Sala Meet</span>
+              <span class="dato-valor">
+                <ng-container *ngIf="trabajador()?.urlVideollamada; else sinMeet">
+                  <a [href]="trabajador()!.urlVideollamada" target="_blank" rel="noopener noreferrer" class="perfil-meet-link">
+                    <i class="bi bi-camera-video me-1"></i>Abrir sala
+                  </a>
+                </ng-container>
+                <ng-template #sinMeet><span class="text-muted">—</span></ng-template>
+              </span>
+            </div>
           </div>
         </div>
 
@@ -184,6 +195,24 @@
                 [value]="form().fechaContratacion"
                 (input)="updateField('fechaContratacion', $any($event.target).value)"
               />
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">
+                <i class="bi bi-camera-video me-1" style="color:#00897b"></i>
+                URL sala Google Meet
+              </label>
+              <input
+                type="url"
+                class="form-control form-control-sm"
+                placeholder="https://meet.google.com/abc-defg-hij"
+                [value]="form().urlVideollamada"
+                (input)="updateField('urlVideollamada', $any($event.target).value)"
+              />
+              <div class="form-text text-muted">
+                Crea tu sala en
+                <a href="https://meet.google.com/new" target="_blank" rel="noopener noreferrer">meet.google.com/new</a>
+              </div>
             </div>
 
           </div>
