@@ -41,6 +41,9 @@ import {
   CreateEventoDto,
   TipoEvento,
 } from '../../../interface/evento-agenda.interface';
+import { FestivosService } from '../../../services/festivos.service';
+import { Festivo } from '../../../interface/festivo.interface';
+import { VacacionesService } from '../../../services/vacaciones.service';
 
 const TIPO_COLORES: Record<string, string> = {
   PEDAGOGIA: '#7c6fd6',
@@ -65,6 +68,8 @@ export class AgendaComponent implements OnInit {
   private notifSvc = inject(NotificacionesService);
   private trabajadorSvc = inject(TrabajadorService);
   private eventosSvc = inject(EventosAgendaService);
+  private festivosSvc = inject(FestivosService);
+  private vacacionesSvc = inject(VacacionesService);
   private destroyRef = inject(DestroyRef);
 
   readonly TIPO_SESION_LABELS: any = TIPO_SESION_LABELS;
@@ -95,6 +100,40 @@ export class AgendaComponent implements OnInit {
   isLoadingSemana = signal(false);
   fechaSeleccionada = signal<Date>(new Date());
   bannerColapsado = signal(false);
+
+  // Festivos y vacaciones en agenda
+  private festivosAgenda = signal<Festivo[]>([]);
+  private festivosAnioCargado = signal<number | null>(null);
+
+  readonly festivosPorFecha = computed(() => {
+    const map = new Map<string, Festivo>();
+    for (const f of this.festivosAgenda()) {
+      map.set(f.fecha.split('T')[0], f);
+    }
+    return map;
+  });
+
+  readonly mostrarVacaciones = computed(() => {
+    if (this.auth.isRecep()) return false;
+    const sel = this.trabajadorSeleccionado();
+    return sel === null || sel.id === this.auth.currentTrabajadorId();
+  });
+
+  esDiaVacaciones(fechaISO: string): boolean {
+    return this.vacacionesSvc.misVacaciones().some(
+      v => fechaISO >= v.fechaInicio.split('T')[0] && fechaISO <= v.fechaFin.split('T')[0],
+    );
+  }
+
+  private cargarFestivosAnio(anio: number): void {
+    if (this.festivosAnioCargado() === anio) return;
+    this.festivosSvc.getFestivosParaAgenda(anio)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(festivos => {
+        this.festivosAgenda.set(festivos);
+        this.festivosAnioCargado.set(anio);
+      });
+  }
 
   // Eventos de agenda
   readonly TIPO_EVENTO_CONFIG = TIPO_EVENTO_CONFIG;
@@ -277,12 +316,16 @@ export class AgendaComponent implements OnInit {
       this.trabajadorSvc.getTrabajadores()
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe(() => {
-          // Solo terapeutas clínicos en el selector
           const clinicos = this.trabajadorSvc.trabajadores().filter(
             t => t.activo && ['ADMIN', 'PEDAGOGO', 'NEURO', 'LOGOPEDA'].includes(t.rol?.codigo ?? '')
           );
           this.trabajadores.set(clinicos);
         });
+    }
+    if (!this.auth.isRecep()) {
+      this.vacacionesSvc.getMisVacaciones()
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe();
     }
     this.loadDia();
     this.loadSemana();
@@ -311,6 +354,7 @@ export class AgendaComponent implements OnInit {
     const trabajadorId = this.trabajadorIdParam();
 
     const lunes = startOfWeek(new Date(fecha + 'T12:00:00'), { weekStartsOn: 1 });
+    this.cargarFestivosAnio(lunes.getFullYear());
     const domingo = new Date(lunes);
     domingo.setDate(domingo.getDate() + 6);
     const desde = this.formatISO(lunes);

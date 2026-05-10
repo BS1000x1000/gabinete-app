@@ -87,6 +87,22 @@
         </button>
       </div>
 
+      <!-- Banners de festivo / vacaciones del día -->
+      @if (!isLoadingDia()) {
+        @if (festivosPorFecha().has(fechaISO())) {
+          <div class="ag-day-festivo-banner">
+            <i class="bi bi-calendar2-x"></i>
+            Festivo: {{ festivosPorFecha().get(fechaISO())!.descripcion }}
+          </div>
+        }
+        @if (mostrarVacaciones() && esDiaVacaciones(fechaISO())) {
+          <div class="ag-day-vacacion-banner">
+            <i class="bi bi-umbrella"></i>
+            Día de vacaciones
+          </div>
+        }
+      }
+
       <!-- Strip de estadísticas del día -->
       @if (totalSesiones() > 0 && !isLoadingDia()) {
         <div class="ag-stats-strip">
@@ -353,12 +369,20 @@
                 class="ag-week-grid__day-header"
                 [class.ag-week-grid__day-header--today]="dia.esHoy"
                 [class.ag-week-grid__day-header--selected]="esDiaSeleccionado(dia.fecha)"
+                [class.ag-week-grid__day-header--festivo]="festivosPorFecha().has(dia.fecha)"
+                [class.ag-week-grid__day-header--vacacion]="mostrarVacaciones() && esDiaVacaciones(dia.fecha)"
                 (click)="irADia(dia.fecha)"
               >
                 <span class="ag-week-grid__day-name">{{ dia.diaSemana.slice(0, 2) }}</span>
                 <span class="ag-week-grid__day-num">{{ dia.dia }}</span>
                 @if (dia.totalSesiones > 0) {
                   <span class="ag-week-grid__day-count">{{ dia.totalSesiones }}</span>
+                }
+                @if (festivosPorFecha().has(dia.fecha)) {
+                  <span class="ag-week-grid__day-festivo-dot" [title]="festivosPorFecha().get(dia.fecha)!.descripcion"></span>
+                }
+                @if (mostrarVacaciones() && esDiaVacaciones(dia.fecha)) {
+                  <i class="bi bi-umbrella ag-week-grid__day-vac-icon" title="Vacaciones"></i>
                 }
               </div>
             }
@@ -385,6 +409,8 @@
                   class="ag-week-grid__day-col"
                   [class.ag-week-grid__day-col--today]="dia.esHoy"
                   [class.ag-week-grid__day-col--selected]="esDiaSeleccionado(dia.fecha)"
+                  [class.ag-week-grid__day-col--festivo]="festivosPorFecha().has(dia.fecha)"
+                  [class.ag-week-grid__day-col--vacacion]="mostrarVacaciones() && esDiaVacaciones(dia.fecha)"
                   (click)="irADia(dia.fecha)"
                 >
                   <!-- Líneas de fondo -->

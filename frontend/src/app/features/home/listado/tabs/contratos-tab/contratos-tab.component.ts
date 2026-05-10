@@ -191,7 +191,7 @@ function emptyForm(trabajadorId = ''): NuevoContratoForm {
 
     <!-- Historial (colapsable) -->
     <div *ngIf="contratosHistorico().length" class="ct-historial">
-      <button class="ct-historial-toggle" (click)="mostrarHistorial.update(v => !v)" type="button">
+      <button class="ct-historial-toggle" (click)="mostrarHistorial.set(!mostrarHistorial())" type="button">
         <i class="bi" [class.bi-chevron-down]="!mostrarHistorial()" [class.bi-chevron-up]="mostrarHistorial()"></i>
         Historial ({{ contratosHistorico().length }})
       </button>

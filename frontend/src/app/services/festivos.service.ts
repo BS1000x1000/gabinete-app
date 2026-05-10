@@ -49,4 +49,10 @@ export class FestivosService {
   tieneNacionales(anio: number) {
     return this.http.get<boolean>(`${this.api}/tiene-nacionales/${anio}`);
   }
+
+  getFestivosParaAgenda(anio: number) {
+    return this.http.get<Festivo[]>(`${this.api}?anio=${anio}`).pipe(
+      map(data => Array.isArray(data) ? data : (data as any)?.data ?? []),
+    );
+  }
 }

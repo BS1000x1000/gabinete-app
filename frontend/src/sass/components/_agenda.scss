@@ -351,6 +351,38 @@
   to { transform: rotate(360deg); }
 }
 
+// ── Banners festivo / vacaciones (panel izquierdo) ───────────
+
+.ag-day-festivo-banner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px $spacing-lg;
+  background: rgba($danger, 0.06);
+  border-bottom: 1px solid rgba($danger, 0.15);
+  color: $danger;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  flex-shrink: 0;
+
+  i { font-size: 0.75rem; }
+}
+
+.ag-day-vacacion-banner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px $spacing-lg;
+  background: rgba($secondary, 0.06);
+  border-bottom: 1px solid rgba($secondary, 0.15);
+  color: $secondary;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  flex-shrink: 0;
+
+  i { font-size: 0.75rem; }
+}
+
 // ── Strip de estadísticas ─────────────────────────────────────
 
 .ag-stats-strip {
@@ -896,6 +928,32 @@ $wg-time-col: 48px;
     }
   }
 
+  // ── Festivo / Vacaciones — cabecera ──────────────────────────
+  &__day-header--festivo {
+    .ag-week-grid__day-name { color: $danger !important; }
+  }
+
+  &__day-header--vacacion:not(&__day-header--festivo) {
+    .ag-week-grid__day-name { color: $secondary; }
+  }
+
+  &__day-festivo-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: $danger;
+    display: block;
+    margin-top: 1px;
+    flex-shrink: 0;
+  }
+
+  &__day-vac-icon {
+    font-size: 0.55rem;
+    color: $secondary;
+    margin-top: 1px;
+    line-height: 1;
+  }
+
   // ── Columnas de día ───────────────────────────────────────
   &__day-col {
     position: relative;
@@ -913,6 +971,29 @@ $wg-time-col: 48px;
 
     &--selected {
       background: rgba($primary, 0.03);
+    }
+
+    &--festivo {
+      background: rgba($danger, 0.04);
+      background-image: repeating-linear-gradient(
+        -45deg,
+        transparent,
+        transparent 6px,
+        rgba($danger, 0.5) 6px,
+        rgba($danger, 0.4) 12px
+      );
+    }
+
+    &--vacacion:not(&--festivo) {
+      background: rgba($secondary, 0.04);
+      background-image: repeating-linear-gradient(
+        -45deg,
+        transparent,
+        transparent 6px,
+        rgba($secondary, 0.5) 6px,
+        rgba($secondary, 0.4) 12px
+      );
+      &:hover { background-color: rgba($secondary, 0.06); }
     }
   }
 
