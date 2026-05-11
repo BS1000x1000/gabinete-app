@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { FacturasService } from '../../../../services/facturas.service';
-import { Factura, MarcarPagadaPayload } from '../../../../interface/factura.interface';
+import { EstadoFactura, Factura, MarcarPagadaPayload } from '../../../../interface/factura.interface';
 
 const MESES = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
                'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -24,12 +24,25 @@ export default class MisFacturasComponent implements OnInit {
   readonly anioActual = new Date().getFullYear();
   readonly mesActual  = new Date().getMonth() + 1;
 
-  filtroAnio   = signal(this.anioActual);
-  filtroMes    = signal<number | null>(null);
-  filtroEstado = signal('');
+  filtroAnio     = signal(this.anioActual);
+  filtroMes      = signal<number | null>(null);
+  filtroEstado    = signal<EstadoFactura | ''>('');
+  filtroClienteId = signal('');
 
   readonly anios = Array.from({ length: 4 }, (_, i) => this.anioActual - i);
   readonly meses = MESES.slice(1).map((label, i) => ({ value: i + 1, label }));
+
+  readonly clientesUnicos = computed(() => {
+    const seen = new Set<string>();
+    const result: { id: string; nombre: string }[] = [];
+    for (const f of this.facturas()) {
+      if (!seen.has(f.clienteId)) {
+        seen.add(f.clienteId);
+        result.push({ id: f.clienteId, nombre: `${f.cliente.nombre} ${f.cliente.apellidos}` });
+      }
+    }
+    return result.sort((a, b) => a.nombre.localeCompare(b.nombre));
+  });
 
   // ── KPIs ─────────────────────────────────────────────────────────────────
   private readonly periodoMesActual =
@@ -61,9 +74,12 @@ export default class MisFacturasComponent implements OnInit {
 
   // ── Table (filtered) ─────────────────────────────────────────────────────
   readonly facturasFiltradas = computed(() => {
-    const estado = this.filtroEstado();
-    if (!estado) return this.facturas();
-    return this.facturas().filter(f => f.estado === estado);
+    const estado    = this.filtroEstado();
+    const clienteId = this.filtroClienteId();
+    return this.facturas().filter(f =>
+      (!estado    || f.estado    === estado) &&
+      (!clienteId || f.clienteId === clienteId),
+    );
   });
 
   // ── Modal marcar pagada ───────────────────────────────────────────────────
@@ -88,6 +104,7 @@ export default class MisFacturasComponent implements OnInit {
   cargar(): void {
     this.cargando.set(true);
     this.error.set(null);
+    this.filtroClienteId.set('');
     this.facturasService.getFacturas({
       anio: this.filtroAnio(),
       mes:  this.filtroMes() ?? undefined,

@@ -52,6 +52,15 @@
             <option value="ANULADA">Anulada</option>
           </select>
         </div>
+        <div class="adm-filter-group" *ngIf="clientesUnicos().length > 1">
+          <label class="adm-filter-label">Cliente</label>
+          <select class="adm-select"
+            [ngModel]="filtroClienteId()"
+            (ngModelChange)="filtroClienteId.set($event)">
+            <option value="">Todos</option>
+            <option *ngFor="let c of clientesUnicos()" [value]="c.id">{{ c.nombre }}</option>
+          </select>
+        </div>
       </div>
     </div>
 
