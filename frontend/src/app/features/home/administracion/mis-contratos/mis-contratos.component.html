@@ -1,0 +1,92 @@
+<div class="adm-page">
+  <div class="adm-page-inner">
+
+    <div *ngIf="cargando()" class="adm-loading">
+      <span class="spinner-border spinner-border-sm me-2"></span> Cargando contratos…
+    </div>
+
+    <div *ngIf="error()" class="adm-alert adm-alert-danger">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error() }}
+    </div>
+
+    <ng-container *ngIf="!cargando()">
+
+      <div *ngIf="!activos().length && !historico().length" class="adm-empty">
+        <div class="adm-empty-icon"><i class="bi bi-file-earmark-ruled"></i></div>
+        <p class="adm-empty-title">Sin contratos de servicio</p>
+        <p class="adm-empty-desc">Los contratos activos aparecerán aquí una vez creados desde la ficha del cliente.</p>
+      </div>
+
+      <!-- Activos -->
+      <div *ngIf="activos().length" class="adm-contract-grid">
+        <div *ngFor="let c of activos()" class="adm-contract-card">
+          <div class="adm-contract-card-top">
+            <span class="adm-contract-tipo-pill"
+              [style.background]="tipoBg(c.tipoSesion)"
+              [style.color]="tipoColor(c.tipoSesion)">
+              {{ tipoLabel(c.tipoSesion) }}
+            </span>
+            <span class="adm-badge adm-badge-{{ c.estado.toLowerCase() }}">{{ estadoLabel(c.estado) }}</span>
+          </div>
+
+          <div class="adm-contract-card-client">
+            <i class="bi bi-person-circle me-1"></i>
+            <strong>{{ c.cliente.nombre }} {{ c.cliente.apellidos }}</strong>
+          </div>
+
+          <div class="adm-contract-card-price">
+            {{ c.cuotaMensual | number:'1.2-2' }}&nbsp;€
+            <span class="adm-contract-card-per">/mes</span>
+          </div>
+
+          <div class="adm-contract-card-meta">
+            <span><i class="bi bi-clock me-1"></i>{{ diaLabel(c.diaSemana) }} {{ c.horaInicio }}–{{ c.horaFin }}</span>
+            <span>
+              <i class="bi bi-calendar me-1"></i>
+              {{ c.fechaInicio | date:'dd/MM/yyyy' }} →
+              {{ c.fechaFin ? (c.fechaFin | date:'dd/MM/yyyy') : 'Indefinido' }}
+            </span>
+            <span class="adm-contract-card-sessions">
+              <i class="bi bi-calendar2-week me-1"></i>{{ c._count.sesiones }} sesiones programadas
+            </span>
+          </div>
+
+          <div *ngIf="c.notas" class="adm-contract-card-notas">
+            <i class="bi bi-chat-left-text me-1"></i>{{ c.notas }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Historial -->
+      <div *ngIf="historico().length" class="adm-historial">
+        <button class="adm-historial-toggle" (click)="mostrarHistorial.set(!mostrarHistorial())" type="button">
+          <i class="bi" [class.bi-chevron-down]="!mostrarHistorial()" [class.bi-chevron-up]="mostrarHistorial()"></i>
+          Historial ({{ historico().length }})
+        </button>
+
+        <div *ngIf="mostrarHistorial()" class="adm-table-wrap mt-3">
+          <table class="adm-table">
+            <thead>
+              <tr>
+                <th>Tipo</th><th>Cliente</th><th>Cuota</th><th>Inicio</th><th>Fin</th><th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let c of historico()">
+                <td><span [style.color]="tipoColor(c.tipoSesion)">{{ tipoLabel(c.tipoSesion) }}</span></td>
+                <td>{{ c.cliente.nombre }} {{ c.cliente.apellidos }}</td>
+                <td>{{ c.cuotaMensual | number:'1.2-2' }} €/mes</td>
+                <td>{{ c.fechaInicio | date:'dd/MM/yyyy' }}</td>
+                <td>{{ c.fechaFin ? (c.fechaFin | date:'dd/MM/yyyy') : '—' }}</td>
+                <td>
+                  <span class="adm-badge adm-badge-{{ c.estado.toLowerCase() }}">{{ estadoLabel(c.estado) }}</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </ng-container>
+  </div>
+</div>

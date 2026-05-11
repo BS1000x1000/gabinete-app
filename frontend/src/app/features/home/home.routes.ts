@@ -19,7 +19,19 @@ export default [
       { path: 'trabajadores/:id', loadChildren: () => import('../trabajadores/ficha/trabajador-ficha.routes'), canActivate: [roleGuard(ROLES_FICHA)] },
       { path: 'cuenta',     loadComponent: () => import('./cuenta/cuenta.component') },
       { path: 'ajustes',    redirectTo: 'cuenta', pathMatch: 'full' },
-      { path: 'administracion/festivos', loadComponent: () => import('./administracion/festivos/festivos.component'), canActivate: [roleGuard(['ADMIN'])] },
+      {
+        path: 'administracion',
+        canActivate: [roleGuard(['ADMIN', 'PEDAGOGO', 'NEURO', 'LOGOPEDA'])],
+        loadComponent: () => import('./administracion/administracion-shell.component'),
+        children: [
+          { path: '',            redirectTo: 'mis-facturas', pathMatch: 'full' },
+          { path: 'mis-contratos', loadComponent: () => import('./administracion/mis-contratos/mis-contratos.component') },
+          { path: 'mis-facturas',  loadComponent: () => import('./administracion/mis-facturas/mis-facturas.component')  },
+          { path: 'mis-ingresos',  loadComponent: () => import('./administracion/mis-ingresos/mis-ingresos.component')  },
+          { path: 'supervision',   loadComponent: () => import('./administracion/supervision/supervision.component'),   canActivate: [roleGuard(['ADMIN'])] },
+          { path: 'festivos',      loadComponent: () => import('./administracion/festivos/festivos.component'),         canActivate: [roleGuard(['ADMIN'])] },
+        ],
+      },
     ]
   }
 ] as Route[];

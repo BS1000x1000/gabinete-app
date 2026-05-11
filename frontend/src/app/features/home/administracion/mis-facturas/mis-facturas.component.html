@@ -1,0 +1,223 @@
+<div class="adm-page">
+  <div class="adm-page-inner">
+
+    <!-- KPI Cards -->
+    <div class="adm-kpi-grid">
+      <div class="adm-kpi-card">
+        <span class="adm-kpi-label">Facturado este mes</span>
+        <span class="adm-kpi-value">{{ kpiFacturadoMes() | number:'1.2-2' }} €</span>
+      </div>
+      <div class="adm-kpi-card adm-kpi-card--success">
+        <span class="adm-kpi-label">Cobrado este mes</span>
+        <span class="adm-kpi-value">{{ kpiCobradoMes() | number:'1.2-2' }} €</span>
+      </div>
+      <div class="adm-kpi-card adm-kpi-card--warning">
+        <span class="adm-kpi-label">Pendiente de cobro</span>
+        <span class="adm-kpi-value">{{ kpiPendienteCobro() | number:'1.2-2' }} €</span>
+      </div>
+      <div class="adm-kpi-card adm-kpi-card--info">
+        <span class="adm-kpi-label">Facturado este año</span>
+        <span class="adm-kpi-value">{{ kpiFacturadoAnio() | number:'1.2-2' }} €</span>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="adm-filters">
+      <div class="adm-filters-row">
+        <div class="adm-filter-group">
+          <label class="adm-filter-label">Año</label>
+          <select class="adm-select"
+            [ngModel]="filtroAnio()"
+            (ngModelChange)="filtroAnio.set(+$event); onFiltroChange()">
+            <option *ngFor="let a of anios" [value]="a">{{ a }}</option>
+          </select>
+        </div>
+        <div class="adm-filter-group">
+          <label class="adm-filter-label">Mes</label>
+          <select class="adm-select"
+            [ngModel]="filtroMes()"
+            (ngModelChange)="filtroMes.set($event ? +$event : null); onFiltroChange()">
+            <option [ngValue]="null">Todos</option>
+            <option *ngFor="let m of meses" [value]="m.value">{{ m.label }}</option>
+          </select>
+        </div>
+        <div class="adm-filter-group">
+          <label class="adm-filter-label">Estado</label>
+          <select class="adm-select"
+            [ngModel]="filtroEstado()"
+            (ngModelChange)="filtroEstado.set($event)">
+            <option value="">Todos</option>
+            <option value="PENDIENTE">Pendiente</option>
+            <option value="PAGADA">Pagada</option>
+            <option value="ANULADA">Anulada</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="cargando()" class="adm-loading">
+      <span class="spinner-border spinner-border-sm me-2"></span> Cargando facturas…
+    </div>
+
+    <div *ngIf="error()" class="adm-alert adm-alert-danger">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error() }}
+    </div>
+
+    <ng-container *ngIf="!cargando()">
+
+      <div *ngIf="!facturasFiltradas().length" class="adm-empty">
+        <div class="adm-empty-icon"><i class="bi bi-receipt"></i></div>
+        <p class="adm-empty-title">Sin facturas</p>
+        <p class="adm-empty-desc">Las facturas se generan automáticamente el día 1 de cada mes.</p>
+      </div>
+
+      <div *ngIf="facturasFiltradas().length" class="adm-table-wrap">
+        <table class="adm-table">
+          <thead>
+            <tr>
+              <th>Nº</th>
+              <th>Cliente</th>
+              <th>Periodo</th>
+              <th>Concepto</th>
+              <th class="text-end">Total</th>
+              <th>Estado</th>
+              <th class="text-center">Email</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <ng-container *ngFor="let f of facturasFiltradas()">
+              <tr [class.adm-row-anulada]="f.estado === 'ANULADA'">
+                <td class="adm-td-numero">{{ f.numeroFormateado }}</td>
+                <td>{{ f.cliente.nombre }} {{ f.cliente.apellidos }}</td>
+                <td class="adm-td-periodo">{{ periodoLabel(f.periodoFacturado) }}</td>
+                <td class="adm-td-concepto" [title]="f.concepto">{{ f.concepto }}</td>
+                <td class="text-end adm-td-total">{{ f.total | number:'1.2-2' }} €</td>
+                <td>
+                  <span class="adm-badge adm-badge-{{ f.estado.toLowerCase() }}">
+                    {{ f.estado === 'PENDIENTE' ? 'Pendiente' : f.estado === 'PAGADA' ? 'Pagada' : 'Anulada' }}
+                  </span>
+                </td>
+                <td class="text-center">
+                  <i class="bi"
+                    [class.bi-envelope-check-fill]="f.emailEnviado"
+                    [class.bi-envelope]="!f.emailEnviado"
+                    [class.adm-email-sent]="f.emailEnviado"
+                    [class.adm-email-pending]="!f.emailEnviado"
+                    [title]="f.emailEnviado ? 'Email enviado ' + (f.fechaEnvioEmail | date:'dd/MM') : 'Email pendiente'">
+                  </i>
+                </td>
+                <td>
+                  <div class="adm-actions-cell">
+                    <button
+                      class="adm-action-btn adm-action-btn--pdf"
+                      [disabled]="!f.urlPdfR2 || descargandoId() === f.id"
+                      (click)="descargarPdf(f.id)"
+                      title="Descargar PDF"
+                      type="button">
+                      <span *ngIf="descargandoId() === f.id" class="spinner-border spinner-border-sm" style="width:12px;height:12px"></span>
+                      <i *ngIf="descargandoId() !== f.id" class="bi bi-download"></i>
+                    </button>
+
+                    <button
+                      *ngIf="f.estado === 'PENDIENTE'"
+                      class="adm-action-btn adm-action-btn--pagada"
+                      (click)="abrirModalPagada(f.id)"
+                      title="Marcar como pagada"
+                      type="button">
+                      <i class="bi bi-check-circle"></i>
+                    </button>
+
+                    <button
+                      *ngIf="f.estado !== 'ANULADA'"
+                      class="adm-action-btn adm-action-btn--anular"
+                      [disabled]="confirmAnularId() === f.id"
+                      (click)="solicitarAnular(f.id)"
+                      title="Anular factura"
+                      type="button">
+                      <i class="bi bi-x-circle"></i>
+                    </button>
+
+                    <button
+                      *ngIf="f.estado !== 'ANULADA'"
+                      class="adm-action-btn adm-action-btn--email"
+                      [disabled]="reenviandoId() === f.id"
+                      (click)="reenviarEmail(f.id)"
+                      title="Reenviar email"
+                      type="button">
+                      <span *ngIf="reenviandoId() === f.id" class="spinner-border spinner-border-sm" style="width:12px;height:12px"></span>
+                      <i *ngIf="reenviandoId() !== f.id" class="bi bi-envelope-arrow-up"></i>
+                    </button>
+                  </div>
+
+                  <!-- Confirm anular inline -->
+                  <div *ngIf="confirmAnularId() === f.id" class="adm-confirm-inline">
+                    <span class="adm-confirm-text">¿Anular esta factura?</span>
+                    <button class="adm-btn-ghost-sm" (click)="cancelarAnular()" type="button">No</button>
+                    <button class="adm-btn-danger-sm" [disabled]="anulando()" (click)="confirmarAnular(f.id)" type="button">
+                      <span *ngIf="anulando()" class="spinner-border spinner-border-sm" style="width:10px;height:10px"></span>
+                      Sí
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </ng-container>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+
+  </div>
+</div>
+
+<!-- Modal: Marcar como pagada -->
+<div *ngIf="modalPagadaId()" class="adm-modal-overlay"
+  (click)="$event.target === $event.currentTarget && cerrarModalPagada()">
+  <div class="adm-modal" role="dialog">
+    <div class="adm-modal-header">
+      <h5 class="adm-modal-title">
+        <i class="bi bi-check-circle-fill me-2"></i>Marcar como pagada
+      </h5>
+      <button class="adm-modal-close" (click)="cerrarModalPagada()" type="button">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <div class="adm-modal-body">
+      <div *ngIf="errorPagada()" class="adm-alert adm-alert-danger mb-3">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ errorPagada() }}
+      </div>
+      <div class="adm-field">
+        <label class="adm-label">Fecha de pago *</label>
+        <input type="date" class="adm-input"
+          [ngModel]="fechaPago()"
+          (ngModelChange)="fechaPago.set($event)" />
+      </div>
+      <div class="adm-field">
+        <label class="adm-label">Método de pago <span class="adm-label-opt">(opcional)</span></label>
+        <select class="adm-input"
+          [ngModel]="metodoPago()"
+          (ngModelChange)="metodoPago.set($event)">
+          <option value="">Sin especificar</option>
+          <option value="Bizum">Bizum</option>
+          <option value="Transferencia">Transferencia bancaria</option>
+          <option value="Efectivo">Efectivo</option>
+          <option value="Tarjeta">Tarjeta</option>
+          <option value="Otro">Otro</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="adm-modal-footer">
+      <button class="adm-btn-ghost" (click)="cerrarModalPagada()" type="button">Cancelar</button>
+      <button class="adm-btn-primary"
+        [disabled]="guardandoPagada() || !fechaPago()"
+        (click)="confirmarPagada()"
+        type="button">
+        <span *ngIf="guardandoPagada()" class="spinner-border spinner-border-sm me-1" style="width:14px;height:14px"></span>
+        <i *ngIf="!guardandoPagada()" class="bi bi-check-circle me-1"></i>
+        Confirmar pago
+      </button>
+    </div>
+  </div>
+</div>

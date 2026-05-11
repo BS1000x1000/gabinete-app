@@ -45,8 +45,8 @@ export class SidebarComponent {
     if (this.auth.isAdmin() || this.auth.isRecep()) {
       items.push({ label: 'Equipo', icon: 'bi-person-badge', route: '/home/trabajadores' });
     }
-    if (this.auth.isAdmin()) {
-      items.push({ label: 'Festivos', icon: 'bi-calendar2-check', route: '/home/administracion/festivos' });
+    if (!this.auth.isRecep()) {
+      items.push({ label: 'Administración', icon: 'bi-receipt', route: '/home/administracion' });
     }
     return items;
   });

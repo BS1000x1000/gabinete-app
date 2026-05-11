@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ClientesModule } from './clientes/clientes.module';
@@ -25,6 +26,7 @@ import { HorariosAdminModule } from './horarios-admin/horarios-admin.module';
 import { ContratosModule } from './contratos/contratos.module';
 import { FestivosModule } from './festivos/festivos.module';
 import { VacacionesModule } from './vacaciones/vacaciones.module';
+import { FacturasModule } from './facturas/facturas.module';
 
 @Module({
   imports: [
@@ -37,6 +39,7 @@ import { VacacionesModule } from './vacaciones/vacaciones.module';
         limit: 200,
       },
     ]),
+    ScheduleModule.forRoot(),
     PrismaModule,
     ClientesModule,
     DisponibilidadModule,
@@ -60,6 +63,7 @@ import { VacacionesModule } from './vacaciones/vacaciones.module';
     ContratosModule,
     FestivosModule,
     VacacionesModule,
+    FacturasModule,
   ],
   controllers: [AppController],
   providers: [AppService],

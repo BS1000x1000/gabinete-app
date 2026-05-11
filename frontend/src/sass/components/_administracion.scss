@@ -1,0 +1,750 @@
+// =========================================
+// ADMINISTRACIÓN — _administracion.scss
+// =========================================
+
+.adm-shell {
+  display: flex;
+  flex-direction: column;
+}
+
+// ── Cabecera de página ────────────────────────────────────
+.adm-header {
+  padding: 1.5rem 2rem 0;
+}
+
+.adm-header-title {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: $gray-800;
+  margin: 0 0 1.25rem;
+
+  i { color: $primary; font-size: 1.15rem; }
+}
+
+// ── Sub-navegación ────────────────────────────────────────
+.adm-subnav {
+  display: flex;
+  gap: 0.15rem;
+  padding: 0 2rem;
+  border-bottom: 1px solid $gray-200;
+  overflow-x: auto;
+  flex-shrink: 0;
+  scrollbar-width: thin;
+  scrollbar-color: $primary-light transparent;
+
+  &::-webkit-scrollbar { height: 3px; }
+  &::-webkit-scrollbar-thumb { background: $primary-light; border-radius: 2px; }
+}
+
+.adm-subnav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.65rem 1rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: $gray-500;
+  white-space: nowrap;
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+  margin-bottom: -1px;
+
+  i { font-size: 0.85rem; }
+
+  &:hover { color: $primary; text-decoration: none; }
+
+  &.is-active {
+    color: $primary;
+    border-bottom-color: $primary;
+    font-weight: 600;
+  }
+}
+
+// ── Área de contenido ─────────────────────────────────────
+.adm-content { flex: 1; }
+
+.adm-page { padding: 1.5rem 2rem 2rem; }
+
+.adm-page-inner { max-width: 1200px; }
+
+// ── KPI Cards ─────────────────────────────────────────────
+.adm-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+
+  @media (max-width: 900px) { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 500px) { grid-template-columns: 1fr; }
+}
+
+.adm-kpi-card {
+  background: $white;
+  border: 1px solid $gray-200;
+  border-radius: $border-radius-lg;
+  padding: 1.1rem 1.25rem;
+  box-shadow: $shadow-card;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: $primary;
+    border-radius: $border-radius-lg $border-radius-lg 0 0;
+  }
+
+  &--success::before { background: $success; }
+  &--warning::before { background: $warning; }
+  &--info::before    { background: $secondary; }
+}
+
+.adm-kpi-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: $gray-400;
+  margin-bottom: 0.4rem;
+}
+
+.adm-kpi-value {
+  display: block;
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: $gray-800;
+  line-height: 1.1;
+}
+
+// ── Filtros ───────────────────────────────────────────────
+.adm-filters {
+  background: $white;
+  border: 1px solid $gray-200;
+  border-radius: $border-radius-lg;
+  padding: 0.9rem 1.25rem;
+  margin-bottom: 1.25rem;
+  box-shadow: $shadow-card;
+}
+
+.adm-filters-row {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.adm-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.adm-filter-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: $gray-400;
+}
+
+.adm-select {
+  border: 1px solid $gray-200;
+  border-radius: 0.5rem;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.825rem;
+  font-family: inherit;
+  color: $gray-700;
+  background: $white;
+  cursor: pointer;
+  min-width: 110px;
+  transition: border-color 0.15s;
+
+  &:focus {
+    outline: none;
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba($primary, 0.1);
+  }
+}
+
+// ── Tabla ─────────────────────────────────────────────────
+.adm-table-wrap {
+  background: $white;
+  border: 1px solid $gray-200;
+  border-radius: $border-radius-lg;
+  box-shadow: $shadow-card;
+  overflow-x: auto;
+}
+
+.adm-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+
+  th {
+    padding: 0.65rem 1rem;
+    background: $gray-50;
+    font-weight: 600;
+    color: $gray-500;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid $gray-200;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid $gray-100;
+    vertical-align: middle;
+    color: $gray-700;
+  }
+
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:not(.adm-sup-detail-row):hover td { background: $gray-50; }
+}
+
+.adm-row-anulada td {
+  opacity: 0.45;
+  text-decoration: line-through;
+  text-decoration-color: $gray-300;
+}
+
+.adm-td-numero   { font-weight: 600; color: $primary; white-space: nowrap; }
+.adm-td-periodo  { white-space: nowrap; }
+.adm-td-concepto { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.adm-td-total    { font-weight: 600; white-space: nowrap; }
+
+// ── Badges ────────────────────────────────────────────────
+.adm-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.18rem 0.55rem;
+  border-radius: 50px;
+  font-size: 0.67rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+
+  &-pendiente  { background: $warning-light;   color: $warning-dark;   }
+  &-pagada     { background: $success-light;   color: $success-dark;   }
+  &-anulada    { background: $gray-100;        color: $gray-500;       }
+  &-activo     { background: $success-light;   color: $success-dark;   }
+  &-borrador   { background: $secondary-light; color: $secondary-dark; }
+  &-suspendido { background: $warning-light;   color: $warning-dark;   }
+  &-finalizado { background: $gray-100;        color: $gray-500;       }
+}
+
+// ── Indicadores email ─────────────────────────────────────
+.adm-email-sent    { color: $success; font-size: 0.9rem; }
+.adm-email-pending { color: $gray-300; font-size: 0.9rem; }
+
+// ── Botones de acción en tabla ────────────────────────────
+.adm-actions-cell {
+  display: flex;
+  gap: 0.2rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.adm-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.78rem;
+  transition: background 0.15s, color 0.15s;
+  background: transparent;
+
+  &--pdf    { color: $gray-400; &:hover:not(:disabled) { background: $primary-ultra-light; color: $primary; } }
+  &--pagada { color: $success;  &:hover { background: $success-light; } }
+  &--anular { color: $gray-400; &:hover { background: $danger-light; color: $danger; } }
+  &--email  { color: $secondary; &:hover:not(:disabled) { background: $secondary-light; } }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
+// ── Confirm inline ────────────────────────────────────────
+.adm-confirm-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+  padding: 0.35rem 0.6rem;
+  background: $warning-light;
+  border-radius: 0.5rem;
+  font-size: 0.73rem;
+}
+
+.adm-confirm-text { color: $warning-dark; margin-right: 0.1rem; }
+
+// ── Botones generales ─────────────────────────────────────
+.adm-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 1rem;
+  background: $primary;
+  color: $white;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.825rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+
+  &:hover:not(:disabled)  { background: $primary-dark; }
+  &:active:not(:disabled) { transform: scale(0.98); }
+  &:disabled { opacity: 0.55; cursor: not-allowed; }
+}
+
+.adm-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  color: $gray-600;
+  border: 1px solid $gray-200;
+  border-radius: 0.5rem;
+  font-size: 0.825rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+  &:hover { background: $gray-50; }
+}
+
+.adm-btn-ghost-sm,
+.adm-btn-danger-sm {
+  padding: 0.18rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  transition: background 0.15s;
+  line-height: 1.4;
+}
+
+.adm-btn-ghost-sm  { background: $gray-200; color: $gray-600; &:hover { background: $gray-300; } }
+.adm-btn-danger-sm { background: $danger; color: $white; &:hover:not(:disabled) { background: $danger-dark; } &:disabled { opacity: 0.55; cursor: not-allowed; } }
+
+// ── Modal ─────────────────────────────────────────────────
+.adm-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1060;
+  padding: 1rem;
+  backdrop-filter: blur(2px);
+}
+
+.adm-modal {
+  background: $white;
+  border-radius: $border-radius-lg;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+  animation: adm-modal-in 0.2s ease;
+}
+
+@keyframes adm-modal-in {
+  from { opacity: 0; transform: scale(0.95) translateY(-8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.adm-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.4rem;
+  border-bottom: 1px solid $gray-100;
+}
+
+.adm-modal-title {
+  font-size: 0.93rem;
+  font-weight: 700;
+  color: $gray-800;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  i { color: $success; }
+}
+
+.adm-modal-close {
+  background: none;
+  border: none;
+  color: $gray-400;
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+  &:hover { background: $gray-100; color: $gray-600; }
+}
+
+.adm-modal-body   { padding: 1.2rem 1.4rem; }
+.adm-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 0.85rem 1.4rem;
+  border-top: 1px solid $gray-100;
+}
+
+// ── Campos de formulario ──────────────────────────────────
+.adm-field   { margin-bottom: 1rem; &:last-child { margin-bottom: 0; } }
+.adm-label   { display: block; font-size: 0.78rem; font-weight: 600; color: $gray-600; margin-bottom: 0.35rem; }
+.adm-label-opt { font-weight: 400; color: $gray-400; }
+
+.adm-input {
+  width: 100%;
+  border: 1px solid $gray-200;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.825rem;
+  font-family: inherit;
+  color: $gray-700;
+  background: $white;
+  transition: border-color 0.15s;
+
+  &:focus {
+    outline: none;
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba($primary, 0.1);
+  }
+}
+
+// ── Alertas / estados ─────────────────────────────────────
+.adm-alert {
+  display: flex;
+  align-items: center;
+  padding: 0.7rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.825rem;
+  margin-bottom: 1rem;
+  &-danger { background: $danger-light; color: $danger-dark; }
+}
+
+.adm-loading {
+  display: flex;
+  align-items: center;
+  padding: 2rem;
+  color: $gray-400;
+  font-size: 0.875rem;
+}
+
+// ── Empty state ───────────────────────────────────────────
+.adm-empty {
+  text-align: center;
+  padding: 3rem 2rem;
+}
+
+.adm-empty-icon  { font-size: 2.5rem; margin-bottom: 1rem; color: $gray-300; }
+.adm-empty-title { font-size: 1rem; font-weight: 600; color: $gray-600; margin-bottom: 0.4rem; }
+.adm-empty-desc  { font-size: 0.825rem; color: $gray-400; max-width: 380px; margin: 0 auto; }
+
+// ── Contratos — mis-contratos ─────────────────────────────
+.adm-contract-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.adm-contract-card {
+  background: $white;
+  border: 1px solid $gray-200;
+  border-radius: $border-radius-lg;
+  padding: 1.1rem 1.25rem;
+  box-shadow: $shadow-card;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  transition: box-shadow 0.15s;
+  &:hover { box-shadow: 0 4px 14px rgba(0, 0, 0, 0.09); }
+}
+
+.adm-contract-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.adm-contract-tipo-pill {
+  display: inline-block;
+  padding: 0.18rem 0.65rem;
+  border-radius: 50px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.adm-contract-card-client { font-size: 0.875rem; color: $gray-700; }
+
+.adm-contract-card-price {
+  font-size: 1.55rem;
+  font-weight: 700;
+  color: $gray-800;
+  line-height: 1;
+}
+
+.adm-contract-card-per { font-size: 0.82rem; font-weight: 400; color: $gray-400; margin-left: 0.2rem; }
+
+.adm-contract-card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.77rem;
+  color: $gray-500;
+}
+
+.adm-contract-card-sessions { font-weight: 600; color: $primary; }
+
+.adm-contract-card-notas {
+  font-size: 0.75rem;
+  color: $gray-400;
+  background: $gray-50;
+  border-radius: 0.4rem;
+  padding: 0.4rem 0.6rem;
+  font-style: italic;
+}
+
+.adm-historial-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: none;
+  border: 1px solid $gray-200;
+  border-radius: 0.5rem;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: $gray-500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  &:hover { background: $gray-50; color: $gray-700; }
+}
+
+// ── Ingresos ──────────────────────────────────────────────
+.adm-ingresos-header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.adm-ingresos-summary {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  background: $white;
+  border: 1px solid $gray-200;
+  border-radius: $border-radius-lg;
+  padding: 0.85rem 1.25rem;
+  box-shadow: $shadow-card;
+  flex-wrap: wrap;
+}
+
+.adm-ingresos-summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  text-align: center;
+}
+
+.adm-ingresos-summary-sep { width: 1px; height: 32px; background: $gray-200; }
+
+.adm-summary-label {
+  font-size: 0.66rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: $gray-400;
+}
+
+.adm-summary-value {
+  font-size: 0.975rem;
+  font-weight: 700;
+  color: $gray-800;
+  &--success { color: $success; }
+  &--warning { color: $warning; }
+}
+
+.adm-charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+
+  @media (max-width: 768px) { grid-template-columns: 1fr; }
+}
+
+.adm-chart-card {
+  background: $white;
+  border: 1px solid $gray-200;
+  border-radius: $border-radius-lg;
+  padding: 1.1rem 1.25rem;
+  box-shadow: $shadow-card;
+
+  &--wide { grid-column: 1 / -1; }
+}
+
+.adm-chart-title {
+  font-size: 0.73rem;
+  font-weight: 700;
+  color: $gray-500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  i { color: $primary; }
+}
+
+.adm-chart-container { height: 240px; position: relative; }
+
+// ── Supervisión ───────────────────────────────────────────
+.adm-supervision-topbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.adm-supervision-title {
+  font-size: 0.93rem;
+  font-weight: 700;
+  color: $gray-800;
+  margin: 0 0 0.15rem;
+  display: flex;
+  align-items: center;
+}
+
+.adm-supervision-period {
+  font-size: 0.78rem;
+  color: $gray-400;
+}
+
+.adm-supervision-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.adm-generado-msg {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.775rem;
+  color: $success-dark;
+  background: $success-light;
+  border-radius: 0.5rem;
+  padding: 0.35rem 0.7rem;
+  i { font-size: 0.8rem; }
+
+  &--error { color: $danger-dark; background: $danger-light; }
+}
+
+.adm-supervision-table {
+  tbody tr:not(.adm-sup-detail-row):not(.adm-sup-totales) { cursor: pointer; }
+}
+
+.adm-sup-row.is-expanded td { background: $primary-ultra-light !important; }
+
+.adm-sup-terapeuta {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.adm-sup-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: $primary-light;
+  color: $primary;
+  font-size: 0.62rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.adm-contratos-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: $secondary-light;
+  color: $secondary-dark;
+  border-radius: 50%;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.adm-sup-cobrado { color: $success-dark; }
+.adm-sup-pendiente.is-positive { color: $warning-dark; font-weight: 600; }
+.adm-sup-anio   { font-weight: 600; }
+.adm-sup-expand { color: $gray-400; text-align: right; }
+
+.adm-sup-detail-row td { padding: 0 !important; background: $gray-50 !important; }
+
+.adm-sup-detail { padding: 1rem 1.5rem; }
+
+.adm-sup-detail-empty { font-size: 0.8rem; color: $gray-400; margin: 0; }
+
+.adm-sub-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+
+  th {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: $gray-400;
+    border-bottom: 1px solid $gray-200;
+  }
+
+  td {
+    padding: 0.45rem 0.75rem;
+    border-bottom: 1px solid $gray-100;
+    color: $gray-600;
+  }
+
+  tbody tr:last-child td { border-bottom: none; }
+}
+
+.adm-sup-totales td {
+  background: $gray-50 !important;
+  border-top: 2px solid $gray-200;
+  font-size: 0.82rem;
+  cursor: default !important;
+  &:hover { background: $gray-50 !important; }
+}

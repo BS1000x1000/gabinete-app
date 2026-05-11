@@ -71,6 +71,8 @@ model Trabajador {
   horariosAdmin        HorarioAdmin[]
   contratosServicio    ContratoServicio[]
   periodosVacaciones   PeriodoVacaciones[]
+  facturasEmitidas     Factura[]           @relation("FacturasEmitidas")
+  contadorFacturas     ContadorFactura[]
 
   @@map("trabajadores")
 }
@@ -145,6 +147,7 @@ model Cliente {
   notificaciones              Notificacion[]
   consentimientosRgpd         ConsentimientoRgpd[]
   contratosServicio           ContratoServicio[]
+  facturasRecibidas           Factura[]          @relation("FacturasRecibidas")
 
   @@map("clientes")
 }
@@ -768,6 +771,7 @@ model ContratoServicio {
   cliente    Cliente    @relation(fields: [clienteId], references: [id])
   trabajador Trabajador @relation(fields: [trabajadorId], references: [id])
   sesiones   Sesion[]   @relation("SesionesContrato")
+  facturas   Factura[]
 
   @@index([clienteId])
   @@index([trabajadorId])
@@ -811,6 +815,70 @@ model PeriodoVacaciones {
 
   @@index([trabajadorId])
   @@map("periodos_vacaciones")
+}
+
+// ============================================================
+// FACTURACIÓN (Hito R3)
+// ============================================================
+
+enum EstadoFactura {
+  PENDIENTE
+  PAGADA
+  ANULADA
+}
+
+model Factura {
+  id                  String        @id @default(uuid())
+  numero              Int
+  numeroFormateado    String        @map("numero_formateado")
+  anio                Int
+
+  trabajadorId        String        @map("id_trabajador")
+  clienteId           String        @map("id_cliente")
+  contratoId          String?       @map("id_contrato")
+
+  fechaEmision        DateTime      @map("fecha_emision")
+  periodoFacturado    String        @map("periodo_facturado")      // "2026-09"
+  concepto            String        @db.Text
+  importe             Decimal       @db.Decimal(10, 2)
+  ivaPorcentaje       Decimal       @db.Decimal(4, 2) @default(0) @map("iva_porcentaje")
+  ivaImporte          Decimal       @db.Decimal(10, 2) @default(0) @map("iva_importe")
+  retencionPorcentaje Decimal       @db.Decimal(4, 2) @default(0) @map("retencion_porcentaje")
+  retencionImporte    Decimal       @db.Decimal(10, 2) @default(0) @map("retencion_importe")
+  exencionIvaTexto    String?       @map("exencion_iva_texto")
+  total               Decimal       @db.Decimal(10, 2)
+
+  estado              EstadoFactura @default(PENDIENTE)
+  fechaPago           DateTime?     @map("fecha_pago")
+  metodoPago          String?       @map("metodo_pago")
+  urlPdfR2            String?       @map("url_pdf_r2")
+  emailEnviado        Boolean       @default(false) @map("email_enviado")
+  fechaEnvioEmail     DateTime?     @map("fecha_envio_email")
+
+  createdAt           DateTime      @default(now()) @map("fecha_creacion")
+  updatedAt           DateTime      @updatedAt      @map("ultima_actualizacion")
+
+  trabajador Trabajador       @relation("FacturasEmitidas", fields: [trabajadorId], references: [id])
+  cliente    Cliente          @relation("FacturasRecibidas", fields: [clienteId], references: [id])
+  contrato   ContratoServicio? @relation(fields: [contratoId], references: [id])
+
+  @@unique([trabajadorId, anio, numero])
+  @@unique([contratoId, periodoFacturado])
+  @@index([trabajadorId, anio])
+  @@index([clienteId])
+  @@index([estado])
+  @@map("facturas")
+}
+
+model ContadorFactura {
+  trabajadorId String @map("id_trabajador")
+  anio         Int
+  ultimoNumero Int    @default(0) @map("ultimo_numero")
+
+  trabajador Trabajador @relation(fields: [trabajadorId], references: [id], onDelete: Cascade)
+
+  @@id([trabajadorId, anio])
+  @@map("contador_facturas")
 }
 
 // ============================================================

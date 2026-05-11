@@ -1,0 +1,139 @@
+<div class="adm-page">
+  <div class="adm-page-inner">
+
+    <!-- Topbar -->
+    <div class="adm-supervision-topbar">
+      <div>
+        <h5 class="adm-supervision-title">
+          <i class="bi bi-binoculars me-2"></i>Vista global · {{ anioActual }}
+        </h5>
+        <span class="adm-supervision-period">Mes activo: {{ periodoLabel(periodoMes) }}</span>
+      </div>
+      <div class="adm-supervision-actions">
+        <div *ngIf="generadoMsg()" class="adm-generado-msg"
+          [class.adm-generado-msg--error]="generadoMsg()!.startsWith('Error')">
+          <i class="bi"
+            [class.bi-check-circle-fill]="!generadoMsg()!.startsWith('Error')"
+            [class.bi-exclamation-triangle-fill]="generadoMsg()!.startsWith('Error')">
+          </i>
+          {{ generadoMsg() }}
+        </div>
+        <button
+          class="adm-btn-primary"
+          [disabled]="generando() || cargando()"
+          (click)="generarMes()"
+          type="button">
+          <span *ngIf="generando()" class="spinner-border spinner-border-sm me-1" style="width:14px;height:14px"></span>
+          <i *ngIf="!generando()" class="bi bi-magic me-1"></i>
+          Generar facturas {{ periodoLabel(periodoMes) }}
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="cargando()" class="adm-loading">
+      <span class="spinner-border spinner-border-sm me-2"></span> Cargando datos…
+    </div>
+
+    <div *ngIf="error()" class="adm-alert adm-alert-danger">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error() }}
+    </div>
+
+    <ng-container *ngIf="!cargando()">
+
+      <div *ngIf="!resumen().length" class="adm-empty">
+        <div class="adm-empty-icon"><i class="bi bi-people"></i></div>
+        <p class="adm-empty-title">Sin datos de supervisión</p>
+        <p class="adm-empty-desc">Genera las facturas del mes para ver el resumen por terapeuta.</p>
+      </div>
+
+      <div *ngIf="resumen().length" class="adm-table-wrap">
+        <table class="adm-table adm-supervision-table">
+          <thead>
+            <tr>
+              <th>Terapeuta</th>
+              <th class="text-center">Contratos</th>
+              <th class="text-end">Facturado mes</th>
+              <th class="text-end">Cobrado mes</th>
+              <th class="text-end">Pendiente mes</th>
+              <th class="text-end">Total año</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <ng-container *ngFor="let t of resumen()">
+              <!-- Main row -->
+              <tr class="adm-sup-row" [class.is-expanded]="expandidoId() === t.id"
+                (click)="toggleExpand(t.id)">
+                <td>
+                  <div class="adm-sup-terapeuta">
+                    <div class="adm-sup-avatar">{{ initiales(t.nombre) }}</div>
+                    <span>{{ t.nombre }}</span>
+                  </div>
+                </td>
+                <td class="text-center">
+                  <span class="adm-contratos-badge">{{ t.contratosActivos }}</span>
+                </td>
+                <td class="text-end">{{ t.facturadoMes | number:'1.2-2' }} €</td>
+                <td class="text-end adm-sup-cobrado">{{ t.cobradoMes | number:'1.2-2' }} €</td>
+                <td class="text-end adm-sup-pendiente" [class.is-positive]="t.pendienteMes > 0">
+                  {{ t.pendienteMes | number:'1.2-2' }} €
+                </td>
+                <td class="text-end adm-sup-anio">{{ t.facturadoAnio | number:'1.2-2' }} €</td>
+                <td class="adm-sup-expand">
+                  <i class="bi"
+                    [class.bi-chevron-down]="expandidoId() !== t.id"
+                    [class.bi-chevron-up]="expandidoId() === t.id">
+                  </i>
+                </td>
+              </tr>
+
+              <!-- Expanded detail -->
+              <tr *ngIf="expandidoId() === t.id" class="adm-sup-detail-row">
+                <td colspan="7">
+                  <div class="adm-sup-detail">
+                    <p *ngIf="!t.facturas.length" class="adm-sup-detail-empty">
+                      Sin facturas en {{ anioActual }}.
+                    </p>
+                    <table *ngIf="t.facturas.length" class="adm-sub-table">
+                      <thead>
+                        <tr>
+                          <th>Nº</th><th>Periodo</th><th>Cliente</th>
+                          <th class="text-end">Total</th><th>Estado</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let f of t.facturas">
+                          <td>{{ f.numeroFormateado }}</td>
+                          <td>{{ periodoLabel(f.periodoFacturado) }}</td>
+                          <td>{{ f.cliente.nombre }} {{ f.cliente.apellidos }}</td>
+                          <td class="text-end">{{ f.total | number:'1.2-2' }} €</td>
+                          <td>
+                            <span class="adm-badge adm-badge-{{ f.estado.toLowerCase() }}">
+                              {{ estadoLabel(f.estado) }}
+                            </span>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </td>
+              </tr>
+            </ng-container>
+
+            <!-- Totales row -->
+            <tr class="adm-sup-totales">
+              <td><strong>Total</strong></td>
+              <td class="text-center">—</td>
+              <td class="text-end"><strong>{{ totales().facturadoMes | number:'1.2-2' }} €</strong></td>
+              <td class="text-end"><strong>{{ totales().cobradoMes | number:'1.2-2' }} €</strong></td>
+              <td class="text-end"><strong>{{ totales().pendienteMes | number:'1.2-2' }} €</strong></td>
+              <td class="text-end"><strong>{{ totales().facturadoAnio | number:'1.2-2' }} €</strong></td>
+              <td></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+
+  </div>
+</div>
