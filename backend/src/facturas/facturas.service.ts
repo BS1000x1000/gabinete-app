@@ -208,13 +208,12 @@ export class FacturasService {
     }
   }
 
-  async getPdfUrl(
+  async generarPdfBuffer(
     facturaId: string,
     user: { userId: string; rol: string },
-  ): Promise<string | null> {
+  ): Promise<Buffer> {
     const factura = await this.findOneOrThrow(facturaId, user);
-    if (!factura.urlPdfR2) return null;
-    return this.r2.getSignedUrl(factura.urlPdfR2, 900);
+    return this.pdfService.generarPdf(factura);
   }
 
   async regenerarPdf(facturaId: string, user: { userId: string; rol: string }): Promise<void> {

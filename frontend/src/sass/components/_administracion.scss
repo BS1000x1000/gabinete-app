@@ -518,6 +518,40 @@
 
 .adm-contract-card-sessions { font-weight: 600; color: $primary; }
 
+.adm-contract-slots {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.adm-contract-slot-row {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.77rem;
+  color: $gray-500;
+}
+
+.adm-contract-slot-dur {
+  color: $gray-400;
+  font-size: 0.72rem;
+}
+
+.adm-contract-slot-mod {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.1rem 0.4rem;
+  border-radius: 50px;
+  background: $primary-ultra-light;
+  color: $primary;
+  margin-left: 0.1rem;
+
+  &.is-online {
+    background: rgba($secondary, 0.1);
+    color: darken($secondary, 10%);
+  }
+}
+
 .adm-contract-card-notas {
   font-size: 0.75rem;
   color: $gray-400;
@@ -525,6 +559,32 @@
   border-radius: 0.4rem;
   padding: 0.4rem 0.6rem;
   font-style: italic;
+}
+
+.adm-contract-card-actions {
+  border-top: 1px solid $gray-100;
+  padding-top: 0.6rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.adm-contract-pdf-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: transparent;
+  color: $primary;
+  border: 1px solid rgba($primary, 0.3);
+  border-radius: 0.5rem;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.775rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+
+  &:hover:not(:disabled) { background: $primary-ultra-light; border-color: $primary; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
 .adm-historial-toggle {

@@ -5,9 +5,10 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { AmbitoFestivo, EstadoContrato, EstadoSesion } from '@prisma/client';
+import { AmbitoFestivo, EstadoContrato, EstadoSesion, ModalidadSesion } from '@prisma/client';
 import { CreateContratoDto } from './dto/create-contrato.dto';
 import { UpdateContratoDto } from './dto/update-contrato.dto';
+import { ContratosPdfService } from './contratos-pdf.service';
 import {
   addMonths,
   añosCubiertos,
@@ -18,21 +19,45 @@ import {
 } from './contratos.utils';
 
 const CONTRATO_INCLUDE = {
-  cliente: { select: { id: true, nombre: true, apellidos: true } },
+  cliente:    { select: { id: true, nombre: true, apellidos: true } },
   trabajador: { select: { id: true, nombre: true, apellidos: true, especialidad: true } },
-  _count: { select: { sesiones: true } },
+  slots:      { orderBy: { diaSemana: 'asc' as const } },
+  _count:     { select: { sesiones: true } },
+} as const;
+
+const CONTRATO_PDF_INCLUDE = {
+  slots: { orderBy: { diaSemana: 'asc' as const } },
+  trabajador: {
+    select: {
+      nombre: true, apellidos: true,
+      nombreFiscal: true, nifFiscal: true,
+      direccionFiscal: true, codigoPostalFiscal: true,
+      ciudadFiscal: true, provinciaFiscal: true,
+      emailFacturacion: true, email: true,
+    },
+  },
+  cliente: {
+    select: {
+      nombre: true, apellidos: true,
+      nombreTutorPagador: true, nifTutorPagador: true,
+      direccionFiscalTutor: true, codigoPostalTutor: true,
+      ciudadTutor: true,
+    },
+  },
 } as const;
 
 @Injectable()
 export class ContratosService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly pdfService: ContratosPdfService,
+  ) {}
 
   async create(dto: CreateContratoDto, user: { userId: string; rol: string }) {
     const trabajadorId = user.rol === 'ADMIN' && dto.trabajadorId
       ? dto.trabajadorId
       : user.userId;
 
-    // Validar que no exista ya un contrato ACTIVO para la misma pareja + tipoSesion
     const existente = await this.prisma.contratoServicio.findFirst({
       where: {
         clienteId: dto.clienteId,
@@ -53,14 +78,19 @@ export class ContratosService {
         trabajadorId,
         tipoSesion: dto.tipoSesion,
         cuotaMensual: dto.cuotaMensual,
-        diaSemana: dto.diaSemana,
-        horaInicio: dto.horaInicio,
-        horaFin: dto.horaFin,
-        duracionMinutos: dto.duracionMinutos,
         fechaInicio: new Date(dto.fechaInicio),
         fechaFin: dto.fechaFin ? new Date(dto.fechaFin) : null,
         notas: dto.notas,
         estado: EstadoContrato.ACTIVO,
+        slots: {
+          create: dto.slots.map(s => ({
+            diaSemana:       s.diaSemana,
+            horaInicio:      s.horaInicio,
+            horaFin:         s.horaFin,
+            duracionMinutos: s.duracionMinutos,
+            modalidad:       s.modalidad ?? ModalidadSesion.PRESENCIAL,
+          })),
+        },
       },
       include: CONTRATO_INCLUDE,
     });
@@ -75,17 +105,18 @@ export class ContratosService {
   async generarSesionesContrato(contratoId: string): Promise<number> {
     const contrato = await this.prisma.contratoServicio.findUniqueOrThrow({
       where: { id: contratoId },
-      include: { cliente: { select: { provincia: true } } },
+      include: {
+        slots:   true,
+        cliente: { select: { provincia: true } },
+      },
     });
 
+    if (!contrato.slots.length) return 0;
+
     const fechaInicio = contrato.fechaInicio;
-    const fechaFin = contrato.fechaFin ?? addMonths(fechaInicio, 12);
-
-    const todasFechas = generarFechasRecurrentes(fechaInicio, fechaFin, contrato.diaSemana);
-    if (todasFechas.length === 0) return 0;
-
-    const anos = añosCubiertos(fechaInicio, fechaFin);
-    const provincia = contrato.cliente.provincia;
+    const fechaFin    = contrato.fechaFin ?? addMonths(fechaInicio, 12);
+    const anos        = añosCubiertos(fechaInicio, fechaFin);
+    const provincia   = contrato.cliente.provincia;
 
     const [festivos, vacaciones] = await Promise.all([
       this.prisma.festivo.findMany({
@@ -103,33 +134,29 @@ export class ContratosService {
       }),
     ]);
 
-    const fechasValidas = todasFechas.filter(
-      f => !esFestivo(f, festivos) && !enVacaciones(f, vacaciones),
-    );
-
-    if (fechasValidas.length === 0) return 0;
-
-    await this.prisma.sesion.createMany({
-      data: fechasValidas.map(f => ({
-        clienteId: contrato.clienteId,
-        trabajadorId: contrato.trabajadorId,
-        contratoId: contrato.id,
-        tipoSesion: contrato.tipoSesion,
-        fechaHoraInicio: combinarFechaHora(f, contrato.horaInicio),
-        fechaHoraFin: combinarFechaHora(f, contrato.horaFin),
-        estado: EstadoSesion.PROGRAMADA,
-      })),
-      skipDuplicates: true,
+    const sesiones = contrato.slots.flatMap(slot => {
+      const fechasValidas = generarFechasRecurrentes(fechaInicio, fechaFin, slot.diaSemana)
+        .filter(f => !esFestivo(f, festivos) && !enVacaciones(f, vacaciones));
+      return fechasValidas.map(f => ({
+        clienteId:       contrato.clienteId,
+        trabajadorId:    contrato.trabajadorId,
+        contratoId:      contrato.id,
+        tipoSesion:      contrato.tipoSesion,
+        modalidad:       slot.modalidad,
+        fechaHoraInicio: combinarFechaHora(f, slot.horaInicio),
+        fechaHoraFin:    combinarFechaHora(f, slot.horaFin),
+        estado:          EstadoSesion.PROGRAMADA,
+      }));
     });
 
-    return fechasValidas.length;
+    if (!sesiones.length) return 0;
+
+    await this.prisma.sesion.createMany({ data: sesiones, skipDuplicates: true });
+    return sesiones.length;
   }
 
   async findAll(user: { userId: string; rol: string }) {
-    const where = user.rol === 'ADMIN'
-      ? {}
-      : { trabajadorId: user.userId };
-
+    const where = user.rol === 'ADMIN' ? {} : { trabajadorId: user.userId };
     return this.prisma.contratoServicio.findMany({
       where,
       include: CONTRATO_INCLUDE,
@@ -142,7 +169,6 @@ export class ContratosService {
     if (user.rol !== 'ADMIN' && user.rol !== 'RECEP') {
       where.trabajadorId = user.userId;
     }
-
     return this.prisma.contratoServicio.findMany({
       where,
       include: CONTRATO_INCLUDE,
@@ -155,7 +181,6 @@ export class ContratosService {
       where: { id },
       include: CONTRATO_INCLUDE,
     });
-
     if (!contrato) throw new NotFoundException(`Contrato ${id} no encontrado`);
     this.checkAcceso(contrato, user);
     return contrato;
@@ -170,18 +195,30 @@ export class ContratosService {
       throw new BadRequestException('No se puede editar un contrato finalizado');
     }
 
-    return this.prisma.contratoServicio.update({
-      where: { id },
-      data: {
-        ...(dto.cuotaMensual !== undefined && { cuotaMensual: dto.cuotaMensual }),
-        ...(dto.diaSemana !== undefined && { diaSemana: dto.diaSemana }),
-        ...(dto.horaInicio !== undefined && { horaInicio: dto.horaInicio }),
-        ...(dto.horaFin !== undefined && { horaFin: dto.horaFin }),
-        ...(dto.duracionMinutos !== undefined && { duracionMinutos: dto.duracionMinutos }),
-        ...(dto.fechaFin !== undefined && { fechaFin: dto.fechaFin ? new Date(dto.fechaFin) : null }),
-        ...(dto.notas !== undefined && { notas: dto.notas }),
-      },
-      include: CONTRATO_INCLUDE,
+    return this.prisma.$transaction(async tx => {
+      if (dto.slots) {
+        await tx.contratoSlot.deleteMany({ where: { contratoId: id } });
+        await tx.contratoSlot.createMany({
+          data: dto.slots.map(s => ({
+            contratoId:      id,
+            diaSemana:       s.diaSemana,
+            horaInicio:      s.horaInicio,
+            horaFin:         s.horaFin,
+            duracionMinutos: s.duracionMinutos,
+            modalidad:       s.modalidad ?? ModalidadSesion.PRESENCIAL,
+          })),
+        });
+      }
+
+      return tx.contratoServicio.update({
+        where: { id },
+        data: {
+          ...(dto.cuotaMensual !== undefined && { cuotaMensual: dto.cuotaMensual }),
+          ...(dto.fechaFin     !== undefined && { fechaFin: dto.fechaFin ? new Date(dto.fechaFin) : null }),
+          ...(dto.notas        !== undefined && { notas: dto.notas }),
+        },
+        include: CONTRATO_INCLUDE,
+      });
     });
   }
 
@@ -213,6 +250,16 @@ export class ContratosService {
     ]);
 
     return contratoFinalizado;
+  }
+
+  async generarPdf(id: string, user: { userId: string; rol: string }): Promise<Buffer> {
+    const contrato = await this.prisma.contratoServicio.findUnique({
+      where: { id },
+      include: CONTRATO_PDF_INCLUDE,
+    });
+    if (!contrato) throw new NotFoundException(`Contrato ${id} no encontrado`);
+    this.checkAcceso(contrato, user);
+    return this.pdfService.generarPdf(contrato);
   }
 
   private checkAcceso(

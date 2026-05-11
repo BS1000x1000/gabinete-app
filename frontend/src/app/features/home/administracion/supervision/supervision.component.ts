@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { finalize, forkJoin } from 'rxjs';
 import { FacturasService } from '../../../../services/facturas.service';
 import { ContratosService } from '../../../../services/contratos.service';
-import { Factura } from '../../../../interface/factura.interface';
+import { EstadoFactura, Factura, ESTADO_FACTURA_LABEL } from '../../../../interface/factura.interface';
 import { ContratoServicio } from '../../../../interface/contrato.interface';
 
 interface TrabajadorResumen {
@@ -64,32 +64,43 @@ export default class SupervisionComponent implements OnInit {
 
     return Object.entries(trabajadoresMap)
       .map(([id, info]) => {
-        const misFact     = facturas.filter(f => f.trabajadorId === id);
-        const misMes      = misFact.filter(f => f.periodoFacturado === this.periodoMes);
-        const misActivos  = contratos.filter(c => c.trabajadorId === id && c.estado === 'ACTIVO').length;
-        const facturadoMes = misMes.filter(f => f.estado !== 'ANULADA').reduce((s, f) => s + +f.total, 0);
-        const cobradoMes   = misMes.filter(f => f.estado === 'PAGADA').reduce((s, f) => s + +f.total, 0);
+        const misFact    = facturas.filter(f => f.trabajadorId === id);
+        const misActivos = contratos.filter(c => c.trabajadorId === id && c.estado === 'ACTIVO').length;
+
+        let facturadoMes = 0, cobradoMes = 0, facturadoAnio = 0;
+        for (const f of misFact) {
+          if (f.estado === 'ANULADA') continue;
+          facturadoAnio += +f.total;
+          if (f.periodoFacturado === this.periodoMes) {
+            facturadoMes += +f.total;
+            if (f.estado === 'PAGADA') cobradoMes += +f.total;
+          }
+        }
 
         return {
           id,
-          nombre:          info.nombre,
+          nombre:           info.nombre,
           contratosActivos: misActivos,
           facturadoMes,
           cobradoMes,
-          pendienteMes:    facturadoMes - cobradoMes,
-          facturadoAnio:   misFact.filter(f => f.estado !== 'ANULADA').reduce((s, f) => s + +f.total, 0),
-          facturas:        misFact,
+          pendienteMes:     facturadoMes - cobradoMes,
+          facturadoAnio,
+          facturas:         misFact,
         };
       })
       .sort((a, b) => b.facturadoAnio - a.facturadoAnio);
   });
 
-  readonly totales = computed(() => ({
-    facturadoMes:  this.resumen().reduce((s, t) => s + t.facturadoMes,  0),
-    cobradoMes:    this.resumen().reduce((s, t) => s + t.cobradoMes,    0),
-    pendienteMes:  this.resumen().reduce((s, t) => s + t.pendienteMes,  0),
-    facturadoAnio: this.resumen().reduce((s, t) => s + t.facturadoAnio, 0),
-  }));
+  readonly totales = computed(() => {
+    let facturadoMes = 0, cobradoMes = 0, pendienteMes = 0, facturadoAnio = 0;
+    for (const t of this.resumen()) {
+      facturadoMes  += t.facturadoMes;
+      cobradoMes    += t.cobradoMes;
+      pendienteMes  += t.pendienteMes;
+      facturadoAnio += t.facturadoAnio;
+    }
+    return { facturadoMes, cobradoMes, pendienteMes, facturadoAnio };
+  });
 
   ngOnInit(): void { this.cargar(); }
 
@@ -134,9 +145,7 @@ export default class SupervisionComponent implements OnInit {
     return `${MESES[+m] ?? m} ${y}`;
   }
 
-  estadoLabel(e: string): string {
-    return { PENDIENTE: 'Pendiente', PAGADA: 'Pagada', ANULADA: 'Anulada' }[e] ?? e;
-  }
+  estadoLabel(e: EstadoFactura): string { return ESTADO_FACTURA_LABEL[e] ?? e; }
 
   initiales(nombre: string): string {
     return nombre.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();

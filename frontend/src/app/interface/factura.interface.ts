@@ -1,5 +1,11 @@
 export type EstadoFactura = 'PENDIENTE' | 'PAGADA' | 'ANULADA';
 
+export const ESTADO_FACTURA_LABEL: Record<EstadoFactura, string> = {
+  PENDIENTE: 'Pendiente',
+  PAGADA:    'Pagada',
+  ANULADA:   'Anulada',
+};
+
 export interface Factura {
   id: string;
   numero: number;

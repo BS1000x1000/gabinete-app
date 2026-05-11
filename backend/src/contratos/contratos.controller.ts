@@ -10,7 +10,10 @@ import {
   Logger,
   UseGuards,
   Req,
+  Res,
+  ParseUUIDPipe,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { ContratosService } from './contratos.service';
 import { CreateContratoDto } from './dto/create-contrato.dto';
 import { UpdateContratoDto } from './dto/update-contrato.dto';
@@ -64,5 +67,21 @@ export class ContratosController {
   finalizar(@Param('id') id: string, @Req() req: any) {
     this.logger.log(`PATCH /contratos/${id}/finalizar`);
     return this.contratosService.finalizar(id, req.user);
+  }
+
+  @Get(':id/pdf')
+  async getPdf(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: any,
+    @Res() res: Response,
+  ) {
+    this.logger.log(`GET /contratos/${id}/pdf`);
+    const buffer = await this.contratosService.generarPdf(id, req.user);
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="contrato-${id}.pdf"`,
+      'Content-Length': String(buffer.length),
+    });
+    res.end(buffer);
   }
 }

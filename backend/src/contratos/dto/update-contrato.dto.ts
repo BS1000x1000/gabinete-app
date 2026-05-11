@@ -1,15 +1,16 @@
 import {
   IsNumber,
-  IsInt,
   IsString,
   IsOptional,
   IsDateString,
-  Min,
-  Max,
+  IsArray,
+  ArrayMinSize,
   MaxLength,
-  Matches,
+  Min,
+  ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { CreateSlotDto } from './create-slot.dto';
 
 export class UpdateContratoDto {
   @IsOptional()
@@ -19,28 +20,6 @@ export class UpdateContratoDto {
   cuotaMensual?: number;
 
   @IsOptional()
-  @IsInt()
-  @Min(1)
-  @Max(7)
-  diaSemana?: number;
-
-  @IsOptional()
-  @IsString()
-  @Matches(/^\d{2}:\d{2}$/, { message: 'horaInicio debe tener formato HH:mm' })
-  horaInicio?: string;
-
-  @IsOptional()
-  @IsString()
-  @Matches(/^\d{2}:\d{2}$/, { message: 'horaFin debe tener formato HH:mm' })
-  horaFin?: string;
-
-  @IsOptional()
-  @IsInt()
-  @Min(15)
-  @Max(240)
-  duracionMinutos?: number;
-
-  @IsOptional()
   @IsDateString()
   fechaFin?: string;
 
@@ -48,4 +27,11 @@ export class UpdateContratoDto {
   @IsString()
   @MaxLength(1000)
   notas?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => CreateSlotDto)
+  slots?: CreateSlotDto[];
 }

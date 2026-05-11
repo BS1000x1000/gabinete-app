@@ -2,17 +2,18 @@ import {
   IsUUID,
   IsEnum,
   IsNumber,
-  IsInt,
   IsString,
   IsOptional,
   IsDateString,
-  Min,
-  Max,
+  IsArray,
+  ArrayMinSize,
   MaxLength,
-  Matches,
+  Min,
+  ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { TipoSesion } from '@prisma/client';
+import { CreateSlotDto } from './create-slot.dto';
 
 export class CreateContratoDto {
   @IsUUID('4')
@@ -20,7 +21,7 @@ export class CreateContratoDto {
 
   @IsOptional()
   @IsUUID('4')
-  trabajadorId?: string; // ignorado si no es ADMIN; se sobreescribe con userId del token
+  trabajadorId?: string;
 
   @IsEnum(TipoSesion)
   tipoSesion: TipoSesion;
@@ -29,24 +30,6 @@ export class CreateContratoDto {
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   cuotaMensual: number;
-
-  @IsInt()
-  @Min(1)
-  @Max(7)
-  diaSemana: number;
-
-  @IsString()
-  @Matches(/^\d{2}:\d{2}$/, { message: 'horaInicio debe tener formato HH:mm' })
-  horaInicio: string;
-
-  @IsString()
-  @Matches(/^\d{2}:\d{2}$/, { message: 'horaFin debe tener formato HH:mm' })
-  horaFin: string;
-
-  @IsInt()
-  @Min(15)
-  @Max(240)
-  duracionMinutos: number;
 
   @IsDateString()
   fechaInicio: string;
@@ -59,4 +42,10 @@ export class CreateContratoDto {
   @IsString()
   @MaxLength(1000)
   notas?: string;
+
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => CreateSlotDto)
+  slots: CreateSlotDto[];
 }

@@ -40,7 +40,18 @@
           </div>
 
           <div class="adm-contract-card-meta">
-            <span><i class="bi bi-clock me-1"></i>{{ diaLabel(c.diaSemana) }} {{ c.horaInicio }}–{{ c.horaFin }}</span>
+            <div class="adm-contract-slots">
+              <div *ngFor="let s of c.slots" class="adm-contract-slot-row">
+                <i class="bi me-1"
+                  [class.bi-camera-video]="s.modalidad === 'ONLINE'"
+                  [class.bi-person]="s.modalidad === 'PRESENCIAL'"></i>
+                <span>{{ diaLabel(s.diaSemana) }} {{ s.horaInicio }}–{{ s.horaFin }}</span>
+                <span class="adm-contract-slot-dur">({{ s.duracionMinutos }} min)</span>
+                <span class="adm-contract-slot-mod" [class.is-online]="s.modalidad === 'ONLINE'">
+                  {{ s.modalidad === 'ONLINE' ? 'Online' : 'Presencial' }}
+                </span>
+              </div>
+            </div>
             <span>
               <i class="bi bi-calendar me-1"></i>
               {{ c.fechaInicio | date:'dd/MM/yyyy' }} →
@@ -53,6 +64,14 @@
 
           <div *ngIf="c.notas" class="adm-contract-card-notas">
             <i class="bi bi-chat-left-text me-1"></i>{{ c.notas }}
+          </div>
+
+          <div class="adm-contract-card-actions">
+            <button class="adm-contract-pdf-btn" (click)="descargarPdf(c.id)" [disabled]="descargandoId() === c.id" type="button">
+              <span *ngIf="descargandoId() === c.id" class="spinner-border spinner-border-sm" style="width:11px;height:11px"></span>
+              <i *ngIf="descargandoId() !== c.id" class="bi bi-file-earmark-pdf me-1"></i>
+              Contrato PDF
+            </button>
           </div>
         </div>
       </div>

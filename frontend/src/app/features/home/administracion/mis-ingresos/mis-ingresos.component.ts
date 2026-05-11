@@ -140,9 +140,10 @@ export default class MisIngresosComponent implements OnInit {
         this.barData.set({ labels: [], datasets: [] });
         return;
       }
-      this.lineData.set(this.buildLine(data));
+      const agg = this.aggregateByMonth(data);
+      this.lineData.set(this.buildLine(agg));
       this.donutData.set(this.buildDonut(data));
-      this.barData.set(this.buildBar(data));
+      this.barData.set(this.buildBar(agg));
     });
   }
 
@@ -162,22 +163,26 @@ export default class MisIngresosComponent implements OnInit {
   onAnioChange(): void { this.cargar(); }
 
   // ── Chart builders ────────────────────────────────────────────────────────
-  private buildLine(data: Factura[]): ChartData<'line'> {
-    const facturadoPorMes = new Array(12).fill(0);
-    const cobradoPorMes   = new Array(12).fill(0);
+  private aggregateByMonth(data: Factura[]): { facturado: number[]; cobrado: number[] } {
+    const facturado = new Array(12).fill(0);
+    const cobrado   = new Array(12).fill(0);
     for (const f of data) {
       if (f.estado === 'ANULADA') continue;
       const idx = parseInt(f.periodoFacturado.split('-')[1], 10) - 1;
       if (idx >= 0 && idx < 12) {
-        facturadoPorMes[idx] += +f.total;
-        if (f.estado === 'PAGADA') cobradoPorMes[idx] += +f.total;
+        facturado[idx] += +f.total;
+        if (f.estado === 'PAGADA') cobrado[idx] += +f.total;
       }
     }
+    return { facturado, cobrado };
+  }
+
+  private buildLine({ facturado, cobrado }: { facturado: number[]; cobrado: number[] }): ChartData<'line'> {
     return {
       labels:   MESES_LABEL,
       datasets: [
-        { label: 'Facturado', data: facturadoPorMes, borderColor: P,  backgroundColor: 'rgba(124,111,214,0.08)', fill: 'origin', pointBackgroundColor: P,  pointBorderColor: '#fff', pointBorderWidth: 2, pointRadius: 4, pointHoverRadius: 6 },
-        { label: 'Cobrado',   data: cobradoPorMes,   borderColor: OK, backgroundColor: 'rgba(16,185,129,0.06)',  fill: 'origin', pointBackgroundColor: OK, pointBorderColor: '#fff', pointBorderWidth: 2, pointRadius: 4, pointHoverRadius: 6 },
+        { label: 'Facturado', data: facturado, borderColor: P,  backgroundColor: 'rgba(124,111,214,0.08)', fill: 'origin', pointBackgroundColor: P,  pointBorderColor: '#fff', pointBorderWidth: 2, pointRadius: 4, pointHoverRadius: 6 },
+        { label: 'Cobrado',   data: cobrado,   borderColor: OK, backgroundColor: 'rgba(16,185,129,0.06)',  fill: 'origin', pointBackgroundColor: OK, pointBorderColor: '#fff', pointBorderWidth: 2, pointRadius: 4, pointHoverRadius: 6 },
       ],
     };
   }
@@ -204,17 +209,7 @@ export default class MisIngresosComponent implements OnInit {
     };
   }
 
-  private buildBar(data: Factura[]): ChartData<'bar'> {
-    const facturado = new Array(12).fill(0);
-    const cobrado   = new Array(12).fill(0);
-    for (const f of data) {
-      if (f.estado === 'ANULADA') continue;
-      const idx = parseInt(f.periodoFacturado.split('-')[1], 10) - 1;
-      if (idx >= 0 && idx < 12) {
-        facturado[idx] += +f.total;
-        if (f.estado === 'PAGADA') cobrado[idx] += +f.total;
-      }
-    }
+  private buildBar({ facturado, cobrado }: { facturado: number[]; cobrado: number[] }): ChartData<'bar'> {
     const mesActual = new Date().getMonth();
     const start     = (mesActual - 5 + 12) % 12;
     const months6   = Array.from({ length: 6 }, (_, i) => (start + i) % 12);

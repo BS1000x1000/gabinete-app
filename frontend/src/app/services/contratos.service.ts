@@ -1,7 +1,9 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { map, tap } from 'rxjs/operators';
+import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment.development';
+import { triggerDownload } from '../shared/utils/download.utils';
 import {
   ContratoServicio,
   CreateContratoPayload,
@@ -22,7 +24,7 @@ export class ContratosService {
     return this.http
       .get<WrappedResponse<ContratoServicio[]>>(`${this.apiUrl}/cliente/${clienteId}`)
       .pipe(
-        map(res => (res.data || res) as ContratoServicio[]),
+        map(res => (res.data ?? res) as ContratoServicio[]),
         tap(contratos => this._contratosCliente.set(contratos)),
       );
   }
@@ -30,31 +32,37 @@ export class ContratosService {
   getContratos() {
     return this.http
       .get<WrappedResponse<ContratoServicio[]>>(this.apiUrl)
-      .pipe(map(res => (res.data || res) as ContratoServicio[]));
+      .pipe(map(res => (res.data ?? res) as ContratoServicio[]));
   }
 
   getContrato(id: string) {
     return this.http
       .get<WrappedResponse<ContratoServicio>>(`${this.apiUrl}/${id}`)
-      .pipe(map(res => (res.data || res) as ContratoServicio));
+      .pipe(map(res => (res.data ?? res) as ContratoServicio));
   }
 
   crear(payload: CreateContratoPayload) {
     return this.http
       .post<WrappedResponse<ContratoServicio>>(this.apiUrl, payload)
-      .pipe(map(res => (res.data || res) as ContratoServicio));
+      .pipe(map(res => (res.data ?? res) as ContratoServicio));
   }
 
   actualizar(id: string, payload: UpdateContratoPayload) {
     return this.http
       .patch<WrappedResponse<ContratoServicio>>(`${this.apiUrl}/${id}`, payload)
-      .pipe(map(res => (res.data || res) as ContratoServicio));
+      .pipe(map(res => (res.data ?? res) as ContratoServicio));
   }
 
   finalizar(id: string) {
     return this.http
       .patch<WrappedResponse<ContratoServicio>>(`${this.apiUrl}/${id}/finalizar`, {})
-      .pipe(map(res => (res.data || res) as ContratoServicio));
+      .pipe(map(res => (res.data ?? res) as ContratoServicio));
+  }
+
+  descargarPdf(id: string): Observable<void> {
+    return this.http
+      .get(`${this.apiUrl}/${id}/pdf`, { responseType: 'blob' })
+      .pipe(map(blob => triggerDownload(blob, `contrato-${id}.pdf`)));
   }
 
   clearContratosCliente() {

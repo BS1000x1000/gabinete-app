@@ -111,7 +111,7 @@
                   <div class="adm-actions-cell">
                     <button
                       class="adm-action-btn adm-action-btn--pdf"
-                      [disabled]="!f.urlPdfR2 || descargandoId() === f.id"
+                      [disabled]="descargandoId() === f.id"
                       (click)="descargarPdf(f.id)"
                       title="Descargar PDF"
                       type="button">

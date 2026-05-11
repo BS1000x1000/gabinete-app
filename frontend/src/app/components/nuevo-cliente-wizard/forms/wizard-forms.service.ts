@@ -23,7 +23,7 @@ export class WizardFormsService {
       apellidos: ['', [Validators.required, Validators.minLength(2)]],
       dni: [
         '',
-        [Validators.required, Validators.pattern(/^\d{8}[A-Z]$/)],
+        [Validators.pattern(/^\d{8}[A-Z]$/)],
         [dniUnicoValidator(this.clientesSvc, 800)],
       ],
       fechaNacimiento: ['', Validators.required],

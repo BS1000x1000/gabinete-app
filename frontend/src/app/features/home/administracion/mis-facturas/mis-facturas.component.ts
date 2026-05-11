@@ -55,7 +55,7 @@ export default class MisFacturasComponent implements OnInit {
 
   readonly kpiFacturadoAnio = computed(() =>
     this.facturas()
-      .filter(f => f.anio === this.anioActual && f.estado !== 'ANULADA')
+      .filter(f => f.estado !== 'ANULADA')
       .reduce((s, f) => s + +f.total, 0),
   );
 
@@ -149,9 +149,9 @@ export default class MisFacturasComponent implements OnInit {
 
   descargarPdf(id: string): void {
     this.descargandoId.set(id);
-    this.facturasService.getPdfUrl(id)
+    this.facturasService.descargarPdf(id)
       .pipe(finalize(() => this.descargandoId.set(null)))
-      .subscribe({ next: ({ url }) => window.open(url, '_blank') });
+      .subscribe({ error: () => this.error.set('Error al generar el PDF de la factura.') });
   }
 
   reenviarEmail(id: string): void {

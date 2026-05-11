@@ -756,10 +756,6 @@ model ContratoServicio {
   trabajadorId    String         @map("id_trabajador")
   tipoSesion      TipoSesion
   cuotaMensual    Decimal        @db.Decimal(10, 2) @map("cuota_mensual")
-  diaSemana       Int            @map("dia_semana")       // 1=Lun..7=Dom (ISO)
-  horaInicio      String         @map("hora_inicio")      // "HH:mm"
-  horaFin         String         @map("hora_fin")
-  duracionMinutos Int            @map("duracion_minutos")
   fechaInicio     DateTime       @map("fecha_inicio")
   fechaFin        DateTime?      @map("fecha_fin")        // null = indefinido
   estado          EstadoContrato @default(ACTIVO)
@@ -768,15 +764,31 @@ model ContratoServicio {
   createdAt       DateTime       @default(now()) @map("fecha_creacion")
   updatedAt       DateTime       @updatedAt      @map("ultima_actualizacion")
 
-  cliente    Cliente    @relation(fields: [clienteId], references: [id])
-  trabajador Trabajador @relation(fields: [trabajadorId], references: [id])
-  sesiones   Sesion[]   @relation("SesionesContrato")
+  cliente    Cliente        @relation(fields: [clienteId], references: [id])
+  trabajador Trabajador     @relation(fields: [trabajadorId], references: [id])
+  slots      ContratoSlot[]
+  sesiones   Sesion[]       @relation("SesionesContrato")
   facturas   Factura[]
 
   @@index([clienteId])
   @@index([trabajadorId])
   @@index([estado])
   @@map("contratos_servicio")
+}
+
+model ContratoSlot {
+  id              String          @id @default(uuid())
+  contratoId      String          @map("id_contrato")
+  diaSemana       Int             @map("dia_semana")       // 1=Lun..7=Dom (ISO)
+  horaInicio      String          @map("hora_inicio")      // "HH:mm"
+  horaFin         String          @map("hora_fin")
+  duracionMinutos Int             @map("duracion_minutos")
+  modalidad       ModalidadSesion @default(PRESENCIAL)
+
+  contrato ContratoServicio @relation(fields: [contratoId], references: [id], onDelete: Cascade)
+
+  @@index([contratoId])
+  @@map("contrato_slots")
 }
 
 // ============================================================

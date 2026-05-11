@@ -2,15 +2,16 @@ import {
   Body,
   Controller,
   Get,
-  NotFoundException,
   Param,
   ParseUUIDPipe,
   Patch,
   Post,
   Query,
   Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../roles/roles.guard';
 import { Roles } from '../roles/roles.decorator';
@@ -53,10 +54,18 @@ export class FacturasController {
   }
 
   @Get(':id/pdf')
-  async getPdfUrl(@Param('id', ParseUUIDPipe) id: string, @Req() req: any) {
-    const url = await this.facturasService.getPdfUrl(id, req.user);
-    if (!url) throw new NotFoundException('PDF no disponible aún');
-    return { url };
+  async getPdf(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: any,
+    @Res() res: Response,
+  ) {
+    const buffer = await this.facturasService.generarPdfBuffer(id, req.user);
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="factura-${id}.pdf"`,
+      'Content-Length': String(buffer.length),
+    });
+    res.end(buffer);
   }
 
   @Patch(':id/marcar-pagada')
