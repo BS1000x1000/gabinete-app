@@ -690,6 +690,7 @@ model EventoAgenda {
   participantes   EventoParticipante[]
   horarioAdminId  String?              @map("horario_admin_id")
   horarioAdmin    HorarioAdmin?        @relation(fields: [horarioAdminId], references: [id], onDelete: SetNull)
+  eliminado       Boolean              @default(false) @map("eliminado")
   createdAt       DateTime             @default(now()) @map("fecha_creacion")
   updatedAt       DateTime             @updatedAt @map("ultima_actualizacion")
 

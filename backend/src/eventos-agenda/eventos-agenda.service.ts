@@ -137,9 +137,10 @@ export class EventosAgendaService {
     ]);
 
     const eventosReales = registros.map((r) => r.evento);
+    const eventosVisibles = eventosReales.filter((e) => !e.eliminado);
 
     if (reglas.length === 0) {
-      return eventosReales;
+      return eventosVisibles;
     }
 
     const overridesExistentes = new Set(
@@ -176,7 +177,7 @@ export class EventosAgendaService {
       cursor.setDate(cursor.getDate() + 1);
     }
 
-    return [...eventosReales, ...virtuales].sort(
+    return [...eventosVisibles, ...virtuales].sort(
       (a, b) => a.fechaHoraInicio.getTime() - b.fechaHoraInicio.getTime(),
     );
   }
@@ -257,6 +258,33 @@ export class EventosAgendaService {
   }
 
   async remove(id: string, userId: string, rol: string) {
+    if (id.startsWith('virtual_')) {
+      const [, horarioAdminId, fecha] = id.split('_');
+      const regla = await this.prisma.horarioAdmin.findUnique({ where: { id: horarioAdminId } });
+      if (!regla) throw new NotFoundException('Horario no encontrado');
+      if (regla.trabajadorId !== userId && rol !== 'ADMIN') {
+        throw new ForbiddenException('Solo el propietario puede eliminar este horario');
+      }
+      const yaEliminado = await this.prisma.eventoAgenda.findFirst({
+        where: { horarioAdminId, eliminado: true, fechaHoraInicio: new Date(`${fecha}T${regla.horaInicio}:00`) },
+        select: { id: true },
+      });
+      if (yaEliminado) return;
+      await this.prisma.eventoAgenda.create({
+        data: {
+          titulo: regla.titulo,
+          fechaHoraInicio: new Date(`${fecha}T${regla.horaInicio}:00`),
+          fechaHoraFin: new Date(`${fecha}T${regla.horaFin}:00`),
+          tipo: 'TIEMPO_ADMINISTRACION',
+          creadoPorId: regla.trabajadorId,
+          horarioAdminId: regla.id,
+          eliminado: true,
+          participantes: { create: [{ trabajadorId: regla.trabajadorId }] },
+        },
+      });
+      return;
+    }
+
     const evento = await this.prisma.eventoAgenda.findUnique({ where: { id } });
     if (!evento) throw new NotFoundException('Evento no encontrado');
     if (evento.creadoPorId !== userId && rol !== 'ADMIN') {

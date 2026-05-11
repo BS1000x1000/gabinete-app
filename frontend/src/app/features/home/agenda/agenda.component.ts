@@ -30,6 +30,7 @@ import {
   CalendarioSemanal,
 } from '../../../interface/calendario.interface';
 import { SesionModalesComponent } from '../../../components/sesiones-modales/sesiones-modales.component';
+import { ConfirmModalComponent } from '../../../shared/components/confirm-modal/confirm-modal.component';
 import { isoToHHMM, formatMinutosHoras } from '../../../shared/utils/date';
 import { abrirEnlaceExterno } from '../../../shared/utils/url.utils';
 import { EventosAgendaService } from '../../../services/eventos-agenda.service';
@@ -57,7 +58,7 @@ const TIPO_COLORES: Record<string, string> = {
 @Component({
   selector: 'app-agenda',
   standalone: true,
-  imports: [CommonModule, FormsModule, SesionModalesComponent],
+  imports: [CommonModule, FormsModule, SesionModalesComponent, ConfirmModalComponent],
   templateUrl: './agenda.component.html',
 })
 export class AgendaComponent implements OnInit {
@@ -156,6 +157,8 @@ export class AgendaComponent implements OnInit {
   resumenHoras = signal<ResumenHoras | null>(null);
   mostrarModalEvento = signal(false);
   eventoEditando = signal<EventoAgenda | null>(null);
+  modalEventoActual = signal<EventoAgenda | null>(null);
+  eventoAEliminar = signal<EventoAgenda | null>(null);
 
   // Modal evento — form state
   modalEventoForm = signal<{
@@ -518,6 +521,7 @@ export class AgendaComponent implements OnInit {
   abrirModalEvento(evento: EventoAgenda, event: Event) {
     event.stopPropagation();
     const fecha = evento.fechaHoraInicio.split('T')[0];
+    this.modalEventoActual.set(evento);
     this.eventoEditando.set(evento.esVirtual ? null : evento);
     this.modalEventoForm.set({
       titulo: evento.titulo,
@@ -536,6 +540,7 @@ export class AgendaComponent implements OnInit {
   cerrarModalEvento() {
     this.mostrarModalEvento.set(false);
     this.eventoEditando.set(null);
+    this.modalEventoActual.set(null);
     this.modalEventoGuardando.set(false);
   }
 
@@ -565,13 +570,26 @@ export class AgendaComponent implements OnInit {
       });
   }
 
-  eliminarEvento(evento: EventoAgenda, event: Event) {
-    event.stopPropagation();
-    if (!confirm(`¿Eliminar "${evento.titulo}"?`)) return;
-    this.eventosSvc
-      .delete(evento.id)
+  pedirEliminar(evento: EventoAgenda) {
+    this.cerrarModalEvento();
+    this.eventoAEliminar.set(evento);
+  }
+
+  confirmarEliminar() {
+    const evento = this.eventoAEliminar();
+    if (!evento) return;
+    this.eventosSvc.delete(evento.id)
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({ next: () => this.loadSemana() });
+      .subscribe({
+        next: () => {
+          this.eventoAEliminar.set(null);
+          this.loadSemana();
+        },
+      });
+  }
+
+  cancelarEliminar() {
+    this.eventoAEliminar.set(null);
   }
 
   updateModalForm(patch: Partial<ReturnType<typeof this.modalEventoForm>>) {

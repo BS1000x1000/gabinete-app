@@ -643,10 +643,10 @@
       </div>
 
       <div class="ag-modal__footer">
-        @if (eventoEditando()) {
+        @if (modalEventoActual()) {
           <button
             class="ag-modal__btn ag-modal__btn--danger"
-            (click)="eliminarEvento(eventoEditando()!, $event)"
+            (click)="pedirEliminar(modalEventoActual()!)"
             [disabled]="modalEventoGuardando()"
           >
             <i class="bi bi-trash"></i> Eliminar
@@ -675,3 +675,17 @@
 }
 
 <app-sesion-modales [onRefresh]="loadDia.bind(this)"></app-sesion-modales>
+
+@if (eventoAEliminar()) {
+  <app-confirm-modal
+    [title]="eventoAEliminar()!.esVirtual ? 'Eliminar bloque de administración' : 'Eliminar evento'"
+    [message]="eventoAEliminar()!.esVirtual
+      ? '¿Eliminar este bloque de administración? Solo se eliminará esta ocurrencia; la serie recurrente continuará.'
+      : '¿Eliminar «' + eventoAEliminar()!.titulo + '»? Esta acción no se puede deshacer.'"
+    confirmLabel="Eliminar"
+    confirmClass="btn-danger"
+    icon="bi-trash-fill"
+    (confirmed)="confirmarEliminar()"
+    (cancelled)="cancelarEliminar()"
+  />
+}
