@@ -29,7 +29,9 @@
       "Bash(New-Item -ItemType Directory -Force -Path \"E:\\\\Programming\\\\PROYECTS\\\\PROPIOS\\\\gabinete-app\\\\frontend\\\\src\\\\app\\\\features\\\\trabajadores\\\\ficha\\\\tabs\\\\trabajador-vacaciones-tab\")",
       "Bash(Out-Null)",
       "Bash(New-Item -ItemType Directory -Force -Path \"E:\\\\Programming\\\\PROYECTS\\\\PROPIOS\\\\gabinete-app\\\\frontend\\\\src\\\\app\\\\features\\\\trabajadores\\\\ficha\\\\tabs\\\\trabajador-facturacion-tab\")",
-      "Bash(New-Item -ItemType Directory -Force -Path \"E:\\\\Programming\\\\PROYECTS\\\\PROPIOS\\\\gabinete-app\\\\frontend\\\\src\\\\app\\\\features\\\\home\\\\cuenta\")"
+      "Bash(New-Item -ItemType Directory -Force -Path \"E:\\\\Programming\\\\PROYECTS\\\\PROPIOS\\\\gabinete-app\\\\frontend\\\\src\\\\app\\\\features\\\\home\\\\cuenta\")",
+      "Bash(npx skills *)",
+      "Bash(npx sass *)"
     ]
   },
   "hooks": {

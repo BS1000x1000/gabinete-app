@@ -1,0 +1,8 @@
+{
+  "files": ["frontend/src/index.html"],
+  "insertBefore": "</body>",
+  "commentSyntax": "<!-- -->",
+  "cspChecked": true,
+  "framework": "angular",
+  "devServer": "http://localhost:4200"
+}

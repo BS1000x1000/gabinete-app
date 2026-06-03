@@ -445,7 +445,7 @@
 
   &:hover {
     border-color: rgba(var(--tipo-color-rgb, 124, 111, 214), 0.35);
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 2px 12px rgba($primary, 0.12);
 
     .ag-card-actions {
       opacity: 1;
@@ -974,26 +974,11 @@ $wg-time-col: 48px;
     }
 
     &--festivo {
-      background: rgba($gray-500, 0.04);
-      background-image: repeating-linear-gradient(
-        -45deg,
-        transparent,
-        transparent 6px,
-        rgba($gray-500, 0.1) 6px,
-        rgba($gray-500, 0.4) 12px
-      );
+      background: rgba($gray-500, 0.06);
     }
 
     &--vacacion:not(&--festivo) {
-      background: rgba($gray-500, 0.04);
-      background-image: repeating-linear-gradient(
-        -45deg,
-        transparent,
-        transparent 6px,
-        rgba($gray-500, 0.1) 6px,
-        rgba($gray-500, 0.4) 12px
-      );
-
+      background: rgba($primary, 0.04);
     }
   }
 
@@ -1113,17 +1098,9 @@ $wg-time-col: 48px;
   &__event--agenda {
     background: color-mix(in srgb, var(--evento-color, #94a3b8) 12%, white) !important;
     border-left-color: var(--evento-color, #94a3b8) !important;
+    border-style: dashed !important;
     color: var(--evento-color, #94a3b8) !important;
     border-radius: 4px;
-
-    // Líneas diagonales sutiles para distinguirlo de sesiones clínicas
-    background-image: repeating-linear-gradient(
-      -45deg,
-      transparent,
-      transparent 6px,
-      color-mix(in srgb, var(--evento-color, #94a3b8) 6%, transparent) 6px,
-      color-mix(in srgb, var(--evento-color, #94a3b8) 6%, transparent) 7px
-    ) !important;
 
     &:hover {
       background: color-mix(in srgb, var(--evento-color, #94a3b8) 22%, white) !important;

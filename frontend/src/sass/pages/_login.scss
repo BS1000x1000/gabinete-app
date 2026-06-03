@@ -55,13 +55,13 @@ $bg-gradient-end: #764ba2;
 
 // Card del login
 .login-card {
-  background: rgba(255, 255, 255, 0.95);
+  background: $white;
   backdrop-filter: blur(10px);
   border-radius: 1.5rem;
   padding: 2.5rem;
-  box-shadow: 
-    0 10px 40px rgba(0, 0, 0, 0.1),
-    0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow:
+    0 10px 40px rgba($primary, 0.12),
+    0 2px 8px rgba($primary, 0.06);
   animation: fadeInUp 0.6s ease-out;
 }
 

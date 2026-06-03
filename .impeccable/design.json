@@ -1,0 +1,264 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-03T00:00:00Z",
+  "title": "Design System: Gabinete Pedagógico",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Lila de Confianza",
+        "canonical": "oklch(0.62 0.14 288)",
+        "tonalRamp": [
+          "oklch(0.18 0.12 288)",
+          "oklch(0.28 0.13 288)",
+          "oklch(0.38 0.14 288)",
+          "oklch(0.48 0.14 288)",
+          "oklch(0.62 0.14 288)",
+          "oklch(0.76 0.09 288)",
+          "oklch(0.88 0.05 288)",
+          "oklch(0.96 0.02 288)"
+        ]
+      },
+      "primary-dark": {
+        "role": "primary-dark",
+        "displayName": "Lila Profundo",
+        "canonical": "oklch(0.48 0.14 288)",
+        "tonalRamp": []
+      },
+      "secondary": {
+        "role": "secondary",
+        "displayName": "Azul de Apoyo",
+        "canonical": "oklch(0.65 0.13 241)",
+        "tonalRamp": [
+          "oklch(0.20 0.11 241)",
+          "oklch(0.30 0.12 241)",
+          "oklch(0.42 0.13 241)",
+          "oklch(0.55 0.13 241)",
+          "oklch(0.65 0.13 241)",
+          "oklch(0.78 0.08 241)",
+          "oklch(0.90 0.04 241)",
+          "oklch(0.97 0.01 241)"
+        ]
+      },
+      "accent": {
+        "role": "tertiary",
+        "displayName": "Amarillo de Atención",
+        "canonical": "oklch(0.88 0.16 95)",
+        "tonalRamp": [
+          "oklch(0.35 0.12 95)",
+          "oklch(0.48 0.14 95)",
+          "oklch(0.60 0.16 95)",
+          "oklch(0.72 0.17 95)",
+          "oklch(0.88 0.16 95)",
+          "oklch(0.93 0.10 95)",
+          "oklch(0.96 0.06 95)",
+          "oklch(0.98 0.02 95)"
+        ]
+      },
+      "success": {
+        "role": "semantic-success",
+        "displayName": "Verde Completado",
+        "canonical": "oklch(0.70 0.16 162)",
+        "tonalRamp": []
+      },
+      "warning": {
+        "role": "semantic-warning",
+        "displayName": "Naranja Pendiente",
+        "canonical": "oklch(0.77 0.16 72)",
+        "tonalRamp": []
+      },
+      "danger": {
+        "role": "semantic-danger",
+        "displayName": "Rojo Cancelado",
+        "canonical": "oklch(0.63 0.22 26)",
+        "tonalRamp": []
+      },
+      "neutral-bg": {
+        "role": "neutral-background",
+        "displayName": "Fondo de App",
+        "canonical": "oklch(0.98 0.002 270)",
+        "tonalRamp": []
+      },
+      "neutral-surface": {
+        "role": "neutral-surface",
+        "displayName": "Superficie Blanca",
+        "canonical": "oklch(1.00 0 0)",
+        "tonalRamp": []
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Encabezados de sección principal. Una vez por vista." },
+      "headline": { "displayName": "Headline", "purpose": "Títulos de cards, nombres en ficha, encabezados de panel." },
+      "title": { "displayName": "Title", "purpose": "Subsecciones dentro de cards, labels de grupo en formularios." },
+      "body": { "displayName": "Body", "purpose": "Contenido narrativo y valores de datos. Max 70ch." },
+      "label": { "displayName": "Label", "purpose": "Metadatos, timestamps, badges, etiquetas de campo." }
+    },
+    "shadows": [
+      {
+        "name": "card",
+        "value": "0 1px 3px rgba(0,0,0,0.08), 0 0 0 1px rgba(124,111,214,0.05)",
+        "purpose": "Shadow de card estándar. Siempre presente en reposo."
+      },
+      {
+        "name": "card-hover",
+        "value": "0 4px 12px rgba(124,111,214,0.15)",
+        "purpose": "Elevación de cards interactivos al hover."
+      },
+      {
+        "name": "dropdown",
+        "value": "0 10px 15px -3px rgba(124,111,214,0.1), 0 4px 6px -4px rgba(124,111,214,0.1)",
+        "purpose": "Dropdowns, popovers, tooltips posicionados."
+      },
+      {
+        "name": "modal",
+        "value": "0 20px 25px -5px rgba(124,111,214,0.1), 0 10px 10px -5px rgba(124,111,214,0.1)",
+        "purpose": "Modales y drawers — la capa más alta."
+      },
+      {
+        "name": "sidebar",
+        "value": "2px 0 12px rgba(124,111,214,0.06)",
+        "purpose": "Separación lateral del sidebar del contenido principal."
+      },
+      {
+        "name": "focus-ring-primary",
+        "value": "0 0 0 3px rgba(124,111,214,0.3)",
+        "purpose": "Focus ring para botones primarios e inputs focuseados."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-standard",
+        "value": "cubic-bezier(0.4, 0, 0.2, 1)",
+        "purpose": "Easing por defecto para transiciones de estado."
+      },
+      {
+        "name": "ease-out-quart",
+        "value": "cubic-bezier(0.25, 1, 0.5, 1)",
+        "purpose": "Entradas de paneles (drawers, modales)."
+      },
+      {
+        "name": "duration-fast",
+        "value": "150ms",
+        "purpose": "Hover, focus, color changes."
+      },
+      {
+        "name": "duration-base",
+        "value": "200ms",
+        "purpose": "State transitions estándar."
+      },
+      {
+        "name": "duration-slow",
+        "value": "300ms",
+        "purpose": "Drawer open/close, modal enter/exit."
+      }
+    ],
+    "breakpoints": [
+      { "name": "xs", "value": "475px" },
+      { "name": "sm", "value": "576px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "992px" },
+      { "name": "xl", "value": "1200px" },
+      { "name": "xxl", "value": "1400px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Acción principal de una vista. Máximo uno por pantalla.",
+      "html": "<button class=\"ds-btn-primary\"><svg class=\"ds-btn-icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 16 16\" fill=\"currentColor\"><path d=\"M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2z\"/></svg>Nueva sesión</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; gap: 6px; background: #7c6fd6; color: #fff; border: none; border-radius: 8px; padding: 10px 16px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.875rem; font-weight: 600; line-height: 1.4; cursor: pointer; transition: all 0.15s ease; } .ds-btn-primary:hover { background: #5a4fa8; transform: translateY(-1px); } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(124,111,214,0.3); } .ds-btn-primary:active { transform: translateY(0); } .ds-btn-icon { flex-shrink: 0; }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Acción secundaria. Convive con el botón primario sin competir.",
+      "html": "<button class=\"ds-btn-outline\">Ver historial</button>",
+      "css": ".ds-btn-outline { display: inline-flex; align-items: center; gap: 6px; background: transparent; color: #7c6fd6; border: 1.5px solid #7c6fd6; border-radius: 8px; padding: 10px 16px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.875rem; font-weight: 600; line-height: 1.4; cursor: pointer; transition: all 0.15s ease; } .ds-btn-outline:hover { background: #f5f3fc; } .ds-btn-outline:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(124,111,214,0.3); }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Acción terciaria o destructiva secundaria. Invisible en reposo.",
+      "html": "<button class=\"ds-btn-ghost\">Cancelar</button>",
+      "css": ".ds-btn-ghost { display: inline-flex; align-items: center; gap: 6px; background: transparent; color: #374151; border: none; border-radius: 8px; padding: 10px 16px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.875rem; font-weight: 500; line-height: 1.4; cursor: pointer; transition: all 0.15s ease; } .ds-btn-ghost:hover { background: #f3f4f6; color: #111827; } .ds-btn-ghost:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(124,111,214,0.2); }"
+    },
+    {
+      "name": "Chip Default",
+      "kind": "chip",
+      "refersTo": "chip-default",
+      "description": "Filtro o selector en reposo (ej. selector de terapeuta en agenda).",
+      "html": "<button class=\"ds-chip\"><span class=\"ds-chip-avatar\">ML</span>María López</button>",
+      "css": ".ds-chip { display: inline-flex; align-items: center; gap: 6px; background: #fff; color: #6b7280; border: 1.5px solid #e5e7eb; border-radius: 9999px; padding: 5px 12px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.75rem; font-weight: 500; cursor: pointer; transition: all 0.15s ease; white-space: nowrap; } .ds-chip:hover { border-color: #d1d5db; color: #374151; } .ds-chip-avatar { width: 18px; height: 18px; border-radius: 50%; background: #e8e4f8; color: #7c6fd6; font-size: 0.58rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }"
+    },
+    {
+      "name": "Chip Active",
+      "kind": "chip",
+      "refersTo": "chip-active",
+      "description": "Filtro o selector activado.",
+      "html": "<button class=\"ds-chip ds-chip--active\"><span class=\"ds-chip-avatar ds-chip-avatar--active\">ML</span>María López</button>",
+      "css": ".ds-chip--active { background: #e8e4f8; color: #7c6fd6; border-color: #7c6fd6; } .ds-chip-avatar--active { background: #7c6fd6; color: #fff; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Contenedor principal de contenido estructurado.",
+      "html": "<div class=\"ds-card\"><p class=\"ds-card-title\">Próxima sesión</p><p class=\"ds-card-body\">Logopedia · 10:30 h · Ana García</p></div>",
+      "css": ".ds-card { background: #ffffff; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 0 0 1px rgba(124,111,214,0.05); transition: box-shadow 0.15s ease; } .ds-card:hover { box-shadow: 0 4px 12px rgba(124,111,214,0.15); } .ds-card-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1rem; font-weight: 600; color: #111827; margin: 0 0 4px; } .ds-card-body { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.9375rem; font-weight: 400; color: #374151; margin: 0; }"
+    },
+    {
+      "name": "Input Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Campo de formulario estándar con estado focus lila.",
+      "html": "<div class=\"ds-field\"><label class=\"ds-label\" for=\"ds-inp\">Nombre del cliente</label><input class=\"ds-input\" id=\"ds-inp\" type=\"text\" placeholder=\"Ej. Juan García\" /></div>",
+      "css": ".ds-field { display: flex; flex-direction: column; gap: 6px; } .ds-label { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.875rem; font-weight: 500; color: #374151; } .ds-input { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px 12px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.9375rem; color: #374151; transition: border-color 0.15s ease, box-shadow 0.15s ease; outline: none; width: 100%; } .ds-input::placeholder { color: #9ca3af; } .ds-input:focus { border-color: #7c6fd6; box-shadow: 0 0 0 3px rgba(124,111,214,0.2); } .ds-input:disabled { background: #f3f4f6; color: #9ca3af; cursor: not-allowed; opacity: 0.5; }"
+    },
+    {
+      "name": "Nav Item",
+      "kind": "nav",
+      "refersTo": "nav-item",
+      "description": "Item de navegación del sidebar — reposo y activo.",
+      "html": "<nav class=\"ds-sidebar\"><a class=\"ds-nav-item ds-nav-item--active\" href=\"#\"><svg class=\"ds-nav-icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 16 16\" fill=\"currentColor\"><path d=\"M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z\"/><path d=\"M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z\"/></svg>Agenda</a><a class=\"ds-nav-item\" href=\"#\"><svg class=\"ds-nav-icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 16 16\" fill=\"currentColor\"><path d=\"M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z\"/><path fill-rule=\"evenodd\" d=\"M5.216 14A2.238 2.238 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.325 6.325 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1h4.216z\"/><path d=\"M4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z\"/></svg>Clientes</a></nav>",
+      "css": ".ds-sidebar { display: flex; flex-direction: column; gap: 2px; padding: 12px 8px; background: #f5f3fc; } .ds-nav-item { display: flex; align-items: center; gap: 8px; padding: 10px 8px; border-radius: 8px; color: #6b7280; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.875rem; font-weight: 500; text-decoration: none; transition: all 0.15s ease; position: relative; } .ds-nav-item:hover { background: #f3f4f6; color: #111827; } .ds-nav-item--active { background: #e8e4f8; color: #7c6fd6; font-weight: 600; } .ds-nav-item--active::after { content: ''; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 6px; height: 6px; border-radius: 50%; background: #7c6fd6; } .ds-nav-icon { flex-shrink: 0; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "La Consulta Ordenada",
+    "overview": "Gabinete Pedagógico es la herramienta de trabajo de un equipo clínico pediátrico. Su modelo visual toma prestado de la consulta bien organizada: una sala donde todo tiene su lugar, el profesional sabe exactamente dónde mirar, y nada distrae del trabajo con el paciente. No hay ornamento sin función. No hay gesto visual que no reduzca fricción.\n\nLa paleta pivota sobre el lila (#7c6fd6) como color de confianza, no como decoración. Aparece en acciones, estados activos y elementos que requieren atención; el fondo permanece neutro y respirado.\n\nEste sistema rechaza explícitamente: el azul frío del software hospitalario institucional; los gradientes lila-sobre-lila del SaaS genérico 2024; los radios hiperbólicos y las glass cards; la densidad burocrática de los ERP; y cualquier energía festiva que recuerde una app infantil.",
+    "keyCharacteristics": [
+      "Luz casi constante: superficies blancas y gris-50 predominan",
+      "Lila funcional: marca acciones, no fondos",
+      "Plus Jakarta Sans en un solo peso variable — jerarquía por peso y tamaño, no por familias",
+      "Elevación ambiental suave con tinte lila, no sombras neutras genéricas",
+      "Radios moderados: 8px estándar, 12px en cards, never más de 16px en contenedores"
+    ],
+    "rules": [
+      { "name": "La Regla del Lila Funcional", "body": "El lila (#7c6fd6) no es un color de fondo ni de decoración. Sólo aparece donde hay intención: botón primario, estado activo, foco, badge de acción.", "section": "colors" },
+      { "name": "La Regla del 80-15-5", "body": "En cualquier pantalla: 80% neutros (blanco + gris-50), 15% lila (acciones + estados), 5% resto (azul, amarillo, semánticos).", "section": "colors" },
+      { "name": "La Regla del Tinte Lila", "body": "Las sombras de este sistema nunca son grises neutras puras. Todas llevan una traza de rgba(124, 111, 214, ...) para que la profundidad permanezca dentro del universo cromático de la marca.", "section": "elevation" },
+      { "name": "La Regla de la Familia Única", "body": "Una sola familia tipográfica en toda la app. La jerarquía se construye con peso (400/500/600/700) y tamaño. Introducir una segunda familia rompe la austeridad que hace que este sistema funcione.", "section": "typography" },
+      { "name": "La Regla del Peso Visible", "body": "La diferencia entre body (400) y headline (600) debe ser perceptible a golpe de vista. Si dos niveles de jerarquía tienen pesos iguales o adyacentes, se elige el de mayor contraste.", "section": "typography" }
+    ],
+    "dos": [
+      "Do usar el lila (#7c6fd6) exclusivamente para acciones, estados activos, y foco",
+      "Do verificar contraste 4.5:1 en todo texto de cuerpo, incluyendo placeholders",
+      "Do aplicar prefers-reduced-motion: reduce en todas las transiciones",
+      "Do usar la sombra tintada 0 1px 3px rgba(0,0,0,0.08), 0 0 0 1px rgba(124,111,214,0.05) como shadow de card estándar",
+      "Do limitar el ancho de texto narrativo a 70ch máximo",
+      "Do etiquetar acciones con verbo + objeto: 'Guardar cambios', 'Eliminar contrato'"
+    ],
+    "donts": [
+      "Don't usar gradientes lila-sobre-lila, glass cards con backdrop-filter, o eyebrows en mayúsculas",
+      "Don't superar border-radius 16px en cards o contenedores",
+      "Don't combinar border: 1px solid y box-shadow con blur mayor de 8px en el mismo elemento",
+      "Don't usar paletas festivas o iconografía infantil",
+      "Don't animar propiedades de layout (width, height, margin, padding)",
+      "Don't usar z-index con valores arbitrarios (999, 9999)"
+    ]
+  }
+}

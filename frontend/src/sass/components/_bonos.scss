@@ -198,9 +198,9 @@
   align-items: flex-start;
   gap: $spacing-xs;
   padding: $spacing-sm $spacing-md;
-  background: $gray-50;
+  background: $primary-ultra-light;
+  border: 1px solid $primary-light;
   border-radius: $border-radius;
-  border-left: 3px solid $primary-light;
 }
 
 // ── Historial ────────────────────────────────────────────
@@ -248,8 +248,11 @@
     border-color: $gray-300;
   }
 
-  &.bono-consumido { border-left: 3px solid $success; }
-  &.bono-cancelado { border-left: 3px solid $gray-300; opacity: 0.7; }
+  &.bono-consumido {
+    background: rgba($success, 0.04);
+    border-color: rgba($success, 0.25);
+  }
+  &.bono-cancelado { opacity: 0.6; }
 }
 
 .bono-hist-estado-col {

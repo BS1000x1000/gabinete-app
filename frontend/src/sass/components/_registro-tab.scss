@@ -352,12 +352,11 @@
 .historial-item {
   padding: $spacing-md;
   border-bottom: 1px solid $gray-100;
-  border-left: 4px solid $primary-light;
+  border-radius: $border-radius-sm;
   transition: $transition-fast;
 
   &:hover {
     background: $gray-50;
-    border-left-color: $primary;
   }
 
   &:last-child {
@@ -366,7 +365,7 @@
 
   &.editando {
     background: $primary-ultra-light;
-    border-left-color: $primary;
+    border: 1px solid $primary-light;
   }
 }
 

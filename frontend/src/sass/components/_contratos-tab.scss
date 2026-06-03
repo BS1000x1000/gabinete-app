@@ -197,7 +197,7 @@
   box-shadow: $shadow-card;
   transition: box-shadow 0.15s;
 
-  &:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.07); }
+  &:hover { box-shadow: $shadow-hover; }
 }
 
 // ── Badges ──
@@ -425,7 +425,7 @@
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.18);
+  box-shadow: $shadow-xl;
 }
 
 .ct-modal-header {

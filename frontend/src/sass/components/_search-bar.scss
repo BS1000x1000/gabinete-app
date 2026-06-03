@@ -103,7 +103,7 @@
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
-  z-index: 10000; // ✅ Aumentado (mayor que agenda-sticky)
+  z-index: $z-modal-backdrop;
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -114,14 +114,14 @@
 .search-modal {
   background: white;
   border-radius: 0.75rem;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: $shadow-2xl;
   width: 90%;
   max-width: 600px;
   max-height: 70vh;
   display: flex;
   flex-direction: column;
   animation: slideDown 0.3s ease;
-  z-index: 10001; // ✅ Asegurar que esté por encima
+  z-index: $z-modal;
 }
 
 .search-input-wrapper {

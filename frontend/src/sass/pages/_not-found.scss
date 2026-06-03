@@ -38,12 +38,9 @@
   font-size: 6rem;
   font-weight: $font-weight-extrabold;
   line-height: 1;
-  background: $gradient-primary;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: $primary;
   margin-bottom: 0.5rem;
-  letter-spacing: -0.05em;
+  letter-spacing: -0.03em;
 }
 
 .not-found-icon {

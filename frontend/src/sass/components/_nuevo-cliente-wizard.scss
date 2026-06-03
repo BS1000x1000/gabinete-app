@@ -246,8 +246,8 @@
     font-size: $font-size-lg;
     font-weight: $font-weight-semibold;
     color: $gray-800;
-    padding-left: $spacing-md;
-    border-left: 4px solid $primary;
+    padding-bottom: $spacing-xs;
+    border-bottom: 2px solid $primary-light;
     margin-bottom: $spacing-md;
   }
 }
@@ -318,9 +318,9 @@
 
 .resumen-section {
   padding: $spacing-lg;
-  background: $gray-50;
+  background: $primary-ultra-light;
+  border: 1px solid $primary-light;
   border-radius: $border-radius-lg;
-  border-left: 4px solid $primary;
 
   .resumen-section-titulo {
     font-size: $font-size-lg;
@@ -347,11 +347,12 @@
 }
 
 .asignacion-resumen {
-  background-color: #f8f9fa;
-  border-left: 4px solid var(--bs-primary) !important;
-  
+  background-color: $primary-ultra-light;
+  border: 1px solid $primary-light;
+  border-radius: $border-radius;
+
   &:hover {
-    background-color: #e9ecef;
+    background-color: $primary-light;
   }
 }
 

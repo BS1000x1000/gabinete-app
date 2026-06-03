@@ -20,7 +20,7 @@
   &-value {
     padding: 0.625rem 0.875rem;
     background: $bg-input;
-    border-left: 3px solid $border-color;
+    border: 1px solid $border-color;
     border-radius: $border-radius;
     font-size: $font-size-base;
     min-height: 2.5rem;
@@ -29,13 +29,13 @@
     transition: $transition-base;
 
     &:hover {
-      border-left-color: $primary;
-      background: darken($bg-input, 2%);
+      border-color: rgba($primary, 0.4);
+      background: $primary-ultra-light;
     }
 
     &.empty {
       background: white;
-      border-left-color: $gray-200;
+      border-color: $gray-200;
     }
 
     .text-break {

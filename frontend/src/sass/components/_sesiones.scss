@@ -649,10 +649,10 @@
   font-size: $font-size-sm;
   color: $gray-700;
   line-height: 1.6;
-  background: $gray-50;
+  background: $primary-ultra-light;
+  border: 1px solid $primary-light;
   border-radius: $border-radius;
   padding: $spacing-sm $spacing-md;
-  border-left: 3px solid $primary-light;
   white-space: pre-wrap;
 }
 

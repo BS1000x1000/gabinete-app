@@ -648,7 +648,7 @@
 .cred-card {
   background: $white;
   border-radius: $border-radius-lg;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba($primary, 0.12);
+  box-shadow: $shadow-2xl, 0 0 0 1px rgba($primary, 0.12);
   padding: 2rem 2rem 1.75rem;
   max-width: 440px;
   width: 100%;

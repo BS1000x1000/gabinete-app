@@ -674,7 +674,7 @@
   z-index: 1050;
   display: flex;
   flex-direction: column;
-  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.14);
+  box-shadow: -8px 0 32px rgba($primary, 0.16);
   transform: translateX(100%);
   transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
 
@@ -863,7 +863,7 @@
   bottom: 0;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(4px);
-  z-index: 9999;
+  z-index: $z-modal;
   display: flex;
   flex-direction: column;
   align-items: center;

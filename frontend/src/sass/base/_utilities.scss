@@ -39,7 +39,7 @@
 .form-hint {
   display: block;
   font-size: 0.75rem;
-  color: $gray-400;
+  color: $gray-500;
   margin-top: 3px;
 }
 
@@ -107,4 +107,20 @@
 
 .border-primary {
   border-color: $primary !important;
+}
+
+// ========================================
+// ACCESIBILIDAD — REDUCED MOTION (WCAG AA)
+// ========================================
+// Usuarios con sensibilidad vestibular o epilepsia fotosensible.
+// Desactiva animaciones y transiciones; deja crossfades instantáneos.
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

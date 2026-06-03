@@ -7,14 +7,14 @@
 // ========================================
 .stat-card {
   padding: $spacing-md;
-  background: $gray-50;
+  background: $primary-ultra-light;
+  border: 1px solid $primary-light;
   border-radius: $border-radius;
-  border-left: 4px solid $primary;
   transition: $transition-base;
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: $shadow-md;
+    box-shadow: $shadow-hover;
   }
 
   small {

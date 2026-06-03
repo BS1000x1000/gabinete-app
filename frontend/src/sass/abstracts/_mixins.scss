@@ -79,9 +79,10 @@
 }
 
 @mixin alert-variant($color) {
-  background-color: rgba($color, 0.1);
-  border-left: 4px solid $color;
-  color: darken($color, 10%);
+  background-color: rgba($color, 0.08);
+  border: 1px solid rgba($color, 0.3);
+  border-radius: $border-radius;
+  color: darken($color, 15%);
 }
 
 // ========================================
