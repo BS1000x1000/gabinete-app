@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { EstadoContrato, EstadoFactura, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { R2Service } from '../common/storage/r2.service';
+import { StorageService } from '../common/storage/storage.service';
 import { FacturasPdfService } from './facturas-pdf.service';
 import { MarcarPagadaDto } from './dto/marcar-pagada.dto';
 import { CrearFacturaPuntualDto } from './dto/crear-factura-puntual.dto';
@@ -56,7 +56,7 @@ export class FacturasService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly r2: R2Service,
+    private readonly r2: StorageService,
     private readonly pdfService: FacturasPdfService,
     private readonly emailService: EmailService,
   ) {}

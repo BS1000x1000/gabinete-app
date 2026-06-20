@@ -61,7 +61,8 @@ describe('Bonos (e2e)', () => {
       .post('/api/auth/login')
       .send({ username: 'terapeuta_test', password: 'Test123!' });
 
-    accessToken = loginRes.body.data.access_token;
+    const setCookie: string = (loginRes.headers['set-cookie'] as string[] | undefined)?.[0] ?? '';
+    accessToken = setCookie.split(';')[0].split('=').slice(1).join('=');
   });
 
   afterAll(async () => {
@@ -101,7 +102,7 @@ describe('Bonos (e2e)', () => {
       const res = await request(app.getHttpServer())
         .post('/api/bonos')
         .set('Authorization', `Bearer ${accessToken}`)
-        .send({ clienteId: CLIENTE_UUID, totalSesiones: 10, precio: 500 });
+        .send({ clienteId: CLIENTE_UUID, tipoSesion: 'PEDAGOGIA', totalSesiones: 10, precio: 500 });
 
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
@@ -114,7 +115,7 @@ describe('Bonos (e2e)', () => {
       const res = await request(app.getHttpServer())
         .post('/api/bonos')
         .set('Authorization', `Bearer ${accessToken}`)
-        .send({ clienteId: CLIENTE_UUID, totalSesiones: 10, precio: 500 });
+        .send({ clienteId: CLIENTE_UUID, tipoSesion: 'PEDAGOGIA', totalSesiones: 10, precio: 500 });
 
       expect(res.status).toBe(409);
       expect(res.body.success).toBe(false);

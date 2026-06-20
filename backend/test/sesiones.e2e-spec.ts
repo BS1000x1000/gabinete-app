@@ -58,7 +58,8 @@ describe('Sesiones (e2e)', () => {
       .post('/api/auth/login')
       .send({ username: 'terapeuta_test', password: 'Test123!' });
 
-    accessToken = loginRes.body.data.access_token;
+    const setCookie: string = (loginRes.headers['set-cookie'] as string[] | undefined)?.[0] ?? '';
+    accessToken = setCookie.split(';')[0].split('=').slice(1).join('=');
   });
 
   afterAll(async () => {
@@ -101,7 +102,8 @@ describe('Sesiones (e2e)', () => {
     });
 
     it('devuelve la sesión si existe', async () => {
-      prisma.sesion.findUnique.mockResolvedValue(testSesion());
+      // PEDAGOGO role → service uses findFirst (soloAsignados = true)
+      prisma.sesion.findFirst.mockResolvedValue(testSesion());
 
       const res = await request(app.getHttpServer())
         .get('/api/sesiones/sesion-e2e-1')

@@ -9,7 +9,7 @@ import { TipoInforme, EstadoInforme } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateInformeDto, UpdateInformeDto } from './dto/informe.dto';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
-import { R2Service } from '../common/storage/r2.service';
+import { StorageService } from '../common/storage/storage.service';
 import { InformesPdfService } from './informes-pdf.service';
 
 // Include completo para devolver el informe con todas sus relaciones
@@ -39,7 +39,7 @@ export class InformesService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly r2: R2Service,
+    private readonly storage: StorageService,
     private readonly pdfService: InformesPdfService,
   ) {}
 
@@ -287,36 +287,36 @@ export class InformesService {
       include: informeInclude,
     });
 
-    // Archivar PDF en R2 (no bloqueante — si falla no revierte el estado)
-    this.archivarPdfEnR2(id).catch((err) =>
-      this.logger.error(`Error al archivar PDF en R2 para informe ${id}: ${err?.message}`),
+    // Archivar PDF en Storage (no bloqueante — si falla no revierte el estado)
+    this.archivarPdfEnStorage(id).catch((err) =>
+      this.logger.error(`Error al archivar PDF en Storage para informe ${id}: ${err?.message}`),
     );
 
     return finalizado;
   }
 
   /**
-   * Genera el PDF del informe y lo sube a R2.
+   * Genera el PDF del informe y lo sube a Object Storage.
    * Guarda la key del objeto en urlDocumentoFinal.
-   * Si R2 no está configurado, no hace nada.
+   * Si Storage no está configurado, no hace nada.
    */
-  private async archivarPdfEnR2(id: string): Promise<void> {
-    if (!this.r2.isConfigured) {
-      this.logger.warn(`R2 no configurado — PDF del informe ${id} no archivado`);
+  private async archivarPdfEnStorage(id: string): Promise<void> {
+    if (!this.storage.isConfigured) {
+      this.logger.warn(`Storage no configurado — PDF del informe ${id} no archivado`);
       return;
     }
 
     const buffer = await this.pdfService.generarPdf(id);
     const key = `informes/${id}.pdf`;
 
-    await this.r2.upload(key, buffer, 'application/pdf');
+    await this.storage.upload(key, buffer, 'application/pdf');
 
     await this.prisma.informe.update({
       where: { id },
       data: { urlDocumentoFinal: key },
     });
 
-    this.logger.log(`PDF archivado en R2 — key: ${key}`);
+    this.logger.log(`PDF archivado en Storage — key: ${key}`);
   }
 
   // ============================================================
@@ -329,13 +329,13 @@ export class InformesService {
     if (!informe.urlDocumentoFinal) {
       throw new NotFoundException(
         `El informe ${id} no tiene PDF archivado. ` +
-        (this.r2.isConfigured ? 'Puede que se finalizó antes de activar R2.' : 'R2 no está configurado.'),
+        (this.storage.isConfigured ? 'Puede que se finalizó antes de activar Storage.' : 'Storage no está configurado.'),
       );
     }
 
-    const url = await this.r2.getSignedUrl(informe.urlDocumentoFinal);
+    const url = await this.storage.getSignedUrl(informe.urlDocumentoFinal);
     if (!url) {
-      throw new InternalServerErrorException('R2 no está configurado correctamente.');
+      throw new InternalServerErrorException('Storage no está configurado correctamente.');
     }
 
     return { url };

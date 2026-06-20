@@ -72,7 +72,10 @@ async function loginAs(
     .post('/api/auth/login')
     .send({ username: user.username, password: 'Test123!' });
 
-  return res.body.data.access_token;
+  // JWT goes in HttpOnly cookie — extract from Set-Cookie header
+  const setCookie: string = (res.headers['set-cookie'] as string[] | undefined)?.[0] ?? '';
+  const token = setCookie.split(';')[0].split('=').slice(1).join('=');
+  return token;
 }
 
 // ── Suite ─────────────────────────────────────────────────────────────────────

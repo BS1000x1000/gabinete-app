@@ -7,6 +7,7 @@
 const modelMock = () => ({
   findFirst: jest.fn().mockResolvedValue(null),
   findUnique: jest.fn().mockResolvedValue(null),
+  findUniqueOrThrow: jest.fn().mockResolvedValue({}),
   findMany: jest.fn().mockResolvedValue([]),
   create: jest.fn().mockResolvedValue({}),
   createMany: jest.fn().mockResolvedValue({ count: 0 }),
@@ -44,6 +45,8 @@ export const createPrismaMock = () => {
     evaluacionGAS: modelMock(),
     rol: modelMock(),
     colegio: modelMock(),
+    tokenRevocado: modelMock(),
+    auditLog: modelMock(),
     // Fichaje (modelo sin schema Prisma, por si el módulo lo usa)
     fichaje: modelMock(),
     $connect: jest.fn().mockResolvedValue(undefined),

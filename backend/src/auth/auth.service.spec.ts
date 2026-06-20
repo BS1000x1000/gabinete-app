@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
+import { AuditService } from './audit.service';
 import { TrabajadorService } from '../trabajador/trabajador.service';
 import { MotorReglasService } from '../notificaciones/motor-reglas.service';
 
@@ -58,6 +59,7 @@ describe('AuthService', () => {
         { provide: TrabajadorService, useValue: trabajadorService },
         { provide: JwtService, useValue: jwtService },
         { provide: MotorReglasService, useValue: motorReglas },
+        { provide: AuditService, useValue: { registrar: jest.fn() } },
       ],
     }).compile();
 
@@ -209,9 +211,8 @@ describe('AuthService', () => {
         expect.any(String),
         expect.any(Date),
       );
-      expect(result).toHaveProperty('resetToken');
-      expect(result).toHaveProperty('expiresAt');
-      expect((result as any).resetToken).toHaveLength(64); // 32 bytes en hex
+      // El servicio devuelve mensaje genérico — el token va solo por email, nunca en la respuesta
+      expect(result.message).toContain('Si el email existe');
     });
   });
 

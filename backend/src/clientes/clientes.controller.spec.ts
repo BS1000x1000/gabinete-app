@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { ClientesController } from './clientes.controller';
 import { ClientesService } from './clientes.service';
+import { AuditService } from '../auth/audit.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TipoSesion } from '@prisma/client';
 
@@ -50,7 +51,10 @@ describe('ClientesController', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ClientesController],
-      providers: [{ provide: ClientesService, useValue: service }],
+      providers: [
+        { provide: ClientesService, useValue: service },
+        { provide: AuditService, useValue: { registrar: jest.fn() } },
+      ],
     })
       .overrideGuard(JwtAuthGuard)
       .useValue({ canActivate: () => true })
@@ -79,10 +83,11 @@ describe('ClientesController', () => {
       const dto = { nombre: 'Ana', apellidos: 'García', dni: '12345678A' };
       const cliente = mockCliente();
       service.create.mockResolvedValue(cliente);
+      const req = { user: { userId: 'admin-1' } };
 
-      const result = await controller.create(dto as any);
+      const result = await controller.create(dto as any, req as any);
 
-      expect(service.create).toHaveBeenCalledWith(dto);
+      expect(service.create).toHaveBeenCalledWith(dto, 'admin-1');
       expect(result).toEqual(cliente);
     });
   });
@@ -165,10 +170,11 @@ describe('ClientesController', () => {
       const dto = { nombre: 'Ana María' };
       const actualizado = mockCliente({ nombre: 'Ana María' });
       service.update.mockResolvedValue(actualizado);
+      const req = { user: { userId: 'admin-1' } };
 
-      const result = await controller.update('cliente-1', dto as any);
+      const result = await controller.update('cliente-1', dto as any, req as any);
 
-      expect(service.update).toHaveBeenCalledWith('cliente-1', dto);
+      expect(service.update).toHaveBeenCalledWith('cliente-1', dto, 'admin-1');
       expect(result).toEqual(actualizado);
     });
   });

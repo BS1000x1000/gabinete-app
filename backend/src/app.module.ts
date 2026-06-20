@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -20,7 +21,6 @@ import { InformesModule } from './informes/informes.module';
 import { BonosModule } from './bonos/bonos.module';
 import { NotificacionesModule } from './notificaciones/notificaciones.module';
 import { ExportModule } from './export/export.module';
-import { N8nModule } from './n8n/n8n.module';
 import { EventosAgendaModule } from './eventos-agenda/eventos-agenda.module';
 import { HorariosAdminModule } from './horarios-admin/horarios-admin.module';
 import { ContratosModule } from './contratos/contratos.module';
@@ -57,7 +57,6 @@ import { FacturasModule } from './facturas/facturas.module';
     BonosModule,
     NotificacionesModule,
     ExportModule,
-    N8nModule,
     EventosAgendaModule,
     HorariosAdminModule,
     ContratosModule,
@@ -66,6 +65,11 @@ import { FacturasModule } from './facturas/facturas.module';
     FacturasModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    // ThrottlerGuard global: todas las rutas quedan limitadas a 200 req/60s por IP.
+    // Los endpoints críticos sobrescriben con @Throttle() (p.ej. login: 5/60s).
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+  ],
 })
 export class AppModule {}

@@ -37,6 +37,7 @@ const testCliente = (overrides: Record<string, any> = {}) => ({
   fechaNacimiento: null,
   fechaInicio: null,
   colegioId: null,
+  deletedAt: null,
   createdAt: new Date(),
   updatedAt: new Date(),
   trabajadoresAsignados: [],
@@ -66,7 +67,8 @@ describe('Clientes (e2e)', () => {
       .post('/api/auth/login')
       .send({ username: 'terapeuta_test', password: 'Test123!' });
 
-    accessToken = loginRes.body.data.access_token;
+    const setCookie: string = (loginRes.headers['set-cookie'] as string[] | undefined)?.[0] ?? '';
+    accessToken = setCookie.split(';')[0].split('=').slice(1).join('=');
   });
 
   afterAll(async () => {
@@ -79,11 +81,13 @@ describe('Clientes (e2e)', () => {
       const clientes = [testCliente(), testCliente({ id: 'cliente-e2e-2', dni: '87654321B' })];
       prisma.cliente.findMany.mockResolvedValue(clientes);
 
-      const res = await request(app.getHttpServer()).get('/api/clientes');
+      const res = await request(app.getHttpServer())
+        .get('/api/clientes')
+        .set('Authorization', `Bearer ${accessToken}`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(res.body.data).toHaveLength(2);
+      expect(res.body.data.data).toHaveLength(2);
     });
   });
 
@@ -93,7 +97,9 @@ describe('Clientes (e2e)', () => {
       prisma.cliente.findFirst.mockResolvedValue(null);
       prisma.cliente.findUnique.mockResolvedValue(null);
 
-      const res = await request(app.getHttpServer()).get('/api/clientes/verificar-dni/99999999Z');
+      const res = await request(app.getHttpServer())
+        .get('/api/clientes/verificar-dni/99999999Z')
+        .set('Authorization', `Bearer ${accessToken}`);
 
       expect(res.status).toBe(200);
       expect(res.body.data.disponible).toBe(true);
@@ -105,9 +111,9 @@ describe('Clientes (e2e)', () => {
       prisma.cliente.findFirst.mockResolvedValue(testCliente());
       prisma.cliente.findUnique.mockResolvedValue(testCliente());
 
-      const res = await request(app.getHttpServer()).get(
-        '/api/clientes/verificar-dni/12345678A',
-      );
+      const res = await request(app.getHttpServer())
+        .get('/api/clientes/verificar-dni/12345678A')
+        .set('Authorization', `Bearer ${accessToken}`);
 
       expect(res.status).toBe(200);
       expect(res.body.data.disponible).toBe(false);
@@ -117,18 +123,24 @@ describe('Clientes (e2e)', () => {
   // ── GET /api/clientes/:id ─────────────────────────────────────────────────
   describe('GET /api/clientes/:id', () => {
     it('devuelve 404 si el cliente no existe', async () => {
-      prisma.cliente.findUnique.mockResolvedValue(null);
+      // findOne uses findFirst (soloAsignados path for PEDAGOGO)
+      prisma.cliente.findFirst.mockResolvedValue(null);
 
-      const res = await request(app.getHttpServer()).get('/api/clientes/cliente-inexistente');
+      const res = await request(app.getHttpServer())
+        .get('/api/clientes/cliente-inexistente')
+        .set('Authorization', `Bearer ${accessToken}`);
 
       expect(res.status).toBe(404);
       expect(res.body.success).toBe(false);
     });
 
     it('devuelve el cliente si existe', async () => {
-      prisma.cliente.findUnique.mockResolvedValue(testCliente());
+      // findOne uses findFirst (soloAsignados path for PEDAGOGO)
+      prisma.cliente.findFirst.mockResolvedValue(testCliente());
 
-      const res = await request(app.getHttpServer()).get('/api/clientes/cliente-e2e-1');
+      const res = await request(app.getHttpServer())
+        .get('/api/clientes/cliente-e2e-1')
+        .set('Authorization', `Bearer ${accessToken}`);
 
       expect(res.status).toBe(200);
       expect(res.body.data.id).toBe('cliente-e2e-1');
@@ -153,15 +165,15 @@ describe('Clientes (e2e)', () => {
       const clienteNuevo = testCliente({ ...dto, id: 'cliente-nuevo' });
 
       prisma.cliente.findFirst.mockResolvedValue(null);
-      // Primera llamada: comprobación de DNI existente → null
-      // Siguiente(s): fetch post-creación → cliente creado
-      prisma.cliente.findUnique
-        .mockResolvedValueOnce(null)
-        .mockResolvedValue(clienteNuevo);
+      // Primera llamada a findUnique: comprobación de DNI existente → null
+      prisma.cliente.findUnique.mockResolvedValueOnce(null);
       prisma.cliente.create.mockResolvedValue(clienteNuevo);
+      // findUniqueOrThrow: fetch post-creación dentro de la $transaction
+      prisma.cliente.findUniqueOrThrow.mockResolvedValue(clienteNuevo);
 
       const res = await request(app.getHttpServer())
         .post('/api/clientes')
+        .set('Authorization', `Bearer ${accessToken}`)
         .send(dto);
 
       expect(res.status).toBe(201);
@@ -195,9 +207,12 @@ describe('Clientes (e2e)', () => {
   // ── DELETE /api/clientes/:id ──────────────────────────────────────────────
   describe('DELETE /api/clientes/:id', () => {
     it('elimina el cliente y devuelve la respuesta formateada', async () => {
-      prisma.cliente.delete.mockResolvedValue(testCliente());
+      prisma.cliente.findUnique.mockResolvedValue(testCliente());
+      prisma.cliente.update.mockResolvedValue(testCliente());
 
-      const res = await request(app.getHttpServer()).delete('/api/clientes/cliente-e2e-1');
+      const res = await request(app.getHttpServer())
+        .delete('/api/clientes/cliente-e2e-1')
+        .set('Authorization', `Bearer ${accessToken}`);
 
       expect(res.status).toBe(200);
       expect(res.body.data.message).toBe('Cliente eliminado correctamente');

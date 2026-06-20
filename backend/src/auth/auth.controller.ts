@@ -10,7 +10,7 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
-import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
+import { Throttle } from '@nestjs/throttler';
 import * as jwt from 'jsonwebtoken';
 import { AuthService } from './auth.service';
 import { AuditService } from './audit.service';
@@ -73,7 +73,7 @@ export class AuthController {
    * Login de trabajador
    * Rate limit estricto: 5 intentos por minuto por IP
    */
-  @UseGuards(ThrottlerGuard, LocalAuthGuard)
+  @UseGuards(LocalAuthGuard)
   @Throttle({ global: { limit: 5, ttl: 60000 } })
   @Post('login')
   @HttpCode(HttpStatus.OK)
@@ -198,7 +198,6 @@ export class AuthController {
    * Solicitar reset de contrasena por email
    * Rate limit estricto: 3 intentos por minuto por IP
    */
-  @UseGuards(ThrottlerGuard)
   @Throttle({ global: { limit: 3, ttl: 60000 } })
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
@@ -209,7 +208,6 @@ export class AuthController {
   /**
    * Resetear contrasena usando token
    */
-  @UseGuards(ThrottlerGuard)
   @Throttle({ global: { limit: 5, ttl: 60000 } })
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)

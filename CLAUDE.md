@@ -17,6 +17,10 @@ Guidance for Claude Code when working with this repository.
 1. **Migraciones, NUNCA `db push` en producción.** `npx prisma db push` solo en local/desarrollo.
    En producción, exclusivamente **migraciones versionadas** (`prisma migrate`), revisadas y con
    **backup reciente antes de aplicarlas**. El push de esquema puede destruir historial clínico.
+   > **Nota de flujo:** `prisma migrate deploy` se ejecuta automáticamente al arrancar el contenedor
+   > (Dockerfile CMD, antes de `node dist/main`). Toda migración debe estar revisada y aprobada
+   > **antes de mergear a `main`**. Ante migraciones destructivas (que eliminen columnas/tablas con
+   > datos reales), hacer un **snapshot manual de la BD** antes del deploy, aunque el PITR esté activo.
 2. **Ficheros a Object Storage, NUNCA al disco del contenedor ni a la BD.** Los Serverless
    Containers son efímeros: lo escrito en disco local desaparece en cada redespliegue. Los PDFs
    generados y los documentos subidos van a **Object Storage (S3-compatible)**.
@@ -55,7 +59,7 @@ en **Cloudflare Pages**. CI/CD por **GitHub Actions** (push a `main` → build �
 npm run start:dev        # Dev server with watch (port 3000)
 npm run build            # Production build
 npm run lint             # ESLint with auto-fix
-npm test                 # Jest unit tests (220 passing)
+npm test                 # Jest unit tests (250 passing)
 npm run test:e2e         # E2E tests (supertest)
 npm run test:cov         # Coverage report
 npx jest src/foo/foo.spec.ts   # Single spec file
@@ -90,7 +94,7 @@ Standard pattern: `module → controller → service → dto/types`. All DB acce
 
 | Module | Responsibility |
 |---|---|
-| `auth` | JWT + Passport local. Token 8h. `JwtAuthGuard` on all routes. `JwtFlexGuard` for SSE (also accepts `?token=` query param). |
+| `auth` | JWT + Passport local. Token 2h (cookie HttpOnly). `JwtAuthGuard` on all routes. `JwtFlexGuard` for SSE (also accepts `?token=` query param). |
 | `trabajador` | Therapist CRUD + profile + password change. |
 | `clientes` | Client CRUD, family contacts, health data, RGPD consent. |
 | `sesiones` | Session generation from availability, state machine (`PROGRAMADA → COMPLETADA/CANCELADA_*`). Integrates with bonos. |
@@ -287,8 +291,10 @@ SECRET=<jwt-secret>
 **Producción:** las variables sensibles (DATABASE_URL, SECRET, credenciales de Object Storage,
 SMTP/TEM) se inyectan desde **Scaleway Secret Manager** / variables del contenedor. Nunca en el
 repo ni en imágenes Docker. Variables adicionales esperadas en producción:
-`PORT`, `CORS_ORIGIN` (= `https://app.dominio.es`), credenciales S3 de Object Storage,
-`PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium`, `PUPPETEER_SKIP_DOWNLOAD=true`.
+`PORT`, `FRONTEND_URL` (= `https://app.dominio.es`, controla CORS y Helmet connectSrc),
+`SCW_ACCESS_KEY`, `SCW_SECRET_KEY`, `SCW_BUCKET_NAME`, `SCW_REGION` (Object Storage — Scaleway),
+`RESEND_API_KEY`, `EMAIL_FROM`,
+`PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium`, `PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true`.
 
 ---
 
@@ -308,7 +314,7 @@ NestJS nativo:
 - **Fiabilidad de tareas:** empezar con una tabla `informes_jobs` (estado + reintentos). Diferir
   Redis + BullMQ hasta que el volumen lo exija.
 
-**Acción pendiente:** borrar el módulo `n8n` del repo y el servicio Docker de n8n (puerto 5678).
+**Hecho (2026-06):** módulo `n8n` y servicio Docker eliminados del repo.
 
 ---
 
@@ -376,8 +382,8 @@ Complex form sections use a shared `ClienteDrawerComponent` with sections: `pers
 ## Testing
 
 ### Backend — current state
-- **Unit**: 220 tests, 17 suites — all green. Jest + @nestjs/testing.
-- **E2E**: supertest + Jest. `test/helpers/create-app.ts` + `test/helpers/prisma-mock.ts`.
+- **Unit**: 250 tests, 19 suites — all green. Jest + @nestjs/testing.
+- **E2E**: 51 tests, 6 suites — all green. supertest + Jest. `test/helpers/create-app.ts` + `test/helpers/prisma-mock.ts`.
 
 ### Controller spec pattern
 ```typescript
@@ -442,8 +448,16 @@ Legacy URL redirects still active in `listado.routes.ts` (e.g. `/cliente → /pe
 ### Minor code debt (not blocking)
 - `ClientesComponent` still navigates to `/cliente` (legacy) in lines 131 and 198 — works via redirect but should point to `/perfil` directly
 - `rbac.e2e-spec.ts` has a minor TypeScript strict error (`username` property type) — runtime correct, tests pass
-- **n8n a eliminar:** el módulo `n8n` (no registrado en `AppModule`) y el servicio Docker de n8n
-  (puerto 5678) deben borrarse. Ver §"Decisión: sin n8n".
+- **n8n eliminado (2026-06):** módulo `n8n` y `docker-compose.yml` con el servicio Docker ya borrados.
+- **TODO (a) — REQUIRED_ENV gateado a producción:** añadir `SCW_ACCESS_KEY`, `SCW_BUCKET_NAME` y
+  `RESEND_API_KEY` al bloque `REQUIRED_ENV` de `main.ts`, gateado a `NODE_ENV === 'production'`,
+  para que el arranque del contenedor falle de forma visible si falta la configuración de Object
+  Storage o email en prod, sin romper el dev local. Convierte el archivado silencioso de informes
+  (`StorageService` no-op) en un fallo ruidoso y detectable. Ver §15 de `CONTEXTO_…md`.
+- **TODO (b) — job de reconciliación de informes archivados:** cron periódico que busque `Informe`
+  con `estado = FINALIZADO` y `urlDocumentoFinal = null` y reintente `archivarPdfEnStorage()`.
+  Cierra el hueco del archivado fire-and-forget actual: hoy un error solo se loguea y el informe
+  queda sin archivar indefinidamente. Ver §15 de `CONTEXTO_…md`.
 
 ### Blockers for production deployment (arquitectura Scaleway — ver `CONTEXTO_…md`)
 1. **Despliegue no definido** — necesita: `Dockerfile` del backend (NestJS + Chromium, multi-etapa,
@@ -464,7 +478,7 @@ Legacy URL redirects still active in `listado.routes.ts` (e.g. `/cliente → /pe
    respaldo cuando falla el SSE. Mismo canal sirve para el envío de informes a familias.
 5. **Endurecimiento de seguridad** — rate limiting en `/auth/login`, cabeceras Helmet.js (confirmar
    activas), y **CORS bloqueado a `https://app.dominio.es`** (probablemente aún en `*`). RBAC/roles
-   ya existen; **MFA NO implementado** (auth es solo JWT + Passport local, token 8h) — pendiente si
+   ya existen; **MFA NO implementado** (auth es solo JWT + Passport local, token 2h) — pendiente si
    se decide reforzar.
 
 ### Medium-term roadmap
@@ -482,5 +496,5 @@ Legacy URL redirects still active in `listado.routes.ts` (e.g. `/cliente → /pe
 
 ---
 
-> Recordatorio: ante cualquier cambio de infraestructura, datos, despliegue o ficheros, consulta
+> Recordatorio: ante cualquier cambio de infraestructura, datos, despliegue o ficheros, consulta en la carpeta docs
 > **`CONTEXTO_ARQUITECTURA_DESPLIEGUE.md`** y respeta las **Reglas innegociables** de la cabecera.

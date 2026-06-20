@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { DashboardController } from './dashboard.controller';
 import { DashboardService } from './dashboard.service';
+import { EventosAgendaService } from '../eventos-agenda/eventos-agenda.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 // ── Mock helpers ─────────────────────────────────────────────────────────────
@@ -29,7 +30,10 @@ describe('DashboardController', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [DashboardController],
-      providers: [{ provide: DashboardService, useValue: service }],
+      providers: [
+        { provide: DashboardService, useValue: service },
+        { provide: EventosAgendaService, useValue: { getHorasTrabajadasHistoricas: jest.fn() } },
+      ],
     })
       .overrideGuard(JwtAuthGuard)
       .useValue({ canActivate: () => true })

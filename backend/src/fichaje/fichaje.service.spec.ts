@@ -9,6 +9,7 @@ const mkPrisma = () => ({
   sesion:{findUnique:jest.fn(),update:jest.fn()},
   registroDiario:{findUnique:jest.fn(),findMany:jest.fn(),create:jest.fn(),update:jest.fn(),delete:jest.fn()},
   registroDiarioObjetivo:{deleteMany:jest.fn()},
+  $transaction: jest.fn(),
 });
 
 describe('FichajeService', () => {
@@ -54,13 +55,14 @@ describe('FichajeService', () => {
     it('BadRequest si objetivo no existe en update', async()=>{
       prisma.registroDiario.findUnique.mockResolvedValue({id:'rd1'});
       prisma.objetivoGeneral.findMany.mockResolvedValue([]);
-      await expect(svc.update('rd1','contenido',[{objetivoGeneralId:'obj-x'}])).rejects.toThrow(BadRequestException);
+      await expect(svc.update('rd1',{contenido:'contenido',objetivosGeneralesTrabajados:[{objetivoGeneralId:'obj-x'}]})).rejects.toThrow(BadRequestException);
     });
     it('actualiza contenido', async()=>{
       prisma.registroDiario.findUnique.mockResolvedValue({id:'rd1'});
       const actualizado={id:'rd1',contenido:'nuevo'};
       prisma.registroDiario.update.mockResolvedValue(actualizado);
-      const r = await svc.update('rd1','nuevo');
+      prisma.$transaction.mockImplementation(async (cb: any) => cb(prisma));
+      const r = await svc.update('rd1',{contenido:'nuevo'});
       expect(r.id).toBe("rd1");
     });
   });

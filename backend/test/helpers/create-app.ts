@@ -3,6 +3,7 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { AppModule } from '../../src/app.module';
 import { PrismaService } from '../../src/prisma/prisma.service';
 import { MotorReglasService } from '../../src/notificaciones/motor-reglas.service';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import { ResponseInterceptor } from '../../src/common/interceptors/response.interceptor';
 import { AllExceptionsFilter } from '../../src/common/filters/http-exception.filter';
 import { PrismaMock } from './prisma-mock';
@@ -19,6 +20,8 @@ export async function createTestApp(prismaMock: PrismaMock): Promise<INestApplic
     .useValue(prismaMock)
     .overrideProvider(MotorReglasService)
     .useValue({ evaluarReglas: jest.fn().mockResolvedValue(undefined) })
+    .overrideGuard(ThrottlerGuard)
+    .useValue({ canActivate: () => true })
     .compile();
 
   const app = moduleFixture.createNestApplication();

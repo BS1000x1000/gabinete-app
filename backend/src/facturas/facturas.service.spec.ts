@@ -6,7 +6,7 @@ import {
 import { EstadoFactura } from '@prisma/client';
 import { FacturasService } from './facturas.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { R2Service } from '../common/storage/r2.service';
+import { StorageService } from '../common/storage/storage.service';
 import { FacturasPdfService } from './facturas-pdf.service';
 import { EmailService } from '../common/email/email.service';
 
@@ -135,7 +135,7 @@ describe('FacturasService', () => {
       providers: [
         FacturasService,
         { provide: PrismaService, useValue: prisma },
-        { provide: R2Service, useValue: r2Mock },
+        { provide: StorageService, useValue: r2Mock },
         { provide: FacturasPdfService, useValue: pdfMock },
         { provide: EmailService, useValue: emailMock },
       ],

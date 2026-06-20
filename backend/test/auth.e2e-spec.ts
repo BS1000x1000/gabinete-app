@@ -67,12 +67,14 @@ describe('Auth (e2e)', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(res.body.data.access_token).toBeDefined();
       expect(res.body.data.token_type).toBe('Bearer');
       expect(res.body.data.user.username).toBe('terapeuta_test');
+      // JWT goes in HttpOnly cookie, not body
+      expect(res.body.data.access_token).toBeUndefined();
 
       // Guardamos el token para los tests siguientes
-      accessToken = res.body.data.access_token;
+      const setCookie: string = (res.headers['set-cookie'] as string[] | undefined)?.[0] ?? '';
+      accessToken = setCookie.split(';')[0].split('=').slice(1).join('=');
     });
   });
 

@@ -3,6 +3,8 @@ import { NotFoundException } from '@nestjs/common';
 import { EstadoInforme } from '@prisma/client';
 import { InformesService } from './informes.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { StorageService } from '../common/storage/storage.service';
+import { InformesPdfService } from './informes-pdf.service';
 
 // ── Mock helpers ──────────────────────────────────────────────────────────────
 
@@ -38,6 +40,8 @@ describe('InformesService', () => {
       providers: [
         InformesService,
         { provide: PrismaService, useValue: prisma },
+        { provide: StorageService, useValue: { isConfigured: false, upload: jest.fn(), getSignedUrl: jest.fn(), delete: jest.fn() } },
+        { provide: InformesPdfService, useValue: { generarPdf: jest.fn() } },
       ],
     }).compile();
 
@@ -71,12 +75,15 @@ describe('InformesService', () => {
       expect(result).toHaveLength(2);
     });
 
-    it('RECEP: filtra solo informes FINALIZADOS', async () => {
+    it('RECEP: filtra solo informes FINALIZADOS y ENVIADOS', async () => {
       await svc.findByCliente('c1', userRecep);
 
       expect(prisma.informe.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { clienteId: 'c1', estado: EstadoInforme.FINALIZADO },
+          where: expect.objectContaining({
+            clienteId: 'c1',
+            estado: { in: [EstadoInforme.FINALIZADO, EstadoInforme.ENVIADO] },
+          }),
         }),
       );
     });
@@ -110,7 +117,7 @@ describe('InformesService', () => {
       const result = await svc.findByCliente('c1', userRecep);
 
       const where = (prisma.informe.findMany.mock.calls[0][0] as any).where;
-      expect(where.estado).toBe(EstadoInforme.FINALIZADO);
+      expect(where.estado).toEqual({ in: [EstadoInforme.FINALIZADO, EstadoInforme.ENVIADO] });
       expect(where.trabajadorId).toBeUndefined();
       expect(result).toHaveLength(1);
       expect(result[0].estado).toBe('FINALIZADO');

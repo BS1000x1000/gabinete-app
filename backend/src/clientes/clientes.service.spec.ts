@@ -4,10 +4,10 @@ import { TipoSesion } from '@prisma/client';
 import { ClientesService } from './clientes.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 
-const mkC = (o={}) => ({id:"c1",nombre:"Ana",apellidos:"Garcia",dni:"12A",activo:true,colegioId:null,...o});
+const mkC = (o={}) => ({id:"c1",nombre:"Ana",apellidos:"Garcia",dni:"12A",activo:true,colegioId:null,deletedAt:null,...o});
 const mkT = (o={}) => ({id:"t1",nombre:"Luis",apellidos:"Perez",...o});
 const mkP = () => ({
-  cliente:{findUnique:jest.fn(),findMany:jest.fn(),findFirst:jest.fn(),create:jest.fn(),update:jest.fn(),delete:jest.fn(),count:jest.fn()},
+  cliente:{findUnique:jest.fn(),findMany:jest.fn(),findFirst:jest.fn(),findUniqueOrThrow:jest.fn(),create:jest.fn(),update:jest.fn(),delete:jest.fn(),count:jest.fn()},
   colegio:{findUnique:jest.fn(),create:jest.fn(),update:jest.fn()},
   trabajador:{findUnique:jest.fn()},
   clienteTrabajador:{findFirst:jest.fn(),create:jest.fn(),delete:jest.fn()},
@@ -36,8 +36,10 @@ describe('ClientesService', () => {
       await expect(svc.create(dto)).rejects.toThrow(ConflictException);
     });
     it('crea cliente si DNI libre', async () => {
-      prisma.cliente.findUnique.mockResolvedValueOnce(null).mockResolvedValueOnce(mkC());
+      prisma.cliente.findUnique.mockResolvedValueOnce(null);
       prisma.cliente.create.mockResolvedValue(mkC());
+      prisma.cliente.findUniqueOrThrow.mockResolvedValue(mkC());
+      prisma.$transaction.mockImplementation(async (cb: any) => cb(prisma));
       const r = await svc.create(dto);
       expect(prisma.cliente.create).toHaveBeenCalledTimes(1);
       expect(r).toMatchObject({id:'c1'});
@@ -46,7 +48,7 @@ describe('ClientesService', () => {
 
   describe('existeDni()', () => {
     it('false si no existe', async()=>{ prisma.cliente.findUnique.mockResolvedValue(null); expect(await svc.existeDni('X')).toBe(false); });
-    it('true si existe', async()=>{ prisma.cliente.findUnique.mockResolvedValue({id:'c1'}); expect(await svc.existeDni('12A')).toBe(true); });
+    it('true si existe', async()=>{ prisma.cliente.findUnique.mockResolvedValue({id:'c1',deletedAt:null}); expect(await svc.existeDni('12A')).toBe(true); });
   });
 
   describe('asignarTrabajador()', () => {
@@ -101,7 +103,7 @@ describe('ClientesService', () => {
     it('elimina familiar', async()=>{ prisma.familiar.findFirst.mockResolvedValue({id:'f1'}); prisma.familiar.delete.mockResolvedValue({}); const r=await svc.eliminarFamiliar('c1','f1'); expect(prisma.familiar.delete).toHaveBeenCalledWith({where:{id:'f1'}}); expect(r.message).toContain('eliminado'); });
   });
 
-  describe('findAllPaginated()', () => {
-    it('calcula totalPages correctamente', async()=>{ prisma.cliente.findMany.mockResolvedValue([mkC(),mkC({id:'c2'})]); prisma.cliente.count.mockResolvedValue(25); const r=await svc.findAllPaginated({page:2,limit:10}); expect(r.meta.totalPages).toBe(3); expect(r.meta.page).toBe(2); expect(r.items).toHaveLength(2); });
+  describe('findAll()', () => {
+    it('pagina resultados y devuelve total', async()=>{ prisma.cliente.findMany.mockResolvedValue([mkC(),mkC({id:'c2'})]); prisma.cliente.count.mockResolvedValue(25); const r=await svc.findAll(undefined,{page:2,limit:10}); expect(r.total).toBe(25); expect(r.page).toBe(2); expect(r.data).toHaveLength(2); });
   });
 });
