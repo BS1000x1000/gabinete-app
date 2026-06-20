@@ -2,13 +2,48 @@
 
 Guidance for Claude Code when working with this repository.
 
+> **Actualizado 2026-06** para reflejar las decisiones de arquitectura y despliegue.
+> Contexto y razonamiento completo en **`CONTEXTO_ARQUITECTURA_DESPLIEGUE.md`** (léelo antes de
+> cambios estructurales de infraestructura, datos o despliegue).
+
+---
+
+## ⚠️ Reglas innegociables — leer antes de cualquier cambio
+
+> El proyecto trata **datos de salud de menores (RGPD Art. 9)**. Estas reglas previenen pérdida de
+> datos, brechas de seguridad e incumplimiento legal. No romperlas por conveniencia. El porqué
+> completo está en `CONTEXTO_ARQUITECTURA_DESPLIEGUE.md`.
+
+1. **Migraciones, NUNCA `db push` en producción.** `npx prisma db push` solo en local/desarrollo.
+   En producción, exclusivamente **migraciones versionadas** (`prisma migrate`), revisadas y con
+   **backup reciente antes de aplicarlas**. El push de esquema puede destruir historial clínico.
+2. **Ficheros a Object Storage, NUNCA al disco del contenedor ni a la BD.** Los Serverless
+   Containers son efímeros: lo escrito en disco local desaparece en cada redespliegue. Los PDFs
+   generados y los documentos subidos van a **Object Storage (S3-compatible)**.
+3. **Secretos desde entorno / Scaleway Secret Manager.** Nunca claves, contraseñas o tokens en el
+   código ni en el repositorio.
+4. **CORS bloqueado al dominio de la app** (`app.dominio.es`). Nunca `*` en producción.
+5. **NestJS escucha en `0.0.0.0` y `process.env.PORT`**
+   (`app.listen(process.env.PORT ?? 8080, '0.0.0.0')`), o el contenedor no recibe tráfico.
+6. **Puppeteer** siempre con `args: ['--no-sandbox', '--disable-dev-shm-usage']` y `executablePath`
+   desde env var.
+
+---
+
 ## Project Overview
 
 **Gabinete Pedagógico** — management app for a multi-therapist pediatric therapy practice. Manages clients (children), therapists (trabajadores), sessions, vouchers (bonos), GAS goals, daily records, reports, smart notifications, and advanced statistics.
 
-Stack: **Angular 19** (frontend) + **NestJS 11** (backend) + **Prisma 5** + **PostgreSQL** + **n8n** (Docker, port 5678, not yet registered in AppModule).
+Stack: **Angular 19** (frontend) + **NestJS 11** (backend) + **Prisma 5** + **PostgreSQL**.
 
-**Current state (2026-03-16)**: Functionally complete for real use. Core clinical nucleus — agenda, client records, sessions, bonos, GAS, daily records, reports, SSE notifications, advanced statistics, multi-user RBAC — all implemented and tested. Remaining blockers are infrastructure/ops (deployment, backup, SMTP), not features.
+> **n8n eliminado** de la arquitectura. La automatización (informes periódicos, alertas, envío de
+> email) se hace nativamente en NestJS. Ver §"Decisión: sin n8n" y `CONTEXTO_…md`.
+
+**Objetivo de despliegue (decidido):** **Scaleway** (Francia, 100% UE) — Managed PostgreSQL +
+Serverless Container (backend) + Object Storage (ficheros) + Transactional Email. Frontend Angular
+en **Cloudflare Pages**. CI/CD por **GitHub Actions** (push a `main` → build → registry → redeploy).
+
+**Current state (2026-06)**: Functionally complete for real use. Core clinical nucleus — agenda, client records, sessions, bonos, GAS, daily records, reports, SSE notifications, advanced statistics, multi-user RBAC — all implemented and tested. Remaining blockers are infrastructure/ops (deployment to Scaleway, file persistence to Object Storage, SMTP/email), not clinical features.
 
 ---
 
@@ -28,11 +63,14 @@ npx jest src/foo/foo.spec.ts   # Single spec file
 
 Prisma:
 ```bash
-npx prisma migrate dev --name <nombre>   # New migration
-npx prisma db push                        # Push schema without migration
+npx prisma migrate dev --name <nombre>   # New migration (DEV) — la forma correcta de cambiar esquema
+npx prisma migrate deploy                # Aplicar migraciones en PRODUCCIÓN (con backup previo)
+npx prisma db push                        # ⚠️ SOLO local/prototipado — NUNCA contra producción (ver Reglas innegociables)
 npx prisma studio                         # DB GUI
 npx prisma generate                       # Regenerate client after schema change
 ```
+
+---
 
 ### Frontend (`/frontend`)
 
@@ -68,6 +106,10 @@ Standard pattern: `module → controller → service → dto/types`. All DB acce
 | `gas` | GAS evaluation. ROLES_CLINICOS only for mutations. |
 | `roles` | Role CRUD. |
 | `health` | Health check endpoint. |
+
+> **Pendiente (no existe aún):** persistencia de ficheros a Object Storage y un servicio de
+> generación/envío programado de informes. Hoy `informes`/`export` generan el PDF y se descarga
+> al vuelo; no se guarda en ningún sitio. Ver §"Trabajo pendiente".
 
 ### RBAC — Roles and guards
 
@@ -230,13 +272,43 @@ effect(() => {
 - `Cliente.consentimientoRgpd Bool` + `consentimientoFecha DateTime?` — RGPD tracking
 - `Trabajador.numeroColegiado String?` + `especialidad String?`
 
+> **Nota de modelo (a revisar):** para datos de salud de menores, el consentimiento es más matizado
+> que un booleano (consentimiento parental, umbral de los 14 años en España). `consentimientoRgpd
+> Bool` puede quedarse corto. No bloquea, pero tenerlo en el radar al evolucionar el modelo.
+
 ### Environment
 
-`backend/.env`:
+`backend/.env` (local):
 ```
 DATABASE_URL=postgresql://...
 SECRET=<jwt-secret>
 ```
+
+**Producción:** las variables sensibles (DATABASE_URL, SECRET, credenciales de Object Storage,
+SMTP/TEM) se inyectan desde **Scaleway Secret Manager** / variables del contenedor. Nunca en el
+repo ni en imágenes Docker. Variables adicionales esperadas en producción:
+`PORT`, `CORS_ORIGIN` (= `https://app.dominio.es`), credenciales S3 de Object Storage,
+`PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium`, `PUPPETEER_SKIP_DOWNLOAD=true`.
+
+---
+
+## Decisión: sin n8n
+
+n8n se ha eliminado. Cada caso de uso que se le había asignado se cubre con lo que ya existe o con
+NestJS nativo:
+
+- **Informes automáticos (mensual / semestral / bienvenida):** `@nestjs/schedule` (cron) + el módulo
+  `informes` existente + plantillas + envío por email. La bienvenida se dispara desde el alta de
+  cliente, no por cron.
+- **Alertas de bono vacío / recordatorios internos:** son **una regla más en el motor existente**
+  (`notificaciones/motor-reglas.service.ts`), no un servicio aparte.
+- **Recordatorios de sesión por email:** Nodemailer / Scaleway Transactional Email desde NestJS.
+- **Recordatorios por WhatsApp (si algún día):** llamada a la API de WhatsApp Business **desde
+  NestJS**; es una integración puntual, no justifica un servicio always-on.
+- **Fiabilidad de tareas:** empezar con una tabla `informes_jobs` (estado + reintentos). Diferir
+  Redis + BullMQ hasta que el volumen lo exija.
+
+**Acción pendiente:** borrar el módulo `n8n` del repo y el servicio Docker de n8n (puerto 5678).
 
 ---
 
@@ -280,9 +352,16 @@ descargarPdf(id: string): Observable<void> {
 ```
 Component uses `descargando = signal(false)` + `finalize(() => this.descargando.set(false))`.
 
+> Nota: este patrón (generar y descargar al vuelo) seguirá existiendo para descargas a demanda.
+> Para informes que deben **persistir** (los periódicos, los enviados a familias), el PDF se sube a
+> **Object Storage** y se guarda su referencia; ver "Trabajo pendiente".
+
 ### SSE — Server-Sent Events
 
 `EventSource` cannot send custom headers. JWT travels as `?token=` query param. `JwtFlexGuard` accepts both Bearer header and query param. Frontend connects in `AuthService` login and reconnects in `HomeComponent.ngOnInit()`.
+
+> Seguridad: el token en query param puede aparecer en logs/proxies. Aceptable como limitación
+> conocida de SSE, pero no lo registres en logs de acceso y mantén la expiración del token corta.
 
 ### Drawer pattern (Registro Diario)
 
@@ -362,21 +441,46 @@ Legacy URL redirects still active in `listado.routes.ts` (e.g. `/cliente → /pe
 
 ### Minor code debt (not blocking)
 - `ClientesComponent` still navigates to `/cliente` (legacy) in lines 131 and 198 — works via redirect but should point to `/perfil` directly
-- `n8n` module exists but is NOT registered in `AppModule`
 - `rbac.e2e-spec.ts` has a minor TypeScript strict error (`username` property type) — runtime correct, tests pass
+- **n8n a eliminar:** el módulo `n8n` (no registrado en `AppModule`) y el servicio Docker de n8n
+  (puerto 5678) deben borrarse. Ver §"Decisión: sin n8n".
 
-### Blockers for production deployment
-1. **No deployment defined** — needs Dockerfile + docker-compose.prod.yml for backend + frontend (Nginx), PostgreSQL, env vars separated (`.env.prod`, `environment.prod.ts`)
-2. **No database backup** — PostgreSQL without automated backup is critical risk given RGPD scope (minor health data)
-3. **SMTP not configured** — reset-password UI exists but requires real SMTP (Resend/Postmark/SES). Without it: password reset broken, no email fallback for missed SSE notifications
-4. **Security hardening** — rate limiting on `/auth/login`, Helmet.js headers (confirm active), CORS locked to production domain (likely still `*`)
+### Blockers for production deployment (arquitectura Scaleway — ver `CONTEXTO_…md`)
+1. **Despliegue no definido** — necesita: `Dockerfile` del backend (NestJS + Chromium, multi-etapa,
+   `node:22-bookworm-slim`, Chromium del sistema vía apt, `tini`, usuario no-root), `.dockerignore`,
+   y `.github/workflows/deploy.yml` (push a `main` → build → push al Container Registry → redeploy
+   con la CLI oficial de Scaleway). **No** docker-compose con Postgres/Nginx propios: la BD es
+   gestionada y el frontend va a Cloudflare Pages.
+2. **Persistencia de ficheros a Object Storage** — hoy los PDFs se generan y se descargan al vuelo,
+   no se guardan. Falta integrar Object Storage (S3-compatible) para: informes que deben
+   conservarse/enviarse y futuros documentos subidos (médicos/pedagógicos). **Nunca al disco del
+   contenedor** (efímero) ni a la BD. *(Nota: al no persistir aún, no hay riesgo de pérdida activo;
+   es una funcionalidad pendiente, no un fallo.)*
+3. **Backup de BD** — se resuelve con **Managed PostgreSQL de Scaleway** (backups automáticos +
+   **PITR**). Requisito: activar cifrado en reposo y **probar una restauración** antes de datos
+   reales. (Antes marcado como riesgo crítico; queda cubierto por la decisión de BD gestionada.)
+4. **Email/SMTP no configurado** — reset-password y fallback de notificaciones requieren
+   **Nodemailer / Scaleway Transactional Email**. Sin ello: reset de contraseña roto y sin email de
+   respaldo cuando falla el SSE. Mismo canal sirve para el envío de informes a familias.
+5. **Endurecimiento de seguridad** — rate limiting en `/auth/login`, cabeceras Helmet.js (confirmar
+   activas), y **CORS bloqueado a `https://app.dominio.es`** (probablemente aún en `*`). RBAC/roles
+   ya existen; **MFA NO implementado** (auth es solo JWT + Passport local, token 8h) — pendiente si
+   se decide reforzar.
 
 ### Medium-term roadmap
 - **Hito K** — Billing/cobros module: payment tracking per bono, debt view per family. Currently managed externally (likely spreadsheet)
-- **n8n integration** — session reminders (email/WhatsApp), bono-empty alerts, monthly auto-reports
+- **Automatización de informes** — generación programada (`@nestjs/schedule`) + envío por email,
+  apoyada en el módulo `informes` y en Object Storage. (Sustituye lo que iba a hacer n8n.)
 - **Mobile/tablet polish** — sidebar collapse, weekly grid density, drawer form on small screens
 
 ### Long-term
 - **Onboarding panel** — configurable gabinete name/logo, welcome email for new workers, CSV client import
 - **Family portal** — read-only view: upcoming sessions, bono status, finalized reports (requires separate auth model + RGPD review)
 - **Multi-tenant decision** — current architecture is single-tenant; refactor cost grows with time if SaaS route chosen
+- **Web de marketing** — sitio público (`www.dominio.es`) separado de la app, en Cloudflare Pages,
+  sin datos personales. Aísla el alcance RGPD a la app. Ver `CONTEXTO_…md`.
+
+---
+
+> Recordatorio: ante cualquier cambio de infraestructura, datos, despliegue o ficheros, consulta
+> **`CONTEXTO_ARQUITECTURA_DESPLIEGUE.md`** y respeta las **Reglas innegociables** de la cabecera.
