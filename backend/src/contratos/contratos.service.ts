@@ -1,14 +1,18 @@
 import {
   Injectable,
+  Logger,
   NotFoundException,
   ForbiddenException,
   BadRequestException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AmbitoFestivo, EstadoContrato, EstadoSesion, ModalidadSesion } from '@prisma/client';
 import { CreateContratoDto } from './dto/create-contrato.dto';
 import { UpdateContratoDto } from './dto/update-contrato.dto';
 import { ContratosPdfService } from './contratos-pdf.service';
+import { StorageService } from '../common/storage/storage.service';
+import { randomUUID } from 'crypto';
 import {
   addMonths,
   añosCubiertos,
@@ -46,11 +50,25 @@ const CONTRATO_PDF_INCLUDE = {
   },
 } as const;
 
+/** 10 MB: un contrato escaneado cabe de sobra; corta subidas accidentales. */
+export const TAMANO_MAX_CONTRATO = 10 * 1024 * 1024;
+
+/** Fichero en memoria de multer. Tipado local para no depender de @types/multer. */
+export interface FicheroContrato {
+  originalname: string;
+  mimetype: string;
+  size: number;
+  buffer: Buffer;
+}
+
 @Injectable()
 export class ContratosService {
+  private readonly logger = new Logger(ContratosService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly pdfService: ContratosPdfService,
+    private readonly storage: StorageService,
   ) {}
 
   async create(dto: CreateContratoDto, user: { userId: string; rol: string }) {
@@ -210,12 +228,22 @@ export class ContratosService {
         });
       }
 
+      // Si se tocan los datos con los que se factura y ya hay un PDF firmado,
+      // sellamos la fecha para poder avisar de que el papel quedo desfasado.
+      const tocaResumen =
+        dto.cuotaMensual !== undefined ||
+        dto.fechaFin !== undefined ||
+        dto.slots !== undefined;
+
       return tx.contratoServicio.update({
         where: { id },
         data: {
           ...(dto.cuotaMensual !== undefined && { cuotaMensual: dto.cuotaMensual }),
           ...(dto.fechaFin     !== undefined && { fechaFin: dto.fechaFin ? new Date(dto.fechaFin) : null }),
           ...(dto.notas        !== undefined && { notas: dto.notas }),
+          ...(tocaResumen && contrato.storageKeyFirmado
+            ? { resumenModificadoAt: new Date() }
+            : {}),
         },
         include: CONTRATO_INCLUDE,
       });
@@ -250,6 +278,99 @@ export class ContratosService {
     ]);
 
     return contratoFinalizado;
+  }
+
+  // ── PDF FIRMADO ───────────────────────────────────────────
+
+  /**
+   * Sube el contrato firmado. Sustituye al PDF generado al vuelo: a partir de
+   * aqui, "Ver PDF" sirve este documento.
+   */
+  async subirDocumentoFirmado(
+    id: string,
+    fichero: FicheroContrato,
+    user: { userId: string; rol: string },
+  ) {
+    if (!fichero) throw new BadRequestException('No se ha recibido ningun fichero');
+    if (fichero.mimetype !== 'application/pdf') {
+      throw new BadRequestException('El contrato firmado debe ser un PDF');
+    }
+    if (fichero.size > TAMANO_MAX_CONTRATO) {
+      throw new BadRequestException(
+        `El fichero supera el maximo de ${TAMANO_MAX_CONTRATO / (1024 * 1024)} MB`,
+      );
+    }
+
+    const contrato = await this.prisma.contratoServicio.findUnique({ where: { id } });
+    if (!contrato) throw new NotFoundException(`Contrato ${id} no encontrado`);
+    this.checkAcceso(contrato, user);
+
+    // Fallo ruidoso: sin Object Storage el fichero no puede persistir. Nunca a
+    // disco local — el contenedor es efimero y el PDF desapareceria al desplegar.
+    if (!this.storage.isConfigured) {
+      throw new ServiceUnavailableException(
+        'El almacenamiento de ficheros no esta configurado (faltan variables SCW_*). ' +
+          'No se pueden subir contratos firmados hasta que se configure Object Storage.',
+      );
+    }
+
+    const anterior = contrato.storageKeyFirmado;
+    const storageKey = `contratos/${id}/${randomUUID()}.pdf`;
+
+    await this.storage.upload(storageKey, fichero.buffer, fichero.mimetype);
+
+    let actualizado;
+    try {
+      actualizado = await this.prisma.contratoServicio.update({
+        where: { id },
+        data: {
+          storageKeyFirmado:  storageKey,
+          mimeTypeFirmado:    fichero.mimetype,
+          tamanoBytesFirmado: fichero.size,
+          fechaSubidaFirmado: new Date(),
+          // El PDF recien subido refleja los datos actuales: se limpia el aviso
+          resumenModificadoAt: null,
+        },
+        include: CONTRATO_INCLUDE,
+      });
+    } catch (error) {
+      // El objeto ya esta en el bucket pero la fila no apunta a el: seria
+      // inalcanzable, asi que lo borramos para no dejar basura huerfana.
+      await this.storage.delete(storageKey).catch(e =>
+        this.logger.error(`No se pudo limpiar el objeto huerfano ${storageKey}`, e),
+      );
+      throw error;
+    }
+
+    // Ya sustituido en BD: el PDF anterior no lo alcanza nadie
+    if (anterior && anterior !== storageKey) {
+      await this.storage.delete(anterior).catch(e =>
+        this.logger.error(`No se pudo borrar el PDF anterior ${anterior}`, e),
+      );
+    }
+
+    this.logger.log(`Contrato ${id}: PDF firmado subido`);
+    return actualizado;
+  }
+
+  /**
+   * URL prefirmada del PDF firmado, o null si este contrato no tiene ninguno
+   * (en ese caso el controlador genera el PDF al vuelo, como siempre).
+   */
+  async getUrlDocumentoFirmado(id: string, user: { userId: string; rol: string }) {
+    const contrato = await this.prisma.contratoServicio.findUnique({ where: { id } });
+    if (!contrato) throw new NotFoundException(`Contrato ${id} no encontrado`);
+    this.checkAcceso(contrato, user);
+
+    if (!contrato.storageKeyFirmado) return null;
+
+    if (!this.storage.isConfigured) {
+      throw new ServiceUnavailableException(
+        'El almacenamiento de ficheros no esta configurado (faltan variables SCW_*).',
+      );
+    }
+
+    return this.storage.getSignedUrl(contrato.storageKeyFirmado, 300);
   }
 
   async generarPdf(id: string, user: { userId: string; rol: string }): Promise<Buffer> {

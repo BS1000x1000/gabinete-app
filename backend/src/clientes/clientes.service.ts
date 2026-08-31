@@ -19,12 +19,14 @@ export class ClientesService {
     createClienteDto: CreateClienteDto,
     trabajadorId?: string,
   ): Promise<ClienteWithRelations> {
-    // Verificar DNI duplicado
-    const dniExiste = await this.existeDni(createClienteDto.dni);
+    // El DNI es opcional: '' se normaliza a null para que varios clientes sin DNI
+    // puedan convivir bajo el indice unico (en Postgres '' colisiona, NULL no).
+    const dni = normalizarDni(createClienteDto.dni);
 
-    if (dniExiste) {
+    // Solo tiene sentido buscar duplicados si el cliente aporta DNI
+    if (dni && (await this.existeDni(dni))) {
       throw new ConflictException(
-        `Ya existe un cliente registrado con el DNI ${createClienteDto.dni}`,
+        `Ya existe un cliente registrado con el DNI ${dni}`,
       );
     }
 
@@ -73,7 +75,7 @@ export class ClientesService {
         data: {
           nombre: createClienteDto.nombre,
           apellidos: createClienteDto.apellidos,
-          dni: createClienteDto.dni,
+          dni,
           domicilio: createClienteDto.domicilio,
           provincia: createClienteDto.provincia,
           ciudad: createClienteDto.ciudad,
@@ -115,24 +117,22 @@ export class ClientesService {
           sanitario: createClienteDto.datosSanitarios
             ? {
                 create: {
-                  diagnostico: createClienteDto.datosSanitarios.diagnostico || '',
-                  centroSalud: createClienteDto.datosSanitarios.centroSalud || '',
-                  tratamientos: createClienteDto.datosSanitarios.tratamientos || '',
-                  medicacion: createClienteDto.datosSanitarios.medicacion || '',
-                  alergias: createClienteDto.datosSanitarios.alergias || '',
-                  adaptaciones: createClienteDto.datosSanitarios.adaptaciones ?? false,
-                  tipoAdaptaciones: createClienteDto.datosSanitarios.tipoAdaptaciones || null,
+                  diagnostico: createClienteDto.datosSanitarios.diagnostico || null,
+                  centroSalud: createClienteDto.datosSanitarios.centroSalud || null,
+                  tratamientos: createClienteDto.datosSanitarios.tratamientos || null,
                   especialistas: createClienteDto.datosSanitarios.especialistas ?? [],
-                  apoyos: createClienteDto.datosSanitarios.apoyos ?? false,
                 },
               }
             : undefined,
 
-          objetivosGeneralesAsignados: createClienteDto.objetivosGeneralesIds
+          escolar: createClienteDto.datosEscolares
             ? {
-                create: createClienteDto.objetivosGeneralesIds.map((objId) => ({
-                  objetivoGeneralId: objId,
-                })),
+                create: {
+                  adaptaciones: createClienteDto.datosEscolares.adaptaciones ?? false,
+                  tipoAdaptaciones: createClienteDto.datosEscolares.tipoAdaptaciones || null,
+                  apoyos: createClienteDto.datosEscolares.apoyos ?? false,
+                  especialistas: createClienteDto.datosEscolares.especialistas ?? [],
+                },
               }
             : undefined,
         },
@@ -736,7 +736,8 @@ export class ClientesService {
     if (updateDto.nombre !== undefined) updateData.nombre = updateDto.nombre;
     if (updateDto.apellidos !== undefined)
       updateData.apellidos = updateDto.apellidos;
-    if (updateDto.dni !== undefined) updateData.dni = updateDto.dni;
+    // Mismo criterio que en create: '' nunca llega a BD, se guarda null
+    if (updateDto.dni !== undefined) updateData.dni = normalizarDni(updateDto.dni);
     if (updateDto.domicilio !== undefined)
       updateData.domicilio = updateDto.domicilio;
     if (updateDto.provincia !== undefined)
@@ -796,9 +797,16 @@ export class ClientesService {
     });
   }
 
-  async existeDni(dni: string): Promise<boolean> {
+  /**
+   * Un cliente sin DNI nunca cuenta como duplicado: `findUnique` con undefined
+   * reventaria y con null no es lo que queremos preguntar.
+   */
+  async existeDni(dni?: string | null): Promise<boolean> {
+    const valor = normalizarDni(dni);
+    if (!valor) return false;
+
     const cliente = await this.prisma.cliente.findUnique({
-      where: { dni },
+      where: { dni: valor },
       select: { deletedAt: true },
     });
     return !!cliente && cliente.deletedAt === null;
@@ -812,6 +820,7 @@ export class ClientesService {
         colegio: true,
         contactosFamiliares: true,
         sanitario: true,
+        escolar: true,
         disponibilidad: true,
         trabajadoresAsignados: {
           include: {
@@ -916,15 +925,10 @@ export class ClientesService {
       return this.prisma.sanitario.create({
         data: {
           clienteId,
-          diagnostico:     data.diagnostico  ?? '',
-          centroSalud:     data.centroSalud  ?? '',
-          tratamientos:    data.tratamientos ?? '',
-          medicacion:      data.medicacion   ?? '',
-          alergias:        data.alergias     ?? '',
-          adaptaciones:    data.adaptaciones ?? false,
-          tipoAdaptaciones:data.tipoAdaptaciones ?? null,
-          especialistas:   data.especialistas ?? [],
-          apoyos:          data.apoyos       ?? false,
+          diagnostico:   data.diagnostico   ?? null,
+          centroSalud:   data.centroSalud   ?? null,
+          tratamientos:  data.tratamientos  ?? null,
+          especialistas: data.especialistas ?? [],
         },
       });
     }
@@ -932,15 +936,41 @@ export class ClientesService {
     return this.prisma.sanitario.update({
       where: { clienteId },
       data: {
-        ...(data.diagnostico      !== undefined && { diagnostico: data.diagnostico }),
-        ...(data.centroSalud      !== undefined && { centroSalud: data.centroSalud }),
-        ...(data.tratamientos     !== undefined && { tratamientos: data.tratamientos }),
-        ...(data.medicacion       !== undefined && { medicacion: data.medicacion }),
-        ...(data.alergias         !== undefined && { alergias: data.alergias }),
+        ...(data.diagnostico   !== undefined && { diagnostico: data.diagnostico }),
+        ...(data.centroSalud   !== undefined && { centroSalud: data.centroSalud }),
+        ...(data.tratamientos  !== undefined && { tratamientos: data.tratamientos }),
+        ...(data.especialistas !== undefined && { especialistas: data.especialistas }),
+      },
+    });
+  }
+
+  // ── ESCOLAR ───────────────────────────────────────────────
+  /**
+   * Situación escolar del niño (adaptaciones, apoyos, especialistas del centro).
+   * Vive aparte de `colegio` porque el colegio se comparte entre clientes.
+   */
+  async updateEscolar(clienteId: string, data: any) {
+    const escolar = await this.prisma.escolar.findUnique({ where: { clienteId } });
+
+    if (!escolar) {
+      return this.prisma.escolar.create({
+        data: {
+          clienteId,
+          adaptaciones:     data.adaptaciones     ?? false,
+          tipoAdaptaciones: data.tipoAdaptaciones ?? null,
+          apoyos:           data.apoyos           ?? false,
+          especialistas:    data.especialistas    ?? [],
+        },
+      });
+    }
+
+    return this.prisma.escolar.update({
+      where: { clienteId },
+      data: {
         ...(data.adaptaciones     !== undefined && { adaptaciones: data.adaptaciones }),
         ...(data.tipoAdaptaciones !== undefined && { tipoAdaptaciones: data.tipoAdaptaciones }),
-        ...(data.especialistas    !== undefined && { especialistas: data.especialistas }),
         ...(data.apoyos           !== undefined && { apoyos: data.apoyos }),
+        ...(data.especialistas    !== undefined && { especialistas: data.especialistas }),
       },
     });
   }
@@ -1096,6 +1126,8 @@ export class ClientesService {
       }),
       // Eliminar datos sanitarios (especial categoría Art. 9)
       this.prisma.sanitario.deleteMany({ where: { clienteId } }),
+      // Eliminar datos escolares (adaptaciones y apoyos revelan necesidades del menor)
+      this.prisma.escolar.deleteMany({ where: { clienteId } }),
       // Eliminar familiares (datos de terceros)
       this.prisma.familiar.deleteMany({ where: { clienteId } }),
       // Eliminar historial de consentimientos
@@ -1104,4 +1136,15 @@ export class ClientesService {
 
     return { message: `Cliente ${clienteId} anonimizado correctamente`, anonimizadoEn: new Date().toISOString() };
   }
+}
+
+/**
+ * El DNI del cliente es opcional. Cualquier forma de "vacio" (undefined, null,
+ * '' o solo espacios) se guarda como NULL: en Postgres varios NULL conviven bajo
+ * un indice unico, mientras que dos '' colisionan entre si. Se normaliza tambien
+ * a mayusculas para que "12345678z" y "12345678Z" no se cuelen como distintos.
+ */
+export function normalizarDni(dni?: string | null): string | null {
+  const limpio = dni?.trim().toUpperCase();
+  return limpio ? limpio : null;
 }

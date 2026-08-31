@@ -1,0 +1,735 @@
+// ============================================================
+// DOCUMENTACIÓN — expediente unificado del cliente
+//
+// Dirección: "expediente clínico". Tabla densa y escaneable en vez de
+// tarjetas: el objetivo es localizar un documento de un vistazo, no lucir.
+// Jerarquía por peso tipográfico y una franja de color por categoría;
+// nada de sombras ni degradados que compitan con el contenido.
+// ============================================================
+
+// ── Barra de herramientas ────────────────────────────────────
+
+.doc-toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $spacing-md;
+  flex-wrap: wrap;
+  margin-bottom: $spacing-md;
+
+  &__title h6 {
+    font-size: $font-size-md;
+    font-weight: $font-weight-bold;
+    color: $gray-900;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+
+  &__sub {
+    margin: 0.15rem 0 0;
+    font-size: $font-size-xs;
+    color: $gray-500;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    flex-wrap: wrap;
+  }
+}
+
+.doc-dot {
+  color: $gray-300;
+  margin: 0 0.35rem;
+}
+
+// ── Buscador ─────────────────────────────────────────────────
+
+.doc-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  i {
+    position: absolute;
+    left: 0.65rem;
+    font-size: 0.8rem;
+    color: $gray-400;
+    pointer-events: none;
+  }
+
+  input {
+    width: 15rem;
+    max-width: 100%;
+    height: 2.1rem;
+    padding: 0 0.65rem 0 2rem;
+    font-size: $font-size-sm;
+    color: $gray-800;
+    background: $white;
+    border: 1px solid $gray-200;
+    border-radius: $border-radius-sm;
+    transition: $transition-color;
+
+    &::placeholder { color: $gray-400; }
+
+    &:focus {
+      outline: none;
+      border-color: $primary;
+      box-shadow: 0 0 0 3px rgba($primary, 0.12);
+    }
+
+    // Oculta la X nativa de Chrome: rompe la altura del control
+    &::-webkit-search-cancel-button { -webkit-appearance: none; }
+  }
+}
+
+// ── Botones ──────────────────────────────────────────────────
+
+.doc-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  height: 2.1rem;
+  padding: 0 0.8rem;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  white-space: nowrap;
+  border-radius: $border-radius-sm;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: $transition-color;
+
+  i { font-size: 0.85rem; }
+
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  &--primary {
+    background: $primary;
+    color: $white;
+    &:hover:not(:disabled) { background: $primary-dark; }
+  }
+
+  &--ghost {
+    background: $white;
+    color: $gray-700;
+    border-color: $gray-200;
+    &:hover:not(:disabled) {
+      border-color: $primary-light;
+      background: $primary-ultra-light;
+      color: $primary-dark;
+    }
+  }
+
+  &--icon {
+    width: 2.1rem;
+    padding: 0;
+    background: $white;
+    color: $gray-500;
+    border-color: $gray-200;
+
+    &:hover { color: $primary-dark; border-color: $primary-light; background: $primary-ultra-light; }
+    &.is-active { background: $primary-light; border-color: $primary; color: $primary-dark; }
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba($primary, 0.25);
+  }
+}
+
+.doc-generar {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+// ── Filtros ──────────────────────────────────────────────────
+
+.doc-filtros {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm $spacing-md;
+  flex-wrap: wrap;
+  padding-bottom: $spacing-sm;
+  margin-bottom: $spacing-sm;
+  border-bottom: 1px solid $gray-100;
+}
+
+.doc-segmented {
+  display: inline-flex;
+  padding: 2px;
+  background: $gray-100;
+  border-radius: $border-radius-sm;
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.7rem;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    color: $gray-500;
+    background: transparent;
+    border: none;
+    border-radius: calc(#{$border-radius-sm} - 2px);
+    cursor: pointer;
+    transition: $transition-color;
+
+    &:hover { color: $gray-800; }
+
+    &.is-active {
+      background: $white;
+      color: $primary-dark;
+      box-shadow: $shadow-sm;
+    }
+
+    &:focus-visible { outline: 2px solid $primary; outline-offset: -2px; }
+  }
+}
+
+.doc-count {
+  font-size: 0.68rem;
+  font-weight: $font-weight-bold;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.65;
+}
+
+.doc-chips {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.doc-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.6rem;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $gray-600;
+  background: transparent;
+  border: 1px solid $gray-200;
+  border-radius: $border-radius-full;
+  cursor: pointer;
+  transition: $transition-color;
+
+  &:hover { border-color: $primary-light; color: $primary-dark; }
+
+  &.is-active {
+    background: $primary-ultra-light;
+    border-color: $primary;
+    color: $primary-dark;
+    font-weight: $font-weight-semibold;
+  }
+
+  &:focus-visible { outline: 2px solid $primary; outline-offset: 1px; }
+}
+
+.doc-limpiar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $gray-500;
+  background: none;
+  border: none;
+  cursor: pointer;
+
+  &:hover { color: $danger; }
+}
+
+// ── Tabla del expediente ─────────────────────────────────────
+
+.doc-tabla-wrap {
+  border: 1px solid $gray-200;
+  border-radius: $border-radius;
+  overflow: hidden;
+  background: $white;
+}
+
+.doc-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: $font-size-sm;
+
+  thead th {
+    padding: 0.55rem 0.75rem;
+    text-align: left;
+    font-size: 0.68rem;
+    font-weight: $font-weight-bold;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: $gray-500;
+    background: $gray-50;
+    border-bottom: 1px solid $gray-200;
+    white-space: nowrap;
+
+    // Cabeceras ordenables
+    button {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.15rem;
+      padding: 0;
+      font: inherit;
+      letter-spacing: inherit;
+      text-transform: inherit;
+      color: inherit;
+      background: none;
+      border: none;
+      cursor: pointer;
+
+      &:hover { color: $primary-dark; }
+      &:focus-visible { outline: 2px solid $primary; outline-offset: 2px; }
+      i { font-size: 0.9rem; }
+    }
+  }
+
+  // Anchos: el nombre manda, el resto se ajusta al contenido
+  .doc-th--doc      { width: auto; }
+  .doc-th--cat      { width: 1%; }
+  .doc-th--estado   { width: 1%; }
+  .doc-th--fecha    { width: 1%; }
+  .doc-th--autor    { width: 1%; }
+  .doc-th--acciones { width: 1%; }
+
+  tbody td {
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid $gray-100;
+    color: $gray-700;
+    vertical-align: middle;
+  }
+
+  tbody tr:last-child td { border-bottom: none; }
+}
+
+.doc-fila {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+
+  &:hover { background: $primary-ultra-light; }
+
+  &:focus-visible {
+    outline: none;
+    background: $primary-ultra-light;
+    box-shadow: inset 3px 0 0 $primary, inset 0 0 0 1px rgba($primary, 0.25);
+  }
+
+  // Al pasar el cursor, la franja de categoría se ensancha: refuerza
+  // de qué fila estamos hablando sin añadir otro elemento visual.
+  &:hover .doc-stripe { width: 5px; }
+  &:hover .doc-acciones { opacity: 1; }
+}
+
+.doc-td--doc {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.doc-stripe {
+  position: absolute;
+  left: 0;
+  top: -0.6rem;
+  bottom: -0.6rem;
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+  transition: width 0.15s ease;
+}
+
+.doc-icono {
+  flex-shrink: 0;
+  font-size: 1rem;
+  margin-left: 0.35rem;
+  opacity: 0.85;
+}
+
+.doc-nombre {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+
+  &__principal {
+    font-weight: $font-weight-semibold;
+    color: $gray-900;
+    @include truncate;
+  }
+
+  &__detalle {
+    font-size: 0.7rem;
+    color: $gray-400;
+    font-variant-numeric: tabular-nums;
+    @include truncate;
+  }
+}
+
+.doc-cat-badge {
+  font-size: 0.72rem;
+  font-weight: $font-weight-semibold;
+  white-space: nowrap;
+}
+
+// ── Estados ──────────────────────────────────────────────────
+
+.doc-estado {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.68rem;
+  font-weight: $font-weight-semibold;
+  white-space: nowrap;
+  border-radius: $border-radius-full;
+  border: 1px solid transparent;
+
+  &--borrador   { background: $gray-100;    color: $gray-600;    border-color: $gray-200; }
+  &--revision   { background: $warning-light; color: $warning-dark; border-color: rgba($warning, 0.35); }
+  &--finalizado { background: $success-light; color: $success-dark; border-color: rgba($success, 0.35); }
+  &--enviado    { background: $secondary-light; color: $secondary-dark; border-color: rgba($secondary, 0.35); }
+  &--externo    { background: transparent;  color: $gray-400;    border-color: $gray-200; }
+}
+
+.doc-td--fecha {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: $gray-600;
+}
+
+.doc-td--autor {
+  white-space: nowrap;
+  color: $gray-500;
+  font-size: $font-size-xs;
+}
+
+// ── Acciones de fila ─────────────────────────────────────────
+
+.doc-acciones {
+  display: flex;
+  gap: 0.25rem;
+  justify-content: flex-end;
+  opacity: 0;
+  transition: $transition-opacity;
+
+  // Sin hover (táctil o teclado) las acciones deben seguir siendo accesibles
+  @media (hover: none) { opacity: 1; }
+  &:focus-within { opacity: 1; }
+}
+
+.doc-accion {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  font-size: 0.8rem;
+  color: $gray-500;
+  background: $white;
+  border: 1px solid $gray-200;
+  border-radius: $border-radius-sm;
+  cursor: pointer;
+  transition: $transition-color;
+
+  &:hover { color: $primary-dark; border-color: $primary; background: $primary-ultra-light; }
+
+  &:focus-visible { outline: 2px solid $primary; outline-offset: 1px; }
+
+  &--peligro:hover { color: $danger-dark; border-color: $danger; background: $danger-light; }
+}
+
+// ── Vacíos ───────────────────────────────────────────────────
+
+.doc-sin-resultados {
+  text-align: center;
+  padding: $spacing-2xl $spacing-md !important;
+
+  i { display: block; font-size: 1.5rem; color: $gray-300; margin-bottom: 0.5rem; }
+  p { margin: 0 0 0.5rem; font-size: $font-size-sm; color: $gray-500; }
+}
+
+.doc-vacio {
+  text-align: center;
+  padding: $spacing-3xl $spacing-md;
+  border: 1px dashed $gray-200;
+  border-radius: $border-radius;
+  background: $gray-50;
+
+  > i { display: block; font-size: 2.25rem; color: $gray-300; margin-bottom: $spacing-sm; }
+
+  &__titulo {
+    margin: 0 0 0.25rem;
+    font-size: $font-size-base;
+    font-weight: $font-weight-semibold;
+    color: $gray-800;
+  }
+
+  &__texto {
+    max-width: 30rem;
+    margin: 0 auto $spacing-md;
+    font-size: $font-size-sm;
+    color: $gray-500;
+    line-height: $line-height-normal;
+  }
+
+  &__acciones {
+    display: flex;
+    gap: $spacing-sm;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+}
+
+// ── Paginación ───────────────────────────────────────────────
+
+.doc-paginacion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-sm;
+  padding: 0.5rem 0.75rem;
+  background: $gray-50;
+  border-top: 1px solid $gray-200;
+
+  &__rango {
+    font-size: $font-size-xs;
+    color: $gray-500;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__nav {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+
+    button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.75rem;
+      height: 1.75rem;
+      color: $gray-600;
+      background: $white;
+      border: 1px solid $gray-200;
+      border-radius: $border-radius-sm;
+      cursor: pointer;
+      transition: $transition-color;
+
+      &:hover:not(:disabled) { border-color: $primary; color: $primary-dark; }
+      &:disabled { opacity: 0.4; cursor: not-allowed; }
+      &:focus-visible { outline: 2px solid $primary; outline-offset: 1px; }
+    }
+  }
+
+  &__pagina {
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    color: $gray-600;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+// ── Panel de subida ──────────────────────────────────────────
+
+.doc-subida {
+  padding: $spacing-md;
+  margin-bottom: $spacing-md;
+  background: $white;
+  border: 1px solid $primary-light;
+  border-radius: $border-radius;
+  box-shadow: $shadow-sm;
+  @include fade-in;
+
+  &__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: $spacing-sm;
+    margin-bottom: $spacing-md;
+
+    h6 {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin: 0;
+      font-size: $font-size-base;
+      font-weight: $font-weight-bold;
+      color: $gray-900;
+
+      i { color: $primary; }
+    }
+
+    p {
+      margin: 0.2rem 0 0;
+      font-size: $font-size-xs;
+      color: $gray-500;
+    }
+  }
+
+  &__error {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: $spacing-sm;
+    padding: 0.5rem 0.7rem;
+    font-size: $font-size-xs;
+    color: $danger-dark;
+    background: $danger-light;
+    border-radius: $border-radius-sm;
+  }
+
+  &__campos {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: $spacing-sm $spacing-md;
+    margin-top: $spacing-md;
+
+    @include respond-to(md) { grid-template-columns: 1fr; }
+  }
+
+  &__acciones {
+    display: flex;
+    gap: $spacing-sm;
+    margin-top: $spacing-md;
+  }
+}
+
+.doc-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: $spacing-lg;
+  text-align: center;
+  cursor: pointer;
+  border: 2px dashed $gray-200;
+  border-radius: $border-radius;
+  background: $gray-50;
+  transition: $transition-color;
+
+  > i { font-size: 1.75rem; color: $gray-400; }
+
+  &__titulo {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $gray-700;
+    word-break: break-all;
+  }
+
+  &__hint {
+    font-size: $font-size-xs;
+    color: $gray-400;
+  }
+
+  &:hover { border-color: $primary-light; background: $primary-ultra-light; }
+
+  &.is-dragging {
+    border-color: $primary;
+    background: $primary-light;
+    > i { color: $primary-dark; }
+  }
+
+  &.has-file {
+    border-style: solid;
+    border-color: $success;
+    background: $success-light;
+    > i { color: $success-dark; }
+  }
+}
+
+.doc-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  &--full { grid-column: 1 / -1; }
+
+  label {
+    font-size: 0.7rem;
+    font-weight: $font-weight-bold;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: $gray-500;
+  }
+
+  input,
+  textarea {
+    padding: 0.4rem 0.6rem;
+    font-size: $font-size-sm;
+    font-family: inherit;
+    color: $gray-800;
+    background: $white;
+    border: 1px solid $gray-200;
+    border-radius: $border-radius-sm;
+    resize: vertical;
+    transition: $transition-color;
+
+    &::placeholder { color: $gray-400; }
+
+    &:focus {
+      outline: none;
+      border-color: $primary;
+      box-shadow: 0 0 0 3px rgba($primary, 0.12);
+    }
+  }
+}
+
+.doc-opcional {
+  font-weight: $font-weight-normal;
+  text-transform: none;
+  letter-spacing: 0;
+  color: $gray-400;
+}
+
+.doc-cat-picker {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.7rem;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-medium;
+    color: $gray-600;
+    background: $white;
+    border: 1px solid $gray-200;
+    border-radius: $border-radius-sm;
+    cursor: pointer;
+    transition: $transition-color;
+
+    &:hover { border-color: $primary-light; color: $primary-dark; }
+
+    &.is-active {
+      background: $primary-ultra-light;
+      border-color: $primary;
+      color: $primary-dark;
+      font-weight: $font-weight-semibold;
+    }
+
+    &:focus-visible { outline: 2px solid $primary; outline-offset: 1px; }
+  }
+}
+
+// ── Responsive: en pantallas estrechas se ocultan las columnas
+//    secundarias antes que provocar scroll horizontal ──────────
+
+@include respond-to(lg) {
+  .doc-tabla .doc-th--autor,
+  .doc-tabla .doc-td--autor { display: none; }
+}
+
+@include respond-to(md) {
+  .doc-tabla .doc-th--cat,
+  .doc-tabla .doc-td--cat { display: none; }
+
+  .doc-search input { width: 100%; }
+  .doc-toolbar__actions { width: 100%; }
+}

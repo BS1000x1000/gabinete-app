@@ -18,6 +18,7 @@ import { HealthModule } from './health/health.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { GasModule } from './gas/gas.module';
 import { InformesModule } from './informes/informes.module';
+import { DocumentosModule } from './documentos/documentos.module';
 import { BonosModule } from './bonos/bonos.module';
 import { NotificacionesModule } from './notificaciones/notificaciones.module';
 import { ExportModule } from './export/export.module';
@@ -53,6 +54,7 @@ import { FacturasModule } from './facturas/facturas.module';
     HealthModule,
     DashboardModule,
     InformesModule,
+    DocumentosModule,
     GasModule,
     BonosModule,
     NotificacionesModule,

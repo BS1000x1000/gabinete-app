@@ -29,6 +29,7 @@ export class ClienteDrawerComponent implements OnDestroy {
   readonly cliente   = this.clientesSvc.cliente;
   readonly clienteRaw = this.clientesSvc.clienteRaw;
   readonly sanitario = this.clientesSvc.sanitario;
+  readonly escolar   = this.clientesSvc.escolar;
   readonly colegio   = this.clientesSvc.colegio;
   readonly familiares = this.clientesSvc.contactosFamiliares;
 
@@ -74,11 +75,7 @@ export class ClienteDrawerComponent implements OnDestroy {
     diagnostico:      [''],
     centroSalud:      [''],
     tratamientos:     [''],
-    medicacion:       [''],
-    alergias:         [''],
-    adaptaciones:     [false],
-    tipoAdaptaciones: [''],
-    apoyos:           [false],
+    // Profesionales sanitarios externos (psicólogo, logopeda...)
     especialistas:    this.fb.array([]),
   });
 
@@ -97,11 +94,22 @@ export class ClienteDrawerComponent implements OnDestroy {
     ctoTelefonoDos:    [''],
     ctoEmailColegioDos:['', Validators.email],
     ctoRelacionColegioDos: [''],
+
+    // Situación escolar DEL NIÑO (modelo Escolar, no Colegio):
+    // el centro se comparte entre clientes, esto no.
+    adaptaciones:      [false],
+    tipoAdaptaciones:  [''],
+    apoyos:            [false],
+    especialistasColegio: this.fb.array([]),
   });
 
   // ── Getters para FormArrays ──
   get especialistas(): FormArray {
     return this.formSanitario.get('especialistas') as FormArray;
+  }
+
+  get especialistasColegio(): FormArray {
+    return this.formColegio.get('especialistasColegio') as FormArray;
   }
 
   get contactosArray(): FormArray {
@@ -149,14 +157,9 @@ export class ClienteDrawerComponent implements OnDestroy {
     const s = this.sanitario();
     if (!s) return;
     this.formSanitario.patchValue({
-      diagnostico:      s.diagnostico ?? '',
-      centroSalud:      s.centroSalud ?? '',
-      tratamientos:     s.tratamientos ?? '',
-      medicacion:       s.medicacion ?? '',
-      alergias:         s.alergias ?? '',
-      adaptaciones:     s.adaptaciones ?? false,
-      tipoAdaptaciones: s.tipoAdaptaciones ?? '',
-      apoyos:           s.apoyos ?? false,
+      diagnostico:  s.diagnostico ?? '',
+      centroSalud:  s.centroSalud ?? '',
+      tratamientos: s.tratamientos ?? '',
     });
     // Rellenar especialistas
     this.especialistas.clear();
@@ -201,6 +204,17 @@ export class ClienteDrawerComponent implements OnDestroy {
       ctoEmailColegioDos: col.ctoEmailColegioDos ?? '',
       ctoRelacionColegioDos: col.ctoRelacionColegioDos ?? '',
     });
+
+    const esc = this.escolar();
+    this.formColegio.patchValue({
+      adaptaciones:     esc?.adaptaciones ?? false,
+      tipoAdaptaciones: esc?.tipoAdaptaciones ?? '',
+      apoyos:           esc?.apoyos ?? false,
+    });
+    this.especialistasColegio.clear();
+    (esc?.especialistas ?? []).forEach((e) => {
+      this.especialistasColegio.push(this.fb.control(e, Validators.required));
+    });
   }
 
   // ── CRUD de arrays ──
@@ -225,6 +239,14 @@ export class ClienteDrawerComponent implements OnDestroy {
 
   addEspecialista(): void {
     this.especialistas.push(this.fb.control('', Validators.required));
+  }
+
+  addEspecialistaColegio(): void {
+    this.especialistasColegio.push(this.fb.control('', Validators.required));
+  }
+
+  removeEspecialistaColegio(i: number): void {
+    this.especialistasColegio.removeAt(i);
   }
 
   removeEspecialista(i: number): void {
@@ -281,15 +303,10 @@ export class ClienteDrawerComponent implements OnDestroy {
     const v = this.formSanitario.value;
     return new Promise((res, rej) => {
       this.clientesSvc.updateSanitario(clienteId, {
-        diagnostico:      v.diagnostico!,
-        centroSalud:      v.centroSalud!,
-        tratamientos:     v.tratamientos!,
-        medicacion:       v.medicacion!,
-        alergias:         v.alergias!,
-        adaptaciones:     v.adaptaciones!,
-        tipoAdaptaciones: v.tipoAdaptaciones!,
-        apoyos:           v.apoyos!,
-        especialistas:    this.especialistas.value,
+        diagnostico:   v.diagnostico!,
+        centroSalud:   v.centroSalud!,
+        tratamientos:  v.tratamientos!,
+        especialistas: this.especialistas.value,
       }).subscribe({ next: () => res(), error: rej });
     });
   }
@@ -358,7 +375,19 @@ export class ClienteDrawerComponent implements OnDestroy {
         ctoTelefonoDos:       v.ctoTelefonoDos!,
         ctoEmailColegioDos:   v.ctoEmailColegioDos!,
         ctoRelacionColegioDos: v.ctoRelacionColegioDos!,
-      }).subscribe({ next: () => res(), error: rej });
+      }).subscribe({
+        // El colegio y la situación escolar del niño son entidades distintas:
+        // se guardan en dos endpoints y el segundo depende del primero.
+        next: () => {
+          this.clientesSvc.updateEscolar(clienteId, {
+            adaptaciones:     v.adaptaciones!,
+            tipoAdaptaciones: v.tipoAdaptaciones!,
+            apoyos:           v.apoyos!,
+            especialistas:    this.especialistasColegio.value,
+          }).subscribe({ next: () => res(), error: rej });
+        },
+        error: rej,
+      });
     });
   }
 

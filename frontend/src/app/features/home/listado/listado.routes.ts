@@ -23,11 +23,11 @@ export default [
         loadComponent: () =>
           import('./tabs/sesiones-tab/sesiones-tab.component'),
       },
-      {
-        path: 'bonos',
-        loadComponent: () =>
-          import('../../../components/bonos/bonos-tab/bonos-tab.component'),
-      },
+      // {
+      //   path: 'bonos',
+      //   loadComponent: () =>
+      //     import('../../../components/bonos/bonos-tab/bonos-tab.component'),
+      // },
       {
         path: 'progreso',
         canActivate: [roleGuard(ROLES_CLINICOS)],
@@ -35,7 +35,7 @@ export default [
           import('./tabs/progreso-tab/progreso-tab.component'),
       },
       {
-        path: 'informes',
+        path: 'documentacion',
         loadComponent: () =>
           import('./tabs/informes-tab/informes-tab.component'),
       },
@@ -46,7 +46,7 @@ export default [
           import('./tabs/contratos-tab/contratos-tab.component'),
       },
 
-      // ── Rutas de soporte (no aparecen en el tab bar) ──
+      // ── Configuración del caso (grupo secundario del tab-bar) ──
       {
         path: 'terapeutas',
         loadComponent: () =>
@@ -56,6 +56,7 @@ export default [
       // ── Redirects de rutas legacy ──
       { path: 'registro',   redirectTo: 'progreso', pathMatch: 'full' },
       { path: 'objetivos',  redirectTo: 'progreso', pathMatch: 'full' },
+      { path: 'informes',   redirectTo: 'documentacion', pathMatch: 'full' },
     ],
   },
 ] as Route[];

@@ -174,14 +174,21 @@
 }
 
 // Tab navigation (5 tabs)
+// Dos grupos: el uso diario a la izquierda y la configuracion del caso
+// empujada a la derecha. Flex en vez de rejilla fija porque el numero de
+// pestañas cambia segun el rol.
 .ficha-tabs {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  display: flex;
+  align-items: stretch;
   border-bottom: 2px solid $gray-100;
   flex-shrink: 0;
+  overflow-x: auto;
+  @include custom-scrollbar(4px);
 
-  @include respond-to('sm') {
-    grid-template-columns: repeat(5, 1fr);
+  // Separa el grupo de configuracion sin dibujar una linea dura
+  &__sep {
+    flex: 1 1 auto;
+    min-width: $spacing-md;
   }
 }
 
@@ -220,6 +227,15 @@
     padding: 14px;
     gap: 0;
   }
+}
+
+// Configuracion del caso: mismo alcance, menos peso visual. Se distingue por
+// tono, no por tamaño, para que siga siendo evidente que es navegable.
+.ficha-tab--config {
+  color: $gray-400;
+  font-weight: 500;
+
+  &:not(.active) i { opacity: 0.75; }
 }
 
 .ficha-tab-body {

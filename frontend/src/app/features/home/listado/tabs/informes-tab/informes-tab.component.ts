@@ -1,5 +1,5 @@
 import { Component, computed, inject, signal, OnInit } from '@angular/core';
-import { CommonModule, NgTemplateOutlet } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { ConfirmModalComponent } from '../../../../../shared/components/confirm-modal/confirm-modal.component';
@@ -7,7 +7,6 @@ import { ActivatedRoute } from '@angular/router';
 import { formatearFechaCorta } from '../../../../../shared/utils/date';
 import { ClientesService } from '../../../../../services/cliente.service';
 import { InformesService } from '../../../../../services/informes.service';
-import { GasService } from '../../../../../services/gas.service';
 import {
   TIPO_INFORME_LABELS,
   ESTADO_INFORME_LABELS,
@@ -17,22 +16,82 @@ import {
   SECCIONES_INICIAL,
   SECCIONES_SEGUIMIENTO,
   SECCIONES_ALTA,
+  SECCION_GAS_KEY,
   CreateInformeDto,
   Informe,
   UpdateInformeDto,
 } from '../../../../../interface/informes.interface';
+import { DocumentosService } from '../../../../../services/documentos.service';
+import {
+  CategoriaDocumento,
+  DocumentoCliente,
+  CATEGORIA_DOCUMENTO_LABELS,
+  CATEGORIAS_DOCUMENTO,
+  MIME_TYPES_PERMITIDOS,
+  TAMANO_MAX_BYTES,
+  iconoPorMime,
+  formatearTamano,
+} from '../../../../../interface/documentos.interface';
+
+/** Origen de una fila del expediente: generada por la app o subida por un profesional. */
+export type OrigenFila = 'informe' | 'documento';
+
+/** Fila normalizada: informes y documentos externos comparten esta forma en la tabla. */
+export interface FilaDocumento {
+  id: string;
+  origen: OrigenFila;
+  nombre: string;
+  categoriaKey: string;
+  categoriaLabel: string;
+  categoriaColor: string;
+  icono: string;
+  estado?: EstadoInforme;
+  fecha: string;
+  autor: string;
+  /** Línea secundaria: período del informe o tamaño del fichero. */
+  detalle: string;
+  informe?: Informe;
+  documento?: DocumentoCliente;
+}
+
+interface FilaExpediente {
+  informes: FilaDocumento[];
+  externos: FilaDocumento[];
+  todas: FilaDocumento[];
+}
+
+/** Color por categoría de documento externo — alineado con la paleta de _variables.scss. */
+const COLOR_CATEGORIA: Record<CategoriaDocumento, string> = {
+  INFORME_MEDICO:  '#e11d48',
+  INFORME_ESCOLAR: '#0891b2',
+  ADMINISTRATIVO:  '#6b7280',
+  OTROS:           '#7c6fd6',
+};
+
+function nombreCorto(p?: { nombre?: string; apellidos?: string } | null): string {
+  if (!p?.nombre) return '—';
+  const inicial = p.apellidos?.charAt(0);
+  return inicial ? `${p.nombre} ${inicial}.` : p.nombre;
+}
+
+function periodoTexto(desde?: string | null, hasta?: string | null): string {
+  if (!desde || !hasta) return '';
+  const fmt = (d: string) =>
+    new Date(d).toLocaleDateString('es-ES', { month: 'short', year: '2-digit' });
+  return `${fmt(desde)} — ${fmt(hasta)}`;
+}
 
 @Component({
   standalone: true,
   selector: 'app-informes-tab',
-  imports: [CommonModule, NgTemplateOutlet, FormsModule, ConfirmModalComponent],
+  imports: [CommonModule, FormsModule, ConfirmModalComponent],
   templateUrl: './informes-tab.component.html',
 })
 export default class InformesTabComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private clientesSvc = inject(ClientesService);
   private informesSvc = inject(InformesService);
-  private gasSvc = inject(GasService);
+  private documentosSvc = inject(DocumentosService);
 
   // Constantes para la template
   readonly TIPO_LABELS = TIPO_INFORME_LABELS;
@@ -50,44 +109,6 @@ export default class InformesTabComponent implements OnInit {
   // Signals del servicio
   informes = this.informesSvc.informes;
   informeActivo = this.informesSvc.informeActivo;
-
-  // Filtros de la lista
-  filtroTipo   = signal<'todos' | TipoInforme>('todos');
-  filtroEstado = signal<'todos' | EstadoInforme>('todos');
-  filtroAnio   = signal<number | null>(null);
-
-  // Años disponibles derivados del array — aparece solo si hay más de un año
-  aniosDisponibles = computed(() => {
-    const years = this.informes().map(i => new Date(i.createdAt).getFullYear());
-    return [...new Set(years)].sort((a, b) => b - a);
-  });
-
-  // Un único computed que produce { borradores, filtrados } en un solo recorrido.
-  // Cuando hay filtro de estado activo: borradores = [] y filtrados = lista estricta.
-  // Cuando no hay filtro: borradores = BORRADOR/REVISION, filtrados = el resto.
-  informesData = computed(() => {
-    const tipo   = this.filtroTipo();
-    const estado = this.filtroEstado();
-    const anio   = this.filtroAnio();
-    const all    = this.informes();
-    const esBorrador = (i: Informe) => i.estado === 'BORRADOR' || i.estado === 'REVISION';
-    const matchTipo  = (i: Informe) => tipo === 'todos' || i.tipoInforme === tipo;
-    const matchAnio  = (i: Informe) => anio === null || new Date(i.createdAt).getFullYear() === anio;
-
-    if (estado !== 'todos') {
-      return {
-        borradores: [] as Informe[],
-        filtrados:  all.filter(i => i.estado === estado && matchTipo(i) && matchAnio(i)),
-      };
-    }
-    return {
-      borradores: all.filter(i =>  esBorrador(i) && matchTipo(i) && matchAnio(i)),
-      filtrados:  all.filter(i => !esBorrador(i) && matchTipo(i) && matchAnio(i)),
-    };
-  });
-
-  // Layout de dos secciones solo cuando hay borradores visibles
-  mostrarSecciones = computed(() => this.informesData().borradores.length > 0);
 
   // Vista: 'lista' | 'editor'
   vista = signal<'lista' | 'editor'>('lista');
@@ -125,6 +146,9 @@ export default class InformesTabComponent implements OnInit {
     return this.getSeccionesParaTipo(informe.tipoInforme);
   });
 
+  // Número de la sección GAS dentro del informe (0 si el tipo no la incluye)
+  numeroSeccionGas = computed(() => this.secciones().findIndex((s) => s.key === SECCION_GAS_KEY) + 1);
+
   // Snapshot GAS parseado del informe activo
   snapshotGAS = computed(() => {
     const informe = this.informeActivo();
@@ -151,10 +175,296 @@ export default class InformesTabComponent implements OnInit {
       if (id) {
         this.clienteId.set(id);
         this.cargarInformes();
+        this.cargarDocumentos();
         this.clientesSvc.getObjetivosCliente(id).subscribe();
       }
     });
   }
+
+  // ============================================================
+  // EXPEDIENTE UNIFICADO — informes generados + documentos externos
+  // ============================================================
+
+  documentos = this.documentosSvc.documentos;
+
+  busqueda        = signal('');
+  filtroOrigen    = signal<OrigenFila | 'todos'>('todos');
+  filtroCategoria = signal<string>('todos');
+  ordenCampo      = signal<'fecha' | 'nombre' | 'categoria'>('fecha');
+  ordenAsc        = signal(false);
+  pagina          = signal(1);
+  readonly POR_PAGINA = 12;
+
+  /** Normaliza informes y documentos a una fila común para poder listarlos juntos. */
+  readonly filas = computed<FilaExpediente>(() => {
+    const informes: FilaDocumento[] = this.informes().map((i) => ({
+      id: i.id,
+      origen: 'informe',
+      nombre: i.titulo,
+      categoriaKey: i.tipoInforme,
+      categoriaLabel: this.TIPO_LABELS[i.tipoInforme]?.texto ?? i.tipoInforme,
+      categoriaColor: this.TIPO_LABELS[i.tipoInforme]?.color ?? '#6b7280',
+      icono: 'bi-file-earmark-text',
+      estado: i.estado,
+      fecha: i.createdAt,
+      autor: nombreCorto(i.trabajador),
+      detalle: periodoTexto(i.periodoDesde, i.periodoHasta),
+      informe: i,
+    }));
+
+    const externos: FilaDocumento[] = this.documentos().map((d) => ({
+      id: d.id,
+      origen: 'documento',
+      nombre: d.nombre,
+      categoriaKey: d.categoria,
+      categoriaLabel: CATEGORIA_DOCUMENTO_LABELS[d.categoria]?.texto ?? d.categoria,
+      categoriaColor: COLOR_CATEGORIA[d.categoria] ?? '#6b7280',
+      icono: iconoPorMime(d.mimeType),
+      fecha: d.fechaDocumento ?? d.createdAt,
+      autor: nombreCorto(d.subidoPor),
+      detalle: formatearTamano(d.tamanoBytes),
+      documento: d,
+    }));
+
+    return { informes, externos, todas: [...informes, ...externos] };
+  });
+
+  readonly totalInformes  = computed(() => this.filas().informes.length);
+  readonly totalDocumentos = computed(() => this.filas().externos.length);
+
+  /** Categorías presentes en el expediente, según el origen seleccionado. */
+  readonly categoriasDisponibles = computed(() => {
+    const origen = this.filtroOrigen();
+    const base =
+      origen === 'informe'   ? this.filas().informes :
+      origen === 'documento' ? this.filas().externos :
+                               this.filas().todas;
+
+    const vistas = new Map<string, { key: string; label: string; total: number }>();
+    for (const f of base) {
+      const actual = vistas.get(f.categoriaKey);
+      if (actual) actual.total++;
+      else vistas.set(f.categoriaKey, { key: f.categoriaKey, label: f.categoriaLabel, total: 1 });
+    }
+    return [...vistas.values()].sort((a, b) => a.label.localeCompare(b.label, 'es'));
+  });
+
+  readonly filasFiltradas = computed(() => {
+    const q         = this.busqueda().trim().toLowerCase();
+    const origen    = this.filtroOrigen();
+    const categoria = this.filtroCategoria();
+    const campo     = this.ordenCampo();
+    const asc       = this.ordenAsc();
+
+    const filtradas = this.filas().todas.filter((f) => {
+      if (origen !== 'todos' && f.origen !== origen) return false;
+      if (categoria !== 'todos' && f.categoriaKey !== categoria) return false;
+      if (q && !f.nombre.toLowerCase().includes(q) && !f.autor.toLowerCase().includes(q)) return false;
+      return true;
+    });
+
+    const dir = asc ? 1 : -1;
+    return filtradas.sort((a, b) => {
+      if (campo === 'nombre')    return dir * a.nombre.localeCompare(b.nombre, 'es');
+      if (campo === 'categoria') return dir * a.categoriaLabel.localeCompare(b.categoriaLabel, 'es');
+      return dir * (new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
+    });
+  });
+
+  readonly totalPaginas = computed(() =>
+    Math.max(1, Math.ceil(this.filasFiltradas().length / this.POR_PAGINA)),
+  );
+
+  /** Página saneada: si un filtro reduce los resultados, no queda una página vacía. */
+  readonly paginaActual = computed(() => Math.min(this.pagina(), this.totalPaginas()));
+
+  readonly filasPagina = computed(() => {
+    const inicio = (this.paginaActual() - 1) * this.POR_PAGINA;
+    return this.filasFiltradas().slice(inicio, inicio + this.POR_PAGINA);
+  });
+
+  readonly rangoMostrado = computed(() => {
+    const total = this.filasFiltradas().length;
+    if (total === 0) return { desde: 0, hasta: 0, total };
+    const desde = (this.paginaActual() - 1) * this.POR_PAGINA + 1;
+    return { desde, hasta: Math.min(desde + this.POR_PAGINA - 1, total), total };
+  });
+
+  readonly hayFiltrosActivos = computed(
+    () => !!this.busqueda().trim() || this.filtroOrigen() !== 'todos' || this.filtroCategoria() !== 'todos',
+  );
+
+  setOrigen(origen: OrigenFila | 'todos'): void {
+    this.filtroOrigen.set(origen);
+    this.filtroCategoria.set('todos'); // las categorías dependen del origen
+    this.pagina.set(1);
+  }
+
+  setCategoria(key: string): void {
+    this.filtroCategoria.set(key);
+    this.pagina.set(1);
+  }
+
+  setBusqueda(valor: string): void {
+    this.busqueda.set(valor);
+    this.pagina.set(1);
+  }
+
+  limpiarFiltros(): void {
+    this.busqueda.set('');
+    this.filtroOrigen.set('todos');
+    this.filtroCategoria.set('todos');
+    this.pagina.set(1);
+  }
+
+  ordenarPor(campo: 'fecha' | 'nombre' | 'categoria'): void {
+    if (this.ordenCampo() === campo) this.ordenAsc.update((v) => !v);
+    else {
+      this.ordenCampo.set(campo);
+      this.ordenAsc.set(campo !== 'fecha'); // texto asc por defecto, fechas desc
+    }
+    this.pagina.set(1);
+  }
+
+  irAPagina(n: number): void {
+    this.pagina.set(Math.min(Math.max(1, n), this.totalPaginas()));
+  }
+
+  cargarDocumentos(): void {
+    this.documentosSvc.getByCliente(this.clienteId()).subscribe({
+      error: () => { /* el interceptor global ya muestra el error */ },
+    });
+  }
+
+  /** Abre el informe en el editor o el documento externo en una pestaña nueva. */
+  abrirFila(fila: FilaDocumento): void {
+    if (fila.origen === 'informe' && fila.informe) {
+      this.abrirEditor(fila.informe);
+      return;
+    }
+    if (this.abriendo()) return;
+    this.abriendo.set(true);
+    this.documentosSvc.abrir(fila.id)
+      .pipe(finalize(() => this.abriendo.set(false)))
+      .subscribe({ error: () => { /* interceptor global */ } });
+  }
+
+  eliminarFila(fila: FilaDocumento, event: Event): void {
+    event.stopPropagation();
+    if (fila.origen === 'informe') {
+      this.eliminarInforme(fila.id, event);
+      return;
+    }
+    this.confirmTitle.set('Eliminar documento');
+    this.confirmMsg.set(`Se eliminará «${fila.nombre}» de forma permanente.`);
+    this.pendingAction.set(() => this.documentosSvc.eliminar(fila.id).subscribe());
+  }
+
+  // ── Subida de documentos ────────────────────────────────────
+
+  readonly CATEGORIAS = CATEGORIAS_DOCUMENTO;
+  readonly CATEGORIA_LABELS = CATEGORIA_DOCUMENTO_LABELS;
+
+  mostrarSubida = signal(false);
+  subiendo      = signal(false);
+  errorSubida   = signal<string | null>(null);
+  ficheroSel    = signal<File | null>(null);
+  arrastrando   = signal(false);
+  formSubida    = signal<{ categoria: CategoriaDocumento; nombre: string; descripcion: string; fechaDocumento: string }>({
+    categoria: 'INFORME_MEDICO',
+    nombre: '',
+    descripcion: '',
+    fechaDocumento: '',
+  });
+
+  abrirSubida(): void {
+    this.mostrarFormNuevo.set(false);
+    this.mostrarFormBorrador.set(false);
+    this.mostrarFormObjetivos.set(false);
+    this.ficheroSel.set(null);
+    this.errorSubida.set(null);
+    this.formSubida.set({ categoria: 'INFORME_MEDICO', nombre: '', descripcion: '', fechaDocumento: '' });
+    this.mostrarSubida.set(true);
+  }
+
+  cerrarSubida(): void {
+    this.mostrarSubida.set(false);
+    this.ficheroSel.set(null);
+    this.errorSubida.set(null);
+  }
+
+  setCampoSubida(campo: string, valor: string): void {
+    this.formSubida.update((f) => ({ ...f, [campo]: valor }));
+  }
+
+  onFicheroInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.seleccionarFichero(input.files?.[0] ?? null);
+  }
+
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    this.arrastrando.set(true);
+  }
+
+  onDragLeave(): void {
+    this.arrastrando.set(false);
+  }
+
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    this.arrastrando.set(false);
+    this.seleccionarFichero(event.dataTransfer?.files?.[0] ?? null);
+  }
+
+  /** Valida tipo y tamaño en cliente; el backend vuelve a validarlo (nunca confiar en el cliente). */
+  private seleccionarFichero(file: File | null): void {
+    this.errorSubida.set(null);
+    if (!file) return;
+
+    if (!MIME_TYPES_PERMITIDOS.includes(file.type)) {
+      this.errorSubida.set('Formato no admitido. Acepta PDF, imagen, Word o Excel.');
+      return;
+    }
+    if (file.size > TAMANO_MAX_BYTES) {
+      this.errorSubida.set(`El fichero supera el máximo de ${TAMANO_MAX_BYTES / (1024 * 1024)} MB.`);
+      return;
+    }
+
+    this.ficheroSel.set(file);
+    // Prerrellena el nombre visible con el del fichero, sin la extensión.
+    if (!this.formSubida().nombre.trim()) {
+      this.setCampoSubida('nombre', file.name.replace(/\.[^.]+$/, ''));
+    }
+  }
+
+  confirmarSubida(): void {
+    const file = this.ficheroSel();
+    if (!file || this.subiendo()) return;
+
+    const form = this.formSubida();
+    this.subiendo.set(true);
+    this.errorSubida.set(null);
+
+    this.documentosSvc
+      .subir(file, {
+        clienteId: this.clienteId(),
+        categoria: form.categoria,
+        nombre: form.nombre.trim() || undefined,
+        descripcion: form.descripcion.trim() || undefined,
+        fechaDocumento: form.fechaDocumento || undefined,
+      })
+      .pipe(finalize(() => this.subiendo.set(false)))
+      .subscribe({
+        next: () => this.cerrarSubida(),
+        error: (err) =>
+          this.errorSubida.set(
+            err?.error?.message ?? 'No se ha podido subir el documento. Inténtalo de nuevo.',
+          ),
+      });
+  }
+
+  formatearTamano = formatearTamano;
 
   // ============================================================
   // CARGAR
@@ -285,7 +595,9 @@ export default class InformesTabComponent implements OnInit {
     } else {
       const textos: Record<string, string> = {};
       const secciones = this.getSeccionesParaTipo(informe.tipoInforme);
-      secciones.forEach((s) => { textos[s.key] = (informe as any)[s.key] ?? ''; });
+      secciones
+        .filter((s) => s.key !== SECCION_GAS_KEY)
+        .forEach((s) => { textos[s.key] = (informe as any)[s.key] ?? ''; });
       this.textosSecciones.set(textos);
       this.seccionActiva.set(secciones[0]?.key ?? null);
     }
@@ -307,17 +619,23 @@ export default class InformesTabComponent implements OnInit {
     this.textosSecciones.update((t) => ({ ...t, [key]: valor }));
   }
 
+  /** Solo las secciones que mapean a un campo del informe (excluye la tabla GAS). */
+  private construirDtoSecciones(): UpdateInformeDto {
+    const textos = this.textosSecciones();
+    const dto: UpdateInformeDto = {};
+    this.secciones()
+      .filter((s) => s.key !== SECCION_GAS_KEY)
+      .forEach((s) => { (dto as any)[s.key] = textos[s.key] ?? ''; });
+    return dto;
+  }
+
   // Autoguardado secciones (INICIAL / SEGUIMIENTO)
   guardarSeccion(): void {
     const informe = this.informeActivo();
     if (!informe || this.esBloqueado()) return;
 
-    const textos = this.textosSecciones();
-    const dto: UpdateInformeDto = {};
-    this.secciones().forEach((s) => { (dto as any)[s.key] = textos[s.key] ?? ''; });
-
     this.guardando.set(true);
-    this.informesSvc.update(informe.id, dto).subscribe({
+    this.informesSvc.update(informe.id, this.construirDtoSecciones()).subscribe({
       next: () => this.guardando.set(false),
       error: () => this.guardando.set(false),
     });
@@ -372,10 +690,7 @@ export default class InformesTabComponent implements OnInit {
     this.confirmMsg.set('No podrás editarlo después de finalizarlo.');
     this.pendingAction.set(() => {
       this.guardando.set(true);
-      const textos = this.textosSecciones();
-      const dto: UpdateInformeDto = {};
-      this.secciones().forEach((s) => { (dto as any)[s.key] = textos[s.key] ?? ''; });
-      this.informesSvc.update(informe.id, dto).subscribe({
+      this.informesSvc.update(informe.id, this.construirDtoSecciones()).subscribe({
         next: () => {
           this.informesSvc.finalizar(informe.id).subscribe({
             next: () => this.guardando.set(false),

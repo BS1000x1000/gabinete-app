@@ -123,49 +123,8 @@
         </div>
 
         <div class="form-section">
-          <h6 class="form-section-title">
-            <span class="text-danger">⚠ </span>Alertas importantes
-          </h6>
-          <div class="row g-3">
-            <div class="col-12">
-              <label class="form-label">Medicación</label>
-              <textarea class="form-control" formControlName="medicacion" rows="2"
-                        placeholder="Medicación actual y dosis..."></textarea>
-            </div>
-            <div class="col-12">
-              <label class="form-label">Alergias</label>
-              <input type="text" class="form-control" formControlName="alergias"
-                     placeholder="Alergias conocidas..." />
-            </div>
-          </div>
-        </div>
-
-        <div class="form-section">
-          <h6 class="form-section-title">Apoyos y adaptaciones</h6>
-          <div class="row g-3">
-            <div class="col-md-6">
-              <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" formControlName="adaptaciones" id="adaptaciones" />
-                <label class="form-check-label" for="adaptaciones">Tiene adaptaciones curriculares</label>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" formControlName="apoyos" id="apoyos" />
-                <label class="form-check-label" for="apoyos">Recibe apoyos</label>
-              </div>
-            </div>
-            <div class="col-12" *ngIf="formSanitario.get('adaptaciones')?.value">
-              <label class="form-label">Tipo de adaptaciones</label>
-              <input type="text" class="form-control" formControlName="tipoAdaptaciones"
-                     placeholder="Ej: ACI, ACUS, refuerzo..." />
-            </div>
-          </div>
-        </div>
-
-        <div class="form-section">
           <div class="d-flex justify-content-between align-items-center mb-2">
-            <h6 class="form-section-title mb-0">Especialistas</h6>
+            <h6 class="form-section-title mb-0">Especialistas sanitarios externos</h6>
             <button type="button" class="btn btn-sm btn-outline-primary" (click)="addEspecialista()">
               <i class="bi bi-plus me-1"></i>Añadir
             </button>
@@ -334,6 +293,54 @@
             <div class="col-md-6">
               <label class="form-label">Email</label>
               <input type="email" class="form-control" formControlName="ctoEmailColegioDos" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Situación escolar DEL ALUMNO: se edita aquí por afinidad, pero se
+             guarda contra el cliente (modelo Escolar), no contra el colegio. -->
+        <div class="form-section">
+          <h6 class="form-section-title">Situación del alumno en el centro</h6>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" formControlName="adaptaciones" id="drw-adaptaciones" />
+                <label class="form-check-label" for="drw-adaptaciones">Tiene adaptaciones curriculares</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" formControlName="apoyos" id="drw-apoyos" />
+                <label class="form-check-label" for="drw-apoyos">Recibe apoyos escolares</label>
+              </div>
+            </div>
+            <div class="col-12" *ngIf="formColegio.get('adaptaciones')?.value">
+              <label class="form-label">Tipo de adaptaciones</label>
+              <input type="text" class="form-control" formControlName="tipoAdaptaciones"
+                     placeholder="Ej: ACI, ACUS, refuerzo..." />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="form-section-title mb-0">Especialistas del centro</h6>
+            <button type="button" class="btn btn-sm btn-outline-primary" (click)="addEspecialistaColegio()">
+              <i class="bi bi-plus me-1"></i>Añadir
+            </button>
+          </div>
+          <div formArrayName="especialistasColegio" class="row g-2">
+            <div *ngFor="let ctrl of especialistasColegio.controls; let i = index" class="col-12">
+              <div class="input-group">
+                <input type="text" class="form-control" [formControlName]="i"
+                       placeholder="Ej: PT, AL, Orientador..." />
+                <button type="button" class="btn btn-outline-danger" (click)="removeEspecialistaColegio(i)">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </div>
+            <div *ngIf="especialistasColegio.length === 0" class="col-12">
+              <p class="text-muted small mb-0">No hay especialistas registrados</p>
             </div>
           </div>
         </div>

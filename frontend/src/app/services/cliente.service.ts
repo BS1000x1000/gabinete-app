@@ -6,6 +6,7 @@ import {
   ContactosData,
   ColegioData,
   SanitarioData,
+  EscolarData,
   ClienteData,
 } from '../interface/cliente-frontend.interface';
 import { ClienteDataBackend, ConsentimientoRgpdBackend } from '../interface/cliente-backend.interface';
@@ -37,6 +38,7 @@ export class ClientesService {
   contactos = signal<ContactosData | null>(null);
   colegio = signal<ColegioData | null>(null);
   sanitario = signal<SanitarioData | null>(null);
+  escolar = signal<EscolarData | null>(null);
   objetivos = signal<ClienteObjetivosResponse | null>(null);
   estadisticasObjetivos = signal<EstadisticasObjetivos | null>(null);
   clienteRaw = signal<ClienteDataBackend | null>(null);
@@ -105,6 +107,7 @@ export class ClientesService {
           const familiarData = c.contactosFamiliares?.[0] || null;
           const colegioData = c.colegio || null;
           const sanitarioData = c.sanitario || null;
+          const escolarData = c.escolar || null;
           this.contactosFamiliares.set(c.contactosFamiliares || []);
 
           // Actualizar signal principal (cliente)
@@ -172,17 +175,25 @@ export class ClientesService {
           if (sanitarioData) {
             this.sanitario.set({
               centroSalud: sanitarioData.centroSalud || '',
-              alergias: sanitarioData.alergias,
-              medicacion: sanitarioData.medicacion,
               diagnostico: sanitarioData.diagnostico,
-              especialistas: sanitarioData.especialistas,
               tratamientos: sanitarioData.tratamientos,
-              adaptaciones: sanitarioData.adaptaciones,
-              tipoAdaptaciones: sanitarioData.tipoAdaptaciones,
-              apoyos: sanitarioData.apoyos,
+              especialistas: sanitarioData.especialistas,
             } as SanitarioData);
           } else {
             this.sanitario.set(null);
+    this.escolar.set(null);
+          }
+
+          // Actualizar situacion escolar
+          if (escolarData) {
+            this.escolar.set({
+              adaptaciones: escolarData.adaptaciones,
+              tipoAdaptaciones: escolarData.tipoAdaptaciones,
+              apoyos: escolarData.apoyos,
+              especialistas: escolarData.especialistas,
+            } as EscolarData);
+          } else {
+            this.escolar.set(null);
           }
         }),
         map(() => {}),
@@ -234,6 +245,13 @@ export class ClientesService {
   updateSanitario(clienteId: string, data: any): Observable<any> {
     return this.http
       .patch<WrappedResponse<any>>(`${this.api}/${clienteId}/sanitario`, data)
+      .pipe(map((res) => res.data || res));
+  }
+
+  // ── ESCOLAR ───────────────────────────────────────────────
+  updateEscolar(clienteId: string, data: any): Observable<any> {
+    return this.http
+      .patch<WrappedResponse<any>>(`${this.api}/${clienteId}/escolar`, data)
       .pipe(map((res) => res.data || res));
   }
 

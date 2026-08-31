@@ -6,10 +6,10 @@ export interface Cliente {
   fechaNacimiento: Date;
   domicilio: string;
   curso: string;
-  diagnostico: string;
-  tratamientos: string;
-  medicacion: string;
-  alergias: string | null;
+  // Sanitario (profesionales externos aparte, ver modelo Sanitario)
+  diagnostico: string | null;
+  tratamientos: string | null;
+  // Escolar — situación del alumno, no del centro (ver modelo Escolar)
   adaptaciones: boolean;
   apoyos: boolean;
   colegio?: {

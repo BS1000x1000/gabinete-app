@@ -7,6 +7,7 @@ export const clienteInclude = {
   colegio: true,
   contactosFamiliares: true,
   sanitario: true,
+  escolar: true,
   disponibilidad: true, // Disponibilidad general
   trabajadoresAsignados: {
     include: {

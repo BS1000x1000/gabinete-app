@@ -46,7 +46,54 @@ describe('ClientesService', () => {
     });
   });
 
+  describe('create() sin DNI', () => {
+    const dtoSinDni = {
+      nombre: 'Ana', apellidos: 'Garcia',
+      fechaNacimiento: '2015-01-01', fechaInicio: '2026-01-01',
+    } as any;
+
+    beforeEach(() => {
+      prisma.cliente.create.mockResolvedValue(mkC());
+      prisma.cliente.findUniqueOrThrow.mockResolvedValue(mkC());
+      prisma.$transaction.mockImplementation(async (cb: any) => cb(prisma));
+    });
+
+    // Este es el bug que se arreglo: dos clientes sin DNI colisionaban porque
+    // el alta guardaba '' y '' si choca en un indice unico de Postgres.
+    it('no consulta duplicados cuando no se aporta DNI', async () => {
+      await svc.create(dtoSinDni);
+      expect(prisma.cliente.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('guarda null en vez de cadena vacia', async () => {
+      await svc.create({ ...dtoSinDni, dni: '   ' });
+      expect(prisma.cliente.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ dni: null }) }),
+      );
+    });
+
+    it('permite crear dos clientes seguidos sin DNI', async () => {
+      await expect(svc.create(dtoSinDni)).resolves.toBeDefined();
+      await expect(svc.create(dtoSinDni)).resolves.toBeDefined();
+    });
+
+    it('normaliza el DNI a mayusculas y sin espacios', async () => {
+      prisma.cliente.findUnique.mockResolvedValue(null);
+      await svc.create({ ...dtoSinDni, dni: ' 12345678z ' });
+      expect(prisma.cliente.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ dni: '12345678Z' }) }),
+      );
+    });
+  });
+
   describe('existeDni()', () => {
+    it('false sin consultar si el DNI viene vacio', async () => {
+      expect(await svc.existeDni('')).toBe(false);
+      expect(await svc.existeDni(null)).toBe(false);
+      expect(await svc.existeDni(undefined)).toBe(false);
+      expect(prisma.cliente.findUnique).not.toHaveBeenCalled();
+    });
+
     it('false si no existe', async()=>{ prisma.cliente.findUnique.mockResolvedValue(null); expect(await svc.existeDni('X')).toBe(false); });
     it('true si existe', async()=>{ prisma.cliente.findUnique.mockResolvedValue({id:'c1',deletedAt:null}); expect(await svc.existeDni('12A')).toBe(true); });
   });

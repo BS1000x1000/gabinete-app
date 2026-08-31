@@ -6,7 +6,6 @@ import {
   IsArray,
   ValidateNested,
   IsBoolean,
-  IsUUID,
   IsInt,
   Max,
   Min,
@@ -154,25 +153,37 @@ export class AsignacionTrabajadorDto {
 }
 
 /**
- * DTO para información sanitaria del cliente
+ * DTO para informacion sanitaria del cliente.
+ * Todo opcional: en el alta a menudo aun no hay diagnostico.
+ * `especialistas` son profesionales sanitarios EXTERNOS (psicologo, logopeda,
+ * neuropediatra...). Lo escolar va en DatosEscolaresDto.
  */
 export class DatosSanitariosDto {
+  @IsOptional()
   @IsString()
-  diagnostico: string;
-
-  @IsString()
-  centroSalud: string;
-
-  @IsString()
-  tratamientos: string;
-
-  @IsString()
-  medicacion: string;
+  diagnostico?: string;
 
   @IsOptional()
   @IsString()
-  alergias?: string;
+  centroSalud?: string;
 
+  @IsOptional()
+  @IsString()
+  tratamientos?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  especialistas?: string[];
+}
+
+/**
+ * DTO para la situacion escolar DEL NINO.
+ * Separado de ColegioDto a proposito: el colegio es una entidad compartida entre
+ * clientes, mientras que las adaptaciones, los apoyos y los especialistas del
+ * centro (PT, AL, orientador...) son del alumno concreto.
+ */
+export class DatosEscolaresDto {
   @IsOptional()
   @IsBoolean()
   adaptaciones?: boolean;
@@ -182,13 +193,13 @@ export class DatosSanitariosDto {
   tipoAdaptaciones?: string;
 
   @IsOptional()
+  @IsBoolean()
+  apoyos?: boolean;
+
+  @IsOptional()
   @IsArray()
   @IsString({ each: true })
   especialistas?: string[];
-
-  @IsOptional()
-  @IsBoolean()
-  apoyos?: boolean;
 }
 
 // ===== DTO PRINCIPAL =====
@@ -209,8 +220,14 @@ export class CreateClienteDto {
   @IsDateString()
   fechaNacimiento?: string;
 
+  /**
+   * Opcional: muchos menores no tienen DNI al darse de alta.
+   * Se normaliza a null para que varios clientes sin DNI convivan bajo el indice unico.
+   */
+  @IsOptional()
   @IsString()
-  dni: string;
+  @Transform(({ value }) => (typeof value === 'string' && value.trim() ? value.trim() : null))
+  dni?: string | null;
 
   @IsString()
   domicilio: string;
@@ -267,10 +284,11 @@ export class CreateClienteDto {
   @Type(() => DatosSanitariosDto)
   datosSanitarios?: DatosSanitariosDto;
 
+  // ----- Situacion escolar del nino (anidado) -----
   @IsOptional()
-  @IsArray()
-  @IsUUID('4', { each: true })
-  objetivosGeneralesIds?: string[];
+  @ValidateNested()
+  @Type(() => DatosEscolaresDto)
+  datosEscolares?: DatosEscolaresDto;
 
   // ✅ NUEVO: Asignación a trabajador
   @IsOptional()
@@ -303,7 +321,8 @@ export class UpdateClienteDto {
 
   @IsOptional()
   @IsString()
-  dni?: string;
+  @Transform(({ value }) => (typeof value === 'string' && value.trim() ? value.trim() : null))
+  dni?: string | null;
 
   @IsOptional()
   @IsString()
@@ -354,6 +373,11 @@ export class UpdateClienteDto {
   @ValidateNested()
   @Type(() => DatosSanitariosDto)
   datosSanitarios?: DatosSanitariosDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => DatosEscolaresDto)
+  datosEscolares?: DatosEscolaresDto;
 
   @IsOptional()
   @IsBoolean()

@@ -537,3 +537,121 @@
   margin-bottom: 0;
   margin-top: $spacing-sm;
 }
+// ============================================================
+// VALIDACIÓN Y CAMPOS NUEVOS (alta de cliente)
+// El objetivo es que el estado del campo se lea sin abrir los ojos:
+// rojo = falta o está mal, verde = correcto y con contenido.
+// ============================================================
+
+.wz-subtitulo {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+  color: $gray-700;
+  margin: 0;
+}
+
+.wz-hint {
+  margin: 0 0 0.5rem;
+  font-size: $font-size-xs;
+  color: $gray-500;
+  line-height: $line-height-normal;
+}
+
+// ── Chips de especialistas ───────────────────────────────────
+
+.wz-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.wz-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.7rem;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $gray-600;
+  background: $white;
+  border: 1px solid $gray-200;
+  border-radius: $border-radius-full;
+  cursor: pointer;
+  transition: $transition-color;
+
+  i { font-size: 0.75rem; opacity: 0.7; }
+
+  &:hover { border-color: $primary-light; color: $primary-dark; }
+
+  &.is-active {
+    background: $primary-ultra-light;
+    border-color: $primary;
+    color: $primary-dark;
+    font-weight: $font-weight-semibold;
+    i { opacity: 1; }
+  }
+
+  &:focus-visible { outline: 2px solid $primary; outline-offset: 1px; }
+}
+
+// ── Aviso de por qué no se puede avanzar ─────────────────────
+
+.wz-aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin: 0 1.5rem 0.75rem;
+  padding: 0.7rem 0.9rem;
+  background: $warning-light;
+  border: 1px solid rgba($warning, 0.4);
+  border-radius: $border-radius;
+  color: $warning-dark;
+  @include fade-in;
+
+  > i { font-size: 1rem; flex-shrink: 0; margin-top: 0.1rem; }
+
+  strong {
+    display: block;
+    font-size: $font-size-sm;
+    margin-bottom: 0.2rem;
+  }
+
+  ul {
+    margin: 0;
+    padding-left: 1.1rem;
+    font-size: $font-size-xs;
+    line-height: $line-height-relaxed;
+  }
+}
+
+// El botón sigue pulsable aunque falte algo: al pulsarlo se explica qué falta.
+// Se atenúa para señalar que no avanzará todavía, pero no se bloquea.
+.wz-btn-bloqueado {
+  opacity: 0.65;
+}
+
+// ── Estados de campo ─────────────────────────────────────────
+
+.form-control.is-valid,
+.form-select.is-valid {
+  border-color: $success;
+  background-image: none; // el icono de Bootstrap pelea con los input-group
+  padding-right: 0.75rem;
+
+  &:focus {
+    border-color: $success;
+    box-shadow: 0 0 0 3px rgba($success, 0.15);
+  }
+}
+
+.form-control.is-invalid,
+.form-select.is-invalid {
+  border-color: $danger;
+  background-image: none;
+  padding-right: 0.75rem;
+
+  &:focus {
+    border-color: $danger;
+    box-shadow: 0 0 0 3px rgba($danger, 0.15);
+  }
+}

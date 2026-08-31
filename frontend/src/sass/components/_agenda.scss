@@ -1492,3 +1492,132 @@ $wg-time-col: 48px;
     opacity: 1;
   }
 }
+
+// ============================================================
+// ACCESOS RÁPIDOS Y PENDIENTES
+// La agenda es la pantalla de inicio: además del día y la semana,
+// da entrada a las acciones repetidas y a lo que queda a medias.
+// ============================================================
+
+.ag-quick {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  padding: 0 $spacing-lg;
+  max-width: 1600px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: $breakpoint-md) { padding: 0 $spacing-md; }
+
+  &__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.8rem;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $gray-700;
+    background: $white;
+    border: 1px solid $gray-200;
+    border-radius: $border-radius-sm;
+    cursor: pointer;
+    transition: $transition-color;
+
+    i { font-size: 0.9rem; }
+
+    &:hover {
+      border-color: $primary-light;
+      background: $primary-ultra-light;
+      color: $primary-dark;
+    }
+
+    &:focus-visible { outline: 2px solid $primary; outline-offset: 1px; }
+
+    &--primary {
+      background: $primary;
+      border-color: $primary;
+      color: $white;
+
+      &:hover { background: $primary-dark; border-color: $primary-dark; color: $white; }
+    }
+  }
+}
+
+.ag-panel--pendientes {
+  padding: $spacing-md;
+}
+
+.ag-pend {
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.6rem;
+
+    i { color: $warning; }
+
+    h2 {
+      flex: 1;
+      margin: 0;
+      font-size: $font-size-sm;
+      font-weight: $font-weight-bold;
+      color: $gray-800;
+    }
+  }
+
+  &__badge {
+    padding: 0.1rem 0.45rem;
+    font-size: 0.68rem;
+    font-weight: $font-weight-bold;
+    color: $warning-dark;
+    background: $warning-light;
+    border-radius: $border-radius-full;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__grupo {
+    & + & { margin-top: 0.7rem; }
+  }
+
+  &__label {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-bottom: 0.25rem;
+    font-size: 0.68rem;
+    font-weight: $font-weight-bold;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: $gray-400;
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.35rem 0.5rem;
+    font-size: $font-size-xs;
+    text-align: left;
+    color: $gray-700;
+    background: transparent;
+    border: none;
+    border-radius: $border-radius-sm;
+    cursor: pointer;
+    transition: $transition-color;
+
+    &:hover { background: $primary-ultra-light; color: $primary-dark; }
+    &:focus-visible { outline: 2px solid $primary; outline-offset: -2px; }
+
+    > span:first-child { @include truncate; }
+  }
+
+  &__meta {
+    flex-shrink: 0;
+    font-size: 0.65rem;
+    color: $gray-400;
+  }
+}

@@ -102,97 +102,92 @@ export const ESTADO_INFORME_LABELS: Record<EstadoInforme, { texto: string; badge
   ENVIADO:     { texto: 'Enviado',     badgeClass: 'badge-enviado' },
 };
 
-// Secciones del informe para el formulario
+// Secciones del informe para el formulario.
+// El orden de cada array ES el orden del documento y de la navegación del editor;
+// la numeración se calcula al renderizar, así que reordenar no obliga a renumerar.
+// Debe mantenerse alineado con `backend/src/informes/templates/informe.template.ts`.
+export const SECCION_GAS_KEY = 'gas';
+
 export interface SeccionInforme {
-  key: keyof UpdateInformeDto;
+  /** `'gas'` es una sección sintética (tabla GAS), no un campo editable del informe. */
+  key: keyof UpdateInformeDto | typeof SECCION_GAS_KEY;
   titulo: string;
-  placeholder: string;
-  soloSeguimiento?: boolean;
+  placeholder?: string;
 }
+
+const GAS_SECCION: SeccionInforme = {
+  key: SECCION_GAS_KEY,
+  titulo: 'Objetivos GAS (Goal Attainment Scaling)',
+};
 
 export const SECCIONES_INICIAL: SeccionInforme[] = [
   {
     key: 'motivoConsulta',
-    titulo: '1. Motivo de consulta',
+    titulo: 'Motivo de consulta',
     placeholder: 'Describe el motivo por el que el alumno acude al gabinete...',
   },
   {
     key: 'analisisInformacion',
-    titulo: '2. Análisis de la información aportada',
+    titulo: 'Análisis de la información aportada',
     placeholder: 'Analiza la información recibida de familia, colegio y otros profesionales...',
   },
   {
     key: 'evaluacionInicial',
-    titulo: '3. Evaluación inicial',
+    titulo: 'Evaluación inicial',
     placeholder: 'Describe los resultados de la evaluación inicial realizada...',
   },
   {
     key: 'objetivosGeneralesTexto',
-    titulo: '4. Objetivos generales',
+    titulo: 'Objetivos generales',
     placeholder: 'Describe los objetivos generales del plan de intervención...',
   },
+  GAS_SECCION,
 ];
 
 export const SECCIONES_ALTA: SeccionInforme[] = [
   {
     key: 'motivoConsulta',
-    titulo: '1. Motivo de consulta / razón del alta',
+    titulo: 'Motivo de consulta / razón del alta',
     placeholder: 'Describe el motivo original de consulta y la razón del alta...',
   },
   {
     key: 'evolucionObservada',
-    titulo: '2. Resumen del proceso terapéutico',
+    titulo: 'Resumen del proceso terapéutico',
     placeholder: 'Resume el proceso seguido durante el tratamiento...',
   },
   {
     key: 'evaluacionInicial',
-    titulo: '3. Estado al cierre del tratamiento',
+    titulo: 'Estado al cierre del tratamiento',
     placeholder: 'Describe el estado del alumno al finalizar el tratamiento...',
   },
-  {
-    key: 'objetivosGeneralesTexto',
-    titulo: '4. Logros alcanzados',
-    placeholder: 'Enumera los logros y objetivos alcanzados durante el tratamiento...',
-  },
+  GAS_SECCION,
   {
     key: 'recomendaciones',
-    titulo: '5. Recomendaciones de continuidad',
+    titulo: 'Recomendaciones de continuidad',
     placeholder: 'Incluye recomendaciones para familia, colegio y seguimiento post-alta...',
   },
 ];
 
 export const SECCIONES_SEGUIMIENTO: SeccionInforme[] = [
   {
-    key: 'motivoConsulta',
-    titulo: '1. Motivo de consulta',
-    placeholder: 'Motivo de consulta original o actualizado...',
-  },
-  {
-    key: 'evolucionObservada',
-    titulo: '2. Evolución observada',
-    placeholder: 'Describe la evolución del alumno durante el período evaluado...',
-    soloSeguimiento: true,
-  },
-  {
     key: 'evaluacionInicial',
-    titulo: '3. Evaluación del período',
+    titulo: 'Evaluación del período',
     placeholder: 'Evaluación del trabajo realizado durante el período...',
   },
   {
     key: 'objetivosGeneralesTexto',
-    titulo: '4. Objetivos trabajados',
+    titulo: 'Objetivos trabajados',
     placeholder: 'Resumen narrativo de los objetivos trabajados...',
   },
+  GAS_SECCION,
   {
     key: 'objetivosProximoCurso',
-    titulo: '5. Objetivos para el próximo período',
+    titulo: 'Objetivos para el próximo período',
     placeholder: 'Objetivos propuestos para el siguiente curso o período...',
-    soloSeguimiento: true,
   },
   {
     key: 'recomendaciones',
-    titulo: '6. Recomendaciones',
+    titulo: 'Recomendaciones',
     placeholder: 'Recomendaciones para familia, colegio u otros profesionales...',
-    soloSeguimiento: true,
   },
 ];

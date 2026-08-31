@@ -645,3 +645,273 @@
     color: darken($secondary, 10%);
   }
 }
+
+// ============================================================
+// LISTA TIPO HRM — sustituye a las tarjetas grandes.
+// Comparte lenguaje visual con la tabla de Documentación
+// (_documentacion.scss): franja de color por tipo, densidad alta,
+// acciones a la derecha. Un contrato por fila, escaneable de un vistazo.
+// ============================================================
+
+.ct-lista {
+  border: 1px solid $gray-200;
+  border-radius: $border-radius;
+  overflow: hidden;
+  background: $white;
+}
+
+.ct-fila {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  flex-wrap: wrap;
+  padding: 0.75rem 0.9rem 0.75rem 1.1rem;
+  border-bottom: 1px solid $gray-100;
+  transition: background-color 0.15s ease;
+
+  &:last-child { border-bottom: none; }
+  &:hover { background: $primary-ultra-light; }
+  &:hover .ct-fila__stripe { width: 5px; }
+
+  &__stripe {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    transition: width 0.15s ease;
+  }
+
+  &__main {
+    flex: 1 1 20rem;
+    min-width: 0;
+  }
+
+  &__titulo {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    font-size: $font-size-base;
+    font-weight: $font-weight-bold;
+    color: $gray-900;
+  }
+
+  &__tipo {
+    font-weight: $font-weight-semibold;
+    font-size: $font-size-sm;
+  }
+
+  &__resumen {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+    margin-top: 0.2rem;
+    font-size: $font-size-xs;
+    color: $gray-500;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__acciones {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+  }
+}
+
+.ct-resumen {
+  &__cuota {
+    font-weight: $font-weight-bold;
+    color: $primary-dark;
+    font-size: $font-size-sm;
+
+    small { font-weight: $font-weight-normal; color: $gray-400; }
+  }
+
+  &__sep { color: $gray-300; }
+}
+
+// ── Distintivos de estado ────────────────────────────────────
+
+.ct-estado {
+  padding: 0.1rem 0.45rem;
+  font-size: 0.68rem;
+  font-weight: $font-weight-semibold;
+  border-radius: $border-radius-full;
+  border: 1px solid transparent;
+
+  &--activo     { background: $success-light;   color: $success-dark;   border-color: rgba($success, 0.35); }
+  &--borrador   { background: $gray-100;        color: $gray-600;       border-color: $gray-200; }
+  &--suspendido { background: $warning-light;   color: $warning-dark;   border-color: rgba($warning, 0.35); }
+  &--finalizado { background: $secondary-light; color: $secondary-dark; border-color: rgba($secondary, 0.35); }
+}
+
+.ct-firmado {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.68rem;
+  font-weight: $font-weight-semibold;
+  color: $success-dark;
+
+  i { font-size: 0.8rem; }
+}
+
+// El PDF firmado ya no coincide con los datos que se facturan
+.ct-desfase {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+  padding: 0.4rem 0.6rem;
+  font-size: $font-size-xs;
+  line-height: $line-height-normal;
+  color: $warning-dark;
+  background: $warning-light;
+  border: 1px solid rgba($warning, 0.35);
+  border-radius: $border-radius-sm;
+
+  i { flex-shrink: 0; margin-top: 0.1rem; }
+}
+
+// ── Acciones de fila ─────────────────────────────────────────
+
+.ct-accion {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.65rem;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  white-space: nowrap;
+  color: $gray-600;
+  background: $white;
+  border: 1px solid $gray-200;
+  border-radius: $border-radius-sm;
+  cursor: pointer;
+  transition: $transition-color;
+
+  &:hover:not(:disabled) {
+    color: $primary-dark;
+    border-color: $primary;
+    background: $primary-ultra-light;
+  }
+
+  &:disabled { opacity: 0.55; cursor: not-allowed; }
+  &:focus-visible { outline: 2px solid $primary; outline-offset: 1px; }
+
+  &--peligro:hover:not(:disabled) {
+    color: $danger-dark;
+    border-color: $danger;
+    background: $danger-light;
+  }
+}
+
+.ct-confirm {
+  flex: 1 1 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-sm;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.7rem;
+  font-size: $font-size-xs;
+  color: $danger-dark;
+  background: $danger-light;
+  border-radius: $border-radius-sm;
+
+  &__botones { display: flex; gap: 0.35rem; }
+}
+
+// ── Drawer de modificación ───────────────────────────────────
+
+.ct-subtitulo {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+  color: $gray-800;
+  margin: 0 0 0.15rem;
+}
+
+.ct-hint {
+  margin: 0 0 0.6rem;
+  font-size: $font-size-xs;
+  color: $gray-500;
+  line-height: $line-height-normal;
+}
+
+.ct-opcional {
+  font-weight: $font-weight-normal;
+  color: $gray-400;
+}
+
+.ct-slots-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: $spacing-md 0 0.5rem;
+}
+
+.ct-slot-remove {
+  align-self: flex-end;
+  width: 2rem;
+  height: 2rem;
+  color: $gray-500;
+  background: $white;
+  border: 1px solid $gray-200;
+  border-radius: $border-radius-sm;
+  cursor: pointer;
+  transition: $transition-color;
+
+  &:hover { color: $danger-dark; border-color: $danger; background: $danger-light; }
+}
+
+.ct-firmado-actual {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  padding: 0.5rem 0.7rem;
+  font-size: $font-size-xs;
+  color: $success-dark;
+  background: $success-light;
+  border-radius: $border-radius-sm;
+
+  i { font-size: 1rem; }
+}
+
+.ct-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: $spacing-lg;
+  text-align: center;
+  cursor: pointer;
+  border: 2px dashed $gray-200;
+  border-radius: $border-radius;
+  background: $gray-50;
+  transition: $transition-color;
+
+  > i { font-size: 1.6rem; color: $gray-400; }
+
+  &__titulo {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $gray-700;
+    word-break: break-all;
+  }
+
+  &__hint { font-size: $font-size-xs; color: $gray-400; }
+
+  &:hover { border-color: $primary-light; background: $primary-ultra-light; }
+
+  &.has-file {
+    border-style: solid;
+    border-color: $success;
+    background: $success-light;
+    > i { color: $success-dark; }
+  }
+}

@@ -10,7 +10,6 @@ export default [
     component: HomeComponent,
     children: [
       { path: '',           redirectTo: 'agenda', pathMatch: 'full' },
-      { path: 'dashboard',  loadComponent: () => import('./dashboard/dashboard-home.component').then(m => m.DashboardHomeComponent) },
       { path: 'agenda',     loadComponent: () => import('./agenda/agenda.component').then(m => m.AgendaComponent) },
       { path: 'listado/:id',loadChildren: () => import('./listado/listado.routes') },
       { path: 'clientes',   loadComponent: () => import('../clientes/clientes.component') },
@@ -24,7 +23,7 @@ export default [
         canActivate: [roleGuard(['ADMIN', 'PEDAGOGO', 'NEURO', 'LOGOPEDA'])],
         loadComponent: () => import('./administracion/administracion-shell.component'),
         children: [
-          { path: '',            redirectTo: 'mis-facturas', pathMatch: 'full' },
+          { path: '',            redirectTo: 'mis-contratos', pathMatch: 'full' },
           { path: 'mis-contratos', loadComponent: () => import('./administracion/mis-contratos/mis-contratos.component') },
           { path: 'mis-facturas',  loadComponent: () => import('./administracion/mis-facturas/mis-facturas.component')  },
           { path: 'mis-ingresos',  loadComponent: () => import('./administracion/mis-ingresos/mis-ingresos.component')  },

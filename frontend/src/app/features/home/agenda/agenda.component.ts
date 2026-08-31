@@ -44,6 +44,9 @@ import {
 } from '../../../interface/evento-agenda.interface';
 import { FestivosService } from '../../../services/festivos.service';
 import { Festivo } from '../../../interface/festivo.interface';
+import { DashboardService } from '../../../services/dashboard.service';
+import { RegistroDrawerService } from '../../../services/registro-drawer.service';
+import { NuevaSesionModalService } from '../../../services/nueva-sesion-modal.service';
 import { VacacionesService } from '../../../services/vacaciones.service';
 
 const TIPO_COLORES: Record<string, string> = {
@@ -71,6 +74,9 @@ export class AgendaComponent implements OnInit {
   private eventosSvc = inject(EventosAgendaService);
   private festivosSvc = inject(FestivosService);
   private vacacionesSvc = inject(VacacionesService);
+  private dashboardSvc = inject(DashboardService);
+  private registroDrawerSvc = inject(RegistroDrawerService);
+  private nuevaSesionSvc = inject(NuevaSesionModalService);
   private destroyRef = inject(DestroyRef);
 
   readonly TIPO_SESION_LABELS: any = TIPO_SESION_LABELS;
@@ -213,6 +219,45 @@ export class AgendaComponent implements OnInit {
       .noLeidas()
       .filter((n) => n.prioridad === 'URGENTE' || n.prioridad === 'ALTA'),
   );
+  // ── Pendientes (rescatado del dashboard huerfano) ───────────
+  // Tareas que no son urgentes -de eso ya avisa el banner- pero que conviene
+  // no perder de vista: informes a medio escribir y objetivos sin evaluar.
+  private readonly miDia = this.dashboardSvc.miDia;
+
+  readonly informesEnBorrador = computed(
+    () => this.miDia()?.accionesPendientes?.informesEnBorrador ?? [],
+  );
+  readonly objetivosSinEvaluar = computed(
+    () => this.miDia()?.accionesPendientes?.objetivosSinEvaluar ?? [],
+  );
+  readonly totalPendientes = computed(
+    () => this.informesEnBorrador().length + this.objetivosSinEvaluar().length,
+  );
+  readonly hayPendientes = computed(() => this.totalPendientes() > 0);
+
+  readonly isRecep = this.auth.isRecep;
+
+  irAlInforme(informe: { cliente: { id: string } }): void {
+    this.router.navigate(['/home/listado', informe.cliente.id, 'documentacion']);
+  }
+
+  irAlObjetivo(obj: { cliente: { id: string } }): void {
+    this.router.navigate(['/home/listado', obj.cliente.id, 'progreso']);
+  }
+
+  // ── Accesos rapidos ─────────────────────────────────────────
+  abrirRegistro(): void {
+    this.registroDrawerSvc.openVacio();
+  }
+
+  abrirNuevaSesion(): void {
+    this.nuevaSesionSvc.open();
+  }
+
+  irANuevoCliente(): void {
+    this.router.navigate(['/home/clientes'], { queryParams: { nuevo: true } });
+  }
+
   readonly hayAlertas = computed(
     () => this.alertasUrgentes().length > 0 && !this.bannerColapsado(),
   );
@@ -322,6 +367,13 @@ export class AgendaComponent implements OnInit {
   }
 
   ngOnInit() {
+    // Alimenta el panel de pendientes. RECEP no tiene informes ni objetivos propios.
+    if (!this.auth.isRecep()) {
+      this.dashboardSvc.getMiDia()
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({ error: () => { /* el interceptor global ya avisa */ } });
+    }
+
     if (this.canVerTodo()) {
       this.trabajadorSvc.getTrabajadores()
         .pipe(takeUntilDestroyed(this.destroyRef))

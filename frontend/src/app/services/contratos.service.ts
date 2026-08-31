@@ -59,6 +59,25 @@ export class ContratosService {
       .pipe(map(res => (res.data ?? res) as ContratoServicio));
   }
 
+  /**
+   * Sube el contrato firmado. El navegador pone el Content-Type con su boundary;
+   * el interceptor no lo toca.
+   */
+  subirDocumento(id: string, fichero: File) {
+    const form = new FormData();
+    form.append('fichero', fichero, fichero.name);
+    return this.http
+      .post<WrappedResponse<ContratoServicio>>(`${this.apiUrl}/${id}/documento`, form)
+      .pipe(
+        map(res => (res.data ?? res) as ContratoServicio),
+        tap(actualizado =>
+          this._contratosCliente.update(list =>
+            list.map(c => (c.id === actualizado.id ? actualizado : c)),
+          ),
+        ),
+      );
+  }
+
   descargarPdf(id: string): Observable<void> {
     return this.http
       .get(`${this.apiUrl}/${id}/pdf`, { responseType: 'blob' })

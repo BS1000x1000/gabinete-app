@@ -60,26 +60,6 @@
         </div>
       </div>
 
-      <!-- Alertas críticas -->
-      <div
-        class="ficha-alerts-zone"
-        *ngIf="sanitario()?.alergias || sanitario()?.medicacion"
-      >
-        <div *ngIf="sanitario()?.alergias" class="ficha-alert ficha-alert-danger">
-          <i class="bi bi-exclamation-triangle-fill"></i>
-          <div>
-            <strong>Alergias</strong>
-            <span>{{ sanitario()?.alergias }}</span>
-          </div>
-        </div>
-        <div *ngIf="sanitario()?.medicacion" class="ficha-alert ficha-alert-info">
-          <i class="bi bi-capsule"></i>
-          <div>
-            <strong>Medicación</strong>
-            <span>{{ sanitario()?.medicacion }}</span>
-          </div>
-        </div>
-      </div>
 
     </div>
 
@@ -90,9 +70,22 @@
 
       <!-- Tab nav -->
       <nav class="ficha-tabs">
+        <!-- Uso diario -->
         <a
           *ngFor="let tab of workTabs()"
           class="ficha-tab"
+          [routerLink]="['./', tab.target]"
+          routerLinkActive="active"
+        >
+          <i class="bi" [ngClass]="tab.icon"></i>
+          <span>{{ tab.label }}</span>
+        </a>
+
+        <!-- Configuración del caso: mismo alcance, menos peso visual -->
+        <span class="ficha-tabs__sep" aria-hidden="true"></span>
+        <a
+          *ngFor="let tab of configTabs()"
+          class="ficha-tab ficha-tab--config"
           [routerLink]="['./', tab.target]"
           routerLinkActive="active"
         >

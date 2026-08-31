@@ -32,14 +32,20 @@ interface FamiliarBackend {
 interface SanitarioBackend {
   id: string;
   centroSalud?: string;
-  alergias?: string;
-  medicacion?: string;
   diagnostico?: string;
   tratamientos?: string;
+  /** Profesionales sanitarios EXTERNOS (psicologo, logopeda, neuropediatra...). */
   especialistas?: string[];
+}
+
+/** Situacion escolar DEL NINO. Separado de Colegio, que se comparte entre clientes. */
+interface EscolarBackend {
+  id: string;
   adaptaciones?: boolean;
   tipoAdaptaciones?: string;
   apoyos?: boolean;
+  /** Especialistas del CENTRO (PT, AL, orientador...). */
+  especialistas?: string[];
 }
 
 // ✅ NUEVO: Objetivo General Asignado
@@ -115,6 +121,9 @@ export interface ClienteDataBackend {
   
   // Datos sanitarios
   sanitario?: SanitarioBackend | null;
+
+  // Situacion escolar del nino
+  escolar?: EscolarBackend | null;
   
   // ✅ NUEVO: Objetivos generales asignados
   objetivosGeneralesAsignados: ObjetivoGeneralAsignado[];

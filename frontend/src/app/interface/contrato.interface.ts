@@ -42,6 +42,15 @@ export interface ContratoServicio {
   estado:       EstadoContrato;
   notas?:       string | null;
   fechaFirma:   string;
+
+  /** PDF firmado subido. Cuando existe, sustituye al generado por la app. */
+  storageKeyFirmado?:  string | null;
+  mimeTypeFirmado?:    string | null;
+  tamanoBytesFirmado?: number | null;
+  fechaSubidaFirmado?: string | null;
+  /** Si es posterior a `fechaSubidaFirmado`, el PDF firmado quedó desfasado. */
+  resumenModificadoAt?: string | null;
+
   createdAt:    string;
   updatedAt:    string;
   cliente:    { id: string; nombre: string; apellidos: string };

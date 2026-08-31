@@ -100,60 +100,59 @@ export function buildInformeHtml(datos: InformeTemplateData): string {
   // Escape once — used in both student card and signatures section
   const elaboradoPor = escapeHtml(datos.elaborado_por);
 
-  // ── Secciones de texto ─────────────────────────────────────
-  type Seccion = { titulo: string; contenido: string };
+  // ── Secciones del informe ──────────────────────────────────
+  // El orden del array ES el orden del documento; la numeración se calcula
+  // al renderizar, así que reordenar aquí no obliga a renumerar títulos.
+  // La sección GAS es una sección más y puede ir en cualquier posición.
+  type Seccion =
+    | { tipo: 'texto'; titulo: string; contenido: string }
+    | { tipo: 'gas'; titulo: string };
+
+  const GAS_SECCION: Seccion = { tipo: 'gas', titulo: 'Objetivos GAS (Goal Attainment Scaling)' };
+
   const secciones: Seccion[] = esAlta
     ? [
-        { titulo: '1. Motivo de consulta / razón del alta', contenido: datos.motivoConsulta },
-        { titulo: '2. Resumen del proceso terapéutico', contenido: datos.evolucionObservada },
-        { titulo: '3. Estado al cierre del tratamiento', contenido: datos.evaluacionInicial },
-        { titulo: '4. Logros alcanzados', contenido: datos.objetivosGeneralesTexto },
-        { titulo: '5. Recomendaciones de continuidad', contenido: datos.recomendaciones },
+        { tipo: 'texto', titulo: 'Motivo de consulta / razón del alta', contenido: datos.motivoConsulta },
+        { tipo: 'texto', titulo: 'Resumen del proceso terapéutico', contenido: datos.evolucionObservada },
+        { tipo: 'texto', titulo: 'Estado al cierre del tratamiento', contenido: datos.evaluacionInicial },
+        GAS_SECCION,
+        { tipo: 'texto', titulo: 'Recomendaciones de continuidad', contenido: datos.recomendaciones },
       ]
-    : [
-        { titulo: '1. Motivo de consulta', contenido: datos.motivoConsulta },
-        {
-          titulo: '2. Análisis de la información recabada',
-          contenido: datos.analisisInformacion
-            ? `En el proceso de valoración de ${escapeHtml(datos.alumno.nombre_pila)}, se ha recabado la siguiente información:<br><br>${escapeHtml(datos.analisisInformacion)}`
-            : '',
-        },
-        {
-          titulo: '3. Evaluación inicial',
-          contenido: datos.evaluacionInicial
-            ? `Tras el proceso de evaluación realizado con ${escapeHtml(datos.alumno.nombre_pila)}, se presentan los siguientes resultados:<br><br>${escapeHtml(datos.evaluacionInicial)}`
-            : '',
-        },
-        {
-          titulo: '4. Objetivos generales de intervención',
-          contenido: datos.objetivosGeneralesTexto
-            ? `Los objetivos generales de intervención planteados para ${escapeHtml(datos.alumno.nombre_pila)} son los siguientes:<br><br>${escapeHtml(datos.objetivosGeneralesTexto)}`
-            : '',
-        },
-        ...(esSeguimiento ? [
-          { titulo: '5. Evolución observada', contenido: datos.evolucionObservada },
-          { titulo: '6. Objetivos próximo curso', contenido: datos.objetivosProximoCurso },
-          { titulo: '7. Recomendaciones', contenido: datos.recomendaciones },
-        ] : []),
-      ];
-
-  const seccionesHtml = secciones
-    .map(
-      (s) => `
-    <div class="section-block">
-      <div class="section-header">
-        <div class="section-accent"></div>
-        <div class="section-title">${s.titulo}</div>
-      </div>
-      <div class="section-body">
-        ${s.contenido || '<em class="empty-text">Sin contenido registrado.</em>'}
-      </div>
-    </div>`,
-    )
-    .join('');
+    : esSeguimiento
+      ? [
+          { tipo: 'texto', titulo: 'Evaluación del período', contenido: datos.evaluacionInicial },
+          { tipo: 'texto', titulo: 'Objetivos trabajados', contenido: datos.objetivosGeneralesTexto },
+          GAS_SECCION,
+          { tipo: 'texto', titulo: 'Objetivos para el próximo período', contenido: datos.objetivosProximoCurso },
+          { tipo: 'texto', titulo: 'Recomendaciones', contenido: datos.recomendaciones },
+        ]
+      : [
+          { tipo: 'texto', titulo: 'Motivo de consulta', contenido: datos.motivoConsulta },
+          {
+            tipo: 'texto',
+            titulo: 'Análisis de la información recabada',
+            contenido: datos.analisisInformacion
+              ? `En el proceso de valoración de ${escapeHtml(datos.alumno.nombre_pila)}, se ha recabado la siguiente información:<br><br>${escapeHtml(datos.analisisInformacion)}`
+              : '',
+          },
+          {
+            tipo: 'texto',
+            titulo: 'Evaluación inicial',
+            contenido: datos.evaluacionInicial
+              ? `Tras el proceso de evaluación realizado con ${escapeHtml(datos.alumno.nombre_pila)}, se presentan los siguientes resultados:<br><br>${escapeHtml(datos.evaluacionInicial)}`
+              : '',
+          },
+          {
+            tipo: 'texto',
+            titulo: 'Objetivos generales de intervención',
+            contenido: datos.objetivosGeneralesTexto
+              ? `Los objetivos generales de intervención planteados para ${escapeHtml(datos.alumno.nombre_pila)} son los siguientes:<br><br>${escapeHtml(datos.objetivosGeneralesTexto)}`
+              : '',
+          },
+          GAS_SECCION,
+        ];
 
   // ── Sección GAS ─────────────────────────────────────────────
-  const gasNumero = esSeguimiento ? 8 : esAlta ? 6 : 5;
   const gasIntro = `La metodología GAS (Goal Attainment Scaling) permite cuantificar el progreso de ${escapeHtml(datos.alumno.nombre_pila)} estableciendo objetivos individualizados en una escala de cinco niveles, facilitando la medición objetiva del avance terapéutico.`;
 
   // Single pass over GAS_COLS to build both header and label rows
@@ -187,12 +186,12 @@ export function buildInformeHtml(datos: InformeTemplateData): string {
           )
           .join('');
 
-  const gasSectionHtml = `
-    <!-- GAS section allows page breaks within — tables can be taller than one page -->
+  // GAS section allows page breaks within — tables can be taller than one page
+  const buildGasSectionHtml = (numero: number, titulo: string) => `
     <div class="section-block gas-section">
       <div class="section-header">
         <div class="section-accent section-accent--blue"></div>
-        <div class="section-title">${gasNumero}. Objetivos GAS (Goal Attainment Scaling)</div>
+        <div class="section-title">${numero}. ${titulo}</div>
       </div>
       <div class="section-body" style="padding:14px 16px;">
         <p style="font-size:10.5px;line-height:1.7;color:#4b5563;margin-bottom:14px;text-align:justify;">${gasIntro}</p>
@@ -204,6 +203,24 @@ export function buildInformeHtml(datos: InformeTemplateData): string {
         ${gasObjetivosHtml}
       </div>
     </div>`;
+
+  // ── Render ordenado (texto + GAS) con numeración automática ─
+  const seccionesHtml = secciones
+    .map((s, i) => {
+      const numero = i + 1;
+      if (s.tipo === 'gas') return buildGasSectionHtml(numero, s.titulo);
+      return `
+    <div class="section-block">
+      <div class="section-header">
+        <div class="section-accent"></div>
+        <div class="section-title">${numero}. ${s.titulo}</div>
+      </div>
+      <div class="section-body">
+        ${s.contenido || '<em class="empty-text">Sin contenido registrado.</em>'}
+      </div>
+    </div>`;
+    })
+    .join('');
 
   // ── Firmas ──────────────────────────────────────────────────
   const signaturas = `
@@ -543,11 +560,8 @@ export function buildInformeHtml(datos: InformeTemplateData): string {
     </div>
   </div>
 
-  <!-- ══ SECCIONES DE TEXTO ════════════════════════════════════ -->
+  <!-- ══ SECCIONES (texto + GAS, en el orden definido arriba) ══ -->
   ${seccionesHtml}
-
-  <!-- ══ SECCIÓN GAS ══════════════════════════════════════════ -->
-  ${gasSectionHtml}
 
   <!-- ══ FIRMAS ════════════════════════════════════════════════ -->
   ${signaturas}

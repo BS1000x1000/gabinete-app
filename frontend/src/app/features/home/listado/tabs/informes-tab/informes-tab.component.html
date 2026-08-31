@@ -12,105 +12,189 @@
     ══════════════════════════════════════════════════════════ -->
     <div *ngIf="vista() === 'lista'" class="px-4 py-3">
 
-      <!-- Header -->
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <div>
-          <h6 class="fw-bold mb-0">Informes</h6>
-          <small class="text-muted">{{ informes().length }} informe{{ informes().length !== 1 ? 's' : '' }}</small>
+      <!-- ═══ Barra de herramientas del expediente ═══ -->
+      <div class="doc-toolbar">
+        <div class="doc-toolbar__title">
+          <h6>Documentación</h6>
+          <p class="doc-toolbar__sub">
+            {{ totalInformes() }} informe{{ totalInformes() !== 1 ? 's' : '' }}
+            <span class="doc-dot">·</span>
+            {{ totalDocumentos() }} documento{{ totalDocumentos() !== 1 ? 's' : '' }} externo{{ totalDocumentos() !== 1 ? 's' : '' }}
+          </p>
         </div>
-        <div class="d-flex gap-2">
-          <button class="btn btn-sm informe-sesiones-btn" [class.active]="mostrarFormBorrador()" (click)="abrirFormBorrador()">
-            <i class="bi me-1" [class.bi-envelope-paper]="!mostrarFormBorrador()" [class.bi-x-lg]="mostrarFormBorrador()"></i>
-            Informe de sesiones
+
+        <div class="doc-toolbar__actions">
+          <div class="doc-search">
+            <i class="bi bi-search"></i>
+            <input
+              type="search"
+              placeholder="Buscar por nombre o autor…"
+              aria-label="Buscar en la documentación"
+              [value]="busqueda()"
+              (input)="setBusqueda($any($event.target).value)"
+            />
+          </div>
+
+          <button class="doc-btn doc-btn--ghost" (click)="abrirSubida()">
+            <i class="bi bi-upload"></i><span>Subir documento</span>
           </button>
-          <button class="btn btn-sm informe-objetivos-btn" [class.active]="mostrarFormObjetivos()" (click)="abrirFormObjetivos()">
-            <i class="bi me-1" [class.bi-graph-up-arrow]="!mostrarFormObjetivos()" [class.bi-x-lg]="mostrarFormObjetivos()"></i>
-            Informe de progreso
-          </button>
-          <button class="btn btn-primary btn-sm" (click)="abrirFormNuevo()">
-            <i class="bi bi-plus-lg me-1"></i>Nuevo informe
-          </button>
+
+          <div class="doc-generar">
+            <button class="doc-btn doc-btn--primary" (click)="abrirFormNuevo()">
+              <i class="bi bi-plus-lg"></i><span>Nuevo informe</span>
+            </button>
+            <button
+              class="doc-btn doc-btn--icon"
+              title="Generar informe de sesiones para la familia"
+              aria-label="Generar informe de sesiones"
+              [class.is-active]="mostrarFormBorrador()"
+              (click)="abrirFormBorrador()"
+            ><i class="bi bi-envelope-paper"></i></button>
+            <button
+              class="doc-btn doc-btn--icon"
+              title="Generar informe de progreso por objetivos"
+              aria-label="Generar informe de progreso"
+              [class.is-active]="mostrarFormObjetivos()"
+              (click)="abrirFormObjetivos()"
+            ><i class="bi bi-graph-up-arrow"></i></button>
+          </div>
         </div>
       </div>
 
-      <!-- Barra de filtros -->
-      <div *ngIf="informes().length > 0" class="informes-filtros mb-3">
-        <div class="informes-filtros-row">
-          <span class="informes-filtros-label">Tipo</span>
-          <button
-            class="informes-filtro-pill"
-            [class.active]="filtroTipo() === 'todos'"
-            (click)="filtroTipo.set('todos')"
-          >Todos</button>
-          <button
-            class="informes-filtro-pill"
-            [class.active]="filtroTipo() === 'INICIAL'"
-            (click)="filtroTipo.set('INICIAL')"
-          >Inicial</button>
-          <button
-            class="informes-filtro-pill"
-            [class.active]="filtroTipo() === 'SEGUIMIENTO'"
-            (click)="filtroTipo.set('SEGUIMIENTO')"
-          >Seguimiento</button>
-          <button
-            class="informes-filtro-pill"
-            [class.active]="filtroTipo() === 'REGISTROS'"
-            (click)="filtroTipo.set('REGISTROS')"
-          >Sesiones</button>
-          <button
-            class="informes-filtro-pill"
-            [class.active]="filtroTipo() === 'OBJETIVOS_PROGRESO'"
-            (click)="filtroTipo.set('OBJETIVOS_PROGRESO')"
-          >Progreso</button>
-          <button
-            class="informes-filtro-pill"
-            [class.active]="filtroTipo() === 'ALTA'"
-            (click)="filtroTipo.set('ALTA')"
-          >Alta</button>
-        </div>
-        <div class="informes-filtros-row">
-        <!-- <div *ngIf="aniosDisponibles().length > 1" class="informes-filtros-row"> -->
-          <span class="informes-filtros-label">Año</span>
-          <button
-            class="informes-filtro-pill"
-            [class.active]="filtroAnio() === null"
-            (click)="filtroAnio.set(null)"
-          >Todos</button>
-          <button
-            *ngFor="let anio of aniosDisponibles()"
-            class="informes-filtro-pill"
-            [class.active]="filtroAnio() === anio"
-            (click)="filtroAnio.set(anio)"
-          >{{ anio }}</button>
+      <!-- ═══ Filtros: origen + categoría contextual ═══ -->
+      <div *ngIf="filas().todas.length > 0" class="doc-filtros">
+        <div class="doc-segmented" role="group" aria-label="Filtrar por origen">
+          <button [class.is-active]="filtroOrigen() === 'todos'" (click)="setOrigen('todos')">
+            Todo <span class="doc-count">{{ filas().todas.length }}</span>
+          </button>
+          <button [class.is-active]="filtroOrigen() === 'informe'" (click)="setOrigen('informe')">
+            Informes <span class="doc-count">{{ totalInformes() }}</span>
+          </button>
+          <button [class.is-active]="filtroOrigen() === 'documento'" (click)="setOrigen('documento')">
+            Documentos <span class="doc-count">{{ totalDocumentos() }}</span>
+          </button>
         </div>
 
-        <div class="informes-filtros-row">
-          <span class="informes-filtros-label">Estado</span>
+        <div class="doc-chips">
           <button
-            class="informes-filtro-pill"
-            [class.active]="filtroEstado() === 'todos'"
-            (click)="filtroEstado.set('todos')"
-          >Todos</button>
+            class="doc-chip"
+            [class.is-active]="filtroCategoria() === 'todos'"
+            (click)="setCategoria('todos')"
+          >Todas las categorías</button>
           <button
-            class="informes-filtro-pill estado-borrador"
-            [class.active]="filtroEstado() === 'BORRADOR'"
-            (click)="filtroEstado.set('BORRADOR')"
-          >Borrador</button>
+            *ngFor="let cat of categoriasDisponibles()"
+            class="doc-chip"
+            [class.is-active]="filtroCategoria() === cat.key"
+            (click)="setCategoria(cat.key)"
+          >{{ cat.label }} <span class="doc-count">{{ cat.total }}</span></button>
+        </div>
+
+        <button *ngIf="hayFiltrosActivos()" class="doc-limpiar" (click)="limpiarFiltros()">
+          <i class="bi bi-x-circle"></i> Limpiar
+        </button>
+      </div>
+
+      <!-- ═══ Panel: subir documento externo ═══ -->
+      <div *ngIf="mostrarSubida()" class="doc-subida">
+        <div class="doc-subida__head">
+          <div>
+            <h6><i class="bi bi-upload"></i> Subir documento al expediente</h6>
+            <p>Informes médicos, escolares, documentación administrativa u otro material del alumno.</p>
+          </div>
+          <button class="doc-accion" (click)="cerrarSubida()" aria-label="Cerrar">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <!-- Zona de arrastre -->
+        <label
+          class="doc-dropzone"
+          [class.is-dragging]="arrastrando()"
+          [class.has-file]="!!ficheroSel()"
+          (dragover)="onDragOver($event)"
+          (dragleave)="onDragLeave()"
+          (drop)="onDrop($event)"
+        >
+          <input type="file" hidden (change)="onFicheroInput($event)" />
+
+          <ng-container *ngIf="!ficheroSel()">
+            <i class="bi bi-cloud-arrow-up"></i>
+            <span class="doc-dropzone__titulo">Arrastra un fichero o haz clic para elegirlo</span>
+            <span class="doc-dropzone__hint">PDF, imagen, Word o Excel · máx. 20 MB</span>
+          </ng-container>
+
+          <ng-container *ngIf="ficheroSel() as f">
+            <i class="bi bi-file-earmark-check"></i>
+            <span class="doc-dropzone__titulo">{{ f.name }}</span>
+            <span class="doc-dropzone__hint">{{ formatearTamano(f.size) }} · clic para cambiar</span>
+          </ng-container>
+        </label>
+
+        <div *ngIf="errorSubida()" class="doc-subida__error">
+          <i class="bi bi-exclamation-triangle"></i> {{ errorSubida() }}
+        </div>
+
+        <!-- Metadatos -->
+        <div class="doc-subida__campos">
+          <div class="doc-campo doc-campo--full">
+            <label>Categoría</label>
+            <div class="doc-cat-picker">
+              <button
+                *ngFor="let cat of CATEGORIAS"
+                type="button"
+                [class.is-active]="formSubida().categoria === cat"
+                (click)="setCampoSubida('categoria', cat)"
+              >
+                <i class="bi" [ngClass]="CATEGORIA_LABELS[cat].icono"></i>
+                {{ CATEGORIA_LABELS[cat].corto }}
+              </button>
+            </div>
+          </div>
+
+          <div class="doc-campo">
+            <label for="doc-nombre">Nombre visible</label>
+            <input
+              id="doc-nombre"
+              type="text"
+              placeholder="Ej: Informe neuropediatría"
+              [value]="formSubida().nombre"
+              (input)="setCampoSubida('nombre', $any($event.target).value)"
+            />
+          </div>
+
+          <div class="doc-campo">
+            <label for="doc-fecha">Fecha del documento</label>
+            <input
+              id="doc-fecha"
+              type="date"
+              [value]="formSubida().fechaDocumento"
+              (input)="setCampoSubida('fechaDocumento', $any($event.target).value)"
+            />
+          </div>
+
+          <div class="doc-campo doc-campo--full">
+            <label for="doc-desc">Descripción <span class="doc-opcional">opcional</span></label>
+            <textarea
+              id="doc-desc"
+              rows="2"
+              placeholder="Contexto que ayude a otro profesional a entender este documento…"
+              [value]="formSubida().descripcion"
+              (input)="setCampoSubida('descripcion', $any($event.target).value)"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="doc-subida__acciones">
           <button
-            class="informes-filtro-pill estado-revision"
-            [class.active]="filtroEstado() === 'REVISION'"
-            (click)="filtroEstado.set('REVISION')"
-          >En revisión</button>
-          <button
-            class="informes-filtro-pill estado-finalizado"
-            [class.active]="filtroEstado() === 'FINALIZADO'"
-            (click)="filtroEstado.set('FINALIZADO')"
-          >Finalizado</button>
-          <button
-            class="informes-filtro-pill estado-enviado"
-            [class.active]="filtroEstado() === 'ENVIADO'"
-            (click)="filtroEstado.set('ENVIADO')"
-          >Enviado</button>
+            class="doc-btn doc-btn--primary"
+            [disabled]="!ficheroSel() || subiendo()"
+            (click)="confirmarSubida()"
+          >
+            <span *ngIf="subiendo()" class="spinner-border spinner-border-sm"></span>
+            <i *ngIf="!subiendo()" class="bi bi-check2"></i>
+            <span>{{ subiendo() ? 'Subiendo…' : 'Subir al expediente' }}</span>
+          </button>
+          <button class="doc-btn doc-btn--ghost" (click)="cerrarSubida()">Cancelar</button>
         </div>
       </div>
 
@@ -279,123 +363,156 @@
         </div>
       </div>
 
-      <!-- Sin informes -->
-      <div *ngIf="informes().length === 0 && !mostrarFormNuevo() && !mostrarFormBorrador()" class="text-center py-5">
-        <i class="bi bi-file-earmark-text display-4 text-muted d-block mb-3"></i>
-        <p class="text-muted">No hay informes para este alumno.</p>
-        <button class="btn btn-primary btn-sm" (click)="abrirFormNuevo()">
-          <i class="bi bi-plus-lg me-1"></i>Crear primer informe
-        </button>
-      </div>
-
-      <!-- ── LAYOUT CON SECCIONES (hay borradores y no hay filtro de estado) ── -->
-      <ng-container *ngIf="mostrarSecciones()">
-
-        <!-- Sección: Pendientes de completar -->
-        <div class="informes-seccion-pendientes mb-3">
-          <div class="informes-seccion-header pendientes">
-            <i class="bi bi-clock-history"></i>
-            <span>Pendientes de completar</span>
-            <span class="informes-seccion-count">{{ informesData().borradores.length }}</span>
-          </div>
-          <ng-container *ngFor="let informe of informesData().borradores">
-            <ng-container *ngTemplateOutlet="cardInforme; context: { informe: informe }"></ng-container>
-          </ng-container>
-        </div>
-
-        <!-- Sección: Finalizados y enviados -->
-        <div *ngIf="informesData().filtrados.length > 0">
-          <div class="informes-seccion-header completados mb-2">
-            <i class="bi bi-check2-circle"></i>
-            <span>Finalizados y enviados</span>
-            <span class="informes-seccion-count">{{ informesData().filtrados.length }}</span>
-          </div>
-          <ng-container *ngFor="let informe of informesData().filtrados">
-            <ng-container *ngTemplateOutlet="cardInforme; context: { informe: informe }"></ng-container>
-          </ng-container>
-        </div>
-
-      </ng-container>
-
-      <!-- ── LAYOUT PLANO (hay filtro de estado activo o no hay borradores) ── -->
-      <ng-container *ngIf="!mostrarSecciones() && informes().length > 0">
-
-        <!-- Sin resultados para el filtro activo -->
-        <div *ngIf="informesData().filtrados.length === 0" class="text-center py-4">
-          <i class="bi bi-funnel text-muted d-block mb-2 fs-3"></i>
-          <p class="text-muted small">No hay informes con los filtros aplicados.</p>
-          <button class="btn btn-link btn-sm" (click)="filtroTipo.set('todos'); filtroEstado.set('todos'); filtroAnio.set(null)">
-            Limpiar filtros
+      <!-- ═══ Expediente vacío ═══ -->
+      <div
+        *ngIf="filas().todas.length === 0 && !mostrarFormNuevo() && !mostrarFormBorrador() && !mostrarSubida()"
+        class="doc-vacio"
+      >
+        <i class="bi bi-folder2-open"></i>
+        <p class="doc-vacio__titulo">El expediente está vacío</p>
+        <p class="doc-vacio__texto">
+          Aquí se reúnen los informes que genera el gabinete y la documentación externa
+          del alumno: informes médicos, escolares y administrativos.
+        </p>
+        <div class="doc-vacio__acciones">
+          <button class="doc-btn doc-btn--primary" (click)="abrirFormNuevo()">
+            <i class="bi bi-plus-lg"></i><span>Crear primer informe</span>
+          </button>
+          <button class="doc-btn doc-btn--ghost" (click)="abrirSubida()">
+            <i class="bi bi-upload"></i><span>Subir documento</span>
           </button>
         </div>
+      </div>
 
-        <!-- Lista filtrada (borradores ya están en filtrados cuando el filtro de estado los incluye) -->
-        <ng-container *ngFor="let informe of informesData().filtrados">
-          <ng-container *ngTemplateOutlet="cardInforme; context: { informe: informe }"></ng-container>
-        </ng-container>
+      <!-- ═══ Tabla del expediente ═══ -->
+      <div *ngIf="filas().todas.length > 0" class="doc-tabla-wrap">
+        <table class="doc-tabla">
+          <thead>
+            <tr>
+              <th scope="col" class="doc-th--doc">
+                <button (click)="ordenarPor('nombre')">
+                  Documento
+                  <i class="bi" [class.bi-arrow-down-short]="ordenCampo() === 'nombre' && !ordenAsc()"
+                     [class.bi-arrow-up-short]="ordenCampo() === 'nombre' && ordenAsc()"></i>
+                </button>
+              </th>
+              <th scope="col" class="doc-th--cat">
+                <button (click)="ordenarPor('categoria')">
+                  Categoría
+                  <i class="bi" [class.bi-arrow-down-short]="ordenCampo() === 'categoria' && !ordenAsc()"
+                     [class.bi-arrow-up-short]="ordenCampo() === 'categoria' && ordenAsc()"></i>
+                </button>
+              </th>
+              <th scope="col" class="doc-th--estado">Estado</th>
+              <th scope="col" class="doc-th--fecha">
+                <button (click)="ordenarPor('fecha')">
+                  Fecha
+                  <i class="bi" [class.bi-arrow-down-short]="ordenCampo() === 'fecha' && !ordenAsc()"
+                     [class.bi-arrow-up-short]="ordenCampo() === 'fecha' && ordenAsc()"></i>
+                </button>
+              </th>
+              <th scope="col" class="doc-th--autor">Autor</th>
+              <th scope="col" class="doc-th--acciones"><span class="visually-hidden">Acciones</span></th>
+            </tr>
+          </thead>
 
-      </ng-container>
+          <tbody>
+            <tr
+              *ngFor="let fila of filasPagina()"
+              class="doc-fila"
+              [class.doc-fila--externo]="fila.origen === 'documento'"
+              tabindex="0"
+              (click)="abrirFila(fila)"
+              (keydown.enter)="abrirFila(fila)"
+              (keydown.space)="$event.preventDefault(); abrirFila(fila)"
+            >
+              <td class="doc-td--doc">
+                <span class="doc-stripe" [style.background-color]="fila.categoriaColor"></span>
+                <i class="doc-icono bi" [ngClass]="fila.icono" [style.color]="fila.categoriaColor"></i>
+                <span class="doc-nombre">
+                  <span class="doc-nombre__principal">{{ fila.nombre }}</span>
+                  <span *ngIf="fila.detalle" class="doc-nombre__detalle">{{ fila.detalle }}</span>
+                </span>
+              </td>
+
+              <td class="doc-td--cat">
+                <span class="doc-cat-badge" [style.color]="fila.categoriaColor">
+                  {{ fila.categoriaLabel }}
+                </span>
+              </td>
+
+              <td class="doc-td--estado">
+                <span
+                  *ngIf="fila.estado"
+                  class="doc-estado"
+                  [ngClass]="'doc-estado--' + fila.estado.toLowerCase()"
+                >{{ getEstadoLabel(fila.estado).texto }}</span>
+                <span *ngIf="!fila.estado" class="doc-estado doc-estado--externo">Archivado</span>
+              </td>
+
+              <td class="doc-td--fecha">{{ formatearFecha(fila.fecha) }}</td>
+
+              <td class="doc-td--autor">{{ fila.autor }}</td>
+
+              <td class="doc-td--acciones">
+                <div class="doc-acciones">
+                  <button
+                    class="doc-accion"
+                    [title]="fila.origen === 'documento' ? 'Abrir documento' : (fila.estado === 'BORRADOR' || fila.estado === 'REVISION' ? 'Editar informe' : 'Ver informe')"
+                    (click)="$event.stopPropagation(); abrirFila(fila)"
+                  >
+                    <i class="bi"
+                       [class.bi-box-arrow-up-right]="fila.origen === 'documento'"
+                       [class.bi-pencil]="fila.origen === 'informe' && (fila.estado === 'BORRADOR' || fila.estado === 'REVISION')"
+                       [class.bi-eye]="fila.origen === 'informe' && fila.estado !== 'BORRADOR' && fila.estado !== 'REVISION'"
+                    ></i>
+                  </button>
+                  <button
+                    *ngIf="fila.origen === 'documento' || (fila.estado !== 'FINALIZADO' && fila.estado !== 'ENVIADO')"
+                    class="doc-accion doc-accion--peligro"
+                    title="Eliminar"
+                    (click)="eliminarFila(fila, $event)"
+                  ><i class="bi bi-trash3"></i></button>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Sin resultados para los filtros -->
+            <tr *ngIf="filasFiltradas().length === 0">
+              <td colspan="6" class="doc-sin-resultados">
+                <i class="bi bi-funnel"></i>
+                <p>Ningún documento coincide con los filtros aplicados.</p>
+                <button class="doc-limpiar" (click)="limpiarFiltros()">Limpiar filtros</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- ═══ Paginación ═══ -->
+        <div *ngIf="filasFiltradas().length > 0" class="doc-paginacion">
+          <span class="doc-paginacion__rango">
+            {{ rangoMostrado().desde }}–{{ rangoMostrado().hasta }} de {{ rangoMostrado().total }}
+          </span>
+          <div *ngIf="totalPaginas() > 1" class="doc-paginacion__nav">
+            <button
+              [disabled]="paginaActual() === 1"
+              (click)="irAPagina(paginaActual() - 1)"
+              aria-label="Página anterior"
+            ><i class="bi bi-chevron-left"></i></button>
+            <span class="doc-paginacion__pagina">
+              Página {{ paginaActual() }} de {{ totalPaginas() }}
+            </span>
+            <button
+              [disabled]="paginaActual() === totalPaginas()"
+              (click)="irAPagina(paginaActual() + 1)"
+              aria-label="Página siguiente"
+            ><i class="bi bi-chevron-right"></i></button>
+          </div>
+        </div>
+      </div>
 
     </div>
     <!-- /vista lista -->
-
-    <!-- ── TEMPLATE CARD INFORME (compacta) ── -->
-    <ng-template #cardInforme let-informe="informe">
-      <div
-        class="informe-card-compact"
-        [class.borrador]="informe.estado === 'BORRADOR' || informe.estado === 'REVISION'"
-        [class.enviado]="informe.estado === 'ENVIADO'"
-        [class.finalizado]="informe.estado === 'FINALIZADO'"
-        (click)="abrirEditor(informe)"
-      >
-        <!-- Franja de color izquierda via clase -->
-        <div class="informe-card-body">
-          <div class="informe-card-info">
-            <div class="informe-card-badges">
-              <span
-                class="informe-tipo-badge"
-                [style.background-color]="getTipoLabel(informe.tipoInforme).bg"
-                [style.color]="getTipoLabel(informe.tipoInforme).color"
-              >{{ getTipoLabel(informe.tipoInforme).texto }}</span>
-              <span class="badge {{ getEstadoLabel(informe.estado).badgeClass }}" style="font-size: 0.68rem;">
-                {{ getEstadoLabel(informe.estado).texto }}
-              </span>
-            </div>
-            <p class="informe-card-titulo">{{ informe.titulo }}</p>
-            <div class="informe-card-meta">
-              <span><i class="bi bi-calendar3 me-1"></i>{{ formatearFecha(informe.createdAt) }}</span>
-              <span *ngIf="informe.periodoDesde">
-                <i class="bi bi-arrow-left-right me-1"></i>
-                {{ formatearFecha(informe.periodoDesde) }} — {{ formatearFecha(informe.periodoHasta) }}
-              </span>
-              <span *ngIf="informe.enviadoFamiliaAt" class="text-success">
-                <i class="bi bi-envelope-check me-1"></i>Enviado {{ formatearFecha(informe.enviadoFamiliaAt) }}
-              </span>
-            </div>
-          </div>
-          <div class="informe-card-actions">
-            <button
-              class="btn btn-sm btn-outline-primary"
-              (click)="abrirEditor(informe); $event.stopPropagation()"
-              [title]="informe.estado === 'ENVIADO' || informe.estado === 'FINALIZADO' ? 'Ver' : 'Editar'"
-            >
-              <i class="bi"
-                [class.bi-pencil]="informe.estado !== 'ENVIADO' && informe.estado !== 'FINALIZADO'"
-                [class.bi-eye]="informe.estado === 'ENVIADO' || informe.estado === 'FINALIZADO'"
-              ></i>
-            </button>
-            <button
-              *ngIf="informe.estado !== 'FINALIZADO' && informe.estado !== 'ENVIADO'"
-              class="btn btn-sm btn-outline-danger"
-              (click)="eliminarInforme(informe.id, $event)"
-              title="Eliminar"
-            >
-              <i class="bi bi-trash3"></i>
-            </button>
-          </div>
-        </div>
-      </div>
-    </ng-template>
 
 
     <!-- ══════════════════════════════════════════════════════════
@@ -435,18 +552,7 @@
           style="cursor: pointer; font-size: 0.8rem;"
           (click)="cambiarSeccion(seccion.key)"
         >
-          {{ seccion.titulo }}
-        </div>
-
-        <div
-          class="p-2 rounded mb-1 small"
-          [class.bg-primary]="seccionActiva() === 'gas'"
-          [class.text-white]="seccionActiva() === 'gas'"
-          [class.text-muted]="seccionActiva() !== 'gas'"
-          style="cursor: pointer; font-size: 0.8rem;"
-          (click)="cambiarSeccion('gas')"
-        >
-          {{ informeActivo()!.tipoInforme === 'INICIAL' ? '5. Objetivos específicos (GAS)' : informeActivo()!.tipoInforme === 'ALTA' ? '6. Estado GAS al alta' : '· Estado GAS' }}
+          <i *ngIf="seccion.key === 'gas'" class="bi bi-bar-chart-steps me-1"></i>{{ i + 1 }}. {{ seccion.titulo }}
         </div>
 
         <hr class="my-2">
@@ -501,9 +607,9 @@
       <div class="flex-grow-1 p-4 overflow-auto">
 
         <ng-container *ngIf="seccionActiva() !== 'gas'">
-          <ng-container *ngFor="let seccion of secciones()">
-            <div *ngIf="seccionActiva() === seccion.key">
-              <h5 class="fw-bold mb-1">{{ seccion.titulo }}</h5>
+          <ng-container *ngFor="let seccion of secciones(); let i = index">
+            <div *ngIf="seccion.key !== 'gas' && seccionActiva() === seccion.key">
+              <h5 class="fw-bold mb-1">{{ i + 1 }}. {{ seccion.titulo }}</h5>
               <hr class="mt-1 mb-3">
               <div *ngIf="!esBloqueado()">
                 <textarea
@@ -527,7 +633,7 @@
         <!-- Sección GAS -->
         <div *ngIf="seccionActiva() === 'gas'">
           <h5 class="fw-bold mb-1">
-            {{ informeActivo()!.tipoInforme === 'INICIAL' ? '5. Objetivos específicos (GAS)' : 'Estado GAS de los objetivos' }}
+            {{ numeroSeccionGas() }}. Objetivos GAS (Goal Attainment Scaling)
           </h5>
           <hr class="mt-1 mb-3">
           <div class="alert alert-info small py-2 mb-3">

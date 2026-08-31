@@ -54,12 +54,20 @@ export interface ColegioData {
 
 export interface SanitarioData {
   centroSalud: string;
-  alergias?: string;
   diagnostico?: string;
   tratamientos?: string;
-  medicacion?: string;
+  /** Profesionales sanitarios externos (psicólogo, logopeda, neuropediatra...). */
   especialistas?: string[];
-  adaptaciones?: boolean; // ✅ Cambiado de string[] a boolean
+}
+
+/**
+ * Situación escolar del alumno. Vive aparte de `ColegioData` porque el colegio es
+ * una entidad compartida entre clientes y esto es del niño concreto.
+ */
+export interface EscolarData {
+  adaptaciones?: boolean;
   tipoAdaptaciones?: string;
-  apoyos?: boolean; // ✅ NUEVO
+  apoyos?: boolean;
+  /** Especialistas del centro escolar (PT, AL, orientador...). */
+  especialistas?: string[];
 }

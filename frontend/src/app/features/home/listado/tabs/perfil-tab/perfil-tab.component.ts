@@ -45,6 +45,7 @@ export class PerfilTabComponent implements OnInit {
   readonly familiares   = this.clientesSvc.contactosFamiliares;
   readonly colegio      = this.clientesSvc.colegio;
   readonly sanitario    = this.clientesSvc.sanitario;
+  readonly escolar      = this.clientesSvc.escolar;
 
   // ── Sección Facturación (datos pagador) ─────────────
   editandoPagador    = signal(false);

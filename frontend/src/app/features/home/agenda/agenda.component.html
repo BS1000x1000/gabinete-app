@@ -50,6 +50,23 @@
     </div>
   }
 
+  <!-- ── Accesos rápidos ────────────────────────────────
+       La agenda es la pantalla donde se pasa el día: las acciones más
+       repetidas están aquí además de en el sidebar. -->
+  <div class="ag-quick">
+    @if (!isRecep()) {
+      <button class="ag-quick__btn ag-quick__btn--primary" type="button" (click)="abrirRegistro()">
+        <i class="bi bi-pencil-square"></i><span>Nuevo registro</span>
+      </button>
+      <button class="ag-quick__btn" type="button" (click)="abrirNuevaSesion()">
+        <i class="bi bi-calendar-plus"></i><span>Nueva sesión</span>
+      </button>
+    }
+    <button class="ag-quick__btn" type="button" (click)="irANuevoCliente()">
+      <i class="bi bi-person-plus"></i><span>Nuevo cliente</span>
+    </button>
+  </div>
+
   <!-- ── Layout principal: dos paneles ─────────────────── -->
   <div class="ag-layout">
 
@@ -499,6 +516,49 @@
 
     </div>
     <!-- ╚═══════════════════════════════════════════════════╝ -->
+
+    <!-- ╔══ PANEL: pendientes ═══════════════════════════╗ -->
+    <!-- Rescatado del antiguo dashboard, que era inalcanzable. Las alertas
+         urgentes ya salen en el banner de arriba; aquí van las tareas que
+         no corren prisa pero conviene no perder de vista. -->
+    @if (hayPendientes()) {
+      <div class="ag-panel ag-panel--pendientes">
+        <div class="ag-pend__header">
+          <i class="bi bi-list-check"></i>
+          <h2>Tienes pendiente</h2>
+          <span class="ag-pend__badge">{{ totalPendientes() }}</span>
+        </div>
+
+        @if (informesEnBorrador().length > 0) {
+          <div class="ag-pend__grupo">
+            <div class="ag-pend__label">
+              <i class="bi bi-file-earmark-text"></i> Informes en borrador
+            </div>
+            @for (informe of informesEnBorrador(); track informe.id) {
+              <button class="ag-pend__item" type="button" (click)="irAlInforme(informe)">
+                <span>{{ informe.cliente.nombre }} {{ informe.cliente.apellidos }}</span>
+                <span class="ag-pend__meta">{{ informe.tipoInforme }}</span>
+              </button>
+            }
+          </div>
+        }
+
+        @if (objetivosSinEvaluar().length > 0) {
+          <div class="ag-pend__grupo">
+            <div class="ag-pend__label">
+              <i class="bi bi-bullseye"></i> Objetivos sin evaluar
+            </div>
+            @for (obj of objetivosSinEvaluar(); track obj.clienteObjetivoId) {
+              <button class="ag-pend__item" type="button" (click)="irAlObjetivo(obj)">
+                <span>{{ obj.cliente.nombre }} — {{ obj.objetivo }}</span>
+              </button>
+            }
+          </div>
+        }
+      </div>
+    }
+    <!-- ╚═══════════════════════════════════════════════════╝ -->
+
 
   </div>
 </div>

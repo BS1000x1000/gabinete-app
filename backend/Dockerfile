@@ -8,6 +8,7 @@ ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 RUN npm ci
 
 COPY . .
+RUN npx prisma generate
 RUN npm run build
 
 # ── Stage 2: Runner ───────────────────────────────────────────────────────────

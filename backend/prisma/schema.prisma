@@ -73,6 +73,7 @@ model Trabajador {
   periodosVacaciones   PeriodoVacaciones[]
   facturasEmitidas     Factura[]           @relation("FacturasEmitidas")
   contadorFacturas     ContadorFactura[]
+  documentosSubidos    DocumentoCliente[]  @relation("DocumentosSubidos")
 
   @@map("trabajadores")
 }
@@ -108,7 +109,9 @@ model Cliente {
   nombre               String
   apellidos            String
   fechaNacimiento      DateTime? @map("fecha_nacimiento")
-  dni                  String    @unique
+  /// Opcional: muchos menores no tienen DNI todavia. Se guarda NULL (nunca ''),
+  /// porque en Postgres varios NULL conviven en un indice unico pero '' colisiona.
+  dni                  String?   @unique
   domicilio            String
   provincia            String
   ciudad               String
@@ -140,6 +143,7 @@ model Cliente {
   informes                    Informe[]
   contactosFamiliares         Familiar[]
   sanitario                   Sanitario?
+  escolar                     Escolar?
   registrosDiarios            RegistroDiario[]
   objetivosGeneralesAsignados ClienteObjetivo[]
   objetivosEspecificos        Objetivo[]
@@ -148,6 +152,7 @@ model Cliente {
   consentimientosRgpd         ConsentimientoRgpd[]
   contratosServicio           ContratoServicio[]
   facturasRecibidas           Factura[]          @relation("FacturasRecibidas")
+  documentos                  DocumentoCliente[]
 
   @@map("clientes")
 }
@@ -256,17 +261,15 @@ model Familiar {
   @@map("familiares")
 }
 
+/// Datos sanitarios del cliente. Todo opcional: en el alta a menudo aún no hay
+/// diagnóstico. `especialistas` son profesionales sanitarios EXTERNOS que atienden
+/// al menor (psicólogo, logopeda, neuropediatra...). Lo escolar vive en `Escolar`.
 model Sanitario {
-  id               String   @id @default(uuid())
-  diagnostico      String   @db.Text
-  centroSalud      String   @map("centro_salud")
-  tratamientos     String   @db.Text
-  medicacion       String   @db.Text
-  alergias         String?  @db.Text
-  adaptaciones     Boolean  @default(false)
-  tipoAdaptaciones String?  @map("tipo_adaptaciones")
-  especialistas    String[]
-  apoyos           Boolean  @default(false)
+  id            String   @id @default(uuid())
+  diagnostico   String?  @db.Text
+  centroSalud   String?  @map("centro_salud")
+  tratamientos  String?  @db.Text
+  especialistas String[]
 
   clienteId String  @unique @map("id_cliente")
   cliente   Cliente @relation(fields: [clienteId], references: [id])
@@ -275,6 +278,26 @@ model Sanitario {
   updatedAt DateTime @updatedAt @map("ultima_actualizacion")
 
   @@map("datos_sanitarios")
+}
+
+/// Situación escolar DEL NIÑO. Deliberadamente separado de `Colegio`, que es una
+/// entidad compartida por muchos clientes: las adaptaciones curriculares, los apoyos
+/// y los especialistas del centro (PT, AL, orientador...) son del alumno concreto,
+/// no del colegio, y guardarlos en `Colegio` los filtraría entre hermanos de centro.
+model Escolar {
+  id               String   @id @default(uuid())
+  adaptaciones     Boolean  @default(false)
+  tipoAdaptaciones String?  @map("tipo_adaptaciones")
+  apoyos           Boolean  @default(false)
+  especialistas    String[]
+
+  clienteId String  @unique @map("id_cliente")
+  cliente   Cliente @relation(fields: [clienteId], references: [id])
+
+  createdAt DateTime @default(now()) @map("fecha_creacion")
+  updatedAt DateTime @updatedAt @map("ultima_actualizacion")
+
+  @@map("datos_escolares")
 }
 
 // ============================================================
@@ -538,6 +561,44 @@ enum TipoSesion {
   REUNION_COLEGIO
 }
 
+/// Documento externo adjuntado al expediente del cliente (no generado por la app).
+/// El fichero vive en Object Storage; aquí solo se guarda la clave y los metadatos.
+model DocumentoCliente {
+  id          String             @id @default(uuid())
+  nombre      String
+  descripcion String?            @db.Text
+  categoria   CategoriaDocumento
+
+  /// Clave del objeto en Object Storage: `clientes/{clienteId}/documentos/{uuid}{ext}`
+  storageKey  String  @map("storage_key")
+  mimeType    String  @map("mime_type")
+  tamanoBytes Int     @map("tamano_bytes")
+
+  /// Fecha del documento en sí (p. ej. fecha del informe médico), no la de subida.
+  fechaDocumento DateTime? @map("fecha_documento")
+
+  createdAt DateTime @default(now()) @map("fecha_creacion")
+  updatedAt DateTime @updatedAt @map("ultima_actualizacion")
+
+  clienteId String  @map("id_cliente")
+  cliente   Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+
+  subidoPorId String     @map("id_subido_por")
+  subidoPor   Trabajador @relation("DocumentosSubidos", fields: [subidoPorId], references: [id])
+
+  @@index([clienteId])
+  @@index([clienteId, categoria])
+  @@index([createdAt])
+  @@map("documentos_cliente")
+}
+
+enum CategoriaDocumento {
+  INFORME_MEDICO
+  INFORME_ESCOLAR
+  ADMINISTRATIVO
+  OTROS
+}
+
 enum EstadoInforme {
   BORRADOR
   REVISION
@@ -762,6 +823,19 @@ model ContratoServicio {
   estado          EstadoContrato @default(ACTIVO)
   notas           String?        @db.Text
   fechaFirma      DateTime       @default(now()) @map("fecha_firma")
+
+  /// PDF firmado subido por el gabinete. Cuando existe, sustituye al PDF que la
+  /// app genera al vuelo: el documento que vale es el que han firmado las partes.
+  storageKeyFirmado  String?   @map("storage_key_firmado")
+  mimeTypeFirmado    String?   @map("mime_type_firmado")
+  tamanoBytesFirmado Int?      @map("tamano_bytes_firmado")
+  fechaSubidaFirmado DateTime? @map("fecha_subida_firmado")
+
+  /// Ultima vez que se tocaron los campos del resumen (cuota, vigencia, slots).
+  /// Si es posterior a `fechaSubidaFirmado`, el PDF firmado ya no refleja los
+  /// datos con los que se factura y hay que avisar de ello.
+  resumenModificadoAt DateTime? @map("resumen_modificado_at")
+
   createdAt       DateTime       @default(now()) @map("fecha_creacion")
   updatedAt       DateTime       @updatedAt      @map("ultima_actualizacion")
 

@@ -254,6 +254,14 @@ export class ClientesController {
     return this.clientesService.updateSanitario(id, body);
   }
 
+  // ── ESCOLAR ───────────────────────────────────────────────
+  @Patch(':id/escolar')
+  @Roles(...ROLES_CLINICOS)
+  async updateEscolar(@Param('id') id: string, @Body() body: any) {
+    this.logger.log(`🎓 PATCH /api/clientes/${id}/escolar`);
+    return this.clientesService.updateEscolar(id, body);
+  }
+
   // ── COLEGIO ───────────────────────────────────────────────
   @Patch(':id/colegio')
   async updateColegio(@Param('id') id: string, @Body() body: any) {
