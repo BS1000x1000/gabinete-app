@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AmbitoFestivo } from '@prisma/client';
 import { CreateFestivoDto } from './dto/create-festivo.dto';
+import { calcularViernesSanto } from '../common/utils/pascua';
 
 const FESTIVOS_FIJOS = [
   { mes: 1,  dia: 1,  descripcion: 'Año Nuevo' },
@@ -15,15 +16,24 @@ const FESTIVOS_FIJOS = [
   { mes: 12, dia: 25, descripcion: 'Natividad del Señor' },
 ];
 
-function calcularViernesSanto(anio: number): Date {
-  // Algoritmo de Gauss para calcular el Domingo de Pascua
-  const a = anio % 19;
-  const b = anio % 4;
-  const c = anio % 7;
-  const d = (19 * a + 24) % 30;
-  const e = (2 * b + 4 * c + 6 * d + 5) % 7;
-  const pascua = new Date(anio, 2, 22 + d + e);
-  return new Date(pascua.getTime() - 2 * 24 * 60 * 60 * 1000);
+/**
+ * Un festivo nacional que cae en domingo se traslada al lunes siguiente
+ * (art. 37.2 del Estatuto de los Trabajadores).
+ *
+ * Importa más de lo que parece: la tabla de sesiones del contrato se calcula
+ * sobre estos festivos, y en el curso 2026-2027 son justo los dos traslados
+ * (1-nov y 6-dic de 2026, ambos domingo) los que hacen que las familias de
+ * lunes pierdan sesión. Sin trasladar, el contrato saldría con dos sesiones de
+ * más.
+ *
+ * Es la regla general; algún año el decreto autonómico puede resolverlo de otro
+ * modo, y para eso está el alta manual de festivos.
+ */
+function trasladarSiDomingo(fecha: Date): { fecha: Date; trasladado: boolean } {
+  if (fecha.getDay() !== 0) return { fecha, trasladado: false };
+  const lunes = new Date(fecha);
+  lunes.setDate(lunes.getDate() + 1);
+  return { fecha: lunes, trasladado: true };
 }
 
 @Injectable()
@@ -34,8 +44,8 @@ export class FestivosService {
     return this.prisma.festivo.findMany({
       where: {
         anio,
-        ...(ccaa && { ccaa }),
-        ...(provincia && { provincia }),
+        ...(ccaa ? { ccaa } : {}),
+        ...(provincia ? { provincia } : {}),
       },
       orderBy: { fecha: 'asc' },
     });
@@ -44,12 +54,12 @@ export class FestivosService {
   async create(dto: CreateFestivoDto) {
     return this.prisma.festivo.create({
       data: {
-        fecha: new Date(dto.fecha + 'T12:00:00'),
+        fecha: new Date(dto.fecha),
         descripcion: dto.descripcion,
         ambito: dto.ambito,
         ccaa: dto.ccaa ?? null,
         provincia: dto.provincia ?? null,
-        anio: dto.anio,
+        anio: new Date(dto.fecha).getFullYear(),
       },
     });
   }
@@ -63,31 +73,43 @@ export class FestivosService {
   async importarNacionales(anio: number): Promise<{ importados: number; omitidos: number }> {
     const viernesSanto = calcularViernesSanto(anio);
 
-    const todos = [
-      ...FESTIVOS_FIJOS.map(f => ({
-        fecha: new Date(anio, f.mes - 1, f.dia, 12, 0, 0),
-        descripcion: f.descripcion,
-        ambito: AmbitoFestivo.NACIONAL,
-        ccaa: null,
-        provincia: null,
-        anio,
-      })),
-      {
-        fecha: new Date(viernesSanto.getFullYear(), viernesSanto.getMonth(), viernesSanto.getDate(), 12, 0, 0),
-        descripcion: 'Viernes Santo',
-        ambito: AmbitoFestivo.NACIONAL,
-        ccaa: null,
-        provincia: null,
-        anio,
-      },
-    ];
+    const candidatos = [
+      ...FESTIVOS_FIJOS.map(f => {
+        const original = new Date(anio, f.mes - 1, f.dia, 12, 0, 0);
+        const { fecha, trasladado } = trasladarSiDomingo(original);
+        return {
+          fecha,
+          descripcion: trasladado
+            ? `${f.descripcion} (trasladado del domingo)`
+            : f.descripcion,
+        };
+      }),
+      { fecha: viernesSanto, descripcion: 'Viernes Santo' },
+    ].map(f => ({
+      fecha: f.fecha,
+      descripcion: f.descripcion,
+      ambito: AmbitoFestivo.NACIONAL,
+      ccaa: null,
+      provincia: null,
+      anio,
+    }));
 
-    const result = await this.prisma.festivo.createMany({
-      data: todos,
-      skipDuplicates: true,
+    // `createMany({ skipDuplicates })` aquí no hace nada: `Festivo` no tiene
+    // ninguna restricción única, solo índices. Sin este filtro previo, volver a
+    // importar un año duplicaba los diez registros y falseaba el calendario.
+    const existentes = await this.prisma.festivo.findMany({
+      where: { anio, ambito: AmbitoFestivo.NACIONAL },
+      select: { fecha: true },
     });
+    const yaEsta = new Set(existentes.map(e => this.claveDia(e.fecha)));
 
-    return { importados: result.count, omitidos: todos.length - result.count };
+    const nuevos = candidatos.filter(c => !yaEsta.has(this.claveDia(c.fecha)));
+
+    if (nuevos.length > 0) {
+      await this.prisma.festivo.createMany({ data: nuevos });
+    }
+
+    return { importados: nuevos.length, omitidos: candidatos.length - nuevos.length };
   }
 
   async tieneNacionales(anio: number): Promise<boolean> {
@@ -95,5 +117,10 @@ export class FestivosService {
       where: { anio, ambito: AmbitoFestivo.NACIONAL },
     });
     return count > 0;
+  }
+
+  /** Día natural, para comparar sin que la hora estropee la igualdad. */
+  private claveDia(fecha: Date): string {
+    return `${fecha.getFullYear()}-${fecha.getMonth()}-${fecha.getDate()}`;
   }
 }

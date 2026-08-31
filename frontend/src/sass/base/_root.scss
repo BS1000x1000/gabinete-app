@@ -5,26 +5,26 @@
 :root {
   // Colores principales (mapeados desde variables SASS)
   --bs-primary: #{$primary};
-  --bs-primary-rgb: 124, 111, 214;
+  --bs-primary-rgb: #{red($primary)}, #{green($primary)}, #{blue($primary)};
   --bs-primary-dark: #{$primary-dark};
   --bs-primary-light: #{$primary-light};
   
   --bs-secondary: #{$secondary};
-  --bs-secondary-rgb: 90, 157, 232;
+  --bs-secondary-rgb: #{red($secondary)}, #{green($secondary)}, #{blue($secondary)};
   --bs-secondary-dark: #{$secondary-dark};
   --bs-secondary-light: #{$secondary-light};
   
   --bs-success: #{$success};
-  --bs-success-rgb: 16, 185, 129;
+  --bs-success-rgb: #{red($success)}, #{green($success)}, #{blue($success)};
   
   --bs-warning: #{$warning};
-  --bs-warning-rgb: 245, 158, 11;
+  --bs-warning-rgb: #{red($warning)}, #{green($warning)}, #{blue($warning)};
   
   --bs-danger: #{$danger};
-  --bs-danger-rgb: 239, 68, 68;
+  --bs-danger-rgb: #{red($danger)}, #{green($danger)}, #{blue($danger)};
   
   --bs-info: #{$info};
-  --bs-info-rgb: 59, 130, 246;
+  --bs-info-rgb: #{red($info)}, #{green($info)}, #{blue($info)};
   
   --bs-light: #{$gray-100};
   --bs-dark: #{$gray-900};
@@ -206,7 +206,7 @@ a {
 .form-control:focus,
 .form-select:focus {
   border-color: $primary !important;
-  box-shadow: 0 0 0 0.25rem rgba(124, 111, 214, 0.25) !important;
+  box-shadow: 0 0 0 0.25rem rgba($primary, 0.25) !important;
 }
 
 // Nav tabs/pills

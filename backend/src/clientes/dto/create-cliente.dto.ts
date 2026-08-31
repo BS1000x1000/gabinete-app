@@ -9,7 +9,8 @@ import {
   IsInt,
   Max,
   Min,
-  ValidateIf
+  ValidateIf,
+  Matches,
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { TipoSesion } from '@prisma/client';
@@ -75,8 +76,16 @@ export class FamiliarDto {
   @IsString()
   apellidos: string;
 
+  /**
+   * NIF/NIE del progenitor o tutor. Sigue siendo opcional -no siempre se tiene
+   * a mano al dar el alta- pero si viene, tiene que tener forma de NIF: es el
+   * dato que va impreso en el contrato y en los consentimientos.
+   */
   @IsOptional()
-  @IsString()
+  @ValidateIf((_, v) => v !== '' && v != null)
+  @Matches(/^[0-9XYZ][0-9]{7}[A-Za-z]$/, {
+    message: 'El DNI/NIE debe tener 8 caracteres y una letra (ej. 12345678Z)',
+  })
   dni?: string;
 
   @IsString()
@@ -97,6 +106,14 @@ export class FamiliarDto {
   @IsOptional()
   @IsBoolean()
   esContactoPrincipal?: boolean;
+
+  /**
+   * Firma el contrato y los consentimientos. Aparte de `esContactoPrincipal`,
+   * que nace en true para todos y solo dice a quien se llama primero.
+   */
+  @IsOptional()
+  @IsBoolean()
+  esTutorLegal?: boolean;
 
   @IsOptional()
   @IsBoolean()

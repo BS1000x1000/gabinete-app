@@ -7,17 +7,20 @@ import { ContratosCronService } from './contratos-cron.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { PdfModule } from '../common/pdf/pdf.module';
 import { StorageService } from '../common/storage/storage.service';
+import { CalendarioContratoService } from '../expediente/calendario-contrato.service';
+import { ExpedienteModule } from '../expediente/expediente.module';
 
 @Module({
-  imports: [PrismaModule, PdfModule],
+  imports: [PrismaModule, PdfModule, ExpedienteModule],
   controllers: [ContratosController],
   providers: [
     ContratosService,
     ContratosPdfService,
+    CalendarioContratoService,
     ContratosReplanificacionService,
     ContratosCronService,
     StorageService,
   ],
-  exports: [ContratosService],
+  exports: [ContratosService, ContratosPdfService, CalendarioContratoService],
 })
 export class ContratosModule {}

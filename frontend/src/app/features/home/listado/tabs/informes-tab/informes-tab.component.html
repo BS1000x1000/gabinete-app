@@ -61,6 +61,160 @@
         </div>
       </div>
 
+      <!-- ═══ Expediente inicial: contrato + los dos consentimientos ═══
+           Se pinta siempre, aunque no haya nada generado todavía: son tres
+           documentos fijos y lo que importa es ver de un vistazo por dónde va
+           cada uno camino de la firma. -->
+      <section *ngIf="expediente() as exp" class="exp-panel">
+
+        <header class="exp-panel__head" (click)="toggleExpediente()">
+          <i class="bi bi-folder-check exp-panel__icono"></i>
+          <h3 class="exp-panel__titulo">Expediente inicial</h3>
+
+          <span class="exp-panel__resumen" *ngIf="!hayExpediente()">sin generar</span>
+
+          <button
+            type="button"
+            class="gb-btn gb-btn--ghost exp-panel__generar"
+            *ngIf="exp.puedeGenerar"
+            [disabled]="generandoExpediente()"
+            (click)="$event.stopPropagation(); generarExpediente()"
+          >
+            <span *ngIf="generandoExpediente()" class="spinner-border spinner-border-sm"></span>
+            <i *ngIf="!generandoExpediente()" class="bi bi-arrow-repeat"></i>
+            <span>{{ hayExpediente() ? 'Regenerar' : 'Generar' }}</span>
+          </button>
+
+          <i class="bi exp-panel__chevron"
+             [class.bi-chevron-down]="expedientePlegado()"
+             [class.bi-chevron-up]="!expedientePlegado()"></i>
+        </header>
+
+        <div class="exp-panel__body" *ngIf="!expedientePlegado()">
+
+          <!-- Sin contrato no hay día, hora ni cuota que poner en los documentos -->
+          <p *ngIf="!exp.puedeGenerar" class="exp-aviso exp-aviso--info">
+            <i class="bi bi-info-circle"></i>
+            Este cliente todavía no tiene contrato. El día, la hora y la cuota que
+            rellenan los documentos salen de él.
+            <button type="button" class="exp-enlace" (click)="irAContratos()">Ir a contratos</button>
+          </p>
+
+          <p *ngIf="errorExpediente()" class="exp-aviso exp-aviso--error">
+            <i class="bi bi-exclamation-triangle"></i>
+            <span>
+              {{ errorExpediente() }}
+              <ng-container *ngIf="errorExpediente()?.includes('SCW_')">
+                Mientras tanto, el botón del ojo descarga cada documento para que
+                puedas ver cómo queda; lo que no puede hacerse todavía es guardarlo
+                en el expediente.
+              </ng-container>
+            </span>
+          </p>
+
+          <ul class="exp-lista">
+            <li *ngFor="let doc of exp.documentos" class="exp-doc">
+              <span
+                class="exp-doc__marca"
+                [style.background-color]="doc.plantillaValidada ? '#2f6b43' : '#8a6018'"
+              ></span>
+
+              <div class="exp-doc__texto">
+                <span class="exp-doc__nombre">{{ doc.nombre }}</span>
+                <span class="exp-doc__meta">
+                  <ng-container *ngIf="doc.fechaEnvio">
+                    enviado el {{ formatearFecha(doc.fechaEnvio) }}
+                  </ng-container>
+                  <ng-container *ngIf="!doc.fechaEnvio && doc.actualizadoEn">
+                    generado el {{ formatearFecha(doc.actualizadoEn) }}
+                  </ng-container>
+                  <ng-container *ngIf="!doc.documentoId">pendiente de generar</ng-container>
+                </span>
+              </div>
+
+              <span
+                class="exp-doc__estado"
+                *ngIf="doc.estadoFirma as estado"
+                [ngClass]="ESTADO_FIRMA_LABELS[estado]?.clase"
+              >{{ ESTADO_FIRMA_LABELS[estado]?.texto ?? estado }}</span>
+
+              <span class="exp-doc__acciones">
+                <!-- Vista previa: genera el PDF al vuelo sin guardarlo. Está
+                     siempre disponible, también sin Object Storage. -->
+                <button
+                  type="button"
+                  class="exp-accion"
+                  *ngIf="exp.puedeGenerar"
+                  [disabled]="descargandoPrevia() !== null"
+                  title="Ver cómo va a quedar (descarga sin guardar)"
+                  (click)="vistaPrevia(doc)"
+                >
+                  <span
+                    *ngIf="descargandoPrevia() === doc.categoria"
+                    class="spinner-border spinner-border-sm"
+                  ></span>
+                  <i *ngIf="descargandoPrevia() !== doc.categoria" class="bi bi-eye"></i>
+                </button>
+
+                <button
+                  type="button"
+                  class="exp-accion"
+                  *ngIf="doc.documentoId"
+                  title="Abrir el documento guardado"
+                  (click)="verDocumentoExpediente(doc)"
+                >
+                  <i class="bi bi-box-arrow-up-right"></i>
+                </button>
+
+                <button
+                  type="button"
+                  class="exp-accion"
+                  *ngIf="doc.documentoId && doc.estadoFirma !== 'FIRMADO'"
+                  [disabled]="!doc.puedeEnviar"
+                  [title]="doc.puedeEnviar
+                    ? 'Marcar como enviado a la familia'
+                    : (doc.motivoNoValidada ?? 'No se puede enviar')"
+                  (click)="marcarEnviado(doc)"
+                >
+                  <i class="bi" [class.bi-send]="doc.puedeEnviar" [class.bi-send-slash]="!doc.puedeEnviar"></i>
+                </button>
+
+                <label
+                  class="exp-accion exp-accion--subir"
+                  *ngIf="doc.documentoId && doc.estadoFirma !== 'FIRMADO'"
+                  title="Subir la versión firmada"
+                >
+                  <span *ngIf="subiendoFirmadoDe() === doc.documentoId" class="spinner-border spinner-border-sm"></span>
+                  <i *ngIf="subiendoFirmadoDe() !== doc.documentoId" class="bi bi-upload"></i>
+                  <input
+                    type="file"
+                    accept="application/pdf"
+                    hidden
+                    (change)="onFirmadoSeleccionado(doc, $event)"
+                  />
+                </label>
+              </span>
+
+              <!-- Por qué no se puede mandar todavía -->
+              <p class="exp-doc__bloqueo" *ngIf="doc.documentoId && !doc.plantillaValidada">
+                <i class="bi bi-hourglass-split"></i>{{ doc.motivoNoValidada }}
+              </p>
+            </li>
+          </ul>
+
+          <!-- Lo que saldría en blanco si se generase ahora -->
+          <div *ngIf="exp.faltantes.length > 0" class="exp-faltantes">
+            <p class="exp-faltantes__titulo">
+              <i class="bi bi-exclamation-circle"></i>
+              Faltan datos; estos huecos saldrán en blanco
+            </p>
+            <ul>
+              <li *ngFor="let f of exp.faltantes">{{ f }}</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
       <!-- ═══ Filtros: origen + categoría contextual ═══ -->
       <div *ngIf="filas().todas.length > 0" class="doc-filtros">
         <div class="doc-segmented" role="group" aria-label="Filtrar por origen">

@@ -8,7 +8,12 @@ import {
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { extname } from 'path';
-import { CategoriaDocumento, Prisma } from '@prisma/client';
+import {
+  CategoriaDocumento,
+  EstadoFirmaDocumento,
+  OrigenDocumento,
+  Prisma,
+} from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../common/storage/storage.service';
 import {
@@ -44,8 +49,27 @@ const documentoSelect = {
   createdAt: true,
   updatedAt: true,
   clienteId: true,
+  origen: true,
+  estadoFirma: true,
+  plantillaVersion: true,
+  fechaEnvio: true,
+  contratoId: true,
+  firmadoDeId: true,
   subidoPor: { select: { id: true, nombre: true, apellidos: true } },
 } satisfies Prisma.DocumentoClienteSelect;
+
+/**
+ * Datos del ciclo de vida del expediente. Van aparte del DTO porque no los
+ * envia el navegador: los pone el backend cuando genera un documento o cuando
+ * recibe la version firmada de uno.
+ */
+export interface MetaDocumento {
+  origen?: OrigenDocumento;
+  estadoFirma?: EstadoFirmaDocumento | null;
+  plantillaVersion?: string | null;
+  contratoId?: string | null;
+  firmadoDeId?: string | null;
+}
 
 type UsuarioPeticion = { userId: string; rol: string };
 
@@ -96,6 +120,7 @@ export class DocumentosService {
     dto: CreateDocumentoDto,
     fichero: FicheroSubido,
     user: UsuarioPeticion,
+    meta: MetaDocumento = {},
   ) {
     if (!fichero) {
       throw new BadRequestException('No se ha recibido ningún fichero');
@@ -141,6 +166,11 @@ export class DocumentosService {
           fechaDocumento: dto.fechaDocumento ? new Date(dto.fechaDocumento) : null,
           clienteId: dto.clienteId,
           subidoPorId: user.userId,
+          origen: meta.origen ?? OrigenDocumento.SUBIDO,
+          estadoFirma: meta.estadoFirma ?? null,
+          plantillaVersion: meta.plantillaVersion ?? null,
+          contratoId: meta.contratoId ?? null,
+          firmadoDeId: meta.firmadoDeId ?? null,
         },
         select: documentoSelect,
       });
@@ -205,6 +235,16 @@ export class DocumentosService {
       );
     }
 
+    // En desarrollo sin bucket no hay URL prefirmada: el fichero lo sirve la
+    // propia API. Mismo contrato para el frontend — una URL que abrir.
+    if (this.storage.sirveDesdeApi) {
+      return {
+        url: `/api/documentos/${id}/fichero`,
+        nombre: documento.nombre,
+        mimeType: documento.mimeType,
+      };
+    }
+
     const url = await this.storage.getSignedUrl(documento.storageKey, 300);
     if (!url) {
       throw new ServiceUnavailableException(
@@ -214,6 +254,29 @@ export class DocumentosService {
 
     this.logger.log(`Enlace de descarga generado — documento ${id}`);
     return { url, nombre: documento.nombre, mimeType: documento.mimeType };
+  }
+
+  /**
+   * Devuelve el binario para servirlo desde la API. Solo en modo local: en
+   * producción el fichero va directo del bucket al navegador y no pasa por
+   * el contenedor.
+   */
+  async getFichero(id: string, user: UsuarioPeticion) {
+    if (!this.storage.sirveDesdeApi) {
+      throw new ServiceUnavailableException(
+        'Esta ruta solo existe en el modo de almacenamiento local de desarrollo',
+      );
+    }
+
+    const documento = await this.findOne(id, user);
+    const buffer = await this.storage.download(documento.storageKey);
+    if (!buffer) {
+      throw new NotFoundException(
+        `El fichero del documento ${id} no está en el almacenamiento local`,
+      );
+    }
+
+    return { buffer, nombre: documento.nombre, mimeType: documento.mimeType };
   }
 
   // ============================================================

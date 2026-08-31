@@ -4,8 +4,8 @@
 
 $nsm-primary:       $primary;
 $nsm-primary-dark:  #6559c0;
-$nsm-primary-soft:  rgba(124, 111, 214, 0.1);
-$nsm-primary-ring:  rgba(124, 111, 214, 0.25);
+$nsm-primary-soft:  rgba($primary, 0.1);
+$nsm-primary-ring:  rgba($primary, 0.25);
 $nsm-border:        #e8e5f5;
 $nsm-text:          #1a1825;
 $nsm-text-muted:    #8b84a8;
@@ -327,11 +327,11 @@ $nsm-transition:    0.25s cubic-bezier(0.4, 0, 0.2, 1);
   &--primary {
     background: $nsm-primary;
     color: $white;
-    box-shadow: 0 4px 12px rgba(124, 111, 214, 0.35);
+    box-shadow: 0 4px 12px rgba($primary, 0.35);
 
     &:hover:not(:disabled) {
       background: $nsm-primary-dark;
-      box-shadow: 0 6px 16px rgba(124, 111, 214, 0.45);
+      box-shadow: 0 6px 16px rgba($primary, 0.45);
       transform: translateY(-1px);
     }
 

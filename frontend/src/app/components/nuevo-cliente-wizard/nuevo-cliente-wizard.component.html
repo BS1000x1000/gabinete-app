@@ -408,6 +408,23 @@
                     </label>
                   </div>
                 </div>
+
+                <!-- Quien firma el contrato y los consentimientos. Es distinto
+                     del contacto principal: ese solo dice a quién se llama primero. -->
+                <div class="col-md-3">
+                  <label class="form-label d-block">Tutor legal</label>
+                  <div class="form-check form-switch">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      formControlName="esTutorLegal"
+                    />
+                    <label class="form-check-label">
+                      {{ contacto.get("esTutorLegal")?.value ? "Sí" : "No" }}
+                    </label>
+                  </div>
+                  <small class="text-muted d-block">Firma la documentación</small>
+                </div>
               </div>
             </div>
           </div>

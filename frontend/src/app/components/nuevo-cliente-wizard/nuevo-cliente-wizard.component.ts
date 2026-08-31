@@ -362,6 +362,7 @@ export class NuevoClienteWizardComponent {
           email: contacto.email || null,
           esResponsablePago: contacto.esPago || false,
           esContactoPrincipal: contacto.esPrincipal || false,
+          esTutorLegal: contacto.esTutorLegal || false,
           whatsapp: false,
         };
       }),

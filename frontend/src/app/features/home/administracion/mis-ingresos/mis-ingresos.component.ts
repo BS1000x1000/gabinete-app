@@ -8,16 +8,16 @@ import { FacturasService } from '../../../../services/facturas.service';
 import { Factura } from '../../../../interface/factura.interface';
 
 const FONT  = 'Plus Jakarta Sans, sans-serif';
-const P     = '#7c6fd6';
-const OK    = '#10b981';
-const MUTED = '#9ca3af';
+const P     = '#2d4a3e';
+const OK    = '#2f6b43';
+const MUTED = '#798d82';
 
 const MESES_LABEL = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
-const CLIENT_COLORS = [P, '#5a9de8', OK, '#f59e0b', '#ef4444', '#8b5cf6', '#14b8a6', '#f97316', '#06b6d4', '#84cc16'];
+const CLIENT_COLORS = [P, '#3a5c74', OK, '#8a6018', '#96382e', '#6b5a8a', '#3a6b63', '#a5622a', '#356b73', '#5f7a2e'];
 
 const TOOLTIP_MONEY = {
-  backgroundColor: '#1f2937',
+  backgroundColor: '#23322b',
   titleFont: { family: FONT, size: 12, weight: 600 as const },
   bodyFont:  { family: FONT, size: 12 },
   padding: 10,
@@ -181,8 +181,8 @@ export default class MisIngresosComponent implements OnInit {
     return {
       labels:   MESES_LABEL,
       datasets: [
-        { label: 'Facturado', data: facturado, borderColor: P,  backgroundColor: 'rgba(124,111,214,0.08)', fill: 'origin', pointBackgroundColor: P,  pointBorderColor: '#fff', pointBorderWidth: 2, pointRadius: 4, pointHoverRadius: 6 },
-        { label: 'Cobrado',   data: cobrado,   borderColor: OK, backgroundColor: 'rgba(16,185,129,0.06)',  fill: 'origin', pointBackgroundColor: OK, pointBorderColor: '#fff', pointBorderWidth: 2, pointRadius: 4, pointHoverRadius: 6 },
+        { label: 'Facturado', data: facturado, borderColor: P,  backgroundColor: 'rgba(45,74,62,0.10)', fill: 'origin', pointBackgroundColor: P,  pointBorderColor: '#fff', pointBorderWidth: 2, pointRadius: 4, pointHoverRadius: 6 },
+        { label: 'Cobrado',   data: cobrado,   borderColor: OK, backgroundColor: 'rgba(47,107,67,0.08)',  fill: 'origin', pointBackgroundColor: OK, pointBorderColor: '#fff', pointBorderWidth: 2, pointRadius: 4, pointHoverRadius: 6 },
       ],
     };
   }

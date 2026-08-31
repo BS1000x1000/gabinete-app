@@ -116,6 +116,7 @@ export class ClientesService {
                   email: f.email || '',
                   esResponsablePago: f.esResponsablePago ?? false,
                   esContactoPrincipal: f.esContactoPrincipal ?? false,
+                  esTutorLegal: f.esTutorLegal ?? false,
                   whatsapp: f.whatsapp ?? false,
                 })),
               }
@@ -806,6 +807,7 @@ export class ClientesService {
         email:              data.email ?? '',
         dni:                data.dni ?? '',
         esContactoPrincipal:data.esContactoPrincipal ?? false,
+        esTutorLegal:       data.esTutorLegal ?? false,
         esResponsablePago:  data.esResponsablePago ?? false,
         whatsapp:           data.whatsapp ?? true,
       },
@@ -826,6 +828,7 @@ export class ClientesService {
         ...(data.parentesco         !== undefined && { parentesco: data.parentesco }),
         ...(data.telefono           !== undefined && { telefono: data.telefono }),
         ...(data.esContactoPrincipal!== undefined && { esContactoPrincipal: data.esContactoPrincipal }),
+        ...(data.esTutorLegal !== undefined && { esTutorLegal: data.esTutorLegal }),
         ...(data.esResponsablePago  !== undefined && { esResponsablePago: data.esResponsablePago }),
         ...(data.whatsapp           !== undefined && { whatsapp: data.whatsapp }),
       },

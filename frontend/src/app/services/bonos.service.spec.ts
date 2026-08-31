@@ -230,16 +230,16 @@ describe('getBonoProgreso()', () => {
 
   it('devuelve color verde cuando queda más del 50%', () => {
     const bono = makeBono({ totalSesiones: 10, sesionesConsumidas: 2 }); // 20% consumido → 80% restante
-    expect(getBonoProgreso(bono).color).toBe('#16a34a');
+    expect(getBonoProgreso(bono).color).toBe('#2f6b43');
   });
 
   it('devuelve color amarillo cuando queda entre 25% y 50%', () => {
     const bono = makeBono({ totalSesiones: 10, sesionesConsumidas: 6 }); // 60% consumido → 40% restante
-    expect(getBonoProgreso(bono).color).toBe('#f59e0b');
+    expect(getBonoProgreso(bono).color).toBe('#8a6018');
   });
 
   it('devuelve color rojo cuando queda 25% o menos', () => {
     const bono = makeBono({ totalSesiones: 10, sesionesConsumidas: 8 }); // 80% consumido → 20% restante
-    expect(getBonoProgreso(bono).color).toBe('#dc2626');
+    expect(getBonoProgreso(bono).color).toBe('#96382e');
   });
 });

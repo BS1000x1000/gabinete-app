@@ -4,14 +4,25 @@ export type EstadoContrato  = 'BORRADOR' | 'ACTIVO' | 'SUSPENDIDO' | 'FINALIZADO
 
 export const DIAS = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'] as const;
 
+/**
+ * Color por tipo de terapia. Apagados para convivir con el verde de marca, pero
+ * distinguibles entre si: con cuatro terapias en la misma semana hay que
+ * reconocerlas en la agenda sin leer la etiqueta. Todos cumplen AA sobre papel.
+ *
+ * ESTA ES LA UNICA DEFINICION. Habia una copia en `agenda.component.ts` que ya
+ * habia divergido (dos tipos con colores distintos segun donde se mirase).
+ */
 export const TIPO_COLOR: Record<string, string> = {
-  PEDAGOGIA:           '#7c6fd6',
-  NEUROPSICOLOGIA:     '#3b82f6',
-  LOGOPEDIA:           '#10b981',
-  TERAPIA_OCUPACIONAL: '#f59e0b',
-  EVALUACION:          '#8b5cf6',
-  REUNION_COLEGIO:     '#6b7280',
+  PEDAGOGIA:           '#2d4a3e', // 8.08
+  NEUROPSICOLOGIA:     '#3a5c74', // 5.89
+  LOGOPEDIA:           '#6b5a8a', // 5.06
+  TERAPIA_OCUPACIONAL: '#8a6018', // 4.64
+  EVALUACION:          '#6b6249', // 5.04
+  REUNION_COLEGIO:     '#556d62', // 4.66
 };
+
+/** Para un tipo desconocido. */
+export const TIPO_COLOR_POR_DEFECTO = '#556d62';
 
 export const ESTADO_CONTRATO_LABEL: Record<EstadoContrato, string> = {
   BORRADOR:   'Borrador',

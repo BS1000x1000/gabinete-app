@@ -3,6 +3,7 @@ import { ContratosService } from './contratos.service';
 import { ContratosPdfService } from './contratos-pdf.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../common/storage/storage.service';
+import { ExpedienteService } from '../expediente/expediente.service';
 
 /**
  * La ventana móvil y las sesiones que genera tienen que cerrar exactamente.
@@ -44,6 +45,8 @@ describe('ContratosService — ventana móvil', () => {
         { provide: PrismaService, useValue: prisma },
         { provide: ContratosPdfService, useValue: { generarPdf: jest.fn() } },
         { provide: StorageService, useValue: { isConfigured: false } },
+        // Crear un contrato dispara la generacion del expediente inicial.
+        { provide: ExpedienteService, useValue: { generar: jest.fn().mockResolvedValue({}) } },
       ],
     }).compile();
 

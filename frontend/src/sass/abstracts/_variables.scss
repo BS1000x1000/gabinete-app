@@ -1,49 +1,64 @@
 // ========================================
-// PALETA DE MARCA - COLORES PRINCIPALES
+// PALETA DE MARCA — verdes cálidos
 // ========================================
+// Los cuatro colores de las redes sociales del gabinete. El resto de la escala
+// está derivado de ellos y verificado contra WCAG AA (4.5:1 para texto); el
+// ratio sobre el papel va anotado en cada uno.
+//
+//   #1f2a24  verde muy oscuro   H 147°  S 15%  L 14%
+//   #2d4a3e  verde bosque       H 155°  S 24%  L 23%
+//   #e3eae0  salvia claro       H 102°  S 19%  L 90%
+//   #f0ead8  crema cálido       H  45°  S 44%  L 89%
 
-// Primario (Lila) - Acciones principales, enlaces, botones primarios
-$primary: #7c6fd6;
-$primary-dark: #5a4fa8;
-$primary-light: #e8e4f8;
-$primary-ultra-light: #f5f3fc;
+// Primario (verde bosque) — acciones, enlaces, lo activo.
+// Regla: el verde SEÑALA, no rellena. Marca lo seleccionado y la acción
+// principal; el resto vive sobre papel.
+$primary: #2d4a3e;              // 8.08 sobre papel
+$primary-dark: #1f2a24;         // 12.34 — hover y texto sobre claro
+$primary-light: #d9e8da;        // fondos de selección
+$primary-ultra-light: #eef4ec;  // superficies de hover
 
-// Secundario (Azul) - Acciones secundarias, elementos de apoyo
-$secondary: #5a9de8;
-$secondary-dark: #3d7bc4;
-$secondary-light: #d9ebfc;
-$secondary-ultra-light: #f0f7fe;
+// Secundario (azul pizarra) — apoyo, nunca compite con el primario
+$secondary: #3a5c74;            // 5.89
+$secondary-dark: #2b4557;
+$secondary-light: #dde6ec;
+$secondary-ultra-light: #eef3f6;
 
-// Acento (Amarillo) - Highlights, llamadas de atención
-$accent: #f9d84a;
-$accent-dark: #d4b63e;
-$accent-light: #fef7db;
+// Acento (ocre) — highlights y llamadas puntuales
+$accent: #8a6018;               // 4.64
+$accent-dark: #6b4a12;
+$accent-light: #f5ecd8;
 
 // ========================================
-// COLORES PASTEL - TU IDENTIDAD VISUAL
+// COLORES DE APOYO
 // ========================================
-$lila-suave: #c8bce8;       // Fondos suaves, badges, decoración
-$azul-bebe: #adc9f6;        // Fondos alternativos, cards especiales
-$amarillo-pastel: #fdf7d3;  // Alertas info, tips, highlights sutiles
+$verde-realce: #7fb08a;     // Realce del ítem activo sobre el cromo oscuro (5.99)
+$salvia: #e3eae0;           // Superficies hundidas
+$arcilla: #9c5434;          // Complemento cálido del bosque — lado negativo del GAS
+$amarillo-pastel: #f5ecd8;  // Alertas info, tips
+
+// Alias heredados: hay código antiguo que aún los nombra.
+$lila-suave: $primary-light;
+$azul-bebe: $secondary-light;
 
 // ========================================
 // COLORES SEMÁNTICOS (Estados y acciones)
 // ========================================
-$success: #10b981;          // Verde - Completado, éxito
-$success-light: #d1fae5;
-$success-dark: #059669;
+$success: #2f6b43;          // 5.28  Verde mas vivo que el bosque, para no confundirse con la marca
+$success-light: #e4eee2;
+$success-dark: #245536;
 
-$warning: #f59e0b;          // Naranja - Advertencias, pendiente
-$warning-light: #fef3c7;
-$warning-dark: #d97706;
+$warning: #8a6018;          // 4.64  Ocre
+$warning-light: #f5ecd8;
+$warning-dark: #6b4a12;
 
-$danger: #ef4444;           // Rojo - Errores, cancelaciones
-$danger-light: #fee2e2;
-$danger-dark: #dc2626;
+$danger: #96382e;           // 6.02  Arcilla. NUNCA verde: en una marca verde
+$danger-light: #f4e3dc;     //       el peligro se confundiria con "todo bien"
+$danger-dark: #7a2c24;
 
-$info: #3b82f6;             // Azul información
-$info-light: #dbeafe;
-$info-dark: #2563eb;
+$info: #345c6b;             // 6.05  Azul pizarra
+$info-light: #e2ecef;
+$info-dark: #274854;
 
 // ========================================
 // NEUTRALES — base cálida ("papel")
@@ -55,16 +70,16 @@ $info-dark: #2563eb;
 // Se conservan los nombres `$gray-*` a propósito: hay ~780 usos repartidos por
 // 39 ficheros y renombrarlos no aportaría nada.
 $white: #ffffff;
-$gray-50: #faf8f5;          // Papel — fondo general
-$gray-100: #f4f1ec;         // Fondos sutiles, filas alternas
-$gray-200: #ebe7e0;         // Bordes, separadores
-$gray-300: #d9d3c9;         // Bordes activos
-$gray-400: #a9a199;         // Texto deshabilitado, iconos secundarios
-$gray-500: #6f6862;         // Texto secundario
-$gray-600: #574f49;         // Texto normal
-$gray-700: #453e39;         // Texto importante
-$gray-800: #332e2a;         // Títulos
-$gray-900: #2b2622;         // Texto principal
+$gray-50: #f0ead8;          // Papel — fondo de la app (crema de marca)
+$gray-100: #e5eadf;         // Superficies hundidas, filas alternas (salvia)
+$gray-200: #c2cdc3;         // Bordes
+$gray-300: #a5b4a9;         // Bordes activos
+$gray-400: #798d82;         //  2.94  Texto deshabilitado
+$gray-500: #556d62;         //  4.66  Texto secundario
+$gray-600: #2d4a3e;         //  8.08  Texto normal (bosque de marca)
+$gray-700: #273c32;         //  9.82  Texto importante
+$gray-800: #23322b;         // 11.18  Títulos
+$gray-900: #1f2a24;         // 12.34  Texto principal (tinta de marca)
 $black: #000000;
 
 // ========================================
@@ -73,12 +88,12 @@ $black: #000000;
 $bg-body: $gray-50;                    // Fondo general de la app
 $bg-card: $white;                      // Fondo de cards
 $bg-input: $white;                     // Fondo de inputs
-$bg-sidebar: $primary-ultra-light;     // Fondo del sidebar (lila muy suave)
+$bg-sidebar: $gray-900;                // Cromo oscuro, como el fondo de los posts
 $bg-header: $white;                    // Fondo del header
 
 // Fondos especiales (usando tus colores pastel)
-$bg-lila: $lila-suave;
-$bg-azul: $azul-bebe;
+$bg-lila: $primary-light;
+$bg-azul: $secondary-light;
 $bg-amarillo: $amarillo-pastel;
 
 // ========================================
@@ -141,25 +156,28 @@ $spacing-3xl: 3rem;      // 48px
 $spacing-4xl: 4rem;      // 64px
 
 // ========================================
-// SOMBRAS (con tinte de tu color primario)
+// SOMBRAS — tintadas con el primario
 // ========================================
-$shadow-sm: 0 1px 2px 0 rgba(124, 111, 214, 0.05);
-$shadow: 0 1px 3px 0 rgba(124, 111, 214, 0.1), 
-         0 1px 2px -1px rgba(124, 111, 214, 0.1);
-$shadow-md: 0 4px 6px -1px rgba(124, 111, 214, 0.1), 
-            0 2px 4px -2px rgba(124, 111, 214, 0.1);
-$shadow-lg: 0 10px 15px -3px rgba(124, 111, 214, 0.1), 
-            0 4px 6px -4px rgba(124, 111, 214, 0.1);
-$shadow-xl: 0 20px 25px -5px rgba(124, 111, 214, 0.1), 
-            0 10px 10px -5px rgba(124, 111, 214, 0.1);
-$shadow-2xl: 0 25px 50px -12px rgba(124, 111, 214, 0.25);
+// Se interpolan desde `$primary` a propósito. Antes el RGB del lila estaba
+// escrito a mano en las ocho, así que al cambiar la marca se habrían quedado
+// lilas en silencio: sombras de un color que ya no existe en ninguna parte.
+$shadow-sm: 0 1px 2px 0 rgba($primary, 0.06);
+$shadow: 0 1px 3px 0 rgba($primary, 0.10),
+         0 1px 2px -1px rgba($primary, 0.10);
+$shadow-md: 0 4px 6px -1px rgba($primary, 0.10),
+            0 2px 4px -2px rgba($primary, 0.10);
+$shadow-lg: 0 10px 15px -3px rgba($primary, 0.10),
+            0 4px 6px -4px rgba($primary, 0.10);
+$shadow-xl: 0 20px 25px -5px rgba($primary, 0.10),
+            0 10px 10px -5px rgba($primary, 0.10);
+$shadow-2xl: 0 25px 50px -12px rgba($primary, 0.25);
 
 // Sombra para cards importantes
-$shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.08), 
-              0 0 0 1px rgba(124, 111, 214, 0.05);
+$shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.06),
+              0 0 0 1px rgba($primary, 0.06);
 
 // Sombra para hover
-$shadow-hover: 0 4px 12px rgba(124, 111, 214, 0.15);
+$shadow-hover: 0 4px 12px rgba($primary, 0.15);
 
 // ========================================
 // TRANSICIONES
@@ -256,11 +274,11 @@ $opacity-overlay: 0.5;
 // COLORES DE ÁREAS DE DESARROLLO
 // (Para tus objetivos generales)
 // ========================================
-$area-lectoescritura: #8B5CF6;      // Morado
-$area-calculo: #F59E0B;              // Naranja
-$area-atencion: #10B981;             // Verde
-$area-memoria: #3B82F6;              // Azul
-$area-funciones-ejecutivas: #EF4444; // Rojo
-$area-lenguaje: #EC4899;             // Rosa
+$area-lectoescritura: #6b5a8a;      // Morado
+$area-calculo: #8a6018;              // Naranja
+$area-atencion: #2f6b43;             // Verde
+$area-memoria: #3a5c74;              // Azul
+$area-funciones-ejecutivas: #96382e; // Rojo
+$area-lenguaje: #8a4a63;             // Rosa
 $area-expresion-escrita: $primary;   // Tu lila
-$area-social-emocional: #06B6D4;     // Cyan
+$area-social-emocional: #356b73;     // Cyan

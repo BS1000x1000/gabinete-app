@@ -118,7 +118,7 @@ export class DrawerRegistroComponent implements OnDestroy {
               areaMap.set(areaKey, {
                 id:       areaKey,
                 nombre:   obj.area,
-                color:    obj.color ?? '#7c6fd6',
+                color:    obj.color ?? '#2d4a3e',
                 objetivos: [],
               });
             }

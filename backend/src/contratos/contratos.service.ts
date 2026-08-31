@@ -11,6 +11,7 @@ import { AmbitoFestivo, EstadoContrato, EstadoSesion, ModalidadSesion } from '@p
 import { CreateContratoDto } from './dto/create-contrato.dto';
 import { UpdateContratoDto } from './dto/update-contrato.dto';
 import { ContratosPdfService } from './contratos-pdf.service';
+import { ExpedienteService } from '../expediente/expediente.service';
 import { StorageService } from '../common/storage/storage.service';
 import { HORIZONTE_GENERACION_MESES } from './contratos.constants';
 import { randomUUID } from 'crypto';
@@ -30,26 +31,8 @@ const CONTRATO_INCLUDE = {
   _count:     { select: { sesiones: true } },
 } as const;
 
-const CONTRATO_PDF_INCLUDE = {
-  slots: { orderBy: { diaSemana: 'asc' as const } },
-  trabajador: {
-    select: {
-      nombre: true, apellidos: true,
-      nombreFiscal: true, nifFiscal: true,
-      direccionFiscal: true, codigoPostalFiscal: true,
-      ciudadFiscal: true, provinciaFiscal: true,
-      emailFacturacion: true, email: true,
-    },
-  },
-  cliente: {
-    select: {
-      nombre: true, apellidos: true,
-      nombreTutorPagador: true, nifTutorPagador: true,
-      direccionFiscalTutor: true, codigoPostalTutor: true,
-      ciudadTutor: true,
-    },
-  },
-} as const;
+export { CONTRATO_PDF_INCLUDE } from './contratos.include';
+import { CONTRATO_PDF_INCLUDE } from './contratos.include';
 
 /** 10 MB: un contrato escaneado cabe de sobra; corta subidas accidentales. */
 export const TAMANO_MAX_CONTRATO = 10 * 1024 * 1024;
@@ -69,6 +52,7 @@ export class ContratosService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly pdfService: ContratosPdfService,
+    private readonly expediente: ExpedienteService,
     private readonly storage: StorageService,
   ) {}
 
@@ -146,6 +130,19 @@ export class ContratosService {
       this.logger.error(`Contrato ${contrato.id}: fallo la generacion de sesiones`, err);
       return { ...contrato, avisoGeneracion: 'El contrato se creo, pero no se pudieron generar sus sesiones. Revisa el horario y vuelve a intentarlo.' };
     }
+
+    // Documentacion inicial: contrato y los dos consentimientos.
+    //
+    // Va sin `await` a proposito, al contrario que las sesiones: son tres
+    // arranques de Chromium (~3-6 s) y la terapeuta no tiene por que esperarlos
+    // para ver el contrato creado. Si falla, el contrato sigue siendo valido y
+    // la pantalla de Documentacion ofrece el boton de generar.
+    this.expediente.generar(contrato.id, user).catch(err =>
+      this.logger.error(
+        `Contrato ${contrato.id}: fallo la generacion del expediente inicial`,
+        err,
+      ),
+    );
 
     return contrato;
   }

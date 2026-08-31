@@ -59,6 +59,9 @@ export class TrabajadorService {
           telefono: dto.telefono,
           img: dto.img,
           numeroColegiado: dto.numeroColegiado,
+          colegioProfesional: dto.colegioProfesional,
+          numeroPoliza: dto.numeroPoliza,
+          direccionProfesional: dto.direccionProfesional,
           especialidad: dto.especialidad,
           fechaContratacion: dto.fechaContratacion
             ? new Date(dto.fechaContratacion)
@@ -412,6 +415,9 @@ export class TrabajadorService {
           ...(dto.telefono !== undefined && { telefono: dto.telefono }),
           ...(dto.img !== undefined && { img: dto.img }),
           ...(dto.numeroColegiado !== undefined && { numeroColegiado: dto.numeroColegiado }),
+          ...(dto.colegioProfesional !== undefined && { colegioProfesional: dto.colegioProfesional }),
+          ...(dto.numeroPoliza !== undefined && { numeroPoliza: dto.numeroPoliza }),
+          ...(dto.direccionProfesional !== undefined && { direccionProfesional: dto.direccionProfesional }),
           ...(dto.especialidad !== undefined && { especialidad: dto.especialidad }),
           ...(dto.fechaContratacion && {
             fechaContratacion: new Date(dto.fechaContratacion),

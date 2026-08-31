@@ -46,35 +46,43 @@ model Trabajador {
   updatedAt            DateTime  @updatedAt @map("ultima_actualizacion")
 
   // Datos fiscales del autónomo (Hito R)
-  nifFiscal           String?  @map("nif_fiscal")
-  nombreFiscal        String?  @map("nombre_fiscal")
-  direccionFiscal     String?  @map("direccion_fiscal") @db.Text
-  codigoPostalFiscal  String?  @map("codigo_postal_fiscal")
-  ciudadFiscal        String?  @map("ciudad_fiscal")
-  provinciaFiscal     String?  @map("provincia_fiscal")
-  iban                String?
-  retencionIrpf       Decimal? @db.Decimal(4, 2) @map("retencion_irpf")
-  emailFacturacion    String?  @map("email_facturacion")
+  nifFiscal          String?  @map("nif_fiscal")
+  nombreFiscal       String?  @map("nombre_fiscal")
+  direccionFiscal    String?  @map("direccion_fiscal") @db.Text
+  codigoPostalFiscal String?  @map("codigo_postal_fiscal")
+  ciudadFiscal       String?  @map("ciudad_fiscal")
+  provinciaFiscal    String?  @map("provincia_fiscal")
+  iban               String?
+  retencionIrpf      Decimal? @map("retencion_irpf") @db.Decimal(4, 2)
+  emailFacturacion   String?  @map("email_facturacion")
+
+  // Datos profesionales que aparecen en el contrato y los consentimientos.
+  // Van por trabajador porque cada terapeuta es autonoma independiente: su
+  // colegio, su numero de colegiada y su poliza son suyos, no del gabinete.
+  colegioProfesional   String? @map("colegio_profesional")
+  numeroPoliza         String? @map("numero_poliza")
+  /// Solo si el domicilio profesional difiere del fiscal; si es null, se usa el fiscal.
+  direccionProfesional String? @map("direccion_profesional") @db.Text
 
   rolId String @map("id_rol")
   rol   Rol    @relation(fields: [rolId], references: [id])
 
-  clientesAsignados    ClienteTrabajador[]
-  sesiones             Sesion[]
-  informes             Informe[]
-  registrosCreados     RegistroDiario[]
-  objetivosAsignados   Objetivo[] @relation("ObjetivosAsignados")
-  notificaciones       Notificacion[]
-  consentimientosRgpd  ConsentimientoRgpd[]
-  eventosCreados       EventoAgenda[]       @relation("EventosCreados")
-  eventosParticipante  EventoParticipante[] @relation("EventosParticipante")
-  horariosAdmin        HorarioAdmin[]
-  contratosServicio    ContratoServicio[]
-  periodosVacaciones   PeriodoVacaciones[]
-  facturasEmitidas     Factura[]           @relation("FacturasEmitidas")
-  contadorFacturas     ContadorFactura[]
-  documentosSubidos    DocumentoCliente[]  @relation("DocumentosSubidos")
-  horarioLaboral       HorarioLaboral[]
+  clientesAsignados   ClienteTrabajador[]
+  sesiones            Sesion[]
+  informes            Informe[]
+  registrosCreados    RegistroDiario[]
+  objetivosAsignados  Objetivo[]           @relation("ObjetivosAsignados")
+  notificaciones      Notificacion[]
+  consentimientosRgpd ConsentimientoRgpd[]
+  eventosCreados      EventoAgenda[]       @relation("EventosCreados")
+  eventosParticipante EventoParticipante[] @relation("EventosParticipante")
+  horariosAdmin       HorarioAdmin[]
+  contratosServicio   ContratoServicio[]
+  periodosVacaciones  PeriodoVacaciones[]
+  facturasEmitidas    Factura[]            @relation("FacturasEmitidas")
+  contadorFacturas    ContadorFactura[]
+  documentosSubidos   DocumentoCliente[]   @relation("DocumentosSubidos")
+  horarioLaboral      HorarioLaboral[]
 
   @@map("trabajadores")
 }
@@ -105,35 +113,35 @@ model Colegio {
 }
 
 model Cliente {
-  id                   String    @id @default(uuid())
-  idCarpetaDrive       String?   @map("id_carpeta_drive")
-  nombre               String
-  apellidos            String
-  fechaNacimiento      DateTime? @map("fecha_nacimiento")
+  id                         String    @id @default(uuid())
+  idCarpetaDrive             String?   @map("id_carpeta_drive")
+  nombre                     String
+  apellidos                  String
+  fechaNacimiento            DateTime? @map("fecha_nacimiento")
   /// Opcional: muchos menores no tienen DNI todavia. Se guarda NULL (nunca ''),
   /// porque en Postgres varios NULL conviven en un indice unico pero '' colisiona.
-  dni                  String?   @unique
-  domicilio            String
-  provincia            String
-  ciudad               String
-  curso                String
-  fechaInicio          DateTime? @map("fecha_inicio")
-  fechaAlta            DateTime? @default(now()) @map("fecha_alta")
-  activo               Boolean   @default(true)
-  consentimientoRgpd        Boolean   @default(false) @map("consentimiento_rgpd")
-  consentimientoFecha       DateTime? @map("consentimiento_fecha")
-  consentimientoTrabajadorId String?  @map("consentimiento_trabajador_id")
-  deletedAt                 DateTime? @map("deleted_at")
-  createdAt            DateTime  @default(now()) @map("fecha_creacion")
-  updatedAt            DateTime  @updatedAt @map("ultima_actualizacion")
+  dni                        String?   @unique
+  domicilio                  String
+  provincia                  String
+  ciudad                     String
+  curso                      String
+  fechaInicio                DateTime? @map("fecha_inicio")
+  fechaAlta                  DateTime? @default(now()) @map("fecha_alta")
+  activo                     Boolean   @default(true)
+  consentimientoRgpd         Boolean   @default(false) @map("consentimiento_rgpd")
+  consentimientoFecha        DateTime? @map("consentimiento_fecha")
+  consentimientoTrabajadorId String?   @map("consentimiento_trabajador_id")
+  deletedAt                  DateTime? @map("deleted_at")
+  createdAt                  DateTime  @default(now()) @map("fecha_creacion")
+  updatedAt                  DateTime  @updatedAt @map("ultima_actualizacion")
 
   // Datos del pagador/tutor para facturación (Hito R)
-  nifTutorPagador      String?  @map("nif_tutor_pagador")
-  nombreTutorPagador   String?  @map("nombre_tutor_pagador")
-  direccionFiscalTutor String?  @map("direccion_fiscal_tutor") @db.Text
-  codigoPostalTutor    String?  @map("codigo_postal_tutor")
-  ciudadTutor          String?  @map("ciudad_tutor")
-  emailFacturacion     String?  @map("email_facturacion_cliente")
+  nifTutorPagador      String? @map("nif_tutor_pagador")
+  nombreTutorPagador   String? @map("nombre_tutor_pagador")
+  direccionFiscalTutor String? @map("direccion_fiscal_tutor") @db.Text
+  codigoPostalTutor    String? @map("codigo_postal_tutor")
+  ciudadTutor          String? @map("ciudad_tutor")
+  emailFacturacion     String? @map("email_facturacion_cliente")
 
   colegioId String?  @map("id_colegio")
   colegio   Colegio? @relation(fields: [colegioId], references: [id])
@@ -152,20 +160,20 @@ model Cliente {
   notificaciones              Notificacion[]
   consentimientosRgpd         ConsentimientoRgpd[]
   contratosServicio           ContratoServicio[]
-  facturasRecibidas           Factura[]          @relation("FacturasRecibidas")
+  facturasRecibidas           Factura[]               @relation("FacturasRecibidas")
   documentos                  DocumentoCliente[]
 
   @@map("clientes")
 }
 
 model ClienteTrabajador {
-  id           String   @id @default(uuid())
-  clienteId    String   @map("id_cliente")
-  trabajadorId String   @map("id_trabajador")
+  id           String     @id @default(uuid())
+  clienteId    String     @map("id_cliente")
+  trabajadorId String     @map("id_trabajador")
   tipoTerapia  TipoSesion @map("tipo_terapia")
-  activo       Boolean  @default(true)
-  createdAt    DateTime @default(now()) @map("fecha_asignacion")
-  updatedAt    DateTime @updatedAt @map("fecha_actualizacion")
+  activo       Boolean    @default(true)
+  createdAt    DateTime   @default(now()) @map("fecha_asignacion")
+  updatedAt    DateTime   @updatedAt @map("fecha_actualizacion")
 
   cliente    Cliente    @relation(fields: [clienteId], references: [id], onDelete: Cascade)
   trabajador Trabajador @relation(fields: [trabajadorId], references: [id], onDelete: Cascade)
@@ -219,14 +227,14 @@ model Sesion {
   createdAt           DateTime        @default(now()) @map("fecha_creacion")
   updatedAt           DateTime        @updatedAt @map("ultima_actualizacion")
 
-  clienteId    String     @map("id_cliente")
-  cliente      Cliente    @relation(fields: [clienteId], references: [id])
-  trabajadorId String     @map("id_trabajador")
-  trabajador   Trabajador @relation(fields: [trabajadorId], references: [id])
-  bonoId  String?  @map("id_bono")
-  bono    Bono?    @relation(fields: [bonoId], references: [id])
-  contratoId  String?           @map("id_contrato")
-  contrato    ContratoServicio? @relation("SesionesContrato", fields: [contratoId], references: [id])
+  clienteId    String            @map("id_cliente")
+  cliente      Cliente           @relation(fields: [clienteId], references: [id])
+  trabajadorId String            @map("id_trabajador")
+  trabajador   Trabajador        @relation(fields: [trabajadorId], references: [id])
+  bonoId       String?           @map("id_bono")
+  bono         Bono?             @relation(fields: [bonoId], references: [id])
+  contratoId   String?           @map("id_contrato")
+  contrato     ContratoServicio? @relation("SesionesContrato", fields: [contratoId], references: [id])
 
   /// Un cliente no puede tener dos sesiones con el mismo terapeuta empezando en
   /// el mismo instante. Es lo que hace que `skipDuplicates` funcione de verdad en
@@ -256,12 +264,15 @@ model Familiar {
   telefono            String
   email               String?
   esResponsablePago   Boolean @default(false) @map("es_responsable_pago")
-  esContactoPrincipal Boolean @default(true)  @map("es_contacto_principal")
+  esContactoPrincipal Boolean @default(true) @map("es_contacto_principal")
   whatsapp            Boolean @default(true)
+  /// Firma el contrato y los consentimientos. `esContactoPrincipal` no sirve
+  /// para esto: nace en true para todos y significa "a quien se llama primero".
+  esTutorLegal        Boolean @default(false) @map("es_tutor_legal")
 
-  clienteId String  @map("id_cliente")
-  cliente   Cliente @relation(fields: [clienteId], references: [id])
-  bonos  Bono[]
+  clienteId           String               @map("id_cliente")
+  cliente             Cliente              @relation(fields: [clienteId], references: [id])
+  bonos               Bono[]
   consentimientosRgpd ConsentimientoRgpd[]
 
   createdAt DateTime @default(now()) @map("fecha_creacion")
@@ -323,21 +334,21 @@ model Informe {
   periodoHasta DateTime?   @map("periodo_hasta")
 
   // Sección 1
-  motivoConsulta String? @db.Text @map("motivo_consulta")
+  motivoConsulta          String? @map("motivo_consulta") @db.Text
   // Sección 2
-  analisisInformacion String? @db.Text @map("analisis_informacion")
+  analisisInformacion     String? @map("analisis_informacion") @db.Text
   // Sección 3
-  evaluacionInicial String? @db.Text @map("evaluacion_inicial")
+  evaluacionInicial       String? @map("evaluacion_inicial") @db.Text
   // Sección 4
-  objetivosGeneralesTexto String? @db.Text @map("objetivos_generales_texto")
+  objetivosGeneralesTexto String? @map("objetivos_generales_texto") @db.Text
 
   // Solo para SEGUIMIENTO
-  evolucionObservada    String? @db.Text @map("evolucion_observada")
-  objetivosProximoCurso String? @db.Text @map("objetivos_proximo_curso")
+  evolucionObservada    String? @map("evolucion_observada") @db.Text
+  objetivosProximoCurso String? @map("objetivos_proximo_curso") @db.Text
   recomendaciones       String? @db.Text
 
   // Snapshot JSON — garantiza que el PDF sea siempre reproducible
-  objetivosSnapshotJson String? @db.Text @map("objetivos_snapshot_json")
+  objetivosSnapshotJson String? @map("objetivos_snapshot_json") @db.Text
 
   urlDocumentoFinal String? @map("url_documento_final")
 
@@ -368,7 +379,7 @@ model RegistroDiario {
   id                  String   @id @default(uuid())
   fechaRegistro       DateTime @default(now()) @map("fecha_registro")
   contenido           String   @db.Text
-  proximaSesion       String?  @db.Text @map("proxima_sesion")
+  proximaSesion       String?  @map("proxima_sesion") @db.Text
   compartirConFamilia Boolean  @default(true) @map("compartir_con_familia")
 
   clienteId    String     @map("id_cliente")
@@ -456,10 +467,10 @@ model ClienteObjetivo {
   clienteId String  @map("id_cliente")
   cliente   Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
 
-  vecesTrabajado        Int       @default(0) @map("veces_trabajado")
-  ultimaVez             DateTime? @map("ultima_vez_trabajado")
-  progreso              Int       @default(0)
-  notas                 String?
+  vecesTrabajado Int       @default(0) @map("veces_trabajado")
+  ultimaVez      DateTime? @map("ultima_vez_trabajado")
+  progreso       Int       @default(0)
+  notas          String?
 
   // Desnormalizado para acceso rápido — se actualiza al crear una EvaluacionGAS
   nivelGASActual        Int?      @map("nivel_gas_actual")
@@ -477,7 +488,7 @@ model ClienteObjetivo {
 
 model DescripcionNivelGAS {
   id          String @id @default(uuid())
-  nivel       Int    // -2, -1, 0, 1, 2
+  nivel       Int // -2, -1, 0, 1, 2
   descripcion String @db.Text
 
   clienteObjetivoId String          @map("id_cliente_objetivo")
@@ -492,7 +503,7 @@ model DescripcionNivelGAS {
 
 model EvaluacionGAS {
   id    String   @id @default(uuid())
-  nivel Int      // -2, -1, 0, 1, 2
+  nivel Int // -2, -1, 0, 1, 2
   notas String?  @db.Text
   fecha DateTime @default(now())
 
@@ -508,7 +519,7 @@ model RegistroDiarioObjetivo {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("fecha_creacion")
 
-  notasRegistro String? @db.Text @map("notas_registro")
+  notasRegistro String? @map("notas_registro") @db.Text
 
   registroDiarioId String         @map("id_registro_diario")
   registroDiario   RegistroDiario @relation(fields: [registroDiarioId], references: [id], onDelete: Cascade)
@@ -521,28 +532,28 @@ model RegistroDiarioObjetivo {
 }
 
 model Bono {
-  id                 String      @id @default(uuid())
-  totalSesiones      Int         @map("total_sesiones")
-  sesionesConsumidas Int         @default(0) @map("sesiones_consumidas")
-  precio             Decimal     @db.Decimal(10, 2)
-  tipoSesion         TipoSesion  @default(PEDAGOGIA) @map("tipo_sesion")
-  estado             EstadoBono  @default(ACTIVO)
-  pagado             Boolean     @default(false)
-  metodoPago         String?     @map("metodo_pago")
-  fechaPago          DateTime?   @map("fecha_pago")
-  fechaInicio        DateTime    @default(now()) @map("fecha_inicio")
-  fechaFin           DateTime?   @map("fecha_fin")
-  notas              String?     @db.Text
-  createdAt          DateTime    @default(now()) @map("fecha_creacion")
-  updatedAt          DateTime    @updatedAt @map("ultima_actualizacion")
+  id                 String     @id @default(uuid())
+  totalSesiones      Int        @map("total_sesiones")
+  sesionesConsumidas Int        @default(0) @map("sesiones_consumidas")
+  precio             Decimal    @db.Decimal(10, 2)
+  tipoSesion         TipoSesion @default(PEDAGOGIA) @map("tipo_sesion")
+  estado             EstadoBono @default(ACTIVO)
+  pagado             Boolean    @default(false)
+  metodoPago         String?    @map("metodo_pago")
+  fechaPago          DateTime?  @map("fecha_pago")
+  fechaInicio        DateTime   @default(now()) @map("fecha_inicio")
+  fechaFin           DateTime?  @map("fecha_fin")
+  notas              String?    @db.Text
+  createdAt          DateTime   @default(now()) @map("fecha_creacion")
+  updatedAt          DateTime   @updatedAt @map("ultima_actualizacion")
 
-  clienteId       String    @map("id_cliente")
-  cliente         Cliente   @relation(fields: [clienteId], references: [id])
+  clienteId String  @map("id_cliente")
+  cliente   Cliente @relation(fields: [clienteId], references: [id])
 
-  familiarPagoId  String?   @map("id_familiar_pago")
-  familiarPago    Familiar? @relation(fields: [familiarPagoId], references: [id])
+  familiarPagoId String?   @map("id_familiar_pago")
+  familiarPago   Familiar? @relation(fields: [familiarPagoId], references: [id])
 
-  sesiones        Sesion[]
+  sesiones Sesion[]
 
   @@index([clienteId])
   @@index([estado])
@@ -578,10 +589,26 @@ model DocumentoCliente {
   descripcion String?            @db.Text
   categoria   CategoriaDocumento
 
+  origen           OrigenDocumento       @default(SUBIDO)
+  estadoFirma      EstadoFirmaDocumento? @map("estado_firma")
+  /// Version de la plantilla con la que se genero. El RAT exige poder decir
+  /// que texto exacto acepto la familia.
+  plantillaVersion String?               @map("plantilla_version")
+  fechaEnvio       DateTime?             @map("fecha_envio")
+
+  /// Contrato del que nace este documento, si nace de uno.
+  contratoId String?           @map("id_contrato")
+  contrato   ContratoServicio? @relation("DocumentosContrato", fields: [contratoId], references: [id], onDelete: SetNull)
+
+  /// El generado al que sustituye este PDF firmado.
+  firmadoDeId String?           @unique @map("id_firmado_de")
+  firmadoDe   DocumentoCliente? @relation("FirmaDocumento", fields: [firmadoDeId], references: [id], onDelete: SetNull)
+  firmadoPor  DocumentoCliente? @relation("FirmaDocumento")
+
   /// Clave del objeto en Object Storage: `clientes/{clienteId}/documentos/{uuid}{ext}`
-  storageKey  String  @map("storage_key")
-  mimeType    String  @map("mime_type")
-  tamanoBytes Int     @map("tamano_bytes")
+  storageKey  String @map("storage_key")
+  mimeType    String @map("mime_type")
+  tamanoBytes Int    @map("tamano_bytes")
 
   /// Fecha del documento en sí (p. ej. fecha del informe médico), no la de subida.
   fechaDocumento DateTime? @map("fecha_documento")
@@ -606,6 +633,23 @@ enum CategoriaDocumento {
   INFORME_ESCOLAR
   ADMINISTRATIVO
   OTROS
+  // Los tres del expediente inicial, que genera la propia aplicacion.
+  CONTRATO
+  CONSENTIMIENTO_INFORMADO
+  CONSENTIMIENTO_DATOS
+}
+
+/// Quien puso el fichero ahi: lo genero la aplicacion o lo subio una persona.
+enum OrigenDocumento {
+  GENERADO
+  SUBIDO
+}
+
+/// Donde esta un documento del expediente en su camino hasta la firma.
+enum EstadoFirmaDocumento {
+  GENERADO
+  ENVIADO
+  FIRMADO
 }
 
 enum EstadoInforme {
@@ -717,17 +761,17 @@ model TokenRevocado {
 
 model ConsentimientoRgpd {
   id                  String   @id @default(uuid())
-  aceptado            Boolean  // true = acepta, false = revoca
-  versionTexto        String   @map("version_texto")       // ej: "v1.0-2026-04"
-  textoConsentimiento String   @db.Text @map("texto_consentimiento") // texto completo aceptado
+  aceptado            Boolean // true = acepta, false = revoca
+  versionTexto        String   @map("version_texto") // ej: "v1.0-2026-04"
+  textoConsentimiento String   @map("texto_consentimiento") @db.Text // texto completo aceptado
   fechaRegistro       DateTime @default(now()) @map("fecha_registro")
-  ipRegistro          String?  @map("ip_registro")         // si se recoge online
+  ipRegistro          String?  @map("ip_registro") // si se recoge online
 
   clienteId    String     @map("id_cliente")
   cliente      Cliente    @relation(fields: [clienteId], references: [id])
-  familiarId   String     @map("id_familiar")              // tutor legal que consiente
+  familiarId   String     @map("id_familiar") // tutor legal que consiente
   familiar     Familiar   @relation(fields: [familiarId], references: [id])
-  trabajadorId String     @map("id_trabajador")            // quien lo registró
+  trabajadorId String     @map("id_trabajador") // quien lo registró
   trabajador   Trabajador @relation(fields: [trabajadorId], references: [id])
 
   @@index([clienteId])
@@ -808,16 +852,16 @@ model HorarioLaboral {
 }
 
 model HorarioAdmin {
-  id           String       @id @default(uuid())
-  trabajadorId String       @map("trabajador_id")
-  trabajador   Trabajador   @relation(fields: [trabajadorId], references: [id])
-  diaSemana    Int          @map("dia_semana")   // 1=Lun, 2=Mar, ..., 7=Dom (ISO)
-  horaInicio   String       @map("hora_inicio")  // "HH:mm"
-  horaFin      String       @map("hora_fin")     // "HH:mm"
-  titulo       String       @default("Tiempo de Administración")
-  activo       Boolean      @default(true)
-  createdAt    DateTime     @default(now()) @map("fecha_creacion")
-  updatedAt    DateTime     @updatedAt @map("ultima_actualizacion")
+  id           String         @id @default(uuid())
+  trabajadorId String         @map("trabajador_id")
+  trabajador   Trabajador     @relation(fields: [trabajadorId], references: [id])
+  diaSemana    Int            @map("dia_semana") // 1=Lun, 2=Mar, ..., 7=Dom (ISO)
+  horaInicio   String         @map("hora_inicio") // "HH:mm"
+  horaFin      String         @map("hora_fin") // "HH:mm"
+  titulo       String         @default("Tiempo de Administración")
+  activo       Boolean        @default(true)
+  createdAt    DateTime       @default(now()) @map("fecha_creacion")
+  updatedAt    DateTime       @updatedAt @map("ultima_actualizacion")
   overrides    EventoAgenda[]
 
   @@index([trabajadorId])
@@ -850,16 +894,16 @@ enum EstadoContrato {
 }
 
 model ContratoServicio {
-  id              String         @id @default(uuid())
-  clienteId       String         @map("id_cliente")
-  trabajadorId    String         @map("id_trabajador")
-  tipoSesion      TipoSesion
-  cuotaMensual    Decimal        @db.Decimal(10, 2) @map("cuota_mensual")
-  fechaInicio     DateTime       @map("fecha_inicio")
-  fechaFin        DateTime?      @map("fecha_fin")        // null = indefinido
-  estado          EstadoContrato @default(ACTIVO)
-  notas           String?        @db.Text
-  fechaFirma      DateTime       @default(now()) @map("fecha_firma")
+  id           String         @id @default(uuid())
+  clienteId    String         @map("id_cliente")
+  trabajadorId String         @map("id_trabajador")
+  tipoSesion   TipoSesion
+  cuotaMensual Decimal        @map("cuota_mensual") @db.Decimal(10, 2)
+  fechaInicio  DateTime       @map("fecha_inicio")
+  fechaFin     DateTime?      @map("fecha_fin") // null = indefinido
+  estado       EstadoContrato @default(ACTIVO)
+  notas        String?        @db.Text
+  fechaFirma   DateTime       @default(now()) @map("fecha_firma")
 
   /// PDF firmado subido por el gabinete. Cuando existe, sustituye al PDF que la
   /// app genera al vuelo: el documento que vale es el que han firmado las partes.
@@ -879,13 +923,14 @@ model ContratoServicio {
   /// datos con los que se factura y hay que avisar de ello.
   resumenModificadoAt DateTime? @map("resumen_modificado_at")
 
-  createdAt       DateTime       @default(now()) @map("fecha_creacion")
-  updatedAt       DateTime       @updatedAt      @map("ultima_actualizacion")
+  createdAt DateTime @default(now()) @map("fecha_creacion")
+  updatedAt DateTime @updatedAt @map("ultima_actualizacion")
 
-  cliente    Cliente        @relation(fields: [clienteId], references: [id])
-  trabajador Trabajador     @relation(fields: [trabajadorId], references: [id])
+  cliente    Cliente            @relation(fields: [clienteId], references: [id])
+  trabajador Trabajador         @relation(fields: [trabajadorId], references: [id])
   slots      ContratoSlot[]
-  sesiones   Sesion[]       @relation("SesionesContrato")
+  documentos DocumentoCliente[] @relation("DocumentosContrato")
+  sesiones   Sesion[]           @relation("SesionesContrato")
   facturas   Factura[]
 
   @@index([clienteId])
@@ -897,8 +942,8 @@ model ContratoServicio {
 model ContratoSlot {
   id              String          @id @default(uuid())
   contratoId      String          @map("id_contrato")
-  diaSemana       Int             @map("dia_semana")       // 1=Lun..7=Dom (ISO)
-  horaInicio      String          @map("hora_inicio")      // "HH:mm"
+  diaSemana       Int             @map("dia_semana") // 1=Lun..7=Dom (ISO)
+  horaInicio      String          @map("hora_inicio") // "HH:mm"
   horaFin         String          @map("hora_fin")
   duracionMinutos Int             @map("duracion_minutos")
   modalidad       ModalidadSesion @default(PRESENCIAL)
@@ -958,38 +1003,38 @@ enum EstadoFactura {
 }
 
 model Factura {
-  id                  String        @id @default(uuid())
-  numero              Int
-  numeroFormateado    String        @map("numero_formateado")
-  anio                Int
+  id               String @id @default(uuid())
+  numero           Int
+  numeroFormateado String @map("numero_formateado")
+  anio             Int
 
-  trabajadorId        String        @map("id_trabajador")
-  clienteId           String        @map("id_cliente")
-  contratoId          String?       @map("id_contrato")
+  trabajadorId String  @map("id_trabajador")
+  clienteId    String  @map("id_cliente")
+  contratoId   String? @map("id_contrato")
 
-  fechaEmision        DateTime      @map("fecha_emision")
-  periodoFacturado    String        @map("periodo_facturado")      // "2026-09"
-  concepto            String        @db.Text
-  importe             Decimal       @db.Decimal(10, 2)
-  ivaPorcentaje       Decimal       @db.Decimal(4, 2) @default(0) @map("iva_porcentaje")
-  ivaImporte          Decimal       @db.Decimal(10, 2) @default(0) @map("iva_importe")
-  retencionPorcentaje Decimal       @db.Decimal(4, 2) @default(0) @map("retencion_porcentaje")
-  retencionImporte    Decimal       @db.Decimal(10, 2) @default(0) @map("retencion_importe")
-  exencionIvaTexto    String?       @map("exencion_iva_texto")
-  total               Decimal       @db.Decimal(10, 2)
+  fechaEmision        DateTime @map("fecha_emision")
+  periodoFacturado    String   @map("periodo_facturado") // "2026-09"
+  concepto            String   @db.Text
+  importe             Decimal  @db.Decimal(10, 2)
+  ivaPorcentaje       Decimal  @default(0) @map("iva_porcentaje") @db.Decimal(4, 2)
+  ivaImporte          Decimal  @default(0) @map("iva_importe") @db.Decimal(10, 2)
+  retencionPorcentaje Decimal  @default(0) @map("retencion_porcentaje") @db.Decimal(4, 2)
+  retencionImporte    Decimal  @default(0) @map("retencion_importe") @db.Decimal(10, 2)
+  exencionIvaTexto    String?  @map("exencion_iva_texto")
+  total               Decimal  @db.Decimal(10, 2)
 
-  estado              EstadoFactura @default(PENDIENTE)
-  fechaPago           DateTime?     @map("fecha_pago")
-  metodoPago          String?       @map("metodo_pago")
-  urlPdfR2            String?       @map("url_pdf_r2")
-  emailEnviado        Boolean       @default(false) @map("email_enviado")
-  fechaEnvioEmail     DateTime?     @map("fecha_envio_email")
+  estado          EstadoFactura @default(PENDIENTE)
+  fechaPago       DateTime?     @map("fecha_pago")
+  metodoPago      String?       @map("metodo_pago")
+  urlPdfR2        String?       @map("url_pdf_r2")
+  emailEnviado    Boolean       @default(false) @map("email_enviado")
+  fechaEnvioEmail DateTime?     @map("fecha_envio_email")
 
-  createdAt           DateTime      @default(now()) @map("fecha_creacion")
-  updatedAt           DateTime      @updatedAt      @map("ultima_actualizacion")
+  createdAt DateTime @default(now()) @map("fecha_creacion")
+  updatedAt DateTime @updatedAt @map("ultima_actualizacion")
 
-  trabajador Trabajador       @relation("FacturasEmitidas", fields: [trabajadorId], references: [id])
-  cliente    Cliente          @relation("FacturasRecibidas", fields: [clienteId], references: [id])
+  trabajador Trabajador        @relation("FacturasEmitidas", fields: [trabajadorId], references: [id])
+  cliente    Cliente           @relation("FacturasRecibidas", fields: [clienteId], references: [id])
   contrato   ContratoServicio? @relation(fields: [contratoId], references: [id])
 
   @@unique([trabajadorId, anio, numero])
@@ -1017,12 +1062,12 @@ model ContadorFactura {
 
 model AuditLog {
   id        String   @id @default(uuid())
-  evento    String   // 'LOGIN_OK' | 'LOGIN_FAIL' | 'LOGOUT' | 'PASSWORD_CHANGE' | 'ACCESO_FICHA'
-  userId    String?  @map("user_id")    // null en LOGIN_FAIL si el usuario no existe
+  evento    String // 'LOGIN_OK' | 'LOGIN_FAIL' | 'LOGOUT' | 'PASSWORD_CHANGE' | 'ACCESO_FICHA'
+  userId    String?  @map("user_id") // null en LOGIN_FAIL si el usuario no existe
   username  String?
   ip        String?
-  recurso   String?  // clienteId, informeId, etc. — contexto del acceso
-  metadata  Json?    // datos adicionales en formato libre
+  recurso   String? // clienteId, informeId, etc. — contexto del acceso
+  metadata  Json? // datos adicionales en formato libre
   createdAt DateTime @default(now()) @map("created_at")
 
   @@index([userId])

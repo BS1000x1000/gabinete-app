@@ -17,6 +17,9 @@ interface EditForm {
   telefono: string;
   especialidad: string;
   numeroColegiado: string;
+  colegioProfesional: string;
+  numeroPoliza: string;
+  direccionProfesional: string;
   fechaContratacion: string;
   urlVideollamada: string;
 }
@@ -45,6 +48,7 @@ export class TrabajadorPerfilTabComponent implements OnInit, OnDestroy {
   readonly form = signal<EditForm>({
     nombre: '', apellidos: '', email: '',
     telefono: '', especialidad: '', numeroColegiado: '',
+    colegioProfesional: '', numeroPoliza: '', direccionProfesional: '',
     fechaContratacion: '', urlVideollamada: '',
   });
 
@@ -84,6 +88,9 @@ export class TrabajadorPerfilTabComponent implements OnInit, OnDestroy {
       telefono:         t.telefono          ?? '',
       especialidad:     t.especialidad      ?? '',
       numeroColegiado:  t.numeroColegiado   ?? '',
+      colegioProfesional:   t.colegioProfesional   ?? '',
+      numeroPoliza:         t.numeroPoliza         ?? '',
+      direccionProfesional: t.direccionProfesional ?? '',
       fechaContratacion: t.fechaContratacion ? t.fechaContratacion.slice(0, 10) : '',
       urlVideollamada:  t.urlVideollamada   ?? '',
     });
@@ -125,6 +132,9 @@ export class TrabajadorPerfilTabComponent implements OnInit, OnDestroy {
       telefono:          f.telefono.trim()          || undefined,
       especialidad:      f.especialidad.trim()      || undefined,
       numeroColegiado:   f.numeroColegiado.trim()   || undefined,
+      colegioProfesional:   f.colegioProfesional.trim()   || undefined,
+      numeroPoliza:         f.numeroPoliza.trim()         || undefined,
+      direccionProfesional: f.direccionProfesional.trim() || undefined,
       fechaContratacion: f.fechaContratacion.trim()  || undefined,
       urlVideollamada:   url || null,
     };

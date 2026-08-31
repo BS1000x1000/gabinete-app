@@ -36,7 +36,7 @@
         <!-- Card — Datos personales -->
         <div class="perfil-card">
           <div class="perfil-card-hdr">
-            <span class="perfil-card-icon" style="background: #ede9fc; color: #7c6fd6;">
+            <span class="perfil-card-icon" style="background: #d9e8da; color: #2d4a3e;">
               <i class="bi bi-person-fill"></i>
             </span>
             <h3 class="perfil-card-title">Datos personales</h3>
@@ -72,7 +72,7 @@
         <!-- Card — Datos profesionales -->
         <div class="perfil-card">
           <div class="perfil-card-hdr">
-            <span class="perfil-card-icon" style="background: #dbeafe; color: #3b82f6;">
+            <span class="perfil-card-icon" style="background: #dde6ec; color: #3a5c74;">
               <i class="bi bi-briefcase-fill"></i>
             </span>
             <h3 class="perfil-card-title">Datos profesionales</h3>
@@ -89,6 +89,18 @@
             <div class="dato-row">
               <span class="dato-label">Nº colegiado</span>
               <span class="dato-valor">{{ trabajador()?.numeroColegiado || '—' }}</span>
+            </div>
+            <div class="dato-row">
+              <span class="dato-label">Colegio profesional</span>
+              <span class="dato-valor">{{ trabajador()?.colegioProfesional || '—' }}</span>
+            </div>
+            <div class="dato-row">
+              <span class="dato-label">Nº póliza RC</span>
+              <span class="dato-valor">{{ trabajador()?.numeroPoliza || '—' }}</span>
+            </div>
+            <div class="dato-row">
+              <span class="dato-label">Domicilio profesional</span>
+              <span class="dato-valor">{{ trabajador()?.direccionProfesional || '—' }}</span>
             </div>
             <div class="dato-row">
               <span class="dato-label">Incorporación</span>
@@ -187,6 +199,43 @@
               />
             </div>
 
+            <!-- Estos tres van impresos en el contrato y los consentimientos.
+                 Si faltan, el documento sale con la línea en blanco. -->
+            <div class="col-12">
+              <label class="form-label">Colegio profesional</label>
+              <input
+                type="text"
+                class="form-control form-control-sm"
+                placeholder="Colegio Oficial de…"
+                [value]="form().colegioProfesional"
+                (input)="updateField('colegioProfesional', $any($event.target).value)"
+              />
+              <small class="text-muted">Aparece en el encabezado del contrato.</small>
+            </div>
+
+            <div class="col-sm-6">
+              <label class="form-label">Nº póliza de responsabilidad civil</label>
+              <input
+                type="text"
+                class="form-control form-control-sm"
+                [value]="form().numeroPoliza"
+                (input)="updateField('numeroPoliza', $any($event.target).value)"
+              />
+              <small class="text-muted">Cláusula 11 del contrato.</small>
+            </div>
+
+            <div class="col-sm-6">
+              <label class="form-label">Domicilio profesional</label>
+              <input
+                type="text"
+                class="form-control form-control-sm"
+                placeholder="Si es distinto del fiscal"
+                [value]="form().direccionProfesional"
+                (input)="updateField('direccionProfesional', $any($event.target).value)"
+              />
+              <small class="text-muted">Si se deja vacío, se usa el domicilio fiscal.</small>
+            </div>
+
             <div class="col-sm-6">
               <label class="form-label">Fecha de incorporación</label>
               <input
@@ -199,7 +248,7 @@
 
             <div class="col-12">
               <label class="form-label">
-                <i class="bi bi-camera-video me-1" style="color:#00897b"></i>
+                <i class="bi bi-camera-video me-1" style="color:#2f6b43"></i>
                 URL sala Google Meet
               </label>
               <input

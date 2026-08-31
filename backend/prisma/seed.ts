@@ -45,14 +45,14 @@ async function main() {
 
   // ── Áreas de desarrollo ────────────────────────────────────────
   const areasData = [
-    { nombre: 'Procesos Cognitivos Básicos',  descripcion: 'Atención, memoria y percepción',                            color: '#6366F1', orden: 1 },
-    { nombre: 'Funciones Ejecutivas',         descripcion: 'Planificación, inhibición y flexibilidad cognitiva',         color: '#EF4444', orden: 2 },
-    { nombre: 'Lectura',                      descripcion: 'Conciencia fonológica, decodificación y comprensión lectora', color: '#3B82F6', orden: 3 },
-    { nombre: 'Escritura',                    descripcion: 'Grafomotricidad, ortografía y expresión escrita',            color: '#8B5CF6', orden: 4 },
-    { nombre: 'Lenguaje y Comunicación',      descripcion: 'Expresión oral, comprensión verbal y vocabulario',           color: '#EC4899', orden: 5 },
-    { nombre: 'Matemáticas',                  descripcion: 'Cálculo, razonamiento y resolución de problemas',            color: '#F59E0B', orden: 6 },
-    { nombre: 'Técnicas de Estudio',          descripcion: 'Organización, planificación y hábitos de estudio',           color: '#10B981', orden: 7 },
-    { nombre: 'Emociones',                    descripcion: 'Identificación y expresión emocional',                       color: '#F97316', orden: 8 },
+    { nombre: 'Procesos Cognitivos Básicos',  descripcion: 'Atención, memoria y percepción',                            color: '#3a5c74', orden: 1 },
+    { nombre: 'Funciones Ejecutivas',         descripcion: 'Planificación, inhibición y flexibilidad cognitiva',         color: '#96382e', orden: 2 },
+    { nombre: 'Lectura',                      descripcion: 'Conciencia fonológica, decodificación y comprensión lectora', color: '#345c6b', orden: 3 },
+    { nombre: 'Escritura',                    descripcion: 'Grafomotricidad, ortografía y expresión escrita',            color: '#6b5a8a', orden: 4 },
+    { nombre: 'Lenguaje y Comunicación',      descripcion: 'Expresión oral, comprensión verbal y vocabulario',           color: '#8a4a63', orden: 5 },
+    { nombre: 'Matemáticas',                  descripcion: 'Cálculo, razonamiento y resolución de problemas',            color: '#8a6018', orden: 6 },
+    { nombre: 'Técnicas de Estudio',          descripcion: 'Organización, planificación y hábitos de estudio',           color: '#2f6b43', orden: 7 },
+    { nombre: 'Emociones',                    descripcion: 'Identificación y expresión emocional',                       color: '#a5622a', orden: 8 },
   ];
 
   const areaIds: Record<string, string> = {};

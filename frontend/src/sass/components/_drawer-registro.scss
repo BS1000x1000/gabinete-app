@@ -9,8 +9,8 @@ $dr-width-mobile: 100%;
 
 $dr-primary: $primary;
 $dr-primary-dark: #6559c0;
-$dr-primary-soft: rgba(124, 111, 214, 0.1);
-$dr-primary-ring: rgba(124, 111, 214, 0.25);
+$dr-primary-soft: rgba($primary, 0.1);
+$dr-primary-ring: rgba($primary, 0.25);
 $dr-surface: $white;
 $dr-border: #e8e5f5;
 $dr-text: #1a1825;
@@ -398,7 +398,7 @@ $dr-transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
   &:hover {
     border-color: var(--chip-color, $dr-primary);
-    background: rgba(124, 111, 214, 0.05);
+    background: rgba($primary, 0.05);
     color: var(--chip-color, $dr-primary);
 
     i {
@@ -410,7 +410,7 @@ $dr-transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     background: var(--chip-color, $dr-primary);
     border-color: var(--chip-color, $dr-primary);
     color: $white;
-    box-shadow: 0 2px 8px rgba(124, 111, 214, 0.3);
+    box-shadow: 0 2px 8px rgba($primary, 0.3);
 
     i {
       color: $white;
@@ -526,11 +526,11 @@ $dr-transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   &--primary {
     background: $dr-primary;
     color: $white;
-    box-shadow: 0 4px 12px rgba(124, 111, 214, 0.35);
+    box-shadow: 0 4px 12px rgba($primary, 0.35);
 
     &:hover:not(:disabled) {
       background: $dr-primary-dark;
-      box-shadow: 0 6px 16px rgba(124, 111, 214, 0.45);
+      box-shadow: 0 6px 16px rgba($primary, 0.45);
       transform: translateY(-1px);
     }
 

@@ -8,7 +8,17 @@ export type CategoriaDocumento =
   | 'INFORME_MEDICO'
   | 'INFORME_ESCOLAR'
   | 'ADMINISTRATIVO'
-  | 'OTROS';
+  | 'OTROS'
+  // Expediente inicial: los genera la propia aplicación a partir del contrato.
+  | 'CONTRATO'
+  | 'CONSENTIMIENTO_INFORMADO'
+  | 'CONSENTIMIENTO_DATOS';
+
+/** Lo puso la aplicación o lo subió una persona. */
+export type OrigenDocumento = 'GENERADO' | 'SUBIDO';
+
+/** Dónde está un documento del expediente camino de la firma. */
+export type EstadoFirmaDocumento = 'GENERADO' | 'ENVIADO' | 'FIRMADO';
 
 export interface DocumentoCliente {
   id: string;
@@ -22,6 +32,12 @@ export interface DocumentoCliente {
   updatedAt: string;
   clienteId: string;
   subidoPor: { id: string; nombre: string; apellidos: string };
+  origen?: OrigenDocumento;
+  estadoFirma?: EstadoFirmaDocumento | null;
+  plantillaVersion?: string | null;
+  fechaEnvio?: string | null;
+  contratoId?: string | null;
+  firmadoDeId?: string | null;
 }
 
 export interface CreateDocumentoPayload {
@@ -63,11 +79,33 @@ export const CATEGORIA_DOCUMENTO_LABELS: Record<
     corto: 'Otros',
     icono: 'bi-paperclip',
   },
+  CONTRATO: {
+    texto: 'Contrato de prestación de servicios',
+    corto: 'Contrato',
+    icono: 'bi-file-earmark-text',
+  },
+  CONSENTIMIENTO_INFORMADO: {
+    texto: 'Consentimiento informado',
+    corto: 'Consent. informado',
+    icono: 'bi-clipboard-check',
+  },
+  CONSENTIMIENTO_DATOS: {
+    texto: 'Consentimiento de protección de datos',
+    corto: 'Consent. datos',
+    icono: 'bi-shield-check',
+  },
 };
 
-export const CATEGORIAS_DOCUMENTO = Object.keys(
-  CATEGORIA_DOCUMENTO_LABELS,
-) as CategoriaDocumento[];
+/** Las tres del expediente inicial no se ofrecen al subir a mano: las genera la app. */
+export const CATEGORIAS_EXPEDIENTE: CategoriaDocumento[] = [
+  'CONTRATO',
+  'CONSENTIMIENTO_INFORMADO',
+  'CONSENTIMIENTO_DATOS',
+];
+
+export const CATEGORIAS_DOCUMENTO = (
+  Object.keys(CATEGORIA_DOCUMENTO_LABELS) as CategoriaDocumento[]
+).filter(c => !CATEGORIAS_EXPEDIENTE.includes(c));
 
 /** Debe coincidir con MIME_TYPES_PERMITIDOS del backend. */
 export const MIME_TYPES_PERMITIDOS = [

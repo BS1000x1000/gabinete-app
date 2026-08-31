@@ -56,6 +56,27 @@ export class CreateTrabajadorDto {
   @IsString()
   @MaxLength(50)
   numeroColegiado?: string;
+  /**
+   * Colegio profesional al que pertenece. Va impreso en el encabezado del
+   * contrato y del consentimiento informado.
+   */
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  colegioProfesional?: string;
+
+  /** Poliza del seguro de responsabilidad civil (clausula 11 del contrato). */
+  @IsOptional()
+  @IsString()
+  @MaxLength(60)
+  numeroPoliza?: string;
+
+  /** Solo si el domicilio profesional difiere del fiscal. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(300)
+  direccionProfesional?: string;
+
 
   @IsOptional()
   @IsString()
@@ -117,6 +138,27 @@ export class UpdateTrabajadorDto {
   @IsString()
   @MaxLength(50)
   numeroColegiado?: string;
+  /**
+   * Colegio profesional al que pertenece. Va impreso en el encabezado del
+   * contrato y del consentimiento informado.
+   */
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  colegioProfesional?: string;
+
+  /** Poliza del seguro de responsabilidad civil (clausula 11 del contrato). */
+  @IsOptional()
+  @IsString()
+  @MaxLength(60)
+  numeroPoliza?: string;
+
+  /** Solo si el domicilio profesional difiere del fiscal. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(300)
+  direccionProfesional?: string;
+
 
   @IsOptional()
   @IsString()

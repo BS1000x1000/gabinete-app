@@ -1,331 +1,433 @@
-import { escapeHtml } from '../../common/utils/html.utils';
+import {
+  documento,
+  bloqueFirmas,
+  lugarYFecha,
+  esc,
+  hueco,
+  Profesional,
+} from '../../common/documentos/documento-base';
 
-function esc(v: unknown): string {
-  if (v == null) return '';
-  return escapeHtml(String(v));
-}
+/**
+ * Contrato de prestacion de servicios pedagogicos.
+ *
+ * Reproduce el documento que la profesional venia rellenando a mano, con sus
+ * trece clausulas y su redaccion. La unica parte que no es texto fijo es la
+ * tabla de la clausula 4, que antes obligaba a mantener una plantilla por dia
+ * de la semana (habia una de lunes y otra de viernes, identicas salvo esa
+ * tabla) y ahora se calcula.
+ */
 
-const TIPO_LABEL: Record<string, string> = {
-  PEDAGOGIA:           'Pedagogía',
-  NEUROPSICOLOGIA:     'Neuropsicología',
-  LOGOPEDIA:           'Logopedia',
-  TERAPIA_OCUPACIONAL: 'Terapia Ocupacional',
-  EVALUACION:          'Evaluación Psicopedagógica',
-  REUNION_COLEGIO:     'Coordinación con Centro Educativo',
-};
+export const PLANTILLA_VERSION = 'contrato-v1-2026-09';
+
+/** El contrato esta cerrado; los consentimientos no todos. */
+export const PLANTILLA_VALIDADA = true;
 
 const DIA_LABEL: Record<number, string> = {
-  1: 'Lunes', 2: 'Martes', 3: 'Miércoles', 4: 'Jueves',
-  5: 'Viernes', 6: 'Sábado', 7: 'Domingo',
+  1: 'lunes', 2: 'martes', 3: 'miércoles', 4: 'jueves',
+  5: 'viernes', 6: 'sábados', 7: 'domingos',
 };
 
+export interface FilaCalendarioTemplate {
+  mes: string;
+  anio: number;
+  diasTexto: string;
+  observaciones: string[];
+  dias: Array<{ dia: number; haySesion: boolean }>;
+}
+
 export interface ContratoTemplateData {
-  // Prestador
-  nombreFiscal: string;
-  nifFiscal: string;
-  direccionFiscal: string;
-  codigoPostalFiscal: string;
-  ciudadFiscal: string;
-  provinciaFiscal: string;
-  emailPrestador: string;
-  // Cliente (pagador)
-  nombrePagador: string;
-  nifPagador: string;
-  direccionPagador: string;
-  codigoPostalPagador: string;
-  ciudadPagador: string;
-  // Beneficiario (menor)
-  nombreBeneficiario: string;
-  // Contrato
-  tipoSesion: string;
-  cuotaMensual: number;
-  fechaInicio: string;
-  fechaFin: string | null;
-  fechaFirma: string;
+  profesional: Profesional;
+  /** Los dos progenitores o tutores legales que firman. */
+  tutores: Array<{ nombreCompleto: string; nif: string | null }>;
+  menor: { nombreCompleto: string; fechaNacimiento: string | null };
+  /** Dia de la semana ISO del slot principal (1=lunes). */
+  diaSemana: number | null;
+  horario: string | null;
+  cuotaMensual: number | null;
+  ciudadFirma: string | null;
+  calendario: FilaCalendarioTemplate[];
+  cursoEtiqueta: string;
+  /** Frases literales de la clausula 4, con las fechas ya calculadas. */
+  periodoNavidad: string;
+  periodoSemanaSanta: string;
   notas: string | null;
-  slots: Array<{
-    diaSemana: number;
-    horaInicio: string;
-    horaFin: string;
-    duracionMinutos: number;
-    modalidad: string;
-  }>;
-  // Fiscal
-  exentoIva: boolean;
-  retencionPorcentaje: number;
+}
+
+function filaCalendario(f: FilaCalendarioTemplate): string {
+  const dias = f.dias
+    .map(d =>
+      d.haySesion
+        ? String(d.dia)
+        : `<span class="sin-sesion">${d.dia}</span>`,
+    )
+    .join(' - ');
+  return `
+    <tr>
+      <td class="mes">${esc(f.mes)} ${esc(f.anio)}</td>
+      <td class="dias">${dias}</td>
+      <td>${f.observaciones.map(o => esc(o)).join('<br>')}</td>
+    </tr>`;
 }
 
 export function buildContratoHtml(d: ContratoTemplateData): string {
-  const tipoLabel = TIPO_LABEL[d.tipoSesion] ?? d.tipoSesion;
+  const p = d.profesional;
 
-  const slotsRows = d.slots.map(s => `
-    <tr>
-      <td>${esc(DIA_LABEL[s.diaSemana] ?? s.diaSemana)}</td>
-      <td>${esc(s.horaInicio)} – ${esc(s.horaFin)}</td>
-      <td>${esc(s.duracionMinutos)} min</td>
-      <td>${s.modalidad === 'ONLINE' ? 'Online (videollamada)' : 'Presencial'}</td>
-    </tr>`).join('');
+  const diaTexto = d.diaSemana ? DIA_LABEL[d.diaSemana] ?? null : null;
+  const colegio = p.colegioProfesional
+    ? `colegiada con el n.º ${esc(p.numeroColegiado ?? '')} en el ${esc(p.colegioProfesional)}`
+    : `colegiada con el n.º ${hueco(p.numeroColegiado, 90)}`;
+  const domicilio = p.direccionProfesional
+    ? esc(p.direccionProfesional)
+    : hueco(null, 240);
 
-  const precioRow = d.retencionPorcentaje > 0
-    ? `<tr><td>Retención IRPF aplicable</td><td>${esc(d.retencionPorcentaje)}%</td></tr>`
+  const tutor1 = d.tutores[0] ?? { nombreCompleto: '', nif: null };
+  const tutor2 = d.tutores[1] ?? { nombreCompleto: '', nif: null };
+
+  const notas = d.notas
+    ? `<h2 class="clausula">Observaciones</h2><p>${esc(d.notas)}</p>`
     : '';
 
-  const ivaRow = d.exentoIva
-    ? `<tr><td>IVA</td><td>Exento — Art. 20.1.3 LIVA<br><small>(servicios de educación y reeducación)</small></td></tr>`
-    : '';
+  const cuerpo = `
+  <h2 class="clausula">Entre</h2>
 
-  const vigenciaFin = d.fechaFin
-    ? esc(d.fechaFin)
-    : 'Indefinida — hasta comunicación de alguna de las partes con 30 días de antelación';
+  <p>
+    Dña. <strong>${esc(p.nombreCompleto)}</strong>, con NIF ${hueco(p.nif, 110)},
+    graduada en Pedagogía, ${colegio}, con domicilio profesional en ${domicilio},
+    en adelante <strong>LA PROFESIONAL</strong>,
+  </p>
 
-  const notasSection = d.notas
-    ? `<div class="section">
-         <h2 class="section-title">Observaciones</h2>
-         <p class="notas">${esc(d.notas)}</p>
-       </div>`
-    : '';
+  <p><strong>Y</strong></p>
 
-  return `<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8"/>
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 11.5px; color: #1a1a2e; background: #fff; line-height: 1.55; }
-  .page { max-width: 800px; margin: 0 auto; padding: 40px 48px; }
+  <p>
+    D./Dña. ${hueco(tutor1.nombreCompleto, 200)}, con NIF ${hueco(tutor1.nif, 110)},
+    y D./Dña. ${hueco(tutor2.nombreCompleto, 200)}, con NIF ${hueco(tutor2.nif, 110)},
+    en calidad de progenitores o tutores legales de ${hueco(d.menor.nombreCompleto, 170)}
+    (<em>nombre del menor</em>), con fecha de nacimiento ${hueco(d.menor.fechaNacimiento, 110)},
+    en adelante <strong>LA FAMILIA</strong>,
+  </p>
 
-  .doc-header { border-bottom: 3px solid #7c6fd6; padding-bottom: 20px; margin-bottom: 28px; display: flex; justify-content: space-between; align-items: flex-start; }
-  .doc-header-left h1 { font-size: 17px; font-weight: 700; color: #7c6fd6; letter-spacing: 0.03em; text-transform: uppercase; }
-  .doc-header-left .subtitle { font-size: 10.5px; color: #888; margin-top: 4px; letter-spacing: 0.05em; text-transform: uppercase; }
-  .doc-header-right { text-align: right; font-size: 10.5px; color: #888; }
-  .doc-header-right .ref { font-weight: 700; color: #7c6fd6; font-size: 12px; }
+  <p>
+    acuerdan suscribir el presente contrato de prestación de servicios pedagógicos,
+    que se regirá por las siguientes cláusulas.
+  </p>
 
-  .parties { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
-  .party-box { background: #f9f8ff; border: 1px solid #e8e4f8; border-radius: 8px; padding: 14px 16px; }
-  .party-box.beneficiario { grid-column: 1 / -1; }
-  .party-box h3 { font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.08em; color: #7c6fd6; margin-bottom: 8px; font-weight: 700; border-bottom: 1px solid #e8e4f8; padding-bottom: 5px; }
-  .party-box p { color: #333; font-size: 11px; }
-  .party-box strong { color: #1a1a2e; }
+  <h2 class="clausula">1. Naturaleza del servicio</h2>
+  <p>
+    El presente acuerdo regula la prestación de un servicio profesional de intervención
+    pedagógica especializada e individualizada, dirigido a población infantojuvenil y a su
+    entorno familiar. Se configura como un proceso continuo, estructurado y personalizado,
+    orientado a favorecer el desarrollo, la adaptación y el bienestar del o de la menor en
+    sus distintos contextos.
+  </p>
+  <p>
+    <strong>Este servicio no tiene carácter sanitario</strong>, no se vincula a los calendarios
+    escolares y no constituye una actividad puntual ni de carácter extracurricular. Es un
+    servicio de naturaleza educativa y pedagógica, prestado por una profesional colegiada en el
+    ámbito de la pedagogía. La continuidad del proceso se considera un elemento esencial del
+    servicio, dado que las interrupciones prolongadas pueden afectar negativamente a los
+    objetivos de intervención establecidos.
+  </p>
+  <p>
+    <strong>La profesional queda sujeta al deber de secreto profesional</strong> inherente a su
+    condición de colegiada, respecto de toda la información conocida en el ejercicio de su
+    actividad, con independencia de las obligaciones específicas en materia de protección de
+    datos recogidas en la cláusula correspondiente.
+  </p>
 
-  .section { margin-bottom: 22px; }
-  .section-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #7c6fd6; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #e8e4f8; }
+  <h2 class="clausula">2. Modalidad del servicio y tarifa</h2>
+  <p>
+    El servicio se presta bajo un sistema de tarifa plana mensual, que garantiza la reserva de
+    un día y horario fijo semanal, la continuidad del proceso de intervención y la estabilidad
+    organizativa tanto para la familia como para la profesional.
+  </p>
+  <p>
+    <strong>Día y horario de la sesión:</strong> las sesiones se realizarán los días
+    ${hueco(diaTexto, 130)} en horario de ${hueco(d.horario, 140)} horas, salvo modificación
+    acordada expresamente entre ambas partes conforme a lo previsto en este contrato.
+  </p>
+  <p>
+    <strong>El primer mes de prestación del servicio incluye, sin coste adicional sobre la cuota
+    mensual, una valoración pedagógica inicial mediante observación directa e instrumentos de
+    valoración pedagógica</strong>, consistente en la recogida de información relevante sobre el
+    desarrollo, la historia escolar y familiar del o de la menor, la realización de las sesiones
+    de exploración necesarias, la coordinación con el centro educativo cuando proceda, y la
+    elaboración de un informe inicial que recoja el perfil de aprendizaje y la propuesta de
+    objetivos de intervención, consensuada posteriormente con la familia.
+  </p>
+  <p>
+    La tarifa mensual incluye, además de las sesiones de intervención directa correspondientes a
+    la frecuencia contratada, la coordinación con la familia y, cuando proceda, con el centro
+    educativo u otros profesionales que intervengan con el o la menor, así como
+    <strong>la elaboración de un informe de seguimiento cada seis meses, sin coste
+    adicional</strong>, en el que se recoja la evolución del proceso y, en su caso, la
+    actualización de los objetivos de intervención.
+  </p>
+  <p>
+    En cuanto a la documentación escrita, <strong>quedan incluidas en la tarifa mensual las notas
+    y orientaciones de seguimiento de hasta dos páginas de extensión</strong>, dirigidas a la
+    familia o al centro educativo en el marco ordinario de la coordinación prevista en este
+    contrato. La elaboración de informes de mayor extensión, o de documentos específicos
+    solicitados por la familia para su presentación ante terceros (otros profesionales, centros,
+    organismos o entidades), no queda incluida en la tarifa mensual y será objeto de presupuesto
+    y facturación independiente, que se comunicará a la familia con carácter previo a su
+    realización.
+  </p>
+  <p>
+    El servicio se presta con carácter general de forma presencial en el domicilio familiar. No
+    obstante, cuando la sesión presencial no pueda tener lugar por causas justificadas y así lo
+    solicite la familia, podrá realizarse de forma telemática mediante videollamada, manteniendo
+    la misma duración y sin que ello suponga modificación de la cuota mensual.
+  </p>
 
-  .clause { font-size: 11px; color: #333; margin-bottom: 8px; text-align: justify; }
-  .clause strong { color: #1a1a2e; }
+  <h2 class="clausula">3. Cuota y condiciones económicas</h2>
+  <p>
+    La cuota mensual asciende a ${hueco(d.cuotaMensual != null ? d.cuotaMensual.toFixed(2).replace('.', ',') : null, 80)}
+    <strong>euros</strong>, de carácter fijo, e incluye lo descrito en la cláusula anterior. La
+    cuota es independiente del número de sesiones que resulten efectivamente realizadas en cada
+    mes natural, dado que responde a la reserva de plaza, a la estructura completa del servicio y
+    a la continuidad del proceso a lo largo del curso. <strong>Este régimen resulta de aplicación
+    con carácter general, con la excepción del mes de julio, que se facturará de forma
+    proporcional al número de sesiones efectivamente impartidas</strong>, conforme a lo
+    establecido en la cláusula de vacaciones. <strong>El mes de agosto no será objeto de
+    facturación</strong>, al corresponder al periodo vacacional de la profesional.
+  </p>
+  <p>
+    El pago se realizará con periodicidad mensual, mediante factura emitida por la profesional al
+    inicio de cada mes, dentro de los primeros diez días naturales siguientes a su emisión.
+  </p>
+  <p>
+    En caso de impago transcurrido el plazo anterior, la profesional lo comunicará a la familia y
+    concederá un plazo adicional de cinco días naturales para la regularización. De no producirse
+    el pago en dicho plazo, la profesional podrá suspender la prestación del servicio hasta la
+    regularización de la cuota pendiente, sin que ello exima a la familia del pago de las
+    cantidades adeudadas.
+  </p>
+  <p>
+    La cuota mensual podrá ser objeto de actualización anual, que se comunicará a la familia con
+    una antelación mínima de un mes antes de su entrada en vigor.
+  </p>
 
-  .slots-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 8px; }
-  .slots-table th { background: #f0eeff; color: #5a4da8; font-weight: 600; text-align: left; padding: 7px 10px; border: 1px solid #e8e4f8; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
-  .slots-table td { padding: 7px 10px; border: 1px solid #eee; color: #333; }
-  .slots-table tbody tr:nth-child(even) td { background: #faf9ff; }
+  <h2 class="clausula">4. Festivos y vacaciones</h2>
 
-  .price-table { width: 320px; border-collapse: collapse; font-size: 11px; }
-  .price-table td { padding: 6px 10px; border-bottom: 1px solid #eee; }
-  .price-table td:last-child { text-align: right; font-weight: 600; }
-  .price-table .total td { font-size: 13px; font-weight: 700; color: #7c6fd6; border-top: 2px solid #7c6fd6; border-bottom: none; }
-  .price-table small { font-weight: 400; color: #888; font-size: 9.5px; }
+  <h3 class="sub">Festivos</h3>
+  <p>
+    Las sesiones que coincidan con festivos nacionales o autonómicos de la Comunidad de Madrid
+    <strong>no se prestarán con carácter general</strong>, no siendo objeto de recuperación ni
+    compensación, y considerándose incluidas dentro del cómputo general de la tarifa mensual,
+    <strong>sin que ello dé lugar a reducción de la cuota ni a devolución parcial alguna</strong>.
+  </p>
+  <p>
+    No obstante, <strong>de manera excepcional</strong>, la profesional podrá proponer la
+    realización o reubicación de alguna sesión <strong>con el fin de garantizar la continuidad del
+    servicio y el equilibrio en el número de sesiones mensuales</strong>. En estos casos,
+    <strong>se informará previamente a la familia</strong>.
+  </p>
+  <p>
+    <em>Los festivos de carácter local, propios de cada municipio, no quedan reflejados en el
+    calendario general de este contrato y se gestionarán, en su caso, de forma individual según el
+    municipio de residencia de cada familia.</em>
+  </p>
 
-  .vigencia-table { border-collapse: collapse; font-size: 11px; }
-  .vigencia-table td { padding: 5px 12px 5px 0; color: #333; vertical-align: top; }
-  .vigencia-table td:first-child { font-weight: 600; color: #555; min-width: 120px; }
+  <h3 class="sub">Vacaciones de la profesional y periodos sin servicio</h3>
+  <p>
+    La profesional <strong>interrumpirá la prestación del servicio durante el mes de agosto</strong>,
+    no realizándose sesiones durante dicho periodo y <strong>no siendo este mes objeto de
+    facturación</strong>.
+  </p>
+  <p>
+    Asimismo, la profesional podrá establecer periodos adicionales de descanso a lo largo del año,
+    los cuales deberán ser comunicados con <strong>una antelación mínima de treinta días
+    naturales</strong>. Las sesiones afectadas podrán reorganizarse en función de la
+    disponibilidad; en caso de no ser posible dicha reorganización, <strong>se procederá a la
+    devolución de la parte proporcional correspondiente a las sesiones no realizadas</strong>.
+  </p>
+  <p>
+    En el <strong>periodo navideño</strong>, no se prestará servicio ${esc(d.periodoNavidad)}.
+    Los días festivos oficiales comprendidos en estas fechas <strong>no se consideran periodo
+    vacacional</strong>, sino festivos conforme al calendario laboral aplicable.
+  </p>
+  <p>
+    En relación con la Semana Santa, no se prestará servicio ${esc(d.periodoSemanaSanta)}.
+    Los días festivos correspondientes a dicho periodo <strong>no se consideran periodo
+    vacacional</strong>, sino festivos conforme al calendario laboral.
+  </p>
+  <p>
+    Las sesiones correspondientes a los periodos anteriormente indicados <strong>no serán
+    recuperables con carácter general</strong>. No obstante, <strong>de forma puntual y previa
+    comunicación</strong>, podrá valorarse su reorganización en función de la disponibilidad,
+    <strong>con el objetivo de mantener la continuidad del servicio sin alterar el cómputo mensual
+    de sesiones</strong>.
+  </p>
+  <p>
+    <strong>En caso de incapacidad prolongada de la profesional por enfermedad, intervención
+    quirúrgica, maternidad u otra causa de fuerza mayor de duración superior a treinta días
+    naturales, el servicio quedará suspendido durante dicho periodo, sin facturación de las
+    mensualidades correspondientes a los meses en que no se preste servicio.</strong> Una vez
+    finalizada la causa de suspensión, se retomará la prestación del servicio, pudiendo acordarse
+    con la familia la reorganización del calendario para favorecer la continuidad del proceso de
+    intervención.
+  </p>
 
-  .legal-box { background: #f9f8ff; border: 1px solid #e8e4f8; border-radius: 6px; padding: 12px 14px; font-size: 10px; color: #555; line-height: 1.6; margin-bottom: 22px; }
-  .legal-box h3 { font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.08em; color: #7c6fd6; font-weight: 700; margin-bottom: 7px; }
+  <h3 class="sub">Vacaciones de la familia</h3>
+  <p>
+    Las interrupciones del servicio solicitadas por la familia deberán comunicarse con una
+    antelación mínima de treinta días naturales. <strong>El mes de junio queda incluido en el
+    régimen ordinario de tarifa plana</strong>, con independencia de las vacaciones que la familia
+    pueda tener dentro de dicho mes.
+  </p>
+  <p>
+    <strong>En relación con el mes de julio</strong>, y con el fin de garantizar la continuidad del
+    proceso de intervención en la medida de lo posible, se acordará previamente con la familia el
+    periodo concreto de vacaciones. <strong>La facturación correspondiente al mes de julio se
+    ajustará a las sesiones efectivamente realizadas</strong>, aplicándose el importe proporcional
+    en función del número de sesiones impartidas.
+  </p>
+  <p>
+    A continuación, se detalla la previsión orientativa de <strong>sesiones para el curso
+    ${esc(d.cursoEtiqueta)}</strong>, tomando como referencia las
+    <strong>sesiones semanales fijadas en ${diaTexto ? esc(diaTexto) : '—'}</strong> y considerando
+    los festivos del calendario oficial de la Comunidad de Madrid. Esta previsión es aplicable con
+    independencia del municipio de residencia de la familia; los festivos de carácter local no
+    quedan reflejados en esta tabla y se gestionarán, en su caso, de forma individual.
+  </p>
 
-  .notas { font-size: 11px; color: #555; background: #fffbf0; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; font-style: italic; }
-
-  .signatures { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 40px; }
-  .signature-box { border-top: 1px solid #ccc; padding-top: 10px; }
-  .signature-box .sig-label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.05em; }
-  .signature-box .sig-name { font-size: 11.5px; font-weight: 600; color: #333; margin-top: 4px; }
-  .signature-box .sig-space { height: 48px; }
-
-  .footer { margin-top: 32px; border-top: 1px solid #e8e4f8; padding-top: 12px; font-size: 9.5px; color: #aaa; line-height: 1.6; text-align: center; }
-</style>
-</head>
-<body>
-<div class="page">
-
-  <!-- Cabecera -->
-  <div class="doc-header">
-    <div class="doc-header-left">
-      <h1>Contrato de Prestación de Servicios</h1>
-      <div class="subtitle">Servicios de ${esc(tipoLabel)}</div>
-    </div>
-    <div class="doc-header-right">
-      <div>Fecha de firma</div>
-      <div class="ref">${esc(d.fechaFirma)}</div>
-    </div>
-  </div>
-
-  <!-- Partes -->
-  <div class="section">
-    <h2 class="section-title">Partes del contrato</h2>
-    <div class="parties">
-      <div class="party-box">
-        <h3>Prestador del servicio</h3>
-        <p>
-          <strong>${esc(d.nombreFiscal)}</strong><br>
-          NIF/NIE: ${esc(d.nifFiscal)}<br>
-          ${esc(d.direccionFiscal)}<br>
-          ${esc(d.codigoPostalFiscal)} ${esc(d.ciudadFiscal)}${d.provinciaFiscal ? ' — ' + esc(d.provinciaFiscal) : ''}<br>
-          ${esc(d.emailPrestador)}
-        </p>
-      </div>
-      <div class="party-box">
-        <h3>Cliente / Responsable del pago</h3>
-        <p>
-          <strong>${esc(d.nombrePagador)}</strong><br>
-          NIF/NIE: ${esc(d.nifPagador)}<br>
-          ${esc(d.direccionPagador)}<br>
-          ${esc(d.codigoPostalPagador)} ${esc(d.ciudadPagador)}
-        </p>
-      </div>
-      <div class="party-box beneficiario">
-        <h3>Beneficiario del servicio</h3>
-        <p><strong>${esc(d.nombreBeneficiario)}</strong> — destinatario/a de las sesiones de ${esc(tipoLabel)}</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- Objeto -->
-  <div class="section">
-    <h2 class="section-title">Objeto del contrato</h2>
-    <p class="clause">
-      El presente contrato tiene por objeto la prestación de servicios profesionales de
-      <strong>${esc(tipoLabel)}</strong> por parte del Prestador al Beneficiario, en las condiciones
-      y con la periodicidad detalladas en las cláusulas siguientes.
-    </p>
-  </div>
-
-  <!-- Condiciones de prestación -->
-  <div class="section">
-    <h2 class="section-title">Condiciones de prestación del servicio</h2>
-    <p class="clause">Las sesiones se realizarán con la siguiente periodicidad semanal:</p>
-    <table class="slots-table">
-      <thead>
-        <tr>
-          <th>Día</th>
-          <th>Horario</th>
-          <th>Duración</th>
-          <th>Modalidad</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${slotsRows}
-      </tbody>
-    </table>
-    <p class="clause" style="margin-top:10px;">
-      Salvo modificación pactada por escrito entre las partes, el horario y la frecuencia
-      establecidos tendrán carácter estable durante toda la vigencia del contrato.
-    </p>
-  </div>
-
-  <!-- Vigencia -->
-  <div class="section">
-    <h2 class="section-title">Vigencia</h2>
-    <table class="vigencia-table">
-      <tr><td>Fecha de inicio</td><td>${esc(d.fechaInicio)}</td></tr>
-      <tr><td>Fecha de finalización</td><td>${vigenciaFin}</td></tr>
-    </table>
-  </div>
-
-  <!-- Precio -->
-  <div class="section">
-    <h2 class="section-title">Precio y condiciones económicas</h2>
-    <table class="price-table">
+  <table class="tabla-calendario">
+    <thead>
       <tr>
-        <td>Cuota mensual</td>
-        <td>${esc(d.cuotaMensual.toFixed(2).replace('.', ','))} €</td>
+        <th>Mes</th>
+        <th>${diaTexto ? esc(diaTexto.toUpperCase()) : 'DÍAS'} del mes</th>
+        <th>Observaciones</th>
       </tr>
-      ${ivaRow}
-      ${precioRow}
-      <tr class="total">
-        <td>Total mensual</td>
-        <td>${esc(d.cuotaMensual.toFixed(2).replace('.', ','))} €</td>
-      </tr>
-    </table>
-    <p class="clause" style="margin-top:10px;">
-      La cuota se abonará mensualmente, mediante el método de pago acordado entre las partes.
-      El Prestador emitirá la correspondiente factura al inicio de cada período.
-    </p>
-  </div>
+    </thead>
+    <tbody>
+      ${d.calendario.map(filaCalendario).join('')}
+    </tbody>
+  </table>
 
-  <!-- Festivos y ausencias -->
-  <div class="section">
-    <h2 class="section-title">Festivos, vacaciones y ausencias</h2>
-    <p class="clause">
-      Las sesiones coincidentes con festivos nacionales, autonómicos o locales de la provincia
-      del Cliente, así como con los períodos de vacaciones del Prestador previamente comunicados,
-      <strong>quedan excluidas del cómputo mensual</strong>. Su importe se descontará de la cuota
-      del mes en que se produzcan, o se compensará con sesiones adicionales, según acuerdo entre
-      las partes.
-    </p>
-    <p class="clause">
-      Las ausencias del Beneficiario no justificadas con un mínimo de <strong>24 horas de
-      antelación</strong> podrán ser facturadas íntegramente, a criterio del Prestador.
-    </p>
-  </div>
+  <p class="nota-pie">
+    Nota: el calendario se ha elaborado sobre la base de los festivos nacionales y autonómicos
+    registrados en la aplicación para el curso indicado. Los festivos de ámbito autonómico sujetos
+    a decreto anual se confirmarán cuando la Comunidad de Madrid publique el calendario oficial
+    correspondiente, y esta tabla se actualizará en consecuencia si fuera necesario.
+  </p>
 
-  <!-- Modificación y rescisión -->
-  <div class="section">
-    <h2 class="section-title">Modificación y rescisión</h2>
-    <p class="clause">
-      Cualquier modificación de las condiciones del presente contrato requerirá acuerdo escrito
-      entre ambas partes. Cualquiera de ellas podrá resolver el contrato comunicándolo a la otra
-      parte con un mínimo de <strong>30 días naturales</strong> de antelación.
-    </p>
-  </div>
+  <h2 class="clausula">5. Ausencias y cancelaciones</h2>
+  <p>
+    <strong>Las cancelaciones solicitadas por la familia con menos de cuarenta y ocho horas de
+    antelación podrán facturarse íntegramente como sesión realizada.</strong> En caso de enfermedad
+    del o de la menor o de otra causa de fuerza mayor debidamente justificada, se valorará la
+    reprogramación de la sesión o, cuando la situación lo permita, la realización de la sesión con
+    la familia en su lugar.
+  </p>
+  <p>
+    Las ausencias no previstas por parte de la profesional serán en todo caso recuperadas,
+    ofreciéndose alternativas dentro del horario habitualmente establecido.
+  </p>
 
-  <!-- RGPD -->
-  <div class="legal-box">
-    <h3>Protección de datos — RGPD / LOPDGDD</h3>
-    <p>
-      Los datos personales recogidos en este contrato serán tratados por el Prestador exclusivamente
-      para la gestión de la relación contractual y la prestación del servicio. El tratamiento se
-      ampara en la ejecución del presente contrato (Art. 6.1.b RGPD). Los datos de salud del
-      Beneficiario se tratan con base en el consentimiento explícito del titular o su representante
-      legal (Art. 9.2.a RGPD).
-    </p>
-    <p style="margin-top:6px;">
-      Los datos no serán cedidos a terceros salvo obligación legal. El Cliente puede ejercer sus
-      derechos de acceso, rectificación, supresión, limitación y portabilidad dirigiéndose al
-      Prestador en la dirección indicada. Conservación: durante la vigencia del contrato y
-      5 años adicionales conforme al Código Civil, o 4 años por obligaciones fiscales.
-    </p>
-  </div>
+  <h2 class="clausula">6. Recuperación de sesiones</h2>
+  <p>
+    Las sesiones susceptibles de recuperación conforme a las cláusulas anteriores deberán
+    realizarse en un plazo máximo de <strong>tres meses desde la fecha inicialmente
+    prevista</strong>. <strong>Transcurrido dicho plazo sin que se haya producido la
+    reprogramación efectiva, la sesión se considerará realizada a todos los efectos.</strong>
+  </p>
 
-  ${notasSection}
+  <h2 class="clausula">7. Intervención en contexto educativo</h2>
+  <p>
+    Con el objetivo de favorecer la generalización de los aprendizajes y la adecuación de la
+    intervención al entorno natural del o de la menor, se contempla la posibilidad de realizar
+    sesiones puntuales en el contexto educativo, en función de las necesidades del o de la menor y
+    de la familia. Esta modalidad será consensuada previamente entre la profesional, la familia y
+    el centro educativo, y tendrá lugar en horario lectivo de mañana, dentro del propio centro.
+  </p>
+  <p>
+    A efectos organizativos, <strong>esta intervención sustituye a la sesión semanal habitual en
+    horario de tarde y se considera equivalente a una sesión ordinaria</strong>, sin que suponga
+    modificación de la cuota mensual ni genere derecho a recuperación adicional. La profesional se
+    compromete a trasladar a la familia la información relevante derivada de la intervención
+    realizada en el contexto educativo.
+  </p>
+  <p>
+    Asimismo, en aquellos días en que no haya actividad lectiva en el centro educativo del o de la
+    menor, podrá acordarse la realización de la sesión en horario de mañana, siempre que exista
+    disponibilidad y acuerdo entre ambas partes, sin que ello suponga modificación de la cuota
+    mensual.
+  </p>
 
-  <!-- Firmas -->
-  <div class="section">
-    <h2 class="section-title">Conformidad y firmas</h2>
-    <p class="clause">
-      Ambas partes declaran haber leído y comprendido el presente contrato, aceptando todas sus
-      cláusulas en prueba de lo cual lo firman en <strong>_________________</strong>,
-      a _____ de _________________ de 20____
-    </p>
-    <div class="signatures">
-      <div class="signature-box">
-        <div class="sig-space"></div>
-        <div class="sig-label">Firma del Prestador</div>
-        <div class="sig-name">${esc(d.nombreFiscal)}</div>
-        <div style="font-size:10px;color:#aaa;">NIF: ${esc(d.nifFiscal)}</div>
-      </div>
-      <div class="signature-box">
-        <div class="sig-space"></div>
-        <div class="sig-label">Firma del Cliente</div>
-        <div class="sig-name">${esc(d.nombrePagador)}</div>
-        <div style="font-size:10px;color:#aaa;">NIF: ${esc(d.nifPagador)}</div>
-      </div>
-    </div>
-  </div>
+  <h2 class="clausula">8. Continuidad del proceso y baja del servicio</h2>
+  <p>
+    La profesional recomienda un <strong>periodo mínimo de tres meses de intervención
+    continuada</strong>, dado que los procesos de intervención pedagógica requieren de un
+    <strong>tiempo de adaptación, vinculación y desarrollo inicial del trabajo</strong>.
+  </p>
+  <p>
+    La <strong>valoración del proceso de intervención</strong> se realizará a partir de los
+    <strong>seis meses</strong>, momento en el cual podrán analizarse de forma más precisa los
+    <strong>avances y resultados obtenidos</strong>.
+  </p>
+  <p>
+    La familia podrá solicitar la baja del servicio en cualquier momento, comunicándolo con un
+    <strong>preaviso mínimo de quince días naturales</strong>, sin que ello dé derecho a
+    <strong>devolución de las cuotas ya abonadas</strong>.
+  </p>
 
-  <div class="footer">
-    Documento generado el ${esc(d.fechaFirma)} · Los datos personales incluidos están
-    tratados conforme al Reglamento (UE) 2016/679 (RGPD) y la Ley Orgánica 3/2018 (LOPDGDD).
-  </div>
+  <h2 class="clausula">9. Resolución del contrato</h2>
+  <p>
+    Cualquiera de las partes podrá dar por finalizado el presente contrato, respetando en todo caso
+    el preaviso establecido en la cláusula anterior. <strong>La finalización del contrato no dará
+    derecho a devolución de las cuotas ya abonadas.</strong> La profesional podrá asimismo dar por
+    finalizado el servicio de forma anticipada cuando concurran causas justificadas relacionadas
+    con la falta de colaboración de la familia o con la inviabilidad del proceso de intervención,
+    comunicándolo con una antelación mínima de treinta días naturales.
+  </p>
 
-</div>
-</body>
-</html>`;
+  <h2 class="clausula">10. Protección de datos</h2>
+  <p>
+    El tratamiento de los datos personales del o de la menor y de la familia se realiza conforme a
+    lo establecido en el Reglamento General de Protección de Datos y en la Ley Orgánica 3/2018, de
+    Protección de Datos Personales y garantía de los derechos digitales. La base legal para el
+    tratamiento de los datos necesarios para la prestación del servicio es la ejecución del
+    presente contrato, conforme al artículo 6.1.b) del Reglamento General de Protección de Datos.
+    Para el tratamiento de datos relativos a la salud del o de la menor que resulten necesarios en
+    el marco de la intervención, dicho tratamiento se fundamenta en el consentimiento explícito de
+    la familia, conforme al artículo 9.2.a) del citado Reglamento.
+  </p>
+  <p>
+    Las condiciones específicas del tratamiento de datos, los derechos de las personas interesadas
+    y el detalle de los flujos de información con centros educativos y otros profesionales se
+    recogen en el documento de consentimiento informado y protección de datos, que se firma de
+    forma independiente al presente contrato y forma parte integrante de la relación contractual.
+  </p>
+
+  <h2 class="clausula">11. Seguro de responsabilidad civil</h2>
+  <p>
+    La profesional dispone de un seguro de responsabilidad civil profesional en vigor que cubre la
+    actividad objeto del presente contrato${p.numeroPoliza ? `, póliza n.º <strong>${esc(p.numeroPoliza)}</strong>` : ''}.
+    La acreditación de dicho seguro se facilitará a la familia si así lo solicita.
+  </p>
+
+  <h2 class="clausula">12. Jurisdicción</h2>
+  <p>
+    Para cualquier controversia derivada del presente contrato que no pueda resolverse de mutuo
+    acuerdo, las partes se someten a los juzgados y tribunales que resulten competentes conforme a
+    la normativa vigente en materia de protección de consumidores y usuarios.
+  </p>
+
+  <h2 class="clausula">13. Aceptación</h2>
+  <p>
+    <strong>La firma del presente documento implica la aceptación de todas las condiciones
+    descritas</strong>, así como del documento de consentimiento informado y protección de datos
+    que lo acompaña.
+  </p>
+  <p>
+    <strong>El presente contrato se firma por duplicado ejemplar y a un solo efecto, quedando cada
+    una de las partes en posesión de un ejemplar.</strong>
+  </p>
+
+  ${lugarYFecha(d.ciudadFirma)}
+  ${bloqueFirmas(p.nombreCompleto)}
+  ${notas}
+  `;
+
+  return documento('Contrato de prestación de servicios pedagógicos', p, cuerpo);
 }

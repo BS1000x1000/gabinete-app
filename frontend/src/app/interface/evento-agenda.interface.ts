@@ -61,32 +61,32 @@ export const TIPO_EVENTO_CONFIG: Record<
 > = {
   COORDINACION_EQUIPO: {
     label: 'Coordinación de equipo',
-    color: '#8b5cf6',
+    color: '#6b5a8a',
     icon: 'bi-people-fill',
   },
   COORDINACION_COLEGIO: {
     label: 'Coordinación colegio',
-    color: '#0ea5e9',
+    color: '#3a5c74',
     icon: 'bi-building',
   },
   COORDINACION_PROFESIONAL: {
     label: 'Coordinación profesional ext.',
-    color: '#14b8a6',
+    color: '#3a6b63',
     icon: 'bi-person-lines-fill',
   },
   TIEMPO_ADMINISTRACION: {
     label: 'Administración',
-    color: '#6b7280',
+    color: '#556d62',
     icon: 'bi-clipboard2-check',
   },
   FORMACION: {
     label: 'Formación',
-    color: '#f59e0b',
+    color: '#8a6018',
     icon: 'bi-mortarboard',
   },
   OTRO: {
     label: 'Otro',
-    color: '#94a3b8',
+    color: '#798d82',
     icon: 'bi-calendar-event',
   },
 };

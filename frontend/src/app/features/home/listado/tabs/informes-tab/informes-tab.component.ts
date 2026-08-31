@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { ConfirmModalComponent } from '../../../../../shared/components/confirm-modal/confirm-modal.component';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { formatearFechaCorta } from '../../../../../shared/utils/date';
 import { ClientesService } from '../../../../../services/cliente.service';
 import { InformesService } from '../../../../../services/informes.service';
@@ -32,6 +32,11 @@ import {
   iconoPorMime,
   formatearTamano,
 } from '../../../../../interface/documentos.interface';
+import {
+  ExpedienteService,
+  EstadoExpediente,
+  FilaExpediente as FilaExpedienteInicial,
+} from '../../../../../services/expediente.service';
 
 /** Origen de una fila del expediente: generada por la app o subida por un profesional. */
 export type OrigenFila = 'informe' | 'documento';
@@ -64,9 +69,29 @@ interface FilaExpediente {
 const COLOR_CATEGORIA: Record<CategoriaDocumento, string> = {
   INFORME_MEDICO:  '#e11d48',
   INFORME_ESCOLAR: '#0891b2',
-  ADMINISTRATIVO:  '#6b7280',
-  OTROS:           '#7c6fd6',
+  ADMINISTRATIVO:  '#556d62',
+  OTROS:           '#2d4a3e',
+  // Expediente inicial
+  CONTRATO:                 '#8a6018',
+  CONSENTIMIENTO_INFORMADO: '#345c6b',
+  CONSENTIMIENTO_DATOS:     '#2f6b43',
 };
+
+/** Como se pinta cada estado de firma en el panel del expediente. */
+export const ESTADO_FIRMA_LABELS: Record<string, { texto: string; clase: string }> = {
+  GENERADO: { texto: 'Generado', clase: 'is-generado' },
+  ENVIADO:  { texto: 'Enviado',  clase: 'is-enviado' },
+  FIRMADO:  { texto: 'Firmado',  clase: 'is-firmado' },
+};
+
+/** Saca el mensaje que manda el backend, que suele ser el util. */
+function mensajeError(err: any): string {
+  return (
+    err?.error?.message ??
+    err?.message ??
+    'No se ha podido completar la operación.'
+  );
+}
 
 function nombreCorto(p?: { nombre?: string; apellidos?: string } | null): string {
   if (!p?.nombre) return '—';
@@ -169,6 +194,25 @@ export default class InformesTabComponent implements OnInit {
   // Sección activa en el editor
   seccionActiva = signal<string | null>(null);
 
+  // ── Expediente inicial (contrato + 2 consentimientos) ──────
+  private expedienteSvc = inject(ExpedienteService);
+  private router = inject(Router);
+
+  readonly ESTADO_FIRMA_LABELS = ESTADO_FIRMA_LABELS;
+  expediente = signal<EstadoExpediente | null>(null);
+  generandoExpediente = signal(false);
+  errorExpediente = signal<string | null>(null);
+  /** Documento sobre el que se esta subiendo la version firmada. */
+  subiendoFirmadoDe = signal<string | null>(null);
+  /** Categoría cuya vista previa se está descargando. */
+  descargandoPrevia = signal<string | null>(null);
+  expedientePlegado = signal(false);
+
+  readonly hayExpediente = computed(() => {
+    const e = this.expediente();
+    return !!e && e.documentos.some(d => d.documentoId !== null);
+  });
+
   ngOnInit(): void {
     this.route.parent?.paramMap.subscribe((params) => {
       const id = params.get('id');
@@ -176,6 +220,7 @@ export default class InformesTabComponent implements OnInit {
         this.clienteId.set(id);
         this.cargarInformes();
         this.cargarDocumentos();
+        this.cargarExpediente();
         this.clientesSvc.getObjetivosCliente(id).subscribe();
       }
     });
@@ -203,7 +248,7 @@ export default class InformesTabComponent implements OnInit {
       nombre: i.titulo,
       categoriaKey: i.tipoInforme,
       categoriaLabel: this.TIPO_LABELS[i.tipoInforme]?.texto ?? i.tipoInforme,
-      categoriaColor: this.TIPO_LABELS[i.tipoInforme]?.color ?? '#6b7280',
+      categoriaColor: this.TIPO_LABELS[i.tipoInforme]?.color ?? '#556d62',
       icono: 'bi-file-earmark-text',
       estado: i.estado,
       fecha: i.createdAt,
@@ -218,7 +263,7 @@ export default class InformesTabComponent implements OnInit {
       nombre: d.nombre,
       categoriaKey: d.categoria,
       categoriaLabel: CATEGORIA_DOCUMENTO_LABELS[d.categoria]?.texto ?? d.categoria,
-      categoriaColor: COLOR_CATEGORIA[d.categoria] ?? '#6b7280',
+      categoriaColor: COLOR_CATEGORIA[d.categoria] ?? '#556d62',
       icono: iconoPorMime(d.mimeType),
       fecha: d.fechaDocumento ?? d.createdAt,
       autor: nombreCorto(d.subidoPor),
@@ -334,6 +379,127 @@ export default class InformesTabComponent implements OnInit {
     this.documentosSvc.getByCliente(this.clienteId()).subscribe({
       error: () => { /* el interceptor global ya muestra el error */ },
     });
+  }
+
+  // ============================================================
+  // EXPEDIENTE INICIAL — contrato + los dos consentimientos
+  // ============================================================
+
+  cargarExpediente(): void {
+    this.expedienteSvc.cargar(this.clienteId()).subscribe({
+      next: e => this.expediente.set(e),
+      error: () => { /* el interceptor global ya muestra el error */ },
+    });
+  }
+
+  /**
+   * Genera o regenera los tres documentos. Los ya firmados no se tocan: eso lo
+   * garantiza el backend, aqui solo se refleja en el recuento.
+   */
+  generarExpediente(): void {
+    const contratoId = this.expediente()?.contratoId;
+    if (!contratoId || this.generandoExpediente()) return;
+
+    this.generandoExpediente.set(true);
+    this.errorExpediente.set(null);
+    this.expedienteSvc
+      .generar(contratoId)
+      .pipe(finalize(() => this.generandoExpediente.set(false)))
+      .subscribe({
+        next: () => {
+          this.cargarExpediente();
+          this.cargarDocumentos();
+        },
+        error: err => this.errorExpediente.set(mensajeError(err)),
+      });
+  }
+
+  /**
+   * Descarga el documento generado al vuelo, sin guardarlo.
+   *
+   * Sirve para ver cómo va a quedar antes de generarlo de verdad, y es lo único
+   * que funciona mientras no haya Object Storage configurado.
+   */
+  vistaPrevia(fila: FilaExpedienteInicial): void {
+    const contratoId = this.expediente()?.contratoId;
+    if (!contratoId || this.descargandoPrevia()) return;
+
+    const nombre = `vista-previa-${fila.categoria.toLowerCase()}.pdf`;
+    this.errorExpediente.set(null);
+    this.descargandoPrevia.set(fila.categoria);
+    this.expedienteSvc
+      .descargarVistaPrevia(contratoId, fila.categoria, nombre)
+      .pipe(finalize(() => this.descargandoPrevia.set(null)))
+      .subscribe({
+        error: err => this.errorExpediente.set(mensajeError(err)),
+      });
+  }
+
+  /** Abre el PDF generado en una pestaña nueva. */
+  verDocumentoExpediente(fila: FilaExpedienteInicial): void {
+    if (!fila.documentoId || this.abriendo()) return;
+    this.abriendo.set(true);
+    this.documentosSvc
+      .abrir(fila.documentoId)
+      .pipe(finalize(() => this.abriendo.set(false)))
+      .subscribe({ error: () => { /* interceptor */ } });
+  }
+
+  /**
+   * Deja constancia de que el documento salio hacia la familia.
+   *
+   * De momento la terapeuta lo descarga y lo manda ella: el correo de la app
+   * sale por un proveedor de EE. UU. y estos documentos llevan datos del menor.
+   * Cuando se migre a Scaleway TEM, esta accion pasara a enviarlo de verdad.
+   */
+  marcarEnviado(fila: FilaExpedienteInicial): void {
+    if (!fila.documentoId || !fila.puedeEnviar) return;
+    this.errorExpediente.set(null);
+    this.expedienteSvc.marcarEnviado(fila.documentoId).subscribe({
+      next: () => this.cargarExpediente(),
+      error: err => this.errorExpediente.set(mensajeError(err)),
+    });
+  }
+
+  /** Sube el PDF que devuelve la familia firmado. */
+  onFirmadoSeleccionado(fila: FilaExpedienteInicial, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const fichero = input.files?.[0];
+    input.value = '';
+    if (!fichero || !fila.documentoId) return;
+
+    if (fichero.type !== 'application/pdf') {
+      this.errorExpediente.set('El documento firmado debe ser un PDF.');
+      return;
+    }
+    if (fichero.size > TAMANO_MAX_BYTES) {
+      this.errorExpediente.set(
+        `El fichero supera el máximo de ${formatearTamano(TAMANO_MAX_BYTES)}.`,
+      );
+      return;
+    }
+
+    this.errorExpediente.set(null);
+    this.subiendoFirmadoDe.set(fila.documentoId);
+    this.expedienteSvc
+      .subirFirmado(fila.documentoId, fichero)
+      .pipe(finalize(() => this.subiendoFirmadoDe.set(null)))
+      .subscribe({
+        next: () => {
+          this.cargarExpediente();
+          this.cargarDocumentos();
+        },
+        error: err => this.errorExpediente.set(mensajeError(err)),
+      });
+  }
+
+  toggleExpediente(): void {
+    this.expedientePlegado.update(v => !v);
+  }
+
+  /** Lleva a la pestaña de contratos, que es donde se completa lo que falta. */
+  irAContratos(): void {
+    this.router.navigate(['/home/listado', this.clienteId(), 'contratos']);
   }
 
   /** Abre el informe en el editor o el documento externo en una pestaña nueva. */

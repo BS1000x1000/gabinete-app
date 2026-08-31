@@ -475,16 +475,16 @@ describe('AgendaComponent', () => {
 
     it('getEventoBg() devuelve el color del tipo con transparencia', () => {
       const bg = component.getEventoBg('PEDAGOGIA');
-      expect(bg).toContain('#7c6fd6');
+      expect(bg).toContain('#2d4a3e');
       expect(bg).toContain('1a');
     });
 
     it('getTipoColor() devuelve color conocido para PEDAGOGIA', () => {
-      expect(component.getTipoColor('PEDAGOGIA')).toBe('#7c6fd6');
+      expect(component.getTipoColor('PEDAGOGIA')).toBe('#2d4a3e');
     });
 
     it('getTipoColor() devuelve color fallback para tipo desconocido', () => {
-      expect(component.getTipoColor('DESCONOCIDO')).toBe('#9ca3af');
+      expect(component.getTipoColor('DESCONOCIDO')).toBe('#556d62');
     });
 
     it('getEstadoClass() mapea estados correctamente', () => {

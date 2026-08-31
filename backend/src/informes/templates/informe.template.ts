@@ -3,6 +3,8 @@
 // ──────────────────────────────────────────────────────────────
 
 import { escapeHtml } from '../../common/utils/html.utils';
+import { GAS_NIVEL, GAS_ACTIVO } from '../../common/marca/paleta';
+import { LOGO_BASE64 } from '../../common/marca/logo';
 
 export interface GasNivel {
   nivel: number;
@@ -59,26 +61,34 @@ function buildGasTableHtml(niveles: GasNivel[], nivelActual: number): string {
   }
 
   const headerCells = GAS_COLS
-    .map((c) => `<th style="width:20%;text-align:center;padding:7px 4px;font-size:9.5px;color:#374151;font-weight:600;background:#e8f4fd;border:1px solid #b3d4f5;">${c >= 0 ? '+' + c : c}</th>`)
+    .map((c) => {
+      const t = GAS_NIVEL[c];
+      return `<th style="width:20%;text-align:center;padding:7px 4px;font-size:9.5px;color:${t.texto};font-weight:700;background:${t.fondo};border:1px solid ${t.borde};">${c > 0 ? '+' + c : c}</th>`;
+    })
     .join('');
 
   const labelCells = GAS_COLS
     .map((c) => {
+      const t = GAS_NIVEL[c];
       const isActive = c === nivelActual;
-      const bg = isActive ? '#5a9de8' : '#f0f7fe';
-      const color = isActive ? '#ffffff' : '#374151';
-      const fw = isActive ? 'font-weight:600;' : '';
+      // El nivel alcanzado se invierte para que salte a la vista; el resto
+      // conserva el color de su tramo, que es lo que permite leer el SIGNO
+      // (por debajo / por encima de lo esperado) sin mirar la etiqueta.
+      const bg = isActive ? GAS_ACTIVO.fondo : t.fondo;
+      const color = isActive ? GAS_ACTIVO.texto : t.texto;
+      const fw = isActive ? 'font-weight:700;' : '';
       const indicator = isActive ? ' ▲' : '';
-      return `<td style="background:${bg};color:${color};${fw}text-align:center;padding:7px 5px;font-size:9px;line-height:1.4;vertical-align:top;border:1px solid #b3d4f5;">${escapeHtml(GAS_LABELS[c] || '')}${indicator}</td>`;
+      return `<td style="background:${bg};color:${color};${fw}text-align:center;padding:7px 5px;font-size:9px;line-height:1.4;vertical-align:top;border:1px solid ${t.borde};">${escapeHtml(GAS_LABELS[c] || '')}${indicator}</td>`;
     })
     .join('');
 
   const descCells = GAS_COLS
     .map((c) => {
+      const t = GAS_NIVEL[c];
       const isActive = c === nivelActual;
-      const bg = isActive ? '#3d7bc4' : '#ffffff';
-      const color = isActive ? '#ffffff' : '#4b5563';
-      return `<td style="background:${bg};color:${color};text-align:center;padding:7px 5px;font-size:9px;line-height:1.4;vertical-align:top;border:1px solid #b3d4f5;">${escapeHtml(nivelMap[c] ?? '—')}</td>`;
+      const bg = isActive ? GAS_ACTIVO.fondo : '#ffffff';
+      const color = isActive ? GAS_ACTIVO.texto : t.texto;
+      return `<td style="background:${bg};color:${color};text-align:center;padding:7px 5px;font-size:9px;line-height:1.4;vertical-align:top;border:1px solid ${t.borde};">${escapeHtml(nivelMap[c] ?? '—')}</td>`;
     })
     .join('');
 
@@ -156,10 +166,13 @@ export function buildInformeHtml(datos: InformeTemplateData): string {
   const gasIntro = `La metodología GAS (Goal Attainment Scaling) permite cuantificar el progreso de ${escapeHtml(datos.alumno.nombre_pila)} estableciendo objetivos individualizados en una escala de cinco niveles, facilitando la medición objetiva del avance terapéutico.`;
 
   // Single pass over GAS_COLS to build both header and label rows
-  const gasResumenCells = GAS_COLS.map((c) => ({
-    header: `<th style="width:20%;text-align:center;padding:6px 4px;font-size:9.5px;background:#e8f4fd;color:#374151;font-weight:600;border:1px solid #b3d4f5;">${c >= 0 ? '+' + c : c}</th>`,
-    label:  `<td style="text-align:center;padding:6px 4px;font-size:9px;background:#f8fbfe;border:1px solid #b3d4f5;color:#4b5563;line-height:1.4;">${escapeHtml(GAS_LABELS[c])}</td>`,
-  }));
+  const gasResumenCells = GAS_COLS.map((c) => {
+    const t = GAS_NIVEL[c];
+    return {
+      header: `<th style="width:20%;text-align:center;padding:6px 4px;font-size:9.5px;background:${t.fondo};color:${t.texto};font-weight:700;border:1px solid ${t.borde};">${c > 0 ? '+' + c : c}</th>`,
+      label:  `<td style="text-align:center;padding:6px 4px;font-size:9px;background:${t.fondo};border:1px solid ${t.borde};color:${t.texto};line-height:1.4;">${escapeHtml(GAS_LABELS[c])}</td>`,
+    };
+  });
   const gasResumenCabecera = gasResumenCells.map((x) => x.header).join('');
   const gasResumenLabels   = gasResumenCells.map((x) => x.label).join('');
 
@@ -173,12 +186,12 @@ export function buildInformeHtml(datos: InformeTemplateData): string {
           <div class="gas-objetivo">
             <table style="width:100%;border-collapse:collapse;">
               <tr>
-                <td style="width:16%;background:#e8f4fd;padding:8px 10px;font-size:10px;font-weight:700;color:#3d7bc4;border:1px solid #b3d4f5;text-transform:uppercase;letter-spacing:0.4px;">Área</td>
-                <td style="padding:8px 10px;font-size:10.5px;color:#374151;border:1px solid #b3d4f5;background:#f8fbfe;">${escapeHtml(obj.area)}</td>
+                <td style="width:16%;background:#eef2ea;padding:8px 10px;font-size:10px;font-weight:700;color:#255138;border:1px solid #c2cdc3;text-transform:uppercase;letter-spacing:0.4px;">Área</td>
+                <td style="padding:8px 10px;font-size:10.5px;color:#273c32;border:1px solid #c2cdc3;background:#f7f5ec;">${escapeHtml(obj.area)}</td>
               </tr>
               <tr>
-                <td style="background:#e8f4fd;padding:8px 10px;font-size:10px;font-weight:700;color:#3d7bc4;border:1px solid #b3d4f5;text-transform:uppercase;letter-spacing:0.4px;">Objetivo</td>
-                <td style="padding:8px 10px;font-size:10.5px;color:#1f2937;border:1px solid #b3d4f5;background:#ffffff;line-height:1.5;">${escapeHtml(obj.objetivo)}</td>
+                <td style="background:#eef2ea;padding:8px 10px;font-size:10px;font-weight:700;color:#255138;border:1px solid #c2cdc3;text-transform:uppercase;letter-spacing:0.4px;">Objetivo</td>
+                <td style="padding:8px 10px;font-size:10.5px;color:#23322b;border:1px solid #c2cdc3;background:#ffffff;line-height:1.5;">${escapeHtml(obj.objetivo)}</td>
               </tr>
             </table>
             ${buildGasTableHtml(obj.niveles, obj.nivelActual)}
@@ -194,7 +207,7 @@ export function buildInformeHtml(datos: InformeTemplateData): string {
         <div class="section-title">${numero}. ${titulo}</div>
       </div>
       <div class="section-body" style="padding:14px 16px;">
-        <p style="font-size:10.5px;line-height:1.7;color:#4b5563;margin-bottom:14px;text-align:justify;">${gasIntro}</p>
+        <p style="font-size:10.5px;line-height:1.7;color:#2d4a3e;margin-bottom:14px;text-align:justify;">${gasIntro}</p>
         <table style="width:100%;border-collapse:collapse;">
           <thead><tr>${gasResumenCabecera}</tr></thead>
           <tbody><tr>${gasResumenLabels}</tr></tbody>
@@ -277,7 +290,7 @@ export function buildInformeHtml(datos: InformeTemplateData): string {
     body {
       font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
       font-size: 11px;
-      color: #1f2937;
+      color: #23322b;
       line-height: 1.65;
       padding: 0 4mm;
     }
@@ -287,7 +300,7 @@ export function buildInformeHtml(datos: InformeTemplateData): string {
       position: fixed;
       top: 0; left: -6mm; right: -6mm;
       height: 5px;
-      background: linear-gradient(90deg, #7c6fd6 0%, #5a9de8 100%);
+      background: linear-gradient(90deg, #2d4a3e 0%, #2d4a3e 100%);
       print-color-adjust: exact;
       -webkit-print-color-adjust: exact;
       z-index: 999;
@@ -297,7 +310,7 @@ export function buildInformeHtml(datos: InformeTemplateData): string {
     .masthead {
       position: relative;
       overflow: hidden;
-      background: #7c6fd6;
+      background: #2d4a3e;
       border-radius: 8px;
       padding: 18px 22px 16px;
       margin-top: 8px;
@@ -315,18 +328,21 @@ export function buildInformeHtml(datos: InformeTemplateData): string {
       print-color-adjust: exact;
       -webkit-print-color-adjust: exact;
     }
-    .masthead-monogram {
+    /* El logo es verde oscuro y aqui va sobre fondo bosque, asi que se sirve
+       dentro de un disco claro para que se lea. */
+    .masthead-logo {
       position: relative;
       z-index: 2;
-      width: 48px; height: 48px;
+      width: 52px; height: 52px;
       border-radius: 50%;
-      background: rgba(255,255,255,0.18);
-      border: 2px solid rgba(255,255,255,0.4);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 15px; font-weight: 700; color: #fff;
+      background: #f0ead8;
+      border: 2px solid rgba(255,255,255,0.35);
       flex-shrink: 0;
-      letter-spacing: 0.5px;
+      display: flex; align-items: center; justify-content: center;
+      print-color-adjust: exact;
+      -webkit-print-color-adjust: exact;
     }
+    .masthead-logo img { width: 34px; height: 34px; object-fit: contain; }
     .masthead-body {
       position: relative; z-index: 2; flex: 1;
     }
@@ -351,9 +367,9 @@ export function buildInformeHtml(datos: InformeTemplateData): string {
 
     /* ── Student card ── */
     .student-card {
-      background: #f7f6fd;
-      border: 1px solid #e2ddf5;
-      border-left: 4px solid #7c6fd6;
+      background: #f7f5ec;
+      border: 1px solid #d9e8da;
+      border-left: 4px solid #2d4a3e;
       border-radius: 6px;
       padding: 14px 18px;
       margin-bottom: 22px;
@@ -366,15 +382,15 @@ export function buildInformeHtml(datos: InformeTemplateData): string {
     .sc-field-wide { flex: 2; }
     .sc-label {
       font-size: 8px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.8px; color: #7c6fd6; margin-bottom: 1px;
+      letter-spacing: 0.8px; color: #2d4a3e; margin-bottom: 1px;
     }
     .sc-value {
-      font-size: 11px; font-weight: 500; color: #1f2937;
+      font-size: 11px; font-weight: 500; color: #23322b;
       line-height: 1.4;
     }
     .sc-name { font-size: 13px; font-weight: 600; }
     .sc-divider {
-      border: none; border-top: 1px solid #e2ddf5;
+      border: none; border-top: 1px solid #d9e8da;
       margin: 10px 0;
     }
 
@@ -397,23 +413,23 @@ export function buildInformeHtml(datos: InformeTemplateData): string {
     }
     .section-accent {
       width: 3px; height: 16px; flex-shrink: 0;
-      background: #7c6fd6; border-radius: 2px;
+      background: #2d4a3e; border-radius: 2px;
     }
-    .section-accent--blue { background: #5a9de8; }
+    .section-accent--blue { background: #2d4a3e; }
     .section-title {
       font-size: 10.5px; font-weight: 700;
-      color: #3d337a; letter-spacing: 0.2px;
+      color: #23322b; letter-spacing: 0.2px;
     }
     .section-body {
-      border: 1px solid #e8e4f8;
-      border-left: 3px solid #e2ddf5;
+      border: 1px solid #c2cdc3;
+      border-left: 3px solid #d9e8da;
       padding: 13px 15px;
       font-size: 11px; line-height: 1.75;
-      color: #374151; text-align: justify;
+      color: #273c32; text-align: justify;
       border-radius: 0 5px 5px 0;
       background: #fff;
     }
-    .empty-text { font-style: italic; color: #9ca3af; }
+    .empty-text { font-style: italic; color: #798d82; }
 
     /* ── GAS ── */
     .gas-objetivo {
@@ -422,7 +438,7 @@ export function buildInformeHtml(datos: InformeTemplateData): string {
       display: block;
       overflow: hidden;
       margin-bottom: 16px;
-      border: 1px solid #cde4f8;
+      border: 1px solid #c2cdc3;
       border-radius: 6px;
     }
     .gas-objetivo table {
@@ -431,7 +447,7 @@ export function buildInformeHtml(datos: InformeTemplateData): string {
     }
     .gas-separator {
       border: none;
-      border-top: 1.5px solid #d9ebfc;
+      border-top: 1.5px solid #d9e8da;
       margin: 16px 0 18px;
     }
 
@@ -443,67 +459,67 @@ export function buildInformeHtml(datos: InformeTemplateData): string {
     }
     .signatures-title {
       font-size: 8.5px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.8px; color: #9ca3af;
+      letter-spacing: 0.8px; color: #798d82;
       padding-bottom: 8px;
-      border-bottom: 1px solid #e8e4f8;
+      border-bottom: 1px solid #c2cdc3;
       margin-bottom: 14px;
     }
     .sig-box {
-      border: 1px solid #e8e4f8;
+      border: 1px solid #c2cdc3;
       border-radius: 6px;
       padding: 12px 14px;
       min-height: 88px;
-      background: #fafafa;
+      background: #f7f5ec;
     }
     .sig-name {
-      font-size: 10.5px; font-weight: 600; color: #1f2937;
+      font-size: 10.5px; font-weight: 600; color: #23322b;
       margin-bottom: 1px;
     }
     .sig-role {
-      font-size: 9.5px; color: #6b7280;
+      font-size: 9.5px; color: #556d62;
     }
     .sig-line {
-      border-top: 1px dashed #d1d5db;
+      border-top: 1px dashed #a5b4a9;
       margin: 18px 0 6px;
     }
     .sig-label {
-      font-size: 8.5px; color: #9ca3af; text-transform: uppercase;
+      font-size: 8.5px; color: #798d82; text-transform: uppercase;
       letter-spacing: 0.6px;
     }
     .signing-place {
-      font-size: 10px; color: #6b7280; margin-top: 14px;
+      font-size: 10px; color: #556d62; margin-top: 14px;
     }
 
     /* ── LOPD ── */
     .lopd-section {
-      background: #f9fafb;
-      border: 1px solid #e8e4f8;
+      background: #f0ead8;
+      border: 1px solid #c2cdc3;
       border-radius: 6px;
       padding: 11px 14px;
       margin-top: 20px;
     }
     .lopd-title {
       font-size: 8px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.7px; color: #9ca3af; margin-bottom: 5px;
+      letter-spacing: 0.7px; color: #798d82; margin-bottom: 5px;
     }
     .lopd-text {
       font-size: 7.5px; line-height: 1.6;
-      color: #9ca3af; text-align: justify;
+      color: #798d82; text-align: justify;
     }
 
     /* ── Contact footer ── */
     .doc-footer {
       margin-top: 14px;
       padding-top: 10px;
-      border-top: 1px solid #e8e4f8;
+      border-top: 1px solid #c2cdc3;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
-    .doc-footer-info { font-size: 8px; color: #b0b0b8; }
+    .doc-footer-info { font-size: 8px; color: #798d82; }
     .doc-confidential {
       font-size: 7.5px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 1.2px; color: #c4bce8;
+      letter-spacing: 1.2px; color: #a5b4a9;
     }
   </style>
 </head>
@@ -516,10 +532,10 @@ export function buildInformeHtml(datos: InformeTemplateData): string {
   <div class="masthead">
     <!-- Decorative rings -->
     <div class="masthead-ring" style="width:130px;height:130px;right:-35px;top:-40px;"></div>
-    <div class="masthead-ring" style="width:90px;height:90px;right:55px;bottom:-40px;background:rgba(90,157,232,0.18);border:none;"></div>
+    <div class="masthead-ring" style="width:90px;height:90px;right:55px;bottom:-40px;background:rgba(240,234,216,0.14);border:none;"></div>
     <div class="masthead-ring" style="width:60px;height:60px;right:-10px;bottom:-10px;"></div>
-    <!-- Monogram -->
-    <div class="masthead-monogram">CJ</div>
+    <!-- Logo -->
+    <div class="masthead-logo"><img src="${LOGO_BASE64}" alt=""></div>
     <!-- Title -->
     <div class="masthead-body">
       <div class="masthead-name">Conectadas Juntas</div>
@@ -541,7 +557,7 @@ export function buildInformeHtml(datos: InformeTemplateData): string {
     <div class="sc-row">
       <div class="sc-field">
         <div class="sc-label">Fecha de nacimiento</div>
-        <div class="sc-value">${escapeHtml(datos.alumno.fecha_nacimiento)}${datos.alumno.edad ? '<span style="color:#7c6fd6;margin-left:6px;font-size:10px;">(' + escapeHtml(datos.alumno.edad) + ')</span>' : ''}</div>
+        <div class="sc-value">${escapeHtml(datos.alumno.fecha_nacimiento)}${datos.alumno.edad ? '<span style="color:#2d4a3e;margin-left:6px;font-size:10px;">(' + escapeHtml(datos.alumno.edad) + ')</span>' : ''}</div>
       </div>
       <div class="sc-field">
         <div class="sc-label">Etapa educativa / Curso</div>
@@ -555,7 +571,7 @@ export function buildInformeHtml(datos: InformeTemplateData): string {
       </div>
       <div class="sc-field">
         <div class="sc-label">Elaborado por</div>
-        <div class="sc-value">${elaboradoPor}${datos.num_colegiado ? '<span style="color:#9ca3af;font-size:9.5px;"> · Col. N.º ' + escapeHtml(datos.num_colegiado) + '</span>' : ''}</div>
+        <div class="sc-value">${elaboradoPor}${datos.num_colegiado ? '<span style="color:#798d82;font-size:9.5px;"> · Col. N.º ' + escapeHtml(datos.num_colegiado) + '</span>' : ''}</div>
       </div>
     </div>
   </div>

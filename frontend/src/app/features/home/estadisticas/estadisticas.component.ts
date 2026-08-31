@@ -17,13 +17,13 @@ import { ResumenHoras } from '../../../interface/evento-agenda.interface';
 type Rango = 'semana' | 'mes' | '3meses';
 
 const FONT  = 'Plus Jakarta Sans, sans-serif';
-const P     = '#7c6fd6';   // primary lila
-const S     = '#5a9de8';   // secondary azul
-const OK    = '#10b981';   // success verde
-const WARN  = '#f59e0b';   // warning naranja
-const ERR   = '#ef4444';   // danger rojo
-const MUTED = '#9ca3af';
-const TEAL  = '#14b8a6';
+const P     = '#2d4a3e';   // primary lila
+const S     = '#3a5c74';   // secondary azul
+const OK    = '#2f6b43';   // success verde
+const WARN  = '#8a6018';   // warning naranja
+const ERR   = '#96382e';   // danger rojo
+const MUTED = '#798d82';
+const TEAL  = '#3a6b63';
 
 const TIPO_CONFIG: Record<string, { label: string; color: string }> = {
   PEDAGOGIA:           { label: 'Pedagogía',       color: P    },
@@ -36,10 +36,10 @@ const TIPO_CONFIG: Record<string, { label: string; color: string }> = {
 
 const TIPO_JORNADA_CONFIG: Record<string, { label: string; color: string; icon: string }> = {
   SESION_CLINICA:           { label: 'Sesiones clínicas',       color: P,       icon: 'bi-heart-pulse' },
-  COORDINACION_EQUIPO:      { label: 'Coordinación equipo',     color: '#8b5cf6', icon: 'bi-people-fill' },
-  COORDINACION_COLEGIO:     { label: 'Coordinación colegio',    color: '#0ea5e9', icon: 'bi-building' },
+  COORDINACION_EQUIPO:      { label: 'Coordinación equipo',     color: '#6b5a8a', icon: 'bi-people-fill' },
+  COORDINACION_COLEGIO:     { label: 'Coordinación colegio',    color: '#3a5c74', icon: 'bi-building' },
   COORDINACION_PROFESIONAL: { label: 'Coordinación profesional',color: TEAL,    icon: 'bi-person-lines-fill' },
-  TIEMPO_ADMINISTRACION:    { label: 'Administración',          color: '#6b7280', icon: 'bi-clipboard2-check' },
+  TIEMPO_ADMINISTRACION:    { label: 'Administración',          color: '#556d62', icon: 'bi-clipboard2-check' },
   FORMACION:                { label: 'Formación',               color: WARN,    icon: 'bi-mortarboard' },
   OTRO:                     { label: 'Otro',                    color: MUTED,   icon: 'bi-calendar-event' },
 };
@@ -67,7 +67,7 @@ const DONUT_CENTER_PLUGIN: Plugin<'doughnut'> = {
 };
 
 const TOOLTIP_OPTS = {
-  backgroundColor: '#1f2937',
+  backgroundColor: '#23322b',
   titleFont: { family: FONT, size: 12, weight: 600 as const },
   bodyFont:  { family: FONT, size: 12 },
   padding: 10,
@@ -90,7 +90,7 @@ const LINE_OPTS: ChartOptions<'line'> = {
     x: {
       grid:   { display: false },
       border: { display: false },
-      ticks:  { font: { family: FONT, size: 11 }, color: '#9ca3af' },
+      ticks:  { font: { family: FONT, size: 11 }, color: '#798d82' },
     },
     y: { display: false, min: 0 },
   },
@@ -129,13 +129,13 @@ const BAR_OPTS: ChartOptions<'bar'> = {
       stacked: true,
       grid:    { display: false },
       border:  { display: false },
-      ticks:   { font: { family: FONT, size: 11 }, color: '#9ca3af' },
+      ticks:   { font: { family: FONT, size: 11 }, color: '#798d82' },
     },
     y: {
       stacked: true,
       border:  { display: false },
       grid:    { color: '#f5f5f5' },
-      ticks:   { font: { family: FONT, size: 11 }, color: '#9ca3af' },
+      ticks:   { font: { family: FONT, size: 11 }, color: '#798d82' },
     },
   },
 };
@@ -195,7 +195,7 @@ export class EstadisticasComponent implements OnInit {
   });
 
   // ── Chart data (signals → driven by effect) ────────────────────────────
-  lineData  = signal<ChartData<'line'>>({ labels: [], datasets: [{ data: [], label: 'Sesiones', borderColor: P, backgroundColor: 'rgba(124,111,214,0.08)', fill: 'origin' }] });
+  lineData  = signal<ChartData<'line'>>({ labels: [], datasets: [{ data: [], label: 'Sesiones', borderColor: P, backgroundColor: 'rgba(45,74,62,0.10)', fill: 'origin' }] });
   donutData = signal<ChartData<'doughnut'>>({ labels: [], datasets: [{ data: [], backgroundColor: [] }] });
   barData   = signal<ChartData<'bar'>>({ labels: [], datasets: [] });
 
@@ -232,7 +232,7 @@ export class EstadisticasComponent implements OnInit {
         grid:    { color: '#f5f5f5' },
         ticks:   {
           font: { family: FONT, size: 11 },
-          color: '#9ca3af',
+          color: '#798d82',
           callback: (v) => `${v}h`,
         },
       },
@@ -316,7 +316,7 @@ export class EstadisticasComponent implements OnInit {
         label:           'Sesiones',
         data:            d.evolucion.map(e => e.total),
         borderColor:     P,
-        backgroundColor: 'rgba(124,111,214,0.08)',
+        backgroundColor: 'rgba(45,74,62,0.10)',
         fill:            'origin',
         tension:         0.4,
         borderWidth:     2.5,

@@ -1,0 +1,256 @@
+// ============================================================
+// EXPEDIENTE INICIAL — contrato + los dos consentimientos
+//
+// Va arriba de la pestaña de Documentación, antes de la tabla del expediente
+// unificado. Son tres filas fijas: lo que importa no es el fichero sino por
+// dónde va cada documento camino de la firma, así que la fila es densa y el
+// estado se lee de un vistazo.
+// ============================================================
+
+.exp-panel {
+  background: $white;
+  border: 1px solid $border-color;
+  border-radius: $border-radius-lg;
+  margin-bottom: $spacing-md;
+  overflow: hidden;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    padding: 10px $spacing-md;
+    cursor: pointer;
+    user-select: none;
+    background: $primary-ultra-light;
+    border-bottom: 1px solid $border-color-light;
+    transition: $transition-color;
+
+    &:hover { background: $primary-light; }
+  }
+
+  &__icono {
+    font-size: 0.95rem;
+    color: $primary;
+    flex-shrink: 0;
+  }
+
+  &__titulo {
+    margin: 0;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-bold;
+    color: $gray-800;
+    letter-spacing: -0.1px;
+  }
+
+  &__resumen {
+    font-size: $font-size-xs;
+    color: $gray-500;
+    font-style: italic;
+  }
+
+  &__generar {
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  &__chevron {
+    font-size: 0.7rem;
+    color: $gray-400;
+    flex-shrink: 0;
+  }
+
+  // Cuando no hay botón de generar, el chevron se va igualmente a la derecha.
+  &__generar + &__chevron { margin-left: 0; }
+  &__titulo + &__chevron,
+  &__resumen + &__chevron { margin-left: auto; }
+
+  &__body {
+    padding: $spacing-sm $spacing-md $spacing-md;
+  }
+}
+
+// ── Filas de documento ────────────────────────────────────────
+
+.exp-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.exp-doc {
+  display: grid;
+  grid-template-columns: 3px 1fr auto auto;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: 8px 0;
+
+  & + & { border-top: 1px solid $border-color-light; }
+
+  &__marca {
+    align-self: stretch;
+    border-radius: 2px;
+    min-height: 26px;
+  }
+
+  &__texto {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+  }
+
+  &__nombre {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $gray-800;
+    @include truncate;
+  }
+
+  &__meta {
+    font-size: $font-size-xs;
+    color: $gray-400;
+    @include truncate;
+  }
+
+  &__estado {
+    font-size: 0.65rem;
+    font-weight: $font-weight-bold;
+    padding: 2px 9px;
+    border-radius: $border-radius-full;
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+
+    &.is-generado { background: $gray-100;      color: $gray-600; }
+    &.is-enviado  { background: $secondary-light; color: $secondary-dark; }
+    &.is-firmado  { background: $success-light;  color: $success-dark; }
+  }
+
+  &__acciones {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+  }
+
+  // El motivo del bloqueo ocupa toda la fila, bajo el nombre.
+  &__bloqueo {
+    grid-column: 2 / -1;
+    margin: 2px 0 0;
+    font-size: $font-size-xs;
+    color: $warning-dark;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+
+    i { font-size: 0.7rem; flex-shrink: 0; }
+  }
+}
+
+.exp-accion {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: $border-radius-sm;
+  border: 1px solid $border-color;
+  background: $white;
+  color: $gray-500;
+  cursor: pointer;
+  transition: $transition-color;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+
+  &:hover:not(:disabled) {
+    border-color: $primary;
+    background: $primary-ultra-light;
+    color: $primary;
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible { outline: 2px solid $primary; outline-offset: 1px; }
+
+  // El input de fichero va oculto dentro del label.
+  &--subir { position: relative; }
+}
+
+// ── Avisos ────────────────────────────────────────────────────
+
+.exp-aviso {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 $spacing-sm;
+  padding: 8px 10px;
+  border-radius: $border-radius-sm;
+  font-size: $font-size-xs;
+  line-height: 1.45;
+
+  i { font-size: 0.8rem; flex-shrink: 0; }
+
+  &--info {
+    background: $secondary-ultra-light;
+    border: 1px solid rgba($secondary, 0.35);
+    color: $secondary-dark;
+  }
+
+  &--error {
+    background: $danger-light;
+    border: 1px solid rgba($danger, 0.35);
+    color: $danger-dark;
+  }
+}
+
+.exp-enlace {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-left: 4px;
+  color: inherit;
+  font: inherit;
+  font-weight: $font-weight-bold;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.exp-faltantes {
+  margin-top: $spacing-sm;
+  padding: 9px 11px;
+  background: $warning-light;
+  border: 1px solid rgba($warning, 0.4);
+  border-radius: $border-radius-sm;
+
+  &__titulo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 5px;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-bold;
+    color: $warning-dark;
+
+    i { font-size: 0.8rem; }
+  }
+
+  ul {
+    margin: 0;
+    padding-left: 20px;
+    font-size: $font-size-xs;
+    color: darken($warning-dark, 8%);
+  }
+
+  li { margin-bottom: 2px; }
+}
+
+@media (max-width: $breakpoint-md) {
+  .exp-doc {
+    grid-template-columns: 3px 1fr auto;
+    row-gap: 4px;
+
+    &__acciones { grid-column: 2 / -1; justify-content: flex-end; }
+  }
+}

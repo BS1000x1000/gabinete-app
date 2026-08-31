@@ -13,9 +13,11 @@ import {
   UseFilters,
   UploadedFile,
   Req,
+  Res,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CategoriaDocumento } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -74,6 +76,33 @@ export class DocumentosController {
   async getUrlDescarga(@Param('id') id: string, @Req() req: any) {
     this.logger.log(`GET /documentos/${id}/descarga`);
     return this.documentosService.getUrlDescarga(id, req.user);
+  }
+
+  /**
+   * Sirve el binario desde la API. Solo responde en el modo de almacenamiento
+   * local de desarrollo; con el bucket configurado la descarga va por URL
+   * prefirmada y no pasa por el contenedor.
+   *
+   * `@Res()` evita el ResponseInterceptor, que envolvería el PDF en JSON.
+   */
+  @Get(':id/fichero')
+  async getFichero(
+    @Param('id') id: string,
+    @Req() req: any,
+    @Res() res: Response,
+  ) {
+    const { buffer, nombre, mimeType } = await this.documentosService.getFichero(
+      id,
+      req.user,
+    );
+    // El nombre lo escribe una persona: fuera todo lo que no sobreviva a una cabecera.
+    const seguro = nombre.replace(/[^\w.\- ]+/g, '_');
+    res.set({
+      'Content-Type': mimeType,
+      'Content-Disposition': `inline; filename="${seguro}"`,
+      'Content-Length': String(buffer.length),
+    });
+    res.end(buffer);
   }
 
   @Get(':id')

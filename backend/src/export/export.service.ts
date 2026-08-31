@@ -45,14 +45,14 @@ function buildTableHtml(opts: {
   rows: string[][];
 }): string {
   const headerCells = opts.headers
-    .map((h) => `<th style="background:#7c6fd6;color:#fff;padding:8px 10px;font-size:11px;text-align:left;border:1px solid #5a4fa8;">${escapeHtml(h)}</th>`)
+    .map((h) => `<th style="background:#2d4a3e;color:#fff;padding:8px 10px;font-size:11px;text-align:left;border:1px solid #1f2a24;">${escapeHtml(h)}</th>`)
     .join('');
 
   const bodyRows = opts.rows
     .map(
       (row, i) =>
-        `<tr style="background:${i % 2 === 0 ? '#ffffff' : '#f5f3fc'};">
-          ${row.map((cell) => `<td style="padding:6px 10px;font-size:10px;border:1px solid #e8e4f8;color:#374151;">${escapeHtml(cell)}</td>`).join('')}
+        `<tr style="background:${i % 2 === 0 ? '#ffffff' : '#f7f5ec'};">
+          ${row.map((cell) => `<td style="padding:6px 10px;font-size:10px;border:1px solid #c2cdc3;color:#273c32;">${escapeHtml(cell)}</td>`).join('')}
         </tr>`,
     )
     .join('');
@@ -63,21 +63,21 @@ function buildTableHtml(opts: {
   <meta charset="UTF-8">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 11px; color: #1f2937; }
+    body { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 11px; color: #23322b; }
     @page { size: A4 landscape; margin: 1.5cm; }
   </style>
 </head>
 <body>
   <div style="text-align:center;margin-bottom:16px;">
-    <h1 style="font-size:16px;font-weight:700;color:#7c6fd6;">${escapeHtml(opts.titulo)}</h1>
-    <p style="font-size:11px;color:#6b7280;margin-top:4px;">${escapeHtml(opts.subtitulo)}</p>
-    <hr style="border:none;border-top:2px solid #7c6fd6;margin-top:10px;">
+    <h1 style="font-size:16px;font-weight:700;color:#2d4a3e;">${escapeHtml(opts.titulo)}</h1>
+    <p style="font-size:11px;color:#556d62;margin-top:4px;">${escapeHtml(opts.subtitulo)}</p>
+    <hr style="border:none;border-top:2px solid #2d4a3e;margin-top:10px;">
   </div>
   <table style="width:100%;border-collapse:collapse;">
     <thead><tr>${headerCells}</tr></thead>
     <tbody>${bodyRows}</tbody>
   </table>
-  <p style="text-align:center;font-size:9px;color:#9ca3af;margin-top:12px;">
+  <p style="text-align:center;font-size:9px;color:#798d82;margin-top:12px;">
     Documento confidencial — Gabinete Pedagógico · Generado el ${fmtFecha(new Date())}
   </p>
 </body>

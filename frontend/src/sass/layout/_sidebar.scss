@@ -2,18 +2,24 @@
 // SIDEBAR — Navegación principal de la aplicación
 // ============================================================
 
+// Cromo oscuro: el sidebar hereda el fondo que la marca usa en redes, y el area
+// de trabajo se queda en papel. Es lo que hace que la app se reconozca al abrirla.
+// Contraste verificado: texto activo 12.34, inactivo 5.59, realce 5.99.
 .sidebar {
   width: $sidebar-width;
   height: 100vh;
-  background: $white;
-  border-right: 1px solid rgba($primary, 0.1);
+  background: $bg-sidebar;
+  border-right: none;
   display: flex;
   flex-direction: column;
   position: sticky;
   top: 0;
   z-index: $z-sticky;
   flex-shrink: 0;
-  box-shadow: 2px 0 12px rgba($primary, 0.06);
+  box-shadow: 2px 0 12px rgba($gray-900, 0.18);
+
+  // Sobre fondo oscuro, el texto por defecto es claro
+  color: $gray-100;
 }
 
 // ── Marca ──────────────────────────────────────────────────
@@ -23,32 +29,27 @@
   align-items: center;
   gap: $spacing-sm;
   padding: $spacing-lg $spacing-md;
-  border-bottom: 1px solid rgba($primary, 0.08);
+  border-bottom: 1px solid rgba($gray-100, 0.10);
   text-decoration: none;
   flex-shrink: 0;
 }
 
+// El logo es verde oscuro y sobre el cromo no se veria. En vez de mantener dos
+// ficheros, se usa su canal alfa como mascara y se pinta del color que toque:
+// un solo asset sirve para fondo claro y oscuro.
 .sidebar-brand-icon {
   width: 34px;
   height: 34px;
-  background: $gradient-primary;
-  border-radius: $border-radius;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba($primary, 0.35);
-
-  i {
-    color: $white;
-    font-size: 1rem;
-  }
+  background-color: $gray-50;
+  -webkit-mask: url('/marca/logo.png') no-repeat center / contain;
+  mask: url('/marca/logo.png') no-repeat center / contain;
 }
 
 .sidebar-brand-name {
   font-size: $font-size-lg;
   font-weight: $font-weight-bold;
-  color: $gray-800;
+  color: $gray-50;
   letter-spacing: -0.3px;
 }
 
@@ -68,7 +69,8 @@
   gap: $spacing-sm;
   padding: 10px $spacing-sm;
   border-radius: $border-radius;
-  color: $gray-600;
+  // Sobre cromo oscuro: el inactivo da 5.59 y el activo 12.34
+  color: #99a199;
   font-size: $font-size-sm;
   font-weight: $font-weight-medium;
   text-decoration: none;
@@ -79,7 +81,8 @@
     font-size: 1.1rem;
     width: 20px;
     text-align: center;
-    color: $gray-400;
+    color: inherit;
+    opacity: 0.8;
     flex-shrink: 0;
     transition: color $animation-duration-fast $animation-timing;
   }
@@ -89,20 +92,20 @@
   }
 
   &:hover {
-    background: $primary-ultra-light;
-    color: $primary;
+    background: rgba($gray-50, 0.07);
+    color: $gray-50;
 
-    i { color: $primary; }
+    i { opacity: 1; }
   }
 
   &.is-active {
-    background: $primary-light;
-    color: $primary-dark;
+    background: rgba($gray-50, 0.11);
+    color: $gray-50;
     font-weight: $font-weight-semibold;
 
-    i { color: $primary; }
+    i { opacity: 1; }
 
-    // Indicador lateral izquierdo
+    // Indicador lateral: el unico verde vivo de la interfaz, y solo aqui
     &::before {
       content: '';
       position: absolute;
@@ -111,7 +114,7 @@
       transform: translateY(-50%);
       width: 3px;
       height: 60%;
-      background: $primary;
+      background: $verde-realce;
       border-radius: 0 $border-radius-full $border-radius-full 0;
     }
   }
@@ -121,7 +124,7 @@
 
 .sidebar-divider {
   height: 1px;
-  background: rgba($primary, 0.08);
+  background: rgba($gray-50, 0.10);
   margin: $spacing-xs $spacing-md;
   flex-shrink: 0;
 }
@@ -153,9 +156,9 @@
   width: 100%;
   padding: 8px $spacing-sm;
   border-radius: $border-radius;
-  border: 1px solid rgba($primary, 0.25);
+  border: 1px solid rgba($gray-50, 0.18);
   background: transparent;
-  color: $primary;
+  color: #99a199;
   font-size: $font-size-xs;
   font-weight: $font-weight-medium;
   font-family: inherit;
@@ -169,9 +172,9 @@
   }
 
   &:hover {
-    background: $primary-ultra-light;
-    border-color: rgba($primary, 0.5);
-    color: $primary-dark;
+    background: rgba($gray-50, 0.08);
+    border-color: rgba($gray-50, 0.35);
+    color: $gray-50;
     transform: translateX(1px);
   }
 
@@ -193,7 +196,7 @@
   align-items: center;
   gap: $spacing-sm;
   padding: $spacing-md;
-  border-top: 1px solid rgba($primary, 0.08);
+  border-top: 1px solid rgba($gray-50, 0.10);
   width: 100%;
   background: transparent;
   border-left: none;
@@ -204,12 +207,12 @@
   transition: background $transition-fast;
 
   &:hover, &.is-open {
-    background: $primary-ultra-light;
+    background: rgba($gray-50, 0.07);
   }
 }
 
 .sidebar-profile-chevron {
-  color: $gray-400;
+  color: #99a199;
   font-size: 0.7rem;
   margin-left: auto;
   flex-shrink: 0;
@@ -278,7 +281,7 @@
 
 .sidebar-profile-dropdown-divider {
   height: 1px;
-  background: rgba($primary, 0.08);
+  background: rgba($gray-50, 0.10);
   margin: 2px 0;
 }
 
@@ -309,7 +312,7 @@
 .sidebar-profile-name {
   font-size: $font-size-xs;
   font-weight: $font-weight-semibold;
-  color: $gray-700;
+  color: $gray-50;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -317,7 +320,7 @@
 
 .sidebar-profile-role {
   font-size: 10px;
-  color: $gray-400;
+  color: #99a199;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -333,7 +336,7 @@
   border-radius: $border-radius-sm;
   border: none;
   background: transparent;
-  color: $gray-400;
+  color: #99a199;
   cursor: pointer;
   transition: $transition-fast;
   flex-shrink: 0;

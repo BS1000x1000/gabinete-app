@@ -13,6 +13,9 @@ export interface Trabajador {
   username?: string;
   telefono?: string;
   numeroColegiado?: string;
+  colegioProfesional?: string;
+  numeroPoliza?: string;
+  direccionProfesional?: string;
   especialidad?: string;
   fechaContratacion?: string;
   urlVideollamada?: string;
@@ -49,6 +52,9 @@ export interface CreateTrabajadorPayload {
   email: string;
   telefono?: string;
   numeroColegiado?: string;
+  colegioProfesional?: string;
+  numeroPoliza?: string;
+  direccionProfesional?: string;
   especialidad?: string;
   rolId: string;
 }
@@ -59,6 +65,9 @@ export interface UpdateTrabajadorPayload {
   email?: string;
   telefono?: string;
   numeroColegiado?: string;
+  colegioProfesional?: string;
+  numeroPoliza?: string;
+  direccionProfesional?: string;
   especialidad?: string;
   fechaContratacion?: string;
   rolId?: string;

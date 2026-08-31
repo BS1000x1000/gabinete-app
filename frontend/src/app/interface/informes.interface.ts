@@ -88,11 +88,11 @@ export interface UpdateInformeDto {
 
 // Labels para la UI
 export const TIPO_INFORME_LABELS: Record<TipoInforme, { texto: string; color: string; bg: string }> = {
-  INICIAL:             { texto: 'Informe Inicial',        color: '#0d6efd', bg: '#cfe2ff' },
-  SEGUIMIENTO:         { texto: 'Informe de Seguimiento', color: '#6610f2', bg: '#e0cffc' },
-  REGISTROS:           { texto: 'Informe de Sesiones',    color: '#059669', bg: '#d1fae5' },
-  OBJETIVOS_PROGRESO:  { texto: 'Informe de Progreso',    color: '#7c3aed', bg: '#ede9fe' },
-  ALTA:                { texto: 'Informe de Alta',         color: '#b45309', bg: '#fef3c7' },
+  INICIAL:             { texto: 'Informe Inicial',        color: '#2d4a3e', bg: '#d9e8da' },
+  SEGUIMIENTO:         { texto: 'Informe de Seguimiento', color: '#3a5c74', bg: '#dde6ec' },
+  REGISTROS:           { texto: 'Informe de Sesiones',    color: '#556d62', bg: '#e5eadf' },
+  OBJETIVOS_PROGRESO:  { texto: 'Informe de Progreso',    color: '#6b5a8a', bg: '#e8e3ef' },
+  ALTA:                { texto: 'Informe de Alta',        color: '#8a6018', bg: '#f5ecd8' },
 };
 
 export const ESTADO_INFORME_LABELS: Record<EstadoInforme, { texto: string; badgeClass: string }> = {

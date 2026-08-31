@@ -105,6 +105,8 @@ export class WizardFormsService {
       email: ['', Validators.email],
       esPrincipal: [false],
       esPago: [false],
+      // Firma el contrato y los consentimientos; el contrato prevé dos.
+      esTutorLegal: [false],
     });
   }
 

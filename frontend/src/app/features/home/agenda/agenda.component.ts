@@ -47,19 +47,14 @@ import {
 } from '../../../interface/evento-agenda.interface';
 import { FestivosService } from '../../../services/festivos.service';
 import { Festivo } from '../../../interface/festivo.interface';
+import { TIPO_COLOR, TIPO_COLOR_POR_DEFECTO } from '../../../interface/contrato.interface';
 import { DashboardService } from '../../../services/dashboard.service';
 import { RegistroDrawerService } from '../../../services/registro-drawer.service';
 import { NuevaSesionModalService } from '../../../services/nueva-sesion-modal.service';
 import { VacacionesService } from '../../../services/vacaciones.service';
 
-const TIPO_COLORES: Record<string, string> = {
-  PEDAGOGIA: '#7c6fd6',
-  NEUROPSICOLOGIA: '#3b82f6',
-  LOGOPEDIA: '#10b981',
-  TERAPIA_OCUPACIONAL: '#ef4444',
-  EVALUACION: '#f59e0b',
-  REUNION_COLEGIO: '#6b7280',
-};
+// El color por tipo de terapia vive en `interface/contrato.interface.ts`.
+// Aqui habia una copia que ya habia divergido de la original.
 
 export type VistaAgenda = 'dia' | 'semana';
 
@@ -830,7 +825,7 @@ export class AgendaComponent implements OnInit {
   // ── Helpers UI ───────────────────────────────────────────
 
   getTipoColor(tipo: string): string {
-    return TIPO_COLORES[tipo] ?? '#9ca3af';
+    return TIPO_COLOR[tipo] ?? TIPO_COLOR_POR_DEFECTO;
   }
 
   getEstadoClass(estado: string): string {
