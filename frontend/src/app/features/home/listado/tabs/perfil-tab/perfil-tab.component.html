@@ -6,7 +6,7 @@
     ══════════════════════════════ -->
     <div class="perfil-card">
       <div class="perfil-card-hdr">
-        <span class="perfil-card-icon" style="background: #ede9fc; color: #7c6fd6;">
+        <span class="perfil-card-icon perfil-card-icon--personal">
           <i class="bi bi-person-fill"></i>
         </span>
         <h3 class="perfil-card-title">Datos personales</h3>
@@ -45,7 +45,7 @@
     ══════════════════════════════ -->
     <div class="perfil-card">
       <div class="perfil-card-hdr">
-        <span class="perfil-card-icon" style="background: #fee2e2; color: #ef4444;">
+        <span class="perfil-card-icon perfil-card-icon--salud">
           <i class="bi bi-heart-pulse-fill"></i>
         </span>
         <h3 class="perfil-card-title">Información médica</h3>
@@ -54,7 +54,7 @@
         </button>
       </div>
       <div class="perfil-card-body">
-        <div *ngIf="!sanitario()" class="perfil-empty">
+        <div *ngIf="!sanitario()" class="gb-empty gb-empty--inline">
           <i class="bi bi-clipboard-x mb-2 d-block fs-4 opacity-25"></i>
           Sin datos médicos registrados
         </div>
@@ -84,7 +84,7 @@
     ══════════════════════════════ -->
     <div class="perfil-card">
       <div class="perfil-card-hdr">
-        <span class="perfil-card-icon" style="background: #dbeafe; color: #3b82f6;">
+        <span class="perfil-card-icon perfil-card-icon--familia">
           <i class="bi bi-people-fill"></i>
         </span>
         <h3 class="perfil-card-title">
@@ -96,7 +96,7 @@
         </button>
       </div>
       <div class="perfil-card-body">
-        <div *ngIf="!familiares()?.length" class="perfil-empty">
+        <div *ngIf="!familiares()?.length" class="gb-empty gb-empty--inline">
           <i class="bi bi-person-x mb-2 d-block fs-4 opacity-25"></i>
           Sin contactos familiares
         </div>
@@ -135,7 +135,7 @@
     ══════════════════════════════ -->
     <div class="perfil-card">
       <div class="perfil-card-hdr">
-        <span class="perfil-card-icon" style="background: #d1fae5; color: #10b981;">
+        <span class="perfil-card-icon perfil-card-icon--colegio">
           <i class="bi bi-building"></i>
         </span>
         <h3 class="perfil-card-title">Colegio</h3>
@@ -144,7 +144,7 @@
         </button>
       </div>
       <div class="perfil-card-body">
-        <div *ngIf="!colegio()" class="perfil-empty">
+        <div *ngIf="!colegio()" class="gb-empty gb-empty--inline">
           <i class="bi bi-building-x mb-2 d-block fs-4 opacity-25"></i>
           Sin colegio registrado
         </div>
@@ -236,13 +236,13 @@
     ══════════════════════════════ -->
     <div class="perfil-card perfil-card-full">
       <div class="perfil-card-hdr">
-        <span class="perfil-card-icon" style="background: #fef3c7; color: #f59e0b;">
+        <span class="perfil-card-icon perfil-card-icon--profesionales">
           <i class="bi bi-person-badge-fill"></i>
         </span>
         <h3 class="perfil-card-title">Profesionales asignados</h3>
       </div>
       <div class="perfil-card-body">
-        <div *ngIf="!clienteRaw()?.trabajadoresAsignados?.length" class="perfil-empty">
+        <div *ngIf="!clienteRaw()?.trabajadoresAsignados?.length" class="gb-empty gb-empty--inline">
           <i class="bi bi-person-slash mb-2 d-block fs-4 opacity-25"></i>
           Sin profesionales asignados
         </div>
@@ -266,7 +266,7 @@
     ══════════════════════════════ -->
     <div *ngIf="!auth.isRecep()" class="perfil-card perfil-card-full">
       <div class="perfil-card-hdr">
-        <span class="perfil-card-icon" style="background: #fce7f3; color: #db2777;">
+        <span class="perfil-card-icon perfil-card-icon--facturacion">
           <i class="bi bi-receipt"></i>
         </span>
         <h3 class="perfil-card-title">Facturación</h3>
@@ -283,7 +283,7 @@
 
         <!-- Modo lectura -->
         <ng-container *ngIf="!editandoPagador()">
-          <div *ngIf="!clienteRaw()?.nifTutorPagador && !clienteRaw()?.nombreTutorPagador" class="perfil-empty">
+          <div *ngIf="!clienteRaw()?.nifTutorPagador && !clienteRaw()?.nombreTutorPagador" class="gb-empty gb-empty--inline">
             <i class="bi bi-receipt mb-2 d-block fs-4 opacity-25"></i>
             Sin datos de facturación registrados
           </div>
@@ -377,7 +377,7 @@
     ══════════════════════════════ -->
     <div class="perfil-card perfil-card-full">
       <div class="perfil-card-hdr">
-        <span class="perfil-card-icon" style="background: #fef9c3; color: #b45309;">
+        <span class="perfil-card-icon perfil-card-icon--rgpd">
           <i class="bi bi-shield-check-fill"></i>
         </span>
         <h3 class="perfil-card-title">Consentimiento RGPD</h3>
@@ -502,10 +502,10 @@
         <!-- ── Historial de consentimientos ── -->
         <div *ngIf="mostrarHistorial()" class="rgpd-historial">
           <div class="rgpd-historial-title">Historial de consentimientos</div>
-          <div *ngIf="cargandoHistorico()" class="perfil-empty">
+          <div *ngIf="cargandoHistorico()" class="gb-empty gb-empty--inline">
             <span class="spinner-border spinner-border-sm me-1"></span> Cargando…
           </div>
-          <div *ngIf="!cargandoHistorico() && !historico().length" class="perfil-empty">
+          <div *ngIf="!cargandoHistorico() && !historico().length" class="gb-empty gb-empty--inline">
             Sin registros de consentimiento.
           </div>
           <div *ngFor="let h of historico()" class="rgpd-historial-item" [class.rgpd-historial-revocado]="!h.aceptado">

@@ -271,7 +271,7 @@
 
     &:hover {
       background: rgba($danger, 0.06);
-      color: darken(#ef4444, 8%);
+      color: darken($danger, 8%);
     }
   }
 }

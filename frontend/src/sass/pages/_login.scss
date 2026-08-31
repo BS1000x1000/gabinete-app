@@ -129,12 +129,12 @@ $bg-gradient-end: #764ba2;
 
 // Variante exito del logo-circle
 .logo-circle--success {
-  background: linear-gradient(135deg, #10b981, #059669) !important;
+  background: linear-gradient(135deg, $success, $success-dark) !important;
 }
 
 // Variante error del logo-circle
 .logo-circle--error {
-  background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+  background: linear-gradient(135deg, $danger, $danger-dark) !important;
 }
 
 // Caja informativa (info box)
@@ -204,8 +204,8 @@ $bg-gradient-end: #764ba2;
   align-items: center;
   gap: 0.35rem;
 
-  &.match-ok  { color: #10b981; }
-  &.match-fail { color: #ef4444; }
+  &.match-ok  { color: $success; }
+  &.match-fail { color: $danger; }
 
   i { font-size: 0.875rem; }
 }

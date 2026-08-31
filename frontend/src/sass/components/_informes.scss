@@ -26,14 +26,14 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #9ca3af;
+  color: $gray-400;
   min-width: 44px;
 }
 
 .informes-filtro-pill {
-  border: 1px solid #e5e7eb;
-  background: #fff;
-  color: #6b7280;
+  border: 1px solid $gray-200;
+  background: $white;
+  color: $gray-500;
   border-radius: 999px;
   padding: 0.18rem 0.7rem;
   font-size: 0.75rem;
@@ -51,17 +51,17 @@
   &.active {
     background: $primary;
     border-color: $primary;
-    color: #fff;
+    color: $white;
     font-weight: 600;
   }
 
   // Estado-specific active colors
-  &.estado-borrador.active  { background: #6b7280; border-color: #6b7280; }
-  &.estado-revision.active  { background: #d97706; border-color: #d97706; }
-  &.estado-finalizado.active { background: #059669; border-color: #059669; }
+  &.estado-borrador.active  { background: $gray-500; border-color: $gray-500; }
+  &.estado-revision.active  { background: $warning-dark; border-color: $warning-dark; }
+  &.estado-finalizado.active { background: $success-dark; border-color: $success-dark; }
   &.estado-enviado.active   {
-    background: #d1fae5;
-    border-color: #059669;
+    background: $success-light;
+    border-color: $success-dark;
     color: #047857;
   }
 }
@@ -79,13 +79,13 @@
   margin-bottom: 0.5rem;
 
   &.pendientes {
-    color: #d97706;
-    i { color: #d97706; }
+    color: $warning-dark;
+    i { color: $warning-dark; }
   }
 
   &.completados {
-    color: #6b7280;
-    i { color: #6b7280; }
+    color: $gray-500;
+    i { color: $gray-500; }
   }
 }
 
@@ -101,13 +101,13 @@
   padding: 0 5px;
 
   .pendientes & {
-    background: #fef3c7;
-    color: #d97706;
+    background: $warning-light;
+    color: $warning-dark;
   }
 
   .completados & {
-    background: #f3f4f6;
-    color: #6b7280;
+    background: $gray-100;
+    color: $gray-500;
   }
 }
 
@@ -115,7 +115,7 @@
 
 .informe-card-compact {
   border-radius: 0.5rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid $gray-200;
   margin-bottom: 0.4rem;
   cursor: pointer;
   transition: box-shadow 0.15s ease, border-color 0.15s ease;
@@ -131,28 +131,28 @@
     bottom: 0;
     width: 3px;
     border-radius: 0.5rem 0 0 0.5rem;
-    background: #e5e7eb;
+    background: $gray-200;
   }
 
-  &.borrador::before { background: #f59e0b; }
-  &.finalizado::before { background: #10b981; }
-  &.enviado::before { background: #059669; }
+  &.borrador::before { background: $warning; }
+  &.finalizado::before { background: $success; }
+  &.enviado::before { background: $success-dark; }
 
   &.borrador {
     background: #fffbeb;
     border-color: #fde68a;
 
     &:hover {
-      border-color: #f59e0b;
+      border-color: $warning;
       box-shadow: 0 2px 8px rgba(245, 158, 11, 0.12);
     }
   }
 
   &.finalizado {
-    background: #fff;
+    background: $white;
 
     &:hover {
-      border-color: #d1d5db;
+      border-color: $gray-300;
       box-shadow: 0 2px 8px rgba($primary, 0.1);
     }
   }
@@ -169,7 +169,7 @@
 
   // estado sin clase específica (REVISION, etc.)
   &:not(.borrador):not(.finalizado):not(.enviado) {
-    background: #fff;
+    background: $white;
     &:hover {
       border-color: $primary;
       box-shadow: 0 2px 8px rgba($primary, 0.08);
@@ -209,7 +209,7 @@
 .informe-card-titulo {
   font-size: 0.82rem;
   font-weight: 600;
-  color: #111827;
+  color: $gray-900;
   margin-bottom: 0.15rem;
   white-space: nowrap;
   overflow: hidden;
@@ -222,10 +222,10 @@
   gap: 0.75rem;
   flex-wrap: wrap;
   font-size: 0.72rem;
-  color: #9ca3af;
+  color: $gray-400;
 
   .text-success {
-    color: #059669 !important;
+    color: $success-dark !important;
     font-weight: 500;
   }
 }
@@ -245,22 +245,22 @@
 // ── Badges y botones heredados (editor) ───────────────────────
 
 .badge-enviado {
-  background-color: #d1fae5;
-  color: #059669;
-  border: 1px solid #059669;
+  background-color: $success-light;
+  color: $success-dark;
+  border: 1px solid $success-dark;
   font-size: 0.72rem;
 }
 
 .informe-sesiones-btn {
-  background-color: #d1fae5;
-  color: #059669;
+  background-color: $success-light;
+  color: $success-dark;
   border: 1px solid #a7f3d0;
   font-weight: 600;
   font-size: 0.8rem;
 
   &:hover {
     background-color: #a7f3d0;
-    border-color: #059669;
+    border-color: $success-dark;
     color: #047857;
   }
 }
@@ -280,15 +280,15 @@
 }
 
 .informe-enviar-btn {
-  background-color: #059669;
-  color: #fff;
+  background-color: $success-dark;
+  color: $white;
   border: none;
   font-weight: 600;
   font-size: 0.8rem;
 
   &:hover:not(:disabled) {
     background-color: #047857;
-    color: #fff;
+    color: $white;
   }
 
   &:disabled {
@@ -298,8 +298,8 @@
 }
 
 .informe-enviado-badge {
-  background-color: #d1fae5;
-  color: #059669;
+  background-color: $success-light;
+  color: $success-dark;
   border: 1px solid #a7f3d0;
   border-radius: 0.4rem;
   padding: 0.4rem 0.6rem;
@@ -325,7 +325,7 @@
   font-size: 0.875rem;
   line-height: 1.7;
   resize: vertical;
-  border-color: #d1d5db;
+  border-color: $gray-300;
 
   &:focus {
     border-color: $primary;
@@ -337,9 +337,9 @@
   white-space: pre-wrap;
   font-size: 0.875rem;
   line-height: 1.7;
-  color: #374151;
-  background-color: #f9fafb;
-  border: 1px solid #e5e7eb;
+  color: $gray-700;
+  background-color: $gray-50;
+  border: 1px solid $gray-200;
   border-radius: 0.5rem;
   padding: 1.25rem;
   min-height: 300px;

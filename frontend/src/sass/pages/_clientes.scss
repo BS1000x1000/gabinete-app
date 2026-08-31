@@ -414,9 +414,9 @@
   }
 
   &.accion-registro:hover {
-    border-color: #5a9de8;
-    color: #5a9de8;
-    background: rgba(#5a9de8, 0.08);
+    border-color: $secondary;
+    color: $secondary;
+    background: rgba($secondary, 0.08);
   }
 }
 

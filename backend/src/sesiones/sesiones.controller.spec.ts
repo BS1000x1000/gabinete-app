@@ -20,7 +20,7 @@ const mockSesion = (overrides: Record<string, any> = {}) => ({
 });
 
 const makeSesionesServiceMock = () => ({
-  generarSesiones: jest.fn(),
+  create: jest.fn(),
   getSesionesHoy: jest.fn(),
   getCalendarioDiario: jest.fn(),
   getCalendarioSemanal: jest.fn(),
@@ -53,22 +53,22 @@ describe('SesionesController', () => {
     controller = module.get<SesionesController>(SesionesController);
   });
 
-  // ── generarSesiones ────────────────────────────────────────────────────────
-  describe('generarSesiones()', () => {
-    it('delega al servicio y devuelve el resultado', async () => {
+  // ── create (sesion suelta) ─────────────────────────────────────────────────
+  describe('create()', () => {
+    it('delega al servicio y devuelve la sesion creada', async () => {
       const dto = {
         clienteId: 'cliente-1',
         trabajadorId: 'trabajador-1',
-        fechaInicio: '2026-03-09',
-        fechaFin: '2026-03-15',
+        fechaHoraInicio: '2026-03-09T16:00:00.000Z',
+        fechaHoraFin: '2026-03-09T17:00:00.000Z',
         tipoSesion: TipoSesion.PEDAGOGIA,
       };
-      const expected = { sesionesCreadas: 2, mensaje: 'Creadas 2 sesiones' };
-      service.generarSesiones.mockResolvedValue(expected);
+      const expected = { id: 'ses-1' };
+      service.create.mockResolvedValue(expected);
 
-      const result = await controller.generarSesiones(dto as any);
+      const result = await controller.create(dto as any);
 
-      expect(service.generarSesiones).toHaveBeenCalledWith(dto);
+      expect(service.create).toHaveBeenCalledWith(dto);
       expect(result).toEqual(expected);
     });
   });

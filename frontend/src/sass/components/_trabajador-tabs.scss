@@ -22,7 +22,7 @@
 // Botón guardar facturación
 .trab-facturacion-save-btn {
   background: #db2777;
-  color: #fff;
+  color: $white;
   border: none;
   font-size: 0.875rem;
   font-weight: 600;
@@ -31,7 +31,7 @@
 
   &:hover:not(:disabled) {
     background: darken(#db2777, 8%);
-    color: #fff;
+    color: $white;
   }
 
   &:disabled { opacity: 0.55; }

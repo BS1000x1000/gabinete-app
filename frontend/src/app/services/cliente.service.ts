@@ -386,12 +386,11 @@ export class ClientesService {
     clienteId: string,
     asignacionId: string,
     horarios: { diaSemana: number; horaInicio: string; horaFin: string }[],
-    confirmar: boolean = false,
   ): Observable<any> {
     return this.http
       .patch<
         WrappedResponse<any>
-      >(`${this.api}/${clienteId}/asignaciones/${asignacionId}/horarios`, { horarios, confirmarActualizacionSesiones: confirmar })
+      >(`${this.api}/${clienteId}/asignaciones/${asignacionId}/horarios`, { horarios })
       .pipe(map((res) => res.data || res));
   }
 

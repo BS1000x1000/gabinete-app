@@ -1,38 +1,82 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { signal, computed } from '@angular/core';
-import { of, Subject } from 'rxjs';
+import { signal, computed, NO_ERRORS_SCHEMA } from '@angular/core';
+import { of } from 'rxjs';
 import { AgendaComponent } from './agenda.component';
 import { SesionesService } from '../../../services/sesiones.service';
 import { SesionAccionesService } from '../../../services/sesiones-acciones.service';
 import { NotificacionesService } from '../../../services/notificaciones.service';
 import { AuthService } from '../../../services/auth.service';
-import { NO_ERRORS_SCHEMA } from '@angular/core';
+import { TrabajadorService } from '../../../services/trabajadores.service';
+import { EventosAgendaService } from '../../../services/eventos-agenda.service';
+import { FestivosService } from '../../../services/festivos.service';
+import { VacacionesService } from '../../../services/vacaciones.service';
+import { DashboardService } from '../../../services/dashboard.service';
+import { RegistroDrawerService } from '../../../services/registro-drawer.service';
+import { NuevaSesionModalService } from '../../../services/nueva-sesion-modal.service';
 
 // ─── Mock data ────────────────────────────────────────────────────────────────
 
 const mockCalendarioDiario = () => ({
   fecha: '2026-03-10',
+  fechaFormateada: '10 de marzo de 2026',
+  diaSemana: 'martes',
+  esHoy: false,
   totalSesiones: 2,
   sesiones: [
     {
       id: 'sesion-1',
       horaInicio: '09:00',
       horaFin: '10:00',
+      duracion: 60,
       estado: 'PROGRAMADA',
       tipoSesion: 'PEDAGOGIA',
-      cliente: { id: 'cliente-1', nombre: 'Ana', apellidos: 'García' },
+      cliente: { id: 'cliente-1', nombre: 'Ana', apellidos: 'García', nombreCompleto: 'Ana García' },
       notas: '',
-      temporal: false,
+      temporal: { esPasada: false, esActual: false, esFutura: true },
     },
   ],
   estadisticas: { completadas: 1, programadas: 1, canceladas: 0 },
 });
 
-const mockCalendarioSemanal = () => ({
-  rangoSemana: { inicioFormateado: '10 mar', finFormateado: '16 mar' },
-  resumen: { totalSesiones: 10, completadas: 5 },
-  dias: [],
+/** Un día de la semana con las sesiones que se le indiquen. */
+const diaCon = (
+  fecha: string,
+  horas: { horaInicio: string; horaFin: string }[],
+  esHoy = false,
+) => ({
+  fecha,
+  diaSemana: 'martes',
+  dia: fecha.slice(-2),
+  mes: 'marzo',
+  esHoy,
+  totalSesiones: horas.length,
+  sesiones: horas.map((h, i) => ({
+    id: `${fecha}-s${i}`,
+    horaInicio: h.horaInicio,
+    horaFin: h.horaFin,
+    duracion: 60,
+    estado: 'PROGRAMADA',
+    tipoSesion: 'PEDAGOGIA',
+    cliente: { id: 'c1', nombre: 'Ana', apellidos: 'García', nombreCompleto: 'Ana García' },
+  })),
+});
+
+const mockCalendarioSemanal = (dias: any[] = []) => ({
+  rangoSemana: {
+    inicio: '2026-03-09',
+    fin: '2026-03-15',
+    inicioFormateado: '9 mar',
+    finFormateado: '15 mar',
+  },
+  resumen: {
+    totalSesiones: 10,
+    completadas: 5,
+    programadas: 4,
+    canceladas: 1,
+    clientesUnicos: 7,
+  },
+  dias,
 });
 
 // ─── Mocks de servicio ────────────────────────────────────────────────────────
@@ -84,10 +128,14 @@ const makeNotifMock = () => {
 
 const makeAuthMock = () => ({
   currentTrabajadorId: signal('trabajador-1'),
+  canVerTodo: () => false,
+  isRecep: () => false,
+  isAdmin: () => false,
 });
 
 const makeRouterMock = () => ({
   navigate: jasmine.createSpy('navigate'),
+  navigateByUrl: jasmine.createSpy('navigateByUrl'),
 });
 
 // ─── Suite ───────────────────────────────────────────────────────────────────
@@ -101,6 +149,9 @@ describe('AgendaComponent', () => {
   let router: ReturnType<typeof makeRouterMock>;
 
   beforeEach(async () => {
+    // La vista se persiste en localStorage: cada test parte de "semana".
+    localStorage.removeItem('agenda.vista');
+
     sesionesSvc = makeSesionesMock();
     accionesSvc = makeAccionesMock();
     notifSvc = makeNotifMock();
@@ -114,6 +165,30 @@ describe('AgendaComponent', () => {
         { provide: NotificacionesService, useValue: notifSvc },
         { provide: AuthService, useValue: makeAuthMock() },
         { provide: Router, useValue: router },
+        { provide: TrabajadorService, useValue: {
+          getTrabajadores: jasmine.createSpy().and.returnValue(of([])),
+          trabajadores: signal([]),
+        } },
+        { provide: EventosAgendaService, useValue: {
+          getEventosPeriodo: jasmine.createSpy().and.returnValue(of([])),
+          getResumenHoras: jasmine.createSpy().and.returnValue(of({ totalMinutos: 0 })),
+          create: jasmine.createSpy().and.returnValue(of({})),
+          update: jasmine.createSpy().and.returnValue(of({})),
+          delete: jasmine.createSpy().and.returnValue(of(void 0)),
+        } },
+        { provide: FestivosService, useValue: {
+          getFestivosParaAgenda: jasmine.createSpy().and.returnValue(of([])),
+        } },
+        { provide: VacacionesService, useValue: {
+          getMisVacaciones: jasmine.createSpy().and.returnValue(of([])),
+          misVacaciones: signal([]),
+        } },
+        { provide: DashboardService, useValue: {
+          getMiDia: jasmine.createSpy().and.returnValue(of(null)),
+          miDia: signal(null),
+        } },
+        { provide: RegistroDrawerService, useValue: { openVacio: jasmine.createSpy() } },
+        { provide: NuevaSesionModalService, useValue: { open: jasmine.createSpy() } },
       ],
     })
       .overrideComponent(AgendaComponent, { set: { schemas: [NO_ERRORS_SCHEMA] } })
@@ -135,23 +210,22 @@ describe('AgendaComponent', () => {
     });
 
     it('actualiza el signal calendarioDiario con los datos recibidos', () => {
-      expect(component.calendarioDiario()).not.toBeNull();
-      expect(component.calendarioDiario()?.totalSesiones).toBe(2);
+      expect(component.calendarioDiario()?.fecha).toBe('2026-03-10');
     });
 
     it('actualiza el signal calendarioSemanal', () => {
-      expect(component.calendarioSemanal()).not.toBeNull();
+      expect(component.calendarioSemanal()?.resumen.totalSesiones).toBe(10);
     });
   });
 
-  // ── Computed signals ─────────────────────────────────────────────────────
+  // ── Computed ─────────────────────────────────────────────────────────────
   describe('computed signals', () => {
     it('totalSesiones refleja los datos del calendarioDiario', () => {
       expect(component.totalSesiones()).toBe(2);
     });
 
     it('semanaTitulo se forma con inicioFormateado y finFormateado', () => {
-      expect(component.semanaTitulo()).toBe('10 mar – 16 mar');
+      expect(component.semanaTitulo()).toBe('9 mar – 15 mar');
     });
 
     it('sesiones mapea las sesiones del calendarioDiario a SesionData', () => {
@@ -159,58 +233,100 @@ describe('AgendaComponent', () => {
       expect(component.sesiones()[0].id).toBe('sesion-1');
     });
 
-    it('hayAlertas es false cuando no hay notificaciones urgentes', () => {
-      expect(component.hayAlertas()).toBe(false);
+    it('alertasUrgentes esta vacio cuando no hay notificaciones', () => {
+      expect(component.alertasUrgentes()).toHaveSize(0);
     });
 
-    it('hayAlertas es true cuando hay notificaciones URGENTE', () => {
+    it('alertasUrgentes recoge las notificaciones URGENTE y ALTA', () => {
       notifSvc._notificaciones.set([
         { id: 'n1', prioridad: 'URGENTE', leida: false, descartada: false },
+        { id: 'n2', prioridad: 'ALTA', leida: false, descartada: false },
+        { id: 'n3', prioridad: 'BAJA', leida: false, descartada: false },
       ]);
-      expect(component.hayAlertas()).toBe(true);
+      expect(component.alertasUrgentes()).toHaveSize(2);
+    });
+
+    it('tituloRango usa el rango de la semana en vista semana', () => {
+      expect(component.vista()).toBe('semana');
+      expect(component.tituloRango()).toBe('9 mar – 15 mar');
+    });
+
+    it('tituloRango usa la fecha completa en vista dia', () => {
+      component.setVista('dia');
+      expect(component.tituloRango()).toBe(component.fechaFormateada());
     });
   });
 
-  // ── Navegación por día ───────────────────────────────────────────────────
+  // ── Vista ────────────────────────────────────────────────────────────────
+  describe('vista', () => {
+    it('arranca en semana por defecto', () => {
+      expect(component.vista()).toBe('semana');
+    });
+
+    it('setVista() persiste la eleccion en localStorage', () => {
+      component.setVista('dia');
+      expect(localStorage.getItem('agenda.vista')).toBe('dia');
+    });
+
+    it('columnas() devuelve los 7 dias en vista semana', () => {
+      component.calendarioSemanal.set(mockCalendarioSemanal([
+        diaCon('2026-03-09', []), diaCon('2026-03-10', []), diaCon('2026-03-11', []),
+        diaCon('2026-03-12', []), diaCon('2026-03-13', []), diaCon('2026-03-14', []),
+        diaCon('2026-03-15', []),
+      ]) as any);
+      expect(component.columnas()).toHaveSize(7);
+    });
+
+    it('columnas() devuelve solo el dia seleccionado en vista dia', () => {
+      component.calendarioSemanal.set(mockCalendarioSemanal([
+        diaCon('2026-03-09', []), diaCon('2026-03-10', []), diaCon('2026-03-11', []),
+      ]) as any);
+      component.irADia('2026-03-10');
+      component.setVista('dia');
+      expect(component.columnas()).toHaveSize(1);
+      expect(component.columnas()[0].fecha).toBe('2026-03-10');
+    });
+  });
+
+  // ── Navegación ───────────────────────────────────────────────────────────
   describe('navegación', () => {
-    it('diaAnterior() retrocede un día y recarga', () => {
-      const fechaInicial = component.fechaSeleccionada();
-      sesionesSvc.getCalendarioDiario.calls.reset();
-      component.diaAnterior();
-      const esperada = new Date(fechaInicial);
-      esperada.setDate(esperada.getDate() - 1);
-      expect(component.fechaSeleccionada().toDateString()).toBe(esperada.toDateString());
-      expect(sesionesSvc.getCalendarioDiario).toHaveBeenCalled();
-    });
-
-    it('diaSiguiente() avanza un día y recarga', () => {
-      const fechaInicial = component.fechaSeleccionada();
-      component.diaSiguiente();
-      const esperada = new Date(fechaInicial);
-      esperada.setDate(esperada.getDate() + 1);
-      expect(component.fechaSeleccionada().toDateString()).toBe(esperada.toDateString());
-    });
-
-    it('irAHoy() establece la fecha de hoy', () => {
-      component.diaAnterior();
-      component.irAHoy();
-      expect(component.esHoy()).toBe(true);
-    });
-
-    it('semanaAnterior() retrocede 7 días', () => {
-      const fechaInicial = component.fechaSeleccionada();
-      component.semanaAnterior();
-      const esperada = new Date(fechaInicial);
+    it('desplazar(-1) retrocede 7 dias en vista semana', () => {
+      const inicial = component.fechaSeleccionada();
+      component.desplazar(-1);
+      const esperada = new Date(inicial);
       esperada.setDate(esperada.getDate() - 7);
       expect(component.fechaSeleccionada().toDateString()).toBe(esperada.toDateString());
     });
 
-    it('semanaSiguiente() avanza 7 días', () => {
-      const fechaInicial = component.fechaSeleccionada();
-      component.semanaSiguiente();
-      const esperada = new Date(fechaInicial);
+    it('desplazar(1) avanza 7 dias en vista semana', () => {
+      const inicial = component.fechaSeleccionada();
+      component.desplazar(1);
+      const esperada = new Date(inicial);
       esperada.setDate(esperada.getDate() + 7);
       expect(component.fechaSeleccionada().toDateString()).toBe(esperada.toDateString());
+    });
+
+    it('desplazar(-1) retrocede solo 1 dia en vista dia', () => {
+      component.setVista('dia');
+      const inicial = component.fechaSeleccionada();
+      component.desplazar(-1);
+      const esperada = new Date(inicial);
+      esperada.setDate(esperada.getDate() - 1);
+      expect(component.fechaSeleccionada().toDateString()).toBe(esperada.toDateString());
+    });
+
+    it('desplazar() recarga dia y semana', () => {
+      sesionesSvc.getCalendarioDiario.calls.reset();
+      sesionesSvc.getCalendarioSemanal.calls.reset();
+      component.desplazar(1);
+      expect(sesionesSvc.getCalendarioDiario).toHaveBeenCalled();
+      expect(sesionesSvc.getCalendarioSemanal).toHaveBeenCalled();
+    });
+
+    it('irAHoy() establece la fecha de hoy', () => {
+      component.desplazar(-1);
+      component.irAHoy();
+      expect(component.esHoy()).toBe(true);
     });
 
     it('irADia() selecciona la fecha especificada', () => {
@@ -220,8 +336,7 @@ describe('AgendaComponent', () => {
     });
 
     it('esDiaSeleccionado() devuelve true para la fecha actual', () => {
-      const iso = component.fechaISO();
-      expect(component.esDiaSeleccionado(iso)).toBe(true);
+      expect(component.esDiaSeleccionado(component.fechaISO())).toBe(true);
     });
 
     it('esDiaSeleccionado() devuelve false para otro día', () => {
@@ -233,8 +348,8 @@ describe('AgendaComponent', () => {
   describe('acciones sobre sesiones', () => {
     const mockSesion: any = {
       id: 'sesion-1',
-      estado: 'PROGRAMADA' as any,
-      tipoSesion: 'PEDAGOGIA' as any,
+      estado: 'PROGRAMADA',
+      tipoSesion: 'PEDAGOGIA',
       fechaHoraInicio: '2026-03-10T09:00:00.000Z',
       fechaHoraFin: '2026-03-10T10:00:00.000Z',
       clienteId: 'cliente-1',
@@ -257,29 +372,105 @@ describe('AgendaComponent', () => {
       );
     });
 
-    it('verCliente() navega a la ruta del cliente', () => {
-      const event = new MouseEvent('click');
-      component.verCliente('cliente-1', event);
-      expect(router.navigate).toHaveBeenCalledWith(['/home/listado', 'cliente-1', 'cliente']);
+    it('verCliente() navega a la ficha del cliente', () => {
+      component.verCliente('cliente-1', new MouseEvent('click'));
+      expect(router.navigate).toHaveBeenCalledWith(['/home/listado', 'cliente-1', 'perfil']);
     });
   });
 
-  // ── Helpers de grid ───────────────────────────────────────────────────────
+  // ── Rango horario adaptativo ─────────────────────────────────────────────
+  describe('rangoHoras()', () => {
+    const cargarSemana = (horas: { horaInicio: string; horaFin: string }[]) => {
+      component.calendarioSemanal.set(
+        mockCalendarioSemanal([diaCon('2026-03-10', horas)]) as any,
+      );
+      component.eventosAgenda.set([]);
+    };
+
+    it('sin actividad usa una jornada por defecto de 09:00 a 19:00', () => {
+      component.calendarioSemanal.set(mockCalendarioSemanal([]) as any);
+      component.eventosAgenda.set([]);
+      expect(component.rangoHoras()).toEqual({ inicio: 9, fin: 19 });
+      expect(component.horasCount()).toBe(10);
+    });
+
+    it('se ajusta a una jornada de mañana con una hora de respiro', () => {
+      cargarSemana([
+        { horaInicio: '09:00', horaFin: '10:00' },
+        { horaInicio: '12:00', horaFin: '13:00' },
+      ]);
+      expect(component.rangoHoras()).toEqual({ inicio: 8, fin: 14 });
+      expect(component.horasCount()).toBe(6);
+    });
+
+    it('se ajusta a una jornada de tarde: no pinta la mañana vacía', () => {
+      cargarSemana([
+        { horaInicio: '15:00', horaFin: '16:00' },
+        { horaInicio: '19:00', horaFin: '20:00' },
+      ]);
+      expect(component.rangoHoras()).toEqual({ inicio: 14, fin: 21 });
+    });
+
+    it('respeta la ventana mínima de 6 h con una sola sesión', () => {
+      cargarSemana([{ horaInicio: '10:00', horaFin: '11:00' }]);
+      // 9–12 serían solo 3 h: la ventana se expande hasta 6.
+      expect(component.horasCount()).toBeGreaterThanOrEqual(6);
+      expect(component.rangoHoras().inicio).toBeLessThanOrEqual(9);
+    });
+
+    it('la ventana envuelve la actividad: nada queda recortado', () => {
+      cargarSemana([
+        { horaInicio: '07:30', horaFin: '08:30' },
+        { horaInicio: '20:30', horaFin: '21:30' },
+      ]);
+      const { inicio, fin } = component.rangoHoras();
+      expect(inicio).toBeLessThanOrEqual(7.5);
+      expect(fin).toBeGreaterThanOrEqual(21.5);
+      expect(component.calcularTopPct('07:30')).toBeGreaterThanOrEqual(0);
+      expect(component.calcularTopPct('21:30')).toBeLessThanOrEqual(100);
+    });
+  });
+
+  // ── Geometría en porcentajes ─────────────────────────────────────────────
   describe('helpers del grid semanal', () => {
-    it('calcularTop() devuelve 0 para la hora de inicio del grid (08:00)', () => {
-      expect(component.calcularTop('08:00')).toBe(0);
+    beforeEach(() => {
+      // Rango conocido: 09:00–13:00 => inicio 8, fin 14, 6 horas.
+      component.calendarioSemanal.set(
+        mockCalendarioSemanal([
+          diaCon('2026-03-10', [
+            { horaInicio: '09:00', horaFin: '10:00' },
+            { horaInicio: '12:00', horaFin: '13:00' },
+          ]),
+        ]) as any,
+      );
+      component.eventosAgenda.set([]);
     });
 
-    it('calcularTop() devuelve 64px para 09:00 (1 hora después del inicio)', () => {
-      expect(component.calcularTop('09:00')).toBe(64);
+    it('calcularTopPct() devuelve 0 en el inicio del rango', () => {
+      expect(component.calcularTopPct('08:00')).toBe(0);
     });
 
-    it('calcularAltura() calcula altura proporcional (60 min = 64px)', () => {
-      expect(component.calcularAltura(60)).toBe(64);
+    it('calcularTopPct() sitúa una hora después a 1/6 del alto', () => {
+      expect(component.calcularTopPct('09:00')).toBeCloseTo(100 / 6, 6);
     });
 
-    it('calcularAltura() devuelve mínimo 18px para duraciones muy cortas', () => {
-      expect(component.calcularAltura(5)).toBe(18);
+    it('calcularAlturaPct() da a 60 min una fracción de 1/6', () => {
+      expect(component.calcularAlturaPct(60)).toBeCloseTo(100 / 6, 6);
+    });
+
+    it('calcularTopPct() queda siempre acotado entre 0 y 100', () => {
+      expect(component.calcularTopPct('00:00')).toBe(0);
+      expect(component.calcularTopPct('23:59')).toBe(100);
+    });
+
+    it('lineaPct() reparte las lineas horarias por el rango', () => {
+      expect(component.lineaPct(0)).toBe(0);
+      expect(component.lineaPct(6)).toBe(100);
+    });
+
+    it('horasGrid() cubre el rango de extremo a extremo', () => {
+      expect(component.horasGrid()[0]).toBe('08:00');
+      expect(component.horasGrid()[component.horasGrid().length - 1]).toBe('14:00');
     });
 
     it('getEventoBg() devuelve el color del tipo con transparencia', () => {
@@ -301,7 +492,38 @@ describe('AgendaComponent', () => {
       expect(component.getEstadoClass('COMPLETADA')).toBe('completada');
       expect(component.getEstadoClass('CANCELADA_CON_AVISO')).toBe('cancelada-aviso');
       expect(component.getEstadoClass('CANCELADA_SIN_AVISO')).toBe('cancelada-sin');
+      expect(component.getEstadoClass('VACACIONES')).toBe('vacaciones');
       expect(component.getEstadoClass('OTRO')).toBe('default');
+    });
+  });
+
+  // ── Tira de estadísticas ─────────────────────────────────────────────────
+  describe('statsRango()', () => {
+    it('en vista semana resume la semana', () => {
+      const labels = component.statsRango().map((c) => c.label);
+      expect(labels).toContain('clientes');
+      expect(component.statsRango()[0].valor).toBe(10);
+    });
+
+    it('en vista dia resume el dia', () => {
+      component.setVista('dia');
+      expect(component.statsRango()[0].valor).toBe(2);
+      expect(component.statsRango().map((c) => c.label)).not.toContain('clientes');
+    });
+  });
+
+  // ── Menú «+ Nuevo» ───────────────────────────────────────────────────────
+  describe('menú nuevo', () => {
+    it('arranca cerrado y alterna al pulsar', () => {
+      expect(component.menuNuevoAbierto()).toBe(false);
+      component.toggleMenuNuevo(new MouseEvent('click'));
+      expect(component.menuNuevoAbierto()).toBe(true);
+    });
+
+    it('un clic en el documento lo cierra', () => {
+      component.toggleMenuNuevo(new MouseEvent('click'));
+      component.cerrarMenuNuevo();
+      expect(component.menuNuevoAbierto()).toBe(false);
     });
   });
 
@@ -310,13 +532,6 @@ describe('AgendaComponent', () => {
     it('llama a notifSvc.descartar con el id', () => {
       component.descartarAlerta('notif-1');
       expect(notifSvc.descartar).toHaveBeenCalledWith('notif-1');
-    });
-  });
-
-  // ── Banner ────────────────────────────────────────────────────────────────
-  describe('bannerColapsado', () => {
-    it('bannerColapsado inicia en false', () => {
-      expect(component.bannerColapsado()).toBe(false);
     });
   });
 });

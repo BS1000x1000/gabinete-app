@@ -46,19 +46,25 @@ $info-light: #dbeafe;
 $info-dark: #2563eb;
 
 // ========================================
-// NEUTRALES (Grises) - Base de tu interfaz
+// NEUTRALES — base cálida ("papel")
 // ========================================
+// La escala anterior era gris azulado (#f9fafb, #6b7280): correcta pero fría.
+// Esta tiene un punto de arena, que es lo que da a la app un aire cercano sin
+// necesidad de adornos. El lila de marca no cambia: pasa de rellenar a acentuar.
+//
+// Se conservan los nombres `$gray-*` a propósito: hay ~780 usos repartidos por
+// 39 ficheros y renombrarlos no aportaría nada.
 $white: #ffffff;
-$gray-50: #f9fafb;          // Fondos muy sutiles
-$gray-100: #f3f4f6;         // Fondos cards, inputs disabled
-$gray-200: #e5e7eb;         // Bordes, separadores
-$gray-300: #d1d5db;         // Bordes activos
-$gray-400: #9ca3af;         // Texto disabled, iconos secundarios
-$gray-500: #6b7280;         // Texto secundario
-$gray-600: #4b5563;         // Texto normal
-$gray-700: #374151;         // Texto importante
-$gray-800: #1f2937;         // Títulos
-$gray-900: #111827;         // Texto principal, headers
+$gray-50: #faf8f5;          // Papel — fondo general
+$gray-100: #f4f1ec;         // Fondos sutiles, filas alternas
+$gray-200: #ebe7e0;         // Bordes, separadores
+$gray-300: #d9d3c9;         // Bordes activos
+$gray-400: #a9a199;         // Texto deshabilitado, iconos secundarios
+$gray-500: #6f6862;         // Texto secundario
+$gray-600: #574f49;         // Texto normal
+$gray-700: #453e39;         // Texto importante
+$gray-800: #332e2a;         // Títulos
+$gray-900: #2b2622;         // Texto principal
 $black: #000000;
 
 // ========================================

@@ -7,11 +7,11 @@ $dr-width-desktop: 55%;
 $dr-width-tablet: 90%;
 $dr-width-mobile: 100%;
 
-$dr-primary: #7c6fd6;
+$dr-primary: $primary;
 $dr-primary-dark: #6559c0;
 $dr-primary-soft: rgba(124, 111, 214, 0.1);
 $dr-primary-ring: rgba(124, 111, 214, 0.25);
-$dr-surface: #ffffff;
+$dr-surface: $white;
 $dr-border: #e8e5f5;
 $dr-text: #1a1825;
 $dr-text-muted: #8b84a8;
@@ -78,7 +78,7 @@ $dr-transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   padding: 0 24px;
   border-bottom: 1px solid $dr-border;
   flex-shrink: 0;
-  background: linear-gradient(135deg, #f9f8ff 0%, #ffffff 100%);
+  background: linear-gradient(135deg, #f9f8ff 0%, $white 100%);
 }
 
 .dr-header-icon {
@@ -234,7 +234,7 @@ $dr-transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     outline: none;
     border-color: $dr-primary;
     box-shadow: 0 0 0 3px $dr-primary-ring;
-    background-color: #fff;
+    background-color: $white;
   }
 
   &--error {
@@ -281,7 +281,7 @@ $dr-transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     outline: none;
     border-color: $dr-primary;
     box-shadow: 0 0 0 3px $dr-primary-ring;
-    background: #fff;
+    background: $white;
   }
 
   &--error {
@@ -321,7 +321,7 @@ $dr-transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 .dr-badge-count {
   margin-left: auto;
   background: $dr-primary;
-  color: #fff;
+  color: $white;
   font-size: 10.5px;
   font-weight: 700;
   border-radius: 20px;
@@ -409,16 +409,16 @@ $dr-transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   &--selected {
     background: var(--chip-color, $dr-primary);
     border-color: var(--chip-color, $dr-primary);
-    color: #fff;
+    color: $white;
     box-shadow: 0 2px 8px rgba(124, 111, 214, 0.3);
 
     i {
-      color: #fff;
+      color: $white;
     }
 
     &:hover {
       filter: brightness(0.92);
-      color: #fff;
+      color: $white;
     }
   }
 }
@@ -429,7 +429,7 @@ $dr-transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   width: 16px;
   height: 16px;
   border: 2px solid rgba(255, 255, 255, 0.4);
-  border-top-color: #fff;
+  border-top-color: $white;
   border-radius: 50%;
   animation: dr-spin 0.7s linear infinite;
   flex-shrink: 0;
@@ -525,7 +525,7 @@ $dr-transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
   &--primary {
     background: $dr-primary;
-    color: #fff;
+    color: $white;
     box-shadow: 0 4px 12px rgba(124, 111, 214, 0.35);
 
     &:hover:not(:disabled) {

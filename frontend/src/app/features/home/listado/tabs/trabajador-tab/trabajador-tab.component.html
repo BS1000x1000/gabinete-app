@@ -1,39 +1,49 @@
+<div class="terapeutas-tab">
+
 <!-- ═══════════════════════════════════════════════════════
      CABECERA
 ═══════════════════════════════════════════════════════ -->
-<div class="card mb-4">
-  <div class="card-header d-flex justify-content-between align-items-center">
-    <h5 class="mb-0">
-      <i class="bi bi-person-badge me-2"></i>
-      Terapeutas Asignados
-      <span class="badge bg-secondary ms-2">{{ asignaciones().length }}</span>
-    </h5>
-    <button class="btn btn-sm btn-primary" (click)="abrirModalAniadir()">
-      <i class="bi bi-plus-lg me-1"></i> Añadir terapeuta
+<div class="gb-header">
+  <div>
+    <h2 class="gb-header__titulo">
+      <i class="bi bi-person-badge"></i>Terapeutas asignados
+      <span class="gb-count">{{ asignaciones().length }}</span>
+    </h2>
+    <p class="gb-header__sub">Quién atiende al alumno y con qué terapia</p>
+  </div>
+  <div class="gb-header__acciones">
+    <button class="gb-btn gb-btn--primary" (click)="abrirModalAniadir()">
+      <i class="bi bi-plus-lg"></i><span>Añadir terapeuta</span>
     </button>
   </div>
+</div>
 
-  <div class="card-body">
+<div class="gb-card">
+  <div class="gb-card__body">
 
     <!-- Loading -->
-    <div *ngIf="isLoading()" class="text-center py-5">
-      <div class="spinner-border text-primary"></div>
-      <p class="text-muted mt-2 small">Cargando...</p>
+    <div *ngIf="isLoading()" class="gb-loading">
+      <span class="spinner-border spinner-border-sm"></span> Cargando terapeutas…
     </div>
 
     <!-- Vacío -->
-    <div *ngIf="!isLoading() && asignaciones().length === 0" class="text-center py-5 text-muted">
-      <i class="bi bi-person-x display-4"></i>
-      <p class="mt-3">Este cliente no tiene terapeutas asignados.</p>
-      <button class="btn btn-primary btn-sm" (click)="abrirModalAniadir()">
-        <i class="bi bi-plus-lg me-1"></i>Asignar primer terapeuta
-      </button>
+    <div *ngIf="!isLoading() && asignaciones().length === 0" class="gb-empty gb-empty--inline">
+      <i class="bi bi-person-x"></i>
+      <p class="gb-empty__titulo">Sin terapeutas asignados</p>
+      <p class="gb-empty__texto">
+        Asignar un terapeuta es lo que le da acceso a la ficha de este alumno.
+      </p>
+      <div class="gb-empty__acciones">
+        <button class="gb-btn gb-btn--primary" (click)="abrirModalAniadir()">
+          <i class="bi bi-plus-lg"></i><span>Asignar primer terapeuta</span>
+        </button>
+      </div>
     </div>
 
     <!-- Tabla -->
     <div *ngIf="!isLoading() && asignaciones().length > 0" class="table-responsive">
-      <table class="table table-hover align-middle mb-0">
-        <thead class="table-light">
+      <table class="gb-table">
+        <thead>
           <tr>
             <th>Profesional</th>
             <th>Tipo Terapia</th>
@@ -46,8 +56,7 @@
           <tr *ngFor="let asignacion of asignaciones()">
             <td>
               <div class="d-flex align-items-center gap-2">
-                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-semibold"
-                     style="width:38px;height:38px;font-size:.8rem;flex-shrink:0">
+                <div class="gb-avatar">
                   {{ asignacion.trabajador.nombre.charAt(0) }}{{ asignacion.trabajador.apellidos.charAt(0) }}
                 </div>
                 <div>
@@ -74,18 +83,12 @@
             <td class="text-center">
               <div class="d-flex justify-content-center gap-1 flex-wrap">
                 <!-- Editar horarios -->
-                <button class="btn btn-sm btn-outline-secondary" title="Editar horarios"
+                <button class="gb-btn gb-btn--sm gb-btn--icon" title="Editar horarios"
                         (click)="abrirModalHorarios(asignacion)">
                   <i class="bi bi-clock-history"></i>
                 </button>
-                <!-- Generar sesiones -->
-                <button class="btn btn-sm btn-outline-primary" title="Generar sesiones"
-                        [disabled]="asignacion.horarios.length === 0"
-                        (click)="abrirModalGenerar(asignacion)">
-                  <i class="bi bi-calendar-plus"></i>
-                </button>
                 <!-- Eliminar -->
-                <button class="btn btn-sm btn-outline-danger" title="Eliminar asignación"
+                <button class="gb-btn gb-btn--sm gb-btn--icon gb-btn--peligro" title="Eliminar asignación"
                         (click)="desasignarTrabajador(asignacion.id)">
                   <i class="bi bi-trash"></i>
                 </button>
@@ -143,7 +146,7 @@
           <!-- Horarios -->
           <div class="d-flex justify-content-between align-items-center mb-2">
             <h6 class="mb-0 fw-semibold"><i class="bi bi-clock me-2 text-muted"></i>Horarios de sesión</h6>
-            <button type="button" class="btn btn-sm btn-outline-primary" (click)="agregarHorarioAniadir()">
+            <button type="button" class="gb-btn gb-btn--sm" (click)="agregarHorarioAniadir()">
               <i class="bi bi-plus-lg me-1"></i>Añadir horario
             </button>
           </div>
@@ -175,7 +178,7 @@
               </div>
 
               <div class="col-md-2 text-end">
-                <button type="button" class="btn btn-sm btn-outline-danger"
+                <button type="button" class="gb-btn gb-btn--sm gb-btn--icon gb-btn--peligro"
                         [disabled]="horariosAniadir.length === 1"
                         (click)="quitarHorarioAniadir(i)" title="Eliminar">
                   <i class="bi bi-trash"></i>
@@ -193,8 +196,8 @@
       </div>
 
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary btn-sm" (click)="cerrarModalAniadir()">Cancelar</button>
-        <button type="button" class="btn btn-primary btn-sm"
+        <button type="button" class="gb-btn gb-btn--sm" (click)="cerrarModalAniadir()">Cancelar</button>
+        <button type="button" class="gb-btn gb-btn--primary gb-btn--sm"
                 [disabled]="guardandoAsignacion()"
                 (click)="guardarAsignacion()">
           <span *ngIf="guardandoAsignacion()" class="spinner-border spinner-border-sm me-2"></span>
@@ -207,91 +210,6 @@
   </div>
 </div>
 
-
-<!-- ═══════════════════════════════════════════════════════
-     MODAL: GENERAR SESIONES
-═══════════════════════════════════════════════════════ -->
-<div *ngIf="mostrarModalGenerar()" class="modal d-block" tabindex="-1" style="background:rgba(0,0,0,.5)">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-
-      <div class="modal-header">
-        <div>
-          <h5 class="modal-title mb-0"><i class="bi bi-calendar-plus me-2 text-primary"></i>Generar Sesiones</h5>
-          <small class="text-muted" *ngIf="asignacionSeleccionada()">
-            {{ asignacionSeleccionada()!.trabajador.nombre }} {{ asignacionSeleccionada()!.trabajador.apellidos }}
-            · {{ TIPO_SESION_LABELS[asignacionSeleccionada()!.tipoTerapia] ?? asignacionSeleccionada()!.tipoTerapia }}
-          </small>
-        </div>
-        <button type="button" class="btn-close" (click)="cerrarModalGenerar()"></button>
-      </div>
-
-      <div class="modal-body">
-
-        <!-- Resumen horarios -->
-        <div class="alert alert-light border mb-3 py-2">
-          <small class="text-muted fw-semibold d-block mb-1">Horarios:</small>
-          <div *ngFor="let h of asignacionSeleccionada()?.horarios" class="small">
-            <i class="bi bi-clock me-1 text-primary"></i>
-            <strong>{{ getDiaNombre(h.diaSemana) }}</strong>: {{ h.horaInicio }}–{{ h.horaFin }}
-          </div>
-        </div>
-
-        <form [formGroup]="formGenerar">
-          <div class="row g-3">
-            <div class="col-6">
-              <label class="form-label small fw-semibold">Fecha inicio</label>
-              <input type="date" class="form-control form-control-sm" formControlName="fechaInicio">
-            </div>
-            <div class="col-6">
-              <label class="form-label small fw-semibold">Fecha fin</label>
-              <input type="date" class="form-control form-control-sm" formControlName="fechaFin">
-            </div>
-            <div class="col-12">
-              <label class="form-label small fw-semibold">Tipo de sesión</label>
-              <select class="form-select form-select-sm" formControlName="tipoSesion">
-                <option *ngFor="let t of TIPOS_SESION" [value]="t.value">{{ t.label }}</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Estimación -->
-          <div class="mt-3 p-3 rounded bg-light d-flex align-items-center gap-3">
-            <i class="bi bi-calculator text-primary fs-4"></i>
-            <div>
-              <span class="fw-semibold fs-5">{{ sesionesEstimadas() }}</span>
-              <span class="text-muted ms-1">sesiones estimadas</span>
-              <div class="text-muted small">Según horarios y rango seleccionado</div>
-            </div>
-          </div>
-        </form>
-
-        <div *ngIf="errorGeneracion()" class="alert alert-danger mt-3 mb-0 py-2 small">
-          <i class="bi bi-exclamation-triangle me-2"></i>{{ errorGeneracion() }}
-        </div>
-        <div *ngIf="resultadoGeneracion()" class="alert alert-success mt-3 mb-0 py-2 small">
-          <i class="bi bi-check-circle me-2"></i>
-          <strong>{{ resultadoGeneracion()!.sesionesCreadas }} sesiones generadas</strong> correctamente.
-        </div>
-
-      </div>
-
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary btn-sm" (click)="cerrarModalGenerar()">
-          {{ resultadoGeneracion() ? 'Cerrar' : 'Cancelar' }}
-        </button>
-        <button *ngIf="!resultadoGeneracion()" type="button" class="btn btn-primary btn-sm"
-                [disabled]="formGenerar.invalid || generando() || sesionesEstimadas() === 0"
-                (click)="generarSesiones()">
-          <span *ngIf="generando()" class="spinner-border spinner-border-sm me-2"></span>
-          <i *ngIf="!generando()" class="bi bi-calendar-plus me-2"></i>
-          {{ generando() ? 'Generando...' : 'Generar ' + sesionesEstimadas() + ' sesiones' }}
-        </button>
-      </div>
-
-    </div>
-  </div>
-</div>
 
 <!-- ═══════════════════════════════════════════════════════
      MODAL: EDITAR HORARIOS — reemplaza el modal completo
@@ -316,40 +234,20 @@
       <div class="modal-body">
 
         <!-- ── AVISO DE CONFIRMACIÓN ── -->
-        <div *ngIf="confirmacionPendiente()" class="alert alert-warning border-warning">
-          <div class="d-flex align-items-start gap-2">
-            <i class="bi bi-exclamation-triangle-fill text-warning fs-5 mt-1 flex-shrink-0"></i>
-            <div>
-              <div class="fw-semibold mb-1">Sesiones futuras afectadas</div>
-              <p class="mb-3 small">
-                Hay <strong>{{ confirmacionPendiente()!.sesionesFuturas }} sesiones futuras</strong>
-                programadas para este terapeuta. Si confirmas, se eliminarán y se regenerarán
-                automáticamente con el nuevo horario hasta la última fecha existente.
-              </p>
-              <div class="d-flex gap-2">
-                <button type="button" class="btn btn-sm btn-warning fw-semibold"
-                        [disabled]="guardandoHorarios()"
-                        (click)="confirmarActualizacionHorarios()">
-                  <span *ngIf="guardandoHorarios()" class="spinner-border spinner-border-sm me-2"></span>
-                  <i *ngIf="!guardandoHorarios()" class="bi bi-arrow-repeat me-1"></i>
-                  Sí, actualizar {{ confirmacionPendiente()!.sesionesFuturas }} sesiones
-                </button>
-                <button type="button" class="btn btn-sm btn-outline-secondary"
-                        (click)="confirmacionPendiente.set(null)">
-                  Volver a editar
-                </button>
-              </div>
-            </div>
-          </div>
+        <!-- Estos horarios ya NO generan ni mueven sesiones: el calendario lo
+             gobierna el contrato. Se conservan como referencia de la asignacion. -->
+        <div class="alert alert-info py-2 small">
+          <i class="bi bi-info-circle me-2"></i>
+          Cambiar estos horarios <strong>no modifica las sesiones ya programadas</strong>.
+          El calendario se define en la pestaña <strong>Contratos</strong>.
         </div>
 
-        <!-- ── FORMULARIO DE HORARIOS (oculto durante confirmación) ── -->
-        <div *ngIf="!confirmacionPendiente()">
+        <div>
           <form [formGroup]="formHorarios">
 
             <div class="d-flex justify-content-between align-items-center mb-3">
               <p class="text-muted small mb-0">Modifica, añade o elimina los horarios de esta asignación.</p>
-              <button type="button" class="btn btn-sm btn-outline-primary" (click)="agregarHorarioEditar()">
+              <button type="button" class="gb-btn gb-btn--sm" (click)="agregarHorarioEditar()">
                 <i class="bi bi-plus-lg me-1"></i>Añadir
               </button>
             </div>
@@ -381,7 +279,7 @@
                 </div>
 
                 <div class="col-1 text-end">
-                  <button type="button" class="btn btn-sm btn-outline-danger"
+                  <button type="button" class="gb-btn gb-btn--sm gb-btn--icon gb-btn--peligro"
                           [disabled]="horariosEditar.length === 1"
                           (click)="quitarHorarioEditar(i)">
                     <i class="bi bi-trash"></i>
@@ -402,9 +300,9 @@
       </div>
 
       <!-- Footer — solo visible cuando NO hay confirmación pendiente -->
-      <div class="modal-footer" *ngIf="!confirmacionPendiente()">
-        <button type="button" class="btn btn-secondary btn-sm" (click)="cerrarModalHorarios()">Cancelar</button>
-        <button type="button" class="btn btn-primary btn-sm"
+      <div class="modal-footer">
+        <button type="button" class="gb-btn gb-btn--sm" (click)="cerrarModalHorarios()">Cancelar</button>
+        <button type="button" class="gb-btn gb-btn--primary gb-btn--sm"
                 [disabled]="guardandoHorarios()"
                 (click)="guardarHorarios()">
           <span *ngIf="guardandoHorarios()" class="spinner-border spinner-border-sm me-2"></span>
@@ -425,4 +323,6 @@
   (confirmed)="onConfirmado()"
   (cancelled)="onCancelado()"
 ></app-confirm-modal>
+</div>
+
 </div>

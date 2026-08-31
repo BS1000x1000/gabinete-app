@@ -1,4 +1,4 @@
-<div class="card border-0 shadow-sm rounded-3 tab-content bg-white py-2">
+<div class="documentacion-tab">
 
   <!-- Loader principal -->
   <div *ngIf="cargando()" class="text-center py-5">
@@ -10,20 +10,20 @@
     <!-- ══════════════════════════════════════════════════════════
          VISTA: LISTA DE INFORMES
     ══════════════════════════════════════════════════════════ -->
-    <div *ngIf="vista() === 'lista'" class="px-4 py-3">
+    <div *ngIf="vista() === 'lista'">
 
       <!-- ═══ Barra de herramientas del expediente ═══ -->
-      <div class="doc-toolbar">
-        <div class="doc-toolbar__title">
-          <h6>Documentación</h6>
-          <p class="doc-toolbar__sub">
+      <div class="gb-header">
+        <div>
+          <h2 class="gb-header__titulo"><i class="bi bi-folder2"></i>Documentación</h2>
+          <p class="gb-header__sub">
             {{ totalInformes() }} informe{{ totalInformes() !== 1 ? 's' : '' }}
             <span class="doc-dot">·</span>
             {{ totalDocumentos() }} documento{{ totalDocumentos() !== 1 ? 's' : '' }} externo{{ totalDocumentos() !== 1 ? 's' : '' }}
           </p>
         </div>
 
-        <div class="doc-toolbar__actions">
+        <div class="gb-header__acciones">
           <div class="doc-search">
             <i class="bi bi-search"></i>
             <input
@@ -35,23 +35,23 @@
             />
           </div>
 
-          <button class="doc-btn doc-btn--ghost" (click)="abrirSubida()">
+          <button class="gb-btn gb-btn--ghost" (click)="abrirSubida()">
             <i class="bi bi-upload"></i><span>Subir documento</span>
           </button>
 
           <div class="doc-generar">
-            <button class="doc-btn doc-btn--primary" (click)="abrirFormNuevo()">
+            <button class="gb-btn gb-btn--primary" (click)="abrirFormNuevo()">
               <i class="bi bi-plus-lg"></i><span>Nuevo informe</span>
             </button>
             <button
-              class="doc-btn doc-btn--icon"
+              class="gb-btn gb-btn--icon"
               title="Generar informe de sesiones para la familia"
               aria-label="Generar informe de sesiones"
               [class.is-active]="mostrarFormBorrador()"
               (click)="abrirFormBorrador()"
             ><i class="bi bi-envelope-paper"></i></button>
             <button
-              class="doc-btn doc-btn--icon"
+              class="gb-btn gb-btn--icon"
               title="Generar informe de progreso por objetivos"
               aria-label="Generar informe de progreso"
               [class.is-active]="mostrarFormObjetivos()"
@@ -186,7 +186,7 @@
 
         <div class="doc-subida__acciones">
           <button
-            class="doc-btn doc-btn--primary"
+            class="gb-btn gb-btn--primary"
             [disabled]="!ficheroSel() || subiendo()"
             (click)="confirmarSubida()"
           >
@@ -194,7 +194,7 @@
             <i *ngIf="!subiendo()" class="bi bi-check2"></i>
             <span>{{ subiendo() ? 'Subiendo…' : 'Subir al expediente' }}</span>
           </button>
-          <button class="doc-btn doc-btn--ghost" (click)="cerrarSubida()">Cancelar</button>
+          <button class="gb-btn gb-btn--ghost" (click)="cerrarSubida()">Cancelar</button>
         </div>
       </div>
 
@@ -230,7 +230,7 @@
         </div>
         <div class="d-flex gap-2">
           <button
-            class="btn btn-success btn-sm"
+            class="gb-btn gb-btn--primary gb-btn--sm"
             (click)="generarBorrador()"
             [disabled]="!formBorrador().desde || !formBorrador().hasta || guardando()"
           >
@@ -238,7 +238,7 @@
             <i *ngIf="!guardando()" class="bi bi-magic me-1"></i>
             {{ guardando() ? 'Generando...' : 'Generar borrador' }}
           </button>
-          <button class="btn btn-outline-secondary btn-sm" (click)="mostrarFormBorrador.set(false)">
+          <button class="gb-btn gb-btn--sm" (click)="mostrarFormBorrador.set(false)">
             Cancelar
           </button>
         </div>
@@ -276,7 +276,7 @@
         </div>
         <div class="d-flex gap-2">
           <button
-            class="btn btn-sm"
+            class="gb-btn gb-btn--sm"
             style="background: #7c3aed; color: white;"
             (click)="generarBorradorObjetivos()"
             [disabled]="!formObjetivos().desde || !formObjetivos().hasta || guardando()"
@@ -285,7 +285,7 @@
             <i *ngIf="!guardando()" class="bi bi-magic me-1"></i>
             {{ guardando() ? 'Generando...' : 'Generar borrador' }}
           </button>
-          <button class="btn btn-outline-secondary btn-sm" (click)="mostrarFormObjetivos.set(false)">
+          <button class="gb-btn gb-btn--sm" (click)="mostrarFormObjetivos.set(false)">
             Cancelar
           </button>
         </div>
@@ -350,14 +350,14 @@
 
         <div class="d-flex gap-2">
           <button
-            class="btn btn-primary btn-sm"
+            class="gb-btn gb-btn--primary gb-btn--sm"
             (click)="crearInforme()"
             [disabled]="!formNuevo().titulo.trim() || guardando()"
           >
             <span *ngIf="guardando()" class="spinner-border spinner-border-sm me-1"></span>
             <i *ngIf="!guardando()" class="bi bi-check2 me-1"></i>Crear y editar
           </button>
-          <button class="btn btn-outline-secondary btn-sm" (click)="mostrarFormNuevo.set(false)">
+          <button class="gb-btn gb-btn--sm" (click)="mostrarFormNuevo.set(false)">
             Cancelar
           </button>
         </div>
@@ -366,19 +366,19 @@
       <!-- ═══ Expediente vacío ═══ -->
       <div
         *ngIf="filas().todas.length === 0 && !mostrarFormNuevo() && !mostrarFormBorrador() && !mostrarSubida()"
-        class="doc-vacio"
+        class="gb-empty"
       >
         <i class="bi bi-folder2-open"></i>
-        <p class="doc-vacio__titulo">El expediente está vacío</p>
-        <p class="doc-vacio__texto">
+        <p class="gb-empty__titulo">El expediente está vacío</p>
+        <p class="gb-empty__texto">
           Aquí se reúnen los informes que genera el gabinete y la documentación externa
           del alumno: informes médicos, escolares y administrativos.
         </p>
-        <div class="doc-vacio__acciones">
-          <button class="doc-btn doc-btn--primary" (click)="abrirFormNuevo()">
+        <div class="gb-empty__acciones">
+          <button class="gb-btn gb-btn--primary" (click)="abrirFormNuevo()">
             <i class="bi bi-plus-lg"></i><span>Crear primer informe</span>
           </button>
-          <button class="doc-btn doc-btn--ghost" (click)="abrirSubida()">
+          <button class="gb-btn gb-btn--ghost" (click)="abrirSubida()">
             <i class="bi bi-upload"></i><span>Subir documento</span>
           </button>
         </div>
@@ -523,13 +523,13 @@
       <!-- Columna izquierda: navegación de secciones -->
       <div class="border-end p-3" style="width: 220px; flex-shrink: 0;">
 
-        <button class="btn btn-link btn-sm text-muted p-0 mb-3 d-flex align-items-center gap-1" (click)="volverALista()">
+        <button class="gb-btn gb-btn--ghost gb-btn--sm mb-3" (click)="volverALista()">
           <i class="bi bi-chevron-left"></i> Volver
         </button>
 
         <div class="mb-3">
           <span
-            class="badge mb-1"
+            class="gb-badge mb-1"
             [style.background-color]="TIPO_LABELS[informeActivo()!.tipoInforme].bg"
             [style.color]="TIPO_LABELS[informeActivo()!.tipoInforme].color"
             style="border: 1px solid currentColor; font-size: 0.7rem;"
@@ -560,7 +560,7 @@
         <div class="d-grid gap-2">
           <button
             *ngIf="!esBloqueado()"
-            class="btn btn-success btn-sm"
+            class="gb-btn gb-btn--primary gb-btn--sm"
             (click)="guardarSeccion()"
             [disabled]="guardando()"
           >
@@ -569,14 +569,14 @@
           </button>
           <button
             *ngIf="!esBloqueado()"
-            class="btn btn-outline-success btn-sm"
+            class="gb-btn gb-btn--sm"
             (click)="finalizarInforme()"
             [disabled]="guardando()"
           >
             <i class="bi bi-lock me-1"></i>Finalizar
           </button>
           <button
-            class="btn btn-outline-secondary btn-sm"
+            class="gb-btn gb-btn--sm"
             (click)="descargarPdf()"
             [disabled]="descargandoPdf()"
           >
@@ -586,7 +586,7 @@
           </button>
           <button
             *ngIf="tienePdfArchivado()"
-            class="btn btn-outline-primary btn-sm"
+            class="gb-btn gb-btn--sm"
             (click)="abrirPdfArchivado()"
             [disabled]="abriendo()"
             title="Ver la copia archivada del informe (PDF inmutable)"
@@ -654,10 +654,10 @@
           </div>
           <div *ngFor="let obj of snapshotGAS()" class="mb-4">
             <div class="d-flex align-items-center gap-2 mb-2">
-              <span class="badge bg-secondary" style="font-size: 0.72rem;">{{ obj.area }}</span>
+              <span class="gb-badge" style="font-size: 0.72rem;">{{ obj.area }}</span>
               <span class="fw-semibold small">{{ obj.objetivo }}</span>
-              <span *ngIf="obj.nivelActual !== null" class="badge bg-secondary-dark ms-auto" style="font-size: 0.72rem;">Nivel {{ getNivelShort(obj.nivelActual) }}</span>
-              <span *ngIf="obj.nivelActual === null" class="badge bg-secondary bg-opacity-25 text-secondary ms-auto" style="font-size: 0.72rem;">Sin evaluar</span>
+              <span *ngIf="obj.nivelActual !== null" class="gb-badge ms-auto" style="font-size: 0.72rem;">Nivel {{ getNivelShort(obj.nivelActual) }}</span>
+              <span *ngIf="obj.nivelActual === null" class="gb-badge ms-auto" style="font-size: 0.72rem;">Sin evaluar</span>
             </div>
             <div *ngIf="obj.niveles && obj.niveles.length === 5" class="table-responsive mb-2">
               <table class="table table-sm table-bordered text-center align-middle mb-0" style="font-size: 0.78rem;">
@@ -700,13 +700,13 @@
       <!-- Columna izquierda -->
       <div class="border-end p-3" style="width: 220px; flex-shrink: 0;">
 
-        <button class="btn btn-link btn-sm text-muted p-0 mb-3 d-flex align-items-center gap-1" (click)="volverALista()">
+        <button class="gb-btn gb-btn--ghost gb-btn--sm mb-3" (click)="volverALista()">
           <i class="bi bi-chevron-left"></i> Volver
         </button>
 
         <div class="mb-3">
           <span
-            class="badge mb-1"
+            class="gb-badge mb-1"
             [style.background-color]="getTipoLabel(informeActivo()!.tipoInforme).bg"
             [style.color]="getTipoLabel(informeActivo()!.tipoInforme).color"
             style="border: 1px solid currentColor; font-size: 0.7rem;"
@@ -736,7 +736,7 @@
           <!-- Guardar (solo si no enviado) -->
           <button
             *ngIf="!esEnviado()"
-            class="btn btn-success btn-sm"
+            class="gb-btn gb-btn--primary gb-btn--sm"
             (click)="guardarContenido()"
             [disabled]="guardando()"
           >
@@ -747,7 +747,7 @@
           <!-- Enviar a familia (solo si no enviado) -->
           <button
             *ngIf="!esEnviado()"
-            class="btn btn-sm informe-enviar-btn"
+            class="gb-btn gb-btn--primary gb-btn--sm"
             (click)="confirmarEnvio()"
             [disabled]="enviando() || guardando()"
           >

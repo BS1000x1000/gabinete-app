@@ -1,4 +1,20 @@
 <div class="sesiones-tab">
+
+  <div class="gb-header">
+    <div>
+      <h2 class="gb-header__titulo">
+        <i class="bi bi-calendar2-week"></i>Sesiones
+        <span class="gb-count">{{ stats().total }}</span>
+      </h2>
+      <p class="gb-header__sub">Las recurrentes las genera el contrato; aquí se añaden las sueltas</p>
+    </div>
+    <div class="gb-header__acciones">
+      <button *ngIf="!auth.isRecep()" class="gb-btn gb-btn--primary" (click)="abrirNuevaSesion()" type="button">
+        <i class="bi bi-plus-lg"></i><span>Nueva sesión</span>
+      </button>
+    </div>
+  </div>
+
   <!-- ==========================================
        CABECERA CON ESTADÍSTICAS
        ========================================== -->
@@ -87,7 +103,7 @@
     <!-- Limpiar filtros -->
     <button
       *ngIf="filtroEstado() !== 'TODAS' || filtroMes()"
-      class="btn btn-sm btn-link text-danger p-0 ms-auto"
+      class="gb-btn gb-btn--ghost gb-btn--sm gb-btn--peligro ms-auto"
       (click)="limpiarFiltros()"
     >
       <i class="bi bi-x-circle me-1"></i>Limpiar filtros
@@ -108,7 +124,7 @@
   <div *ngIf="error() && !isLoading()" class="alert alert-danger m-3">
     <i class="bi bi-exclamation-triangle me-2"></i>{{ error() }}
     <button
-      class="btn btn-sm btn-outline-danger ms-3"
+      class="gb-btn gb-btn--sm gb-btn--peligro ms-3"
       (click)="cargarSesiones()"
     >
       Reintentar
@@ -118,7 +134,7 @@
   <!-- Sin resultados -->
   <div
     *ngIf="!isLoading() && !error() && sesionesFiltradas().length === 0"
-    class="sesiones-empty"
+    class="gb-empty gb-empty--inline"
   >
     <i class="bi bi-calendar-x"></i>
     <p *ngIf="sesiones().length === 0">
@@ -129,7 +145,7 @@
     </p>
     <button
       *ngIf="sesiones().length > 0"
-      class="btn btn-sm btn-outline-primary"
+      class="gb-btn gb-btn--sm"
       (click)="limpiarFiltros()"
     >
       Quitar filtros

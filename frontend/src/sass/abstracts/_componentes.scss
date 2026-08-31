@@ -1,0 +1,475 @@
+// ============================================================
+// PRIMITIVAS COMPARTIDAS — el sistema de diseño de la ficha
+//
+// Dirección: "cuaderno del gabinete". Papel cálido, tinta lila, mucho aire.
+// Ni clínico ni infantil: un cuaderno bien llevado en una sala luminosa.
+//
+// Regla que gobierna el conjunto: EL LILA SEÑALA, NO RELLENA. Marca lo activo,
+// lo seleccionado y la acción primaria. Todo lo demás vive sobre papel y grises
+// cálidos. Un acento vale cuando escasea.
+//
+// Regla de contraste: `$primary` (3.9:1 sobre papel) vale para rellenos, bordes
+// e iconos, pero NO para texto pequeño. Para texto sobre fondo claro se usa
+// `$primary-dark` (6.4:1).
+//
+// Estas clases sustituyen a los dialectos que habían crecido por separado:
+// 14 sistemas de botón, 20 de badge, 6 de estado vacío y 8 de cabecera.
+// ============================================================
+
+// ── Tarjeta ─────────────────────────────────────────────────
+// Una sola definición de "superficie de contenido".
+
+.gb-card {
+  background: $bg-card;
+  border: 1px solid $border-color;
+  border-radius: $border-radius-lg;
+  overflow: hidden;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    padding: 0.8rem $spacing-md;
+    border-bottom: 1px solid $border-color-light;
+  }
+
+  &__body {
+    padding: $spacing-md;
+  }
+
+  // Solo para tarjetas que son enlaces o abren algo
+  &--interactiva {
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+    cursor: pointer;
+
+    &:hover {
+      border-color: $primary-light;
+      background: $primary-ultra-light;
+    }
+  }
+}
+
+// ── Cabecera de pestaña ─────────────────────────────────────
+// Título a la izquierda, acción primaria SIEMPRE arriba a la derecha.
+// Antes había 8 tamaños de título distintos y dos pestañas sin ninguno; al
+// cambiar de pestaña la jerarquía se reiniciaba.
+
+.gb-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $spacing-md;
+  flex-wrap: wrap;
+  margin-bottom: $spacing-md;
+
+  &__titulo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    font-size: $font-size-md;
+    font-weight: $font-weight-bold;
+    color: $gray-900;
+    letter-spacing: -0.01em;
+
+    i { color: $primary; font-size: 0.95em; }
+  }
+
+  &__sub {
+    margin: 0.15rem 0 0;
+    font-size: $font-size-xs;
+    color: $gray-500;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__acciones {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    flex-wrap: wrap;
+  }
+}
+
+/** Recuento junto al título. Antes se dibujaba de seis formas distintas. */
+.gb-count {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.05rem 0.4rem;
+  font-size: 0.68rem;
+  font-weight: $font-weight-bold;
+  font-variant-numeric: tabular-nums;
+  color: $primary-dark;
+  background: $primary-light;
+  border-radius: $border-radius-full;
+}
+
+// ── Botón ───────────────────────────────────────────────────
+// Un solo sistema. Antes: 14, con tres radios distintos para la misma acción
+// primaria (0.375 / 0.5 / 0.75rem), lo que se notaba al cambiar de pestaña.
+
+.gb-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  height: 2.15rem;
+  padding: 0 0.85rem;
+  font-family: inherit;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  white-space: nowrap;
+  color: $gray-700;
+  background: $bg-card;
+  border: 1px solid $border-color;
+  border-radius: $border-radius;
+  cursor: pointer;
+  transition: $transition-color;
+
+  i { font-size: 0.9em; }
+
+  &:hover:not(:disabled) {
+    border-color: $primary-light;
+    background: $primary-ultra-light;
+    color: $primary-dark;
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba($primary, 0.25);
+  }
+
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /** La acción primaria de la pantalla. Como mucho una por vista. */
+  &--primary {
+    background: $primary;
+    border-color: $primary;
+    color: $white;
+
+    &:hover:not(:disabled) {
+      background: $primary-dark;
+      border-color: $primary-dark;
+      color: $white;
+    }
+  }
+
+  /** Sin marco: para acciones secundarias que no deben competir. */
+  &--ghost {
+    border-color: transparent;
+    background: transparent;
+    color: $gray-600;
+
+    &:hover:not(:disabled) { background: $primary-ultra-light; }
+  }
+
+  &--peligro:hover:not(:disabled) {
+    border-color: $danger;
+    background: $danger-light;
+    color: $danger-dark;
+  }
+
+  /** Cuadrado, solo icono. Exige `aria-label` o `title`. */
+  &--icon {
+    width: 2.15rem;
+    padding: 0;
+  }
+
+  &--sm {
+    height: 1.8rem;
+    padding: 0 0.6rem;
+    font-size: $font-size-xs;
+
+    &.gb-btn--icon { width: 1.8rem; padding: 0; }
+  }
+}
+
+// ── Distintivo de estado ────────────────────────────────────
+// Siempre cápsula. Antes convivían seis literales para "redondo del todo"
+// (9999px / 999px / 99px / 50px / 20px / 10px) y algunos eran rectangulares.
+
+.gb-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.68rem;
+  font-weight: $font-weight-semibold;
+  white-space: nowrap;
+  line-height: 1.5;
+  border: 1px solid transparent;
+  border-radius: $border-radius-full;
+  background: $gray-100;
+  color: $gray-600;
+  border-color: $gray-200;
+
+  &--exito    { background: $success-light;   color: $success-dark;   border-color: rgba($success, 0.35); }
+  &--aviso    { background: $warning-light;   color: $warning-dark;   border-color: rgba($warning, 0.35); }
+  &--peligro  { background: $danger-light;    color: $danger-dark;    border-color: rgba($danger, 0.35); }
+  &--info     { background: $secondary-light; color: $secondary-dark; border-color: rgba($secondary, 0.35); }
+  &--acento   { background: $primary-light;   color: $primary-dark;   border-color: rgba($primary, 0.35); }
+  &--neutro   { background: transparent;      color: $gray-500;       border-color: $gray-200; }
+}
+
+// ── Estado vacío ────────────────────────────────────────────
+// Antes: seis implementaciones, con iconos de 1.5rem a 3.5rem, unas con CTA y
+// otras solo con texto en cursiva. Al vaciar dos pestañas parecían apps distintas.
+
+.gb-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: $spacing-2xl $spacing-md;
+  border: 1px dashed $border-color;
+  border-radius: $border-radius-lg;
+  background: $gray-50;
+
+  > i {
+    font-size: 2rem;
+    color: $gray-300;
+    margin-bottom: $spacing-sm;
+  }
+
+  &__titulo {
+    margin: 0 0 0.25rem;
+    font-size: $font-size-base;
+    font-weight: $font-weight-semibold;
+    color: $gray-800;
+  }
+
+  &__texto {
+    max-width: 30rem;
+    margin: 0;
+    font-size: $font-size-sm;
+    line-height: $line-height-normal;
+    color: $gray-500;
+  }
+
+  &__acciones {
+    display: flex;
+    gap: $spacing-sm;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: $spacing-md;
+  }
+
+  /** Variante sin marco, para huecos dentro de una tarjeta. */
+  &--inline {
+    border: none;
+    background: transparent;
+    padding: $spacing-lg $spacing-md;
+  }
+}
+
+// ── Tabla ───────────────────────────────────────────────────
+// Antes había tres estéticas de tabla y la misma información se pintaba como
+// tabla en una pestaña y como tarjetas en la de al lado.
+
+.gb-table-wrap {
+  border: 1px solid $border-color;
+  border-radius: $border-radius-lg;
+  overflow: hidden;
+  background: $bg-card;
+}
+
+.gb-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: $font-size-sm;
+
+  thead th {
+    padding: 0.55rem 0.75rem;
+    text-align: left;
+    font-size: 0.68rem;
+    font-weight: $font-weight-bold;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: $gray-500;
+    background: $gray-50;
+    border-bottom: 1px solid $border-color;
+    white-space: nowrap;
+  }
+
+  tbody td {
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid $border-color-light;
+    color: $gray-700;
+    vertical-align: middle;
+  }
+
+  tbody tr:last-child td { border-bottom: none; }
+
+  // Fechas y cantidades alineadas: es una tabla de registros, no de texto
+  .gb-num {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+}
+
+.gb-fila {
+  transition: background-color 0.15s ease;
+
+  &--clicable {
+    cursor: pointer;
+
+    &:hover { background: $primary-ultra-light; }
+    &:hover .gb-fila__acciones { opacity: 1; }
+
+    &:focus-visible {
+      outline: none;
+      background: $primary-ultra-light;
+      box-shadow: inset 3px 0 0 $primary;
+    }
+  }
+
+  &__acciones {
+    display: flex;
+    gap: 0.25rem;
+    justify-content: flex-end;
+    opacity: 0;
+    transition: $transition-opacity;
+
+    // Sin hover (táctil o teclado) las acciones deben seguir alcanzándose
+    @media (hover: none) { opacity: 1; }
+    &:focus-within { opacity: 1; }
+  }
+}
+
+// ── Filtros ─────────────────────────────────────────────────
+// Antes: `.filtro-pill` definida en dos SCSS distintos, más `.doc-segmented` y
+// `.doc-chip`. Tres interfaces para el mismo gesto.
+
+.gb-filtros {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm $spacing-md;
+  flex-wrap: wrap;
+  padding-bottom: $spacing-sm;
+  margin-bottom: $spacing-md;
+  border-bottom: 1px solid $border-color-light;
+}
+
+.gb-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.65rem;
+  font-family: inherit;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $gray-600;
+  background: transparent;
+  border: 1px solid $border-color;
+  border-radius: $border-radius-full;
+  cursor: pointer;
+  transition: $transition-color;
+
+  &:hover { border-color: $primary-light; color: $primary-dark; }
+
+  &.is-active {
+    background: $primary-ultra-light;
+    border-color: $primary;
+    color: $primary-dark;
+    font-weight: $font-weight-semibold;
+  }
+
+  &:focus-visible { outline: 2px solid $primary; outline-offset: 1px; }
+}
+
+/** Control segmentado: opciones excluyentes de un mismo eje. */
+.gb-segmented {
+  display: inline-flex;
+  padding: 2px;
+  background: $gray-100;
+  border-radius: $border-radius;
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.7rem;
+    font-family: inherit;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    color: $gray-500;
+    background: transparent;
+    border: none;
+    border-radius: calc(#{$border-radius} - 2px);
+    cursor: pointer;
+    transition: $transition-color;
+
+    &:hover { color: $gray-800; }
+
+    &.is-active {
+      background: $bg-card;
+      color: $primary-dark;
+      box-shadow: $shadow-sm;
+    }
+
+    &:focus-visible { outline: 2px solid $primary; outline-offset: -2px; }
+  }
+}
+
+// ── Carga ───────────────────────────────────────────────────
+
+.gb-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: $spacing-2xl $spacing-md;
+  font-size: $font-size-sm;
+  color: $gray-500;
+}
+
+// ── Pares etiqueta / valor ──────────────────────────────────
+
+.gb-dato {
+  display: flex;
+  align-items: baseline;
+  gap: $spacing-sm;
+  padding: 0.35rem 0;
+
+  & + & { border-top: 1px solid $border-color-light; }
+
+  &__label {
+    flex: 0 0 8.5rem;
+    font-size: $font-size-xs;
+    color: $gray-500;
+  }
+
+  &__valor {
+    flex: 1;
+    min-width: 0;
+    font-size: $font-size-sm;
+    color: $gray-800;
+  }
+}
+
+// ── Avatar de iniciales ─────────────────────────────────────
+// Antes se construía con tamaños inline (`style="width:38px;height:38px"`)
+// repetidos en varias pestañas.
+
+.gb-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: $border-radius-full;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+  color: $white;
+  background: $primary;
+}
+
+// ── Raíces de pestaña ───────────────────────────────────────
+// El padding lo pone `.ficha-tab-body`; aquí solo el ritmo vertical interno.
+
+.documentacion-tab,
+.terapeutas-tab {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}

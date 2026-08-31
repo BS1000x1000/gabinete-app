@@ -57,7 +57,7 @@
   font-size: 0.875rem;
 
   &--editando {
-    background: #fff;
+    background: $white;
     border-color: $primary;
     flex-wrap: wrap;
   }
@@ -98,11 +98,11 @@
   }
   &--delete {
     color: #94a3b8;
-    &:hover { background: #fee2e2; color: $danger; }
+    &:hover { background: $danger-light; color: $danger; }
   }
   &--save {
     color: $success;
-    &:hover { background: #d1fae5; }
+    &:hover { background: $success-light; }
     &:disabled { opacity: 0.5; }
   }
   &--cancel {
@@ -157,7 +157,7 @@
   height: 2.25rem;
   border: 1.5px solid #cbd5e1;
   border-radius: 50%;
-  background: #fff;
+  background: $white;
   color: #475569;
   font-size: 0.75rem;
   font-weight: 600;
@@ -173,12 +173,12 @@
   &--activo {
     background: $primary;
     border-color: $primary;
-    color: #fff;
+    color: $white;
 
     &:hover {
       background: darken($primary, 8%);
       border-color: darken($primary, 8%);
-      color: #fff;
+      color: $white;
     }
   }
 }

@@ -1,387 +1,171 @@
-<div class="ag-page">
+<div class="ag-shell">
 
-  <!-- ── Selector de terapeuta (solo ADMIN/RECEP) ──────── -->
-  @if (canVerTodo() && trabajadores().length > 0) {
-    <div class="ag-therapist-bar">
-      <button
-        class="ag-therapist-chip"
-        [class.ag-therapist-chip--active]="trabajadorSeleccionado() === null"
-        (click)="seleccionarTerapeuta(null)"
-      >
-        <i class="bi bi-people-fill"></i>
-        <span>Todos</span>
-      </button>
-      @for (t of trabajadores(); track t.id) {
+  <!-- ══════════════════════════════════════════════════════════
+       BARRA ÚNICA
+       Un solo control de fecha, un selector de vista y las acciones.
+       Sustituye a la barra de terapeutas, el banner, los accesos
+       rápidos y las dos cabeceras de navegación que había antes.
+       ══════════════════════════════════════════════════════════ -->
+  <header class="ag-toolbar">
+
+    <div class="ag-toolbar__row">
+
+      <!-- Navegación temporal: un par de flechas para las dos vistas -->
+      <div class="ag-nav">
         <button
-          class="ag-therapist-chip"
-          [class.ag-therapist-chip--active]="trabajadorSeleccionado()?.id === t.id"
-          (click)="seleccionarTerapeuta(t)"
-          [title]="t.nombre + ' ' + t.apellidos"
-        >
-          <span class="ag-therapist-chip__avatar">{{ getTrabajadorIniciales(t) }}</span>
-          <span>{{ t.nombre }}</span>
-        </button>
-      }
-    </div>
-  }
+          class="ag-nav__hoy"
+          type="button"
+          (click)="irAHoy()"
+          [disabled]="esHoy()"
+          title="Ir a hoy"
+        >Hoy</button>
 
-  <!-- ── Banner de alertas ──────────────────────────────── -->
-  @if (hayAlertas()) {
-    <div class="ag-banner">
-      <div class="ag-banner__inner">
-        <i class="bi bi-exclamation-triangle-fill ag-banner__icon"></i>
-        <div class="ag-banner__body">
-          <strong class="ag-banner__count">
-            {{ alertasUrgentes().length }} alerta{{ alertasUrgentes().length !== 1 ? 's' : '' }} pendiente{{ alertasUrgentes().length !== 1 ? 's' : '' }}
-          </strong>
-          <span class="ag-banner__list">
-            @for (alerta of alertasUrgentes().slice(0, 3); track alerta.id) {
-              <span class="ag-banner__item">· {{ alerta.titulo }}</span>
-            }
-            @if (alertasUrgentes().length > 3) {
-              <span class="ag-banner__more">+{{ alertasUrgentes().length - 3 }} más</span>
-            }
-          </span>
+        <div class="ag-nav__arrows">
+          <button
+            class="ag-nav__arrow"
+            type="button"
+            (click)="desplazar(-1)"
+            [disabled]="isLoading()"
+            [title]="vista() === 'semana' ? 'Semana anterior' : 'Día anterior'"
+          >
+            <i class="bi bi-chevron-left"></i>
+          </button>
+          <button
+            class="ag-nav__arrow"
+            type="button"
+            (click)="desplazar(1)"
+            [disabled]="isLoading()"
+            [title]="vista() === 'semana' ? 'Semana siguiente' : 'Día siguiente'"
+          >
+            <i class="bi bi-chevron-right"></i>
+          </button>
         </div>
-        <button class="ag-banner__close" (click)="bannerColapsado.set(true)" title="Cerrar">
-          <i class="bi bi-x-lg"></i>
-        </button>
+
+        <h1 class="ag-nav__title">{{ tituloRango() }}</h1>
+
+        @if (isLoading()) {
+          <span class="ag-nav__loading" aria-label="Cargando"></span>
+        }
       </div>
-    </div>
-  }
 
-  <!-- ── Accesos rápidos ────────────────────────────────
-       La agenda es la pantalla donde se pasa el día: las acciones más
-       repetidas están aquí además de en el sidebar. -->
-  <div class="ag-quick">
-    @if (!isRecep()) {
-      <button class="ag-quick__btn ag-quick__btn--primary" type="button" (click)="abrirRegistro()">
-        <i class="bi bi-pencil-square"></i><span>Nuevo registro</span>
-      </button>
-      <button class="ag-quick__btn" type="button" (click)="abrirNuevaSesion()">
-        <i class="bi bi-calendar-plus"></i><span>Nueva sesión</span>
-      </button>
-    }
-    <button class="ag-quick__btn" type="button" (click)="irANuevoCliente()">
-      <i class="bi bi-person-plus"></i><span>Nuevo cliente</span>
-    </button>
-  </div>
+      <!-- Acciones -->
+      <div class="ag-actions">
 
-  <!-- ── Layout principal: dos paneles ─────────────────── -->
-  <div class="ag-layout">
+        <!-- Vista -->
+        <div class="ag-seg" role="group" aria-label="Vista del calendario">
+          <button
+            type="button"
+            class="ag-seg__btn"
+            [class.ag-seg__btn--active]="vista() === 'dia'"
+            (click)="setVista('dia')"
+          >Día</button>
+          <button
+            type="button"
+            class="ag-seg__btn"
+            [class.ag-seg__btn--active]="vista() === 'semana'"
+            (click)="setVista('semana')"
+          >Semana</button>
+        </div>
 
-    <!-- ╔══ PANEL IZQUIERDO: Sesiones del día ═══════════╗ -->
-    <div class="ag-panel ag-panel--sessions">
+        <!-- Terapeuta (ADMIN / RECEP) -->
+        @if (canVerTodo() && trabajadores().length > 0) {
+          <select
+            class="ag-select"
+            [value]="trabajadorSeleccionado()?.id ?? ''"
+            (change)="onCambiarTerapeuta($any($event.target).value)"
+            aria-label="Filtrar por terapeuta"
+          >
+            <option value="">Todo el equipo</option>
+            @for (t of trabajadores(); track t.id) {
+              <option [value]="t.id">{{ t.nombre }} {{ t.apellidos }}</option>
+            }
+          </select>
+        }
 
-      <!-- Cabecera: navegación por día -->
-      <div class="ag-day-header">
-        <button class="ag-nav-btn" (click)="diaAnterior()" [disabled]="isLoadingDia()">
-          <i class="bi bi-chevron-left"></i>
-        </button>
+        <!-- Nuevo -->
+        <div class="ag-new">
+          <button class="ag-new__btn" type="button" (click)="toggleMenuNuevo($event)">
+            <i class="bi bi-plus-lg"></i>
+            <span>Nuevo</span>
+            <i class="bi bi-chevron-down ag-new__caret"></i>
+          </button>
 
-        <div class="ag-day-info">
-          <h1 class="ag-day-title">{{ fechaFormateada() }}</h1>
-          @if (esHoy()) {
-            <span class="ag-hoy-badge">Hoy</span>
-          } @else {
-            <button class="ag-hoy-link" (click)="irAHoy()">
-              <i class="bi bi-arrow-counterclockwise"></i> Ir a hoy
-            </button>
+          @if (menuNuevoAbierto()) {
+            <div class="ag-new__menu" (click)="$event.stopPropagation()">
+              @if (!isRecep()) {
+                <button class="ag-new__item" type="button" (click)="abrirRegistro()">
+                  <i class="bi bi-pencil-square"></i> Registro diario
+                </button>
+                <button class="ag-new__item" type="button" (click)="abrirNuevaSesion()">
+                  <i class="bi bi-calendar-plus"></i> Sesión
+                </button>
+              }
+              <button class="ag-new__item" type="button" (click)="abrirModalNuevoEvento()">
+                <i class="bi bi-calendar-event"></i> Evento
+              </button>
+              <div class="ag-new__sep"></div>
+              <button class="ag-new__item" type="button" (click)="irANuevoCliente()">
+                <i class="bi bi-person-plus"></i> Cliente
+              </button>
+            </div>
           }
         </div>
 
-        <button class="ag-nav-btn" (click)="diaSiguiente()" [disabled]="isLoadingDia()">
-          <i class="bi bi-chevron-right"></i>
-        </button>
         <button
-          class="ag-refresh-btn"
-          [class.ag-refresh-btn--spinning]="isLoadingDia()"
+          class="ag-icon-btn"
+          type="button"
+          [class.ag-icon-btn--spinning]="isLoading()"
           (click)="refrescar()"
-          [disabled]="isLoadingDia()"
+          [disabled]="isLoading()"
           title="Refrescar"
         >
           <i class="bi bi-arrow-clockwise"></i>
         </button>
       </div>
-
-      <!-- Banners de festivo / vacaciones del día -->
-      @if (!isLoadingDia()) {
-        @if (festivosPorFecha().has(fechaISO())) {
-          <div class="ag-day-festivo-banner">
-            <i class="bi bi-calendar2-x"></i>
-            Festivo: {{ festivosPorFecha().get(fechaISO())!.descripcion }}
-          </div>
-        }
-        @if (mostrarVacaciones() && esDiaVacaciones(fechaISO())) {
-          <div class="ag-day-vacacion-banner">
-            <i class="bi bi-umbrella"></i>
-            Día de vacaciones
-          </div>
-        }
-      }
-
-      <!-- Strip de estadísticas del día -->
-      @if (totalSesiones() > 0 && !isLoadingDia()) {
-        <div class="ag-stats-strip">
-          <span class="ag-stat">
-            <strong>{{ totalSesiones() }}</strong> sesiones
-          </span>
-          <span class="ag-stat-sep">·</span>
-          <span class="ag-stat ag-stat--success">
-            <i class="bi bi-check-circle-fill"></i>{{ sesionesCompletadas() }}
-          </span>
-          <span class="ag-stat-sep">·</span>
-          <span class="ag-stat ag-stat--primary">
-            <i class="bi bi-clock-fill"></i>{{ sesionesProgramadas() }}
-          </span>
-          @if (sesionesCanceladas() > 0) {
-            <span class="ag-stat-sep">·</span>
-            <span class="ag-stat ag-stat--danger">
-              <i class="bi bi-x-circle-fill"></i>{{ sesionesCanceladas() }}
-            </span>
-          }
-        </div>
-      }
-
-      <!-- Lista de tarjetas de sesión -->
-      <div class="ag-sessions-list">
-
-        <!-- Skeletons mientras carga -->
-        @if (isLoadingDia()) {
-          @for (i of [1, 2, 3]; track i) {
-            <div class="ag-card ag-card--skeleton">
-              <div class="ag-card-time">
-                <div class="ag-skel ag-skel--sm"></div>
-                <div class="ag-skel ag-skel--xs"></div>
-              </div>
-              <div class="ag-card-indicator"></div>
-              <div class="ag-card-body">
-                <div class="ag-skel ag-skel--lg" style="margin-bottom: 8px"></div>
-                <div class="ag-skel ag-skel--md"></div>
-              </div>
-            </div>
-          }
-
-        <!-- Estado vacío -->
-        } @else if (todoDelDia().length === 0) {
-          <div class="ag-empty">
-            <div class="ag-empty__icon">
-              <i class="bi bi-calendar-week"></i>
-            </div>
-            <p class="ag-empty__title">Sin actividad este día</p>
-            <p class="ag-empty__sub">{{ fechaFormateada() }}</p>
-          </div>
-
-        <!-- Tarjetas de sesión y eventos mezclados por hora -->
-        } @else {
-          @for (item of todoDelDia(); track item.id) {
-
-            @if (item.kind === 'sesion') {
-              <div
-                class="ag-card"
-                [class.ag-card--pasada]="item.sesion.temporal?.esPasada && item.sesion.estado === 'PROGRAMADA'"
-                [style.--tipo-color]="getTipoColor(item.sesion.tipoSesion)"
-              >
-                <div class="ag-card-time">
-                  <span class="ag-time-start">{{ item.sesion.horaInicio }}</span>
-                  <span class="ag-time-sep">–</span>
-                  <span class="ag-time-end">{{ item.sesion.horaFin }}</span>
-                </div>
-                <div class="ag-card-indicator"></div>
-                <div class="ag-card-body">
-                  <div class="ag-card-top">
-                    <span class="ag-client-name">
-                      {{ item.sesion.cliente.nombreCompleto || (item.sesion.cliente.nombre + ' ' + item.sesion.cliente.apellidos) }}
-                    </span>
-                    <span class="ag-estado ag-estado--{{ getEstadoClass(item.sesion.estado) }}">
-                      {{ ESTADO_SESION_LABELS[item.sesion.estado] ?? item.sesion.estado }}
-                    </span>
-                  </div>
-                  <div class="ag-card-sub">
-                    <span
-                      class="ag-tipo"
-                      [style.color]="getTipoColor(item.sesion.tipoSesion)"
-                      [style.background-color]="getTipoColor(item.sesion.tipoSesion) + '18'"
-                    >
-                      {{ TIPO_SESION_LABELS[item.sesion.tipoSesion] ?? item.sesion.tipoSesion }}
-                    </span>
-                    @if (item.sesion.cliente.curso) {
-                      <span class="ag-curso">{{ item.sesion.cliente.curso }}</span>
-                    }
-                  </div>
-                </div>
-                <div class="ag-card-actions">
-                  @if (item.sesion.modalidad === 'ONLINE') {
-                    <button
-                      class="btn-meet"
-                      [disabled]="!item.sesion.urlVideollamada"
-                      [title]="item.sesion.urlVideollamada ? 'Iniciar videollamada de Meet' : 'Configura tu sala en Ajustes'"
-                      (click)="abrirVideollamada(item.sesion.urlVideollamada, $event)"
-                    >
-                      <i class="bi bi-camera-video"></i>
-                      Iniciar
-                    </button>
-                  }
-                  @if (item.sesion.estado === 'PROGRAMADA' && item.sesion.modalidad !== 'ONLINE') {
-                    <button
-                      class="ag-action ag-action--neutral"
-                      title="Marcar como online"
-                      (click)="toggleModalidad(item.sesion, $event)"
-                    >
-                      <i class="bi bi-camera-video-off"></i>
-                    </button>
-                  }
-                  @if (item.sesion.estado === 'PROGRAMADA') {
-                    <button
-                      class="ag-action ag-action--success"
-                      title="Completar sesión"
-                      (click)="abrirCompletar(item.sesion, $event)"
-                    >
-                      <i class="bi bi-check-circle"></i>
-                    </button>
-                    <button
-                      class="ag-action ag-action--danger"
-                      title="Cancelar sesión"
-                      (click)="abrirCancelar(item.sesion, $event)"
-                    >
-                      <i class="bi bi-x-circle"></i>
-                    </button>
-                  }
-                  <button
-                    class="ag-action ag-action--neutral"
-                    title="Ver ficha del cliente"
-                    (click)="verCliente(item.sesion.clienteId, $event)"
-                  >
-                    <i class="bi bi-person"></i>
-                  </button>
-                </div>
-              </div>
-
-            } @else {
-              <div
-                class="ag-card ag-card--evento"
-                [class.ag-card--virtual]="item.evento.esVirtual"
-                [style.--tipo-color]="getEventoColor(item.evento)"
-                (click)="abrirModalEvento(item.evento, $event)"
-              >
-                <div class="ag-card-time">
-                  <span class="ag-time-start">{{ isoToHHMM(item.evento.fechaHoraInicio) }}</span>
-                  <span class="ag-time-sep">–</span>
-                  <span class="ag-time-end">{{ isoToHHMM(item.evento.fechaHoraFin) }}</span>
-                </div>
-                <div class="ag-card-indicator"></div>
-                <div class="ag-card-body">
-                  <div class="ag-card-top">
-                    <span class="ag-client-name">{{ item.evento.titulo }}</span>
-                    @if (item.evento.esVirtual) {
-                      <i class="bi bi-arrow-repeat ag-virtual-icon" title="Recurrente"></i>
-                    }
-                  </div>
-                  <div class="ag-card-sub">
-                    <span
-                      class="ag-tipo"
-                      [style.color]="getEventoColor(item.evento)"
-                      [style.background-color]="getEventoColor(item.evento) + '18'"
-                    >
-                      {{ TIPO_EVENTO_CONFIG[item.evento.tipo]?.label }}
-                    </span>
-                    @if (item.evento.descripcion) {
-                      <span class="ag-curso">{{ item.evento.descripcion }}</span>
-                    }
-                  </div>
-                </div>
-                <div class="ag-card-actions">
-                  @if (item.evento.modalidad === 'ONLINE') {
-                    <button
-                      class="btn-meet"
-                      [disabled]="!item.evento.creadoPor?.urlVideollamada"
-                      [title]="item.evento.creadoPor?.urlVideollamada ? 'Iniciar videollamada de Meet' : 'Configura tu sala en Ajustes'"
-                      (click)="abrirVideollamada(item.evento.creadoPor?.urlVideollamada, $event)"
-                    >
-                      <i class="bi bi-camera-video"></i>
-                      Iniciar
-                    </button>
-                  }
-                  @if (!item.evento.esVirtual) {
-                    <button
-                      class="ag-action ag-action--neutral"
-                      title="Editar evento"
-                      (click)="abrirModalEvento(item.evento, $event)"
-                    >
-                      <i class="bi bi-pencil"></i>
-                    </button>
-                  }
-                </div>
-              </div>
-            }
-
-          }
-        }
-
-      </div>
     </div>
-    <!-- ╚═══════════════════════════════════════════════════╝ -->
 
-
-    <!-- ╔══ PANEL DERECHO: Grid semanal tipo Teams ══════╗ -->
-    <div class="ag-panel ag-panel--calendar">
-
-      <!-- Barra de navegación de semana -->
-      <div class="ag-wg-nav">
-        <button class="ag-wg-nav__btn" (click)="semanaAnterior()" title="Semana anterior">
-          <i class="bi bi-chevron-left"></i>
-        </button>
-        <div class="ag-wg-nav__center">
-          <span class="ag-wg-nav__title">{{ semanaTitulo() }}</span>
-          @if (!esHoy()) {
-            <button class="ag-wg-nav__hoy" (click)="irAHoy()">Hoy</button>
-          }
-        </div>
-        <button class="ag-wg-nav__btn" (click)="semanaSiguiente()" title="Semana siguiente">
-          <i class="bi bi-chevron-right"></i>
-        </button>
-        <button class="ag-wg-nav__evento-btn" (click)="abrirModalNuevoEvento()" title="Añadir evento">
-          <i class="bi bi-plus-lg"></i>
-          <span>Evento</span>
-        </button>
+    <!-- Tira única de estadísticas, del rango visible -->
+    @if (statsRango().length > 0) {
+      <div class="ag-stats">
+        @for (chip of statsRango(); track chip.label) {
+          <span class="ag-stats__item ag-stats__item--{{ chip.tono }}">
+            <strong>{{ chip.valor }}</strong> {{ chip.label }}
+          </span>
+        }
+        @if (resumenHoras() && resumenHoras()!.totalMinutos > 0 && vista() === 'semana') {
+          <span class="ag-stats__item ag-stats__item--horas" title="Horas clínicas + no clínicas">
+            <i class="bi bi-clock"></i> {{ formatResumenHoras() }}
+          </span>
+        }
       </div>
+    }
+  </header>
 
-      <!-- Stats rápidas de la semana -->
-      @if (resumenSemana()) {
-        <div class="ag-wg-stats">
-          <span class="ag-wg-stat">
-            <strong>{{ resumenSemana()!.totalSesiones }}</strong> sesiones
-          </span>
-          <span class="ag-wg-stat-sep">·</span>
-          <span class="ag-wg-stat ag-wg-stat--success">
-            <i class="bi bi-check-circle-fill"></i> {{ resumenSemana()!.completadas }}
-          </span>
-          <span class="ag-wg-stat-sep">·</span>
-          <span class="ag-wg-stat">
-            <i class="bi bi-people-fill"></i> {{ resumenSemana()!.clientesUnicos }}
-          </span>
-          @if (resumenHoras() && resumenHoras()!.totalMinutos > 0) {
-            <span class="ag-wg-stat-sep">·</span>
-            <span class="ag-wg-stat ag-wg-stat--horas" title="Horas clínicas + no clínicas">
-              <i class="bi bi-clock"></i> {{ formatResumenHoras() }}
-            </span>
-          }
-        </div>
-      }
 
-      @if (isLoadingSemana()) {
+  <!-- ══════════════════════════════════════════════════════════
+       CUERPO: rejilla + rail. Nada scrollea salvo estos dos.
+       ══════════════════════════════════════════════════════════ -->
+  <div class="ag-body">
+
+    <!-- ╔══ REJILLA ═════════════════════════════════════════╗ -->
+    <section class="ag-panel ag-panel--calendar">
+
+      @if (isLoadingSemana() && diasSemana().length === 0) {
         <div class="ag-wg-loading">
           <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
         </div>
       } @else {
 
-        <!-- Grid de calendario -->
-        <div class="ag-week-grid">
+        <div
+          class="ag-week-grid"
+          [style.--cols]="columnas().length"
+          [style.--horas]="horasCount()"
+        >
 
-          <!-- Header: días de la semana -->
+          <!-- Cabecera de días -->
           <div class="ag-week-grid__header">
             <div class="ag-week-grid__corner"></div>
-            @for (dia of diasSemana(); track dia.fecha) {
+            @for (dia of columnas(); track dia.fecha) {
               <div
                 class="ag-week-grid__day-header"
                 [class.ag-week-grid__day-header--today]="dia.esHoy"
@@ -390,13 +174,16 @@
                 [class.ag-week-grid__day-header--vacacion]="mostrarVacaciones() && esDiaVacaciones(dia.fecha)"
                 (click)="irADia(dia.fecha)"
               >
-                <span class="ag-week-grid__day-name">{{ dia.diaSemana.slice(0, 2) }}</span>
+                <span class="ag-week-grid__day-name">{{ dia.diaSemana.slice(0, 3) }}</span>
                 <span class="ag-week-grid__day-num">{{ dia.dia }}</span>
                 @if (dia.totalSesiones > 0) {
                   <span class="ag-week-grid__day-count">{{ dia.totalSesiones }}</span>
                 }
                 @if (festivosPorFecha().has(dia.fecha)) {
-                  <span class="ag-week-grid__day-festivo-dot" [title]="festivosPorFecha().get(dia.fecha)!.descripcion"></span>
+                  <span
+                    class="ag-week-grid__day-festivo-dot"
+                    [title]="festivosPorFecha().get(dia.fecha)!.descripcion"
+                  ></span>
                 }
                 @if (mostrarVacaciones() && esDiaVacaciones(dia.fecha)) {
                   <i class="bi bi-umbrella ag-week-grid__day-vac-icon" title="Vacaciones"></i>
@@ -405,23 +192,24 @@
             }
           </div>
 
-          <!-- Cuerpo scrollable -->
-          <div class="ag-week-grid__scroll">
-            <div class="ag-week-grid__body" [style.height.px]="alturaGrid">
+          <!-- Cuerpo. Solo scrollea si el rango no cabe. -->
+          <div class="ag-week-grid__scroll" #gridScroll>
+            <div class="ag-week-grid__body">
 
               <!-- Columna de horas -->
               <div class="ag-week-grid__time-col">
-                @for (hora of horasGrid; track hora; let i = $index) {
+                @for (hora of horasGrid(); track hora; let i = $index) {
                   <span
                     class="ag-week-grid__time-label"
                     [class.ag-week-grid__time-label--first]="i === 0"
-                    [style.top.px]="i * PX_POR_HORA"
+                    [class.ag-week-grid__time-label--last]="i === horasCount()"
+                    [style.top.%]="lineaPct(i)"
                   >{{ hora }}</span>
                 }
               </div>
 
               <!-- Columnas de cada día -->
-              @for (dia of diasSemana(); track dia.fecha) {
+              @for (dia of columnas(); track dia.fecha) {
                 <div
                   class="ag-week-grid__day-col"
                   [class.ag-week-grid__day-col--today]="dia.esHoy"
@@ -431,19 +219,19 @@
                   (click)="irADia(dia.fecha)"
                 >
                   <!-- Líneas de fondo -->
-                  @for (hora of horasGrid; track hora; let i = $index) {
-                    <div class="ag-week-grid__hour-line" [style.top.px]="i * PX_POR_HORA"></div>
-                    @if (i < horasCount) {
-                      <div class="ag-week-grid__half-line" [style.top.px]="i * PX_POR_HORA + PX_POR_HORA / 2"></div>
+                  @for (hora of horasGrid(); track hora; let i = $index) {
+                    <div class="ag-week-grid__hour-line" [style.top.%]="lineaPct(i)"></div>
+                    @if (i < horasCount()) {
+                      <div
+                        class="ag-week-grid__half-line"
+                        [style.top.%]="lineaPct(i + 0.5)"
+                      ></div>
                     }
                   }
 
                   <!-- Indicador de hora actual -->
-                  @if (dia.esHoy && minutosActualesEnGrid() !== null) {
-                    <div
-                      class="ag-week-grid__now-indicator"
-                      [style.top.px]="minutosActualesEnGrid()!"
-                    ></div>
+                  @if (dia.esHoy && ahoraPct() !== null) {
+                    <div class="ag-week-grid__now-indicator" [style.top.%]="ahoraPct()"></div>
                   }
 
                   <!-- Bloques de sesión -->
@@ -452,8 +240,8 @@
                       class="ag-week-grid__event"
                       [class.ag-week-grid__event--completada]="sesion.estado === 'COMPLETADA'"
                       [class.ag-week-grid__event--cancelada]="sesion.estado === 'CANCELADA_CON_AVISO' || sesion.estado === 'CANCELADA_SIN_AVISO'"
-                      [style.top.px]="calcularTop(sesion.horaInicio)"
-                      [style.height.px]="calcularAltura(sesion.duracion)"
+                      [style.top.%]="calcularTopPct(sesion.horaInicio)"
+                      [style.height.%]="calcularAlturaPct(sesion.duracion)"
                       [style.background-color]="getEventoBg(sesion.tipoSesion)"
                       [style.border-left-color]="getTipoColor(sesion.tipoSesion)"
                       [style.color]="getTipoColor(sesion.tipoSesion)"
@@ -471,7 +259,7 @@
                       <span class="ag-week-grid__event-name">
                         {{ sesion.cliente.nombreCompleto || sesion.cliente.nombre + ' ' + sesion.cliente.apellidos }}
                       </span>
-                      @if (calcularAltura(sesion.duracion) >= 44) {
+                      @if (sesion.duracion >= 45) {
                         <span class="ag-week-grid__event-tipo">
                           {{ TIPO_SESION_LABELS[sesion.tipoSesion] ?? sesion.tipoSesion }}
                         </span>
@@ -485,8 +273,8 @@
                       class="ag-week-grid__event ag-week-grid__event--agenda"
                       [class.ag-week-grid__event--compartido]="esEventoCompartido(evento)"
                       [class.ag-week-grid__event--virtual]="evento.esVirtual"
-                      [style.top.px]="getEventoTop(evento)"
-                      [style.height.px]="getEventoAltura(evento)"
+                      [style.top.%]="getEventoTopPct(evento)"
+                      [style.height.%]="getEventoAlturaPct(evento)"
                       [style.--evento-color]="getEventoColor(evento)"
                       (click)="abrirModalEvento(evento, $event)"
                       [title]="evento.titulo + ' · ' + TIPO_EVENTO_CONFIG[evento.tipo]?.label + (evento.esVirtual ? ' (recurrente)' : '')"
@@ -498,7 +286,7 @@
                           <i class="bi bi-arrow-repeat ag-virtual-icon-sm"></i>
                         }
                       </span>
-                      @if (getEventoAltura(evento) >= 44) {
+                      @if (getEventoDuracion(evento) >= 45) {
                         <span class="ag-week-grid__event-tipo">
                           {{ TIPO_EVENTO_CONFIG[evento.tipo]?.label ?? evento.tipo }}
                         </span>
@@ -511,57 +299,281 @@
             </div>
           </div>
         </div>
+      }
+    </section>
+    <!-- ╚════════════════════════════════════════════════════╝ -->
 
+
+    <!-- ╔══ RAIL ════════════════════════════════════════════╗
+         Una sola columna que scrollea como unidad: lo que
+         requiere atención, el día elegido y lo que queda a medias.
+         ╚════════════════════════════════════════════════════╝ -->
+    <aside class="ag-rail">
+
+      <!-- Alertas — sustituye al banner que empujaba el contenido -->
+      @if (alertasUrgentes().length > 0) {
+        <section class="ag-rail__block ag-rail__block--alertas">
+          <div class="ag-rail__head">
+            <i class="bi bi-exclamation-triangle-fill ag-rail__head-icon ag-rail__head-icon--warn"></i>
+            <h2 class="ag-rail__title">Requiere atención</h2>
+            <span class="ag-rail__badge ag-rail__badge--warn">{{ alertasUrgentes().length }}</span>
+          </div>
+          <div class="ag-rail__body">
+            @for (alerta of alertasUrgentes().slice(0, 4); track alerta.id) {
+              <div
+                class="ag-alerta"
+                [class.ag-alerta--urgente]="alerta.prioridad === 'URGENTE'"
+                (click)="irANotificacion(alerta)"
+              >
+                <span class="ag-alerta__texto">{{ alerta.titulo }}</span>
+                <button
+                  class="ag-alerta__close"
+                  type="button"
+                  title="Descartar"
+                  (click)="descartarAlerta(alerta.id, $event)"
+                >
+                  <i class="bi bi-x"></i>
+                </button>
+              </div>
+            }
+            @if (alertasUrgentes().length > 4) {
+              <p class="ag-rail__more">
+                +{{ alertasUrgentes().length - 4 }} más en la campana
+              </p>
+            }
+          </div>
+        </section>
       }
 
-    </div>
-    <!-- ╚═══════════════════════════════════════════════════╝ -->
-
-    <!-- ╔══ PANEL: pendientes ═══════════════════════════╗ -->
-    <!-- Rescatado del antiguo dashboard, que era inalcanzable. Las alertas
-         urgentes ya salen en el banner de arriba; aquí van las tareas que
-         no corren prisa pero conviene no perder de vista. -->
-    @if (hayPendientes()) {
-      <div class="ag-panel ag-panel--pendientes">
-        <div class="ag-pend__header">
-          <i class="bi bi-list-check"></i>
-          <h2>Tienes pendiente</h2>
-          <span class="ag-pend__badge">{{ totalPendientes() }}</span>
+      <!-- Día seleccionado -->
+      <section class="ag-rail__block ag-rail__block--dia">
+        <div class="ag-rail__head">
+          <h2 class="ag-rail__title ag-rail__title--fecha">{{ fechaCorta() }}</h2>
+          @if (esHoy()) {
+            <span class="ag-rail__badge ag-rail__badge--hoy">Hoy</span>
+          }
         </div>
 
-        @if (informesEnBorrador().length > 0) {
-          <div class="ag-pend__grupo">
-            <div class="ag-pend__label">
-              <i class="bi bi-file-earmark-text"></i> Informes en borrador
-            </div>
-            @for (informe of informesEnBorrador(); track informe.id) {
-              <button class="ag-pend__item" type="button" (click)="irAlInforme(informe)">
-                <span>{{ informe.cliente.nombre }} {{ informe.cliente.apellidos }}</span>
-                <span class="ag-pend__meta">{{ informe.tipoInforme }}</span>
-              </button>
-            }
-          </div>
+        @if (!isLoadingDia()) {
+          @if (festivosPorFecha().has(fechaISO())) {
+            <p class="ag-rail__aviso ag-rail__aviso--festivo">
+              <i class="bi bi-calendar2-x"></i>
+              Festivo: {{ festivosPorFecha().get(fechaISO())!.descripcion }}
+            </p>
+          }
+          @if (mostrarVacaciones() && esDiaVacaciones(fechaISO())) {
+            <p class="ag-rail__aviso ag-rail__aviso--vacacion">
+              <i class="bi bi-umbrella"></i> Día de vacaciones
+            </p>
+          }
         }
 
-        @if (objetivosSinEvaluar().length > 0) {
-          <div class="ag-pend__grupo">
-            <div class="ag-pend__label">
-              <i class="bi bi-bullseye"></i> Objetivos sin evaluar
+        <div class="ag-rail__body ag-rail__body--lista">
+
+          @if (isLoadingDia()) {
+            @for (i of [1, 2, 3]; track i) {
+              <div class="ag-card ag-card--skeleton">
+                <div class="ag-skel ag-skel--sm"></div>
+                <div class="ag-skel ag-skel--lg"></div>
+                <div class="ag-skel ag-skel--md"></div>
+              </div>
+            }
+
+          } @else if (todoDelDia().length === 0) {
+            <div class="ag-empty">
+              <div class="ag-empty__icon"><i class="bi bi-calendar-week"></i></div>
+              <p class="ag-empty__title">Sin actividad este día</p>
             </div>
-            @for (obj of objetivosSinEvaluar(); track obj.clienteObjetivoId) {
-              <button class="ag-pend__item" type="button" (click)="irAlObjetivo(obj)">
-                <span>{{ obj.cliente.nombre }} — {{ obj.objetivo }}</span>
-              </button>
+
+          } @else {
+            @for (item of todoDelDia(); track item.id) {
+
+              @if (item.kind === 'sesion') {
+                <article
+                  class="ag-card"
+                  [class.ag-card--pasada]="item.sesion.temporal?.esPasada && item.sesion.estado === 'PROGRAMADA'"
+                  [style.--tipo-color]="getTipoColor(item.sesion.tipoSesion)"
+                >
+                  <div class="ag-card__top">
+                    <span class="ag-card__hora">
+                      {{ item.sesion.horaInicio }}<span class="ag-card__hora-sep">–</span>{{ item.sesion.horaFin }}
+                    </span>
+                    <span class="ag-estado ag-estado--{{ getEstadoClass(item.sesion.estado) }}">
+                      {{ ESTADO_SESION_LABELS[item.sesion.estado] ?? item.sesion.estado }}
+                    </span>
+                  </div>
+
+                  <h3 class="ag-card__nombre">
+                    {{ item.sesion.cliente.nombreCompleto || (item.sesion.cliente.nombre + ' ' + item.sesion.cliente.apellidos) }}
+                  </h3>
+
+                  <div class="ag-card__foot">
+                    <span class="ag-card__meta">
+                      <span
+                        class="ag-tipo-dot"
+                        [style.background-color]="getTipoColor(item.sesion.tipoSesion)"
+                      ></span>
+                      <span class="ag-card__meta-text">
+                        {{ TIPO_SESION_LABELS[item.sesion.tipoSesion] ?? item.sesion.tipoSesion }}
+                        @if (item.sesion.cliente.curso) {
+                          <span class="ag-card__curso">· {{ item.sesion.cliente.curso }}</span>
+                        }
+                      </span>
+                    </span>
+
+                    <span class="ag-card__acciones">
+                      @if (item.sesion.modalidad === 'ONLINE') {
+                        <button
+                          class="btn-meet"
+                          [disabled]="!item.sesion.urlVideollamada"
+                          [title]="item.sesion.urlVideollamada ? 'Iniciar videollamada de Meet' : 'Configura tu sala en Ajustes'"
+                          (click)="abrirVideollamada(item.sesion.urlVideollamada, $event)"
+                        >
+                          <i class="bi bi-camera-video"></i> Iniciar
+                        </button>
+                      }
+                      @if (item.sesion.estado === 'PROGRAMADA' && item.sesion.modalidad !== 'ONLINE') {
+                        <button
+                          class="ag-action ag-action--neutral"
+                          title="Marcar como online"
+                          (click)="toggleModalidad(item.sesion, $event)"
+                        >
+                          <i class="bi bi-camera-video-off"></i>
+                        </button>
+                      }
+                      @if (item.sesion.estado === 'PROGRAMADA') {
+                        <button
+                          class="ag-action ag-action--success"
+                          title="Completar sesión"
+                          (click)="abrirCompletar(item.sesion, $event)"
+                        >
+                          <i class="bi bi-check-circle"></i>
+                        </button>
+                        <button
+                          class="ag-action ag-action--danger"
+                          title="Cancelar sesión"
+                          (click)="abrirCancelar(item.sesion, $event)"
+                        >
+                          <i class="bi bi-x-circle"></i>
+                        </button>
+                      }
+                      <button
+                        class="ag-action ag-action--neutral"
+                        title="Ver ficha del cliente"
+                        (click)="verCliente(item.sesion.clienteId, $event)"
+                      >
+                        <i class="bi bi-person"></i>
+                      </button>
+                    </span>
+                  </div>
+                </article>
+
+              } @else {
+                <article
+                  class="ag-card ag-card--evento"
+                  [class.ag-card--virtual]="item.evento.esVirtual"
+                  [style.--tipo-color]="getEventoColor(item.evento)"
+                  (click)="abrirModalEvento(item.evento, $event)"
+                >
+                  <div class="ag-card__top">
+                    <span class="ag-card__hora">
+                      {{ isoToHHMM(item.evento.fechaHoraInicio) }}<span class="ag-card__hora-sep">–</span>{{ isoToHHMM(item.evento.fechaHoraFin) }}
+                    </span>
+                    @if (item.evento.esVirtual) {
+                      <i class="bi bi-arrow-repeat ag-virtual-icon" title="Recurrente"></i>
+                    }
+                  </div>
+
+                  <h3 class="ag-card__nombre">{{ item.evento.titulo }}</h3>
+
+                  <div class="ag-card__foot">
+                    <span class="ag-card__meta">
+                      <span
+                        class="ag-tipo-dot"
+                        [style.background-color]="getEventoColor(item.evento)"
+                      ></span>
+                      <span class="ag-card__meta-text">
+                        {{ TIPO_EVENTO_CONFIG[item.evento.tipo]?.label }}
+                        @if (item.evento.descripcion) {
+                          <span class="ag-card__curso">· {{ item.evento.descripcion }}</span>
+                        }
+                      </span>
+                    </span>
+
+                    <span class="ag-card__acciones">
+                      @if (item.evento.modalidad === 'ONLINE') {
+                        <button
+                          class="btn-meet"
+                          [disabled]="!item.evento.creadoPor?.urlVideollamada"
+                          [title]="item.evento.creadoPor?.urlVideollamada ? 'Iniciar videollamada de Meet' : 'Configura tu sala en Ajustes'"
+                          (click)="abrirVideollamada(item.evento.creadoPor?.urlVideollamada, $event)"
+                        >
+                          <i class="bi bi-camera-video"></i> Iniciar
+                        </button>
+                      }
+                      @if (!item.evento.esVirtual) {
+                        <button
+                          class="ag-action ag-action--neutral"
+                          title="Editar evento"
+                          (click)="abrirModalEvento(item.evento, $event)"
+                        >
+                          <i class="bi bi-pencil"></i>
+                        </button>
+                      }
+                    </span>
+                  </div>
+                </article>
+              }
+            }
+          }
+        </div>
+      </section>
+
+      <!-- Pendientes — ahora con un hueco declarado, no una fila implícita -->
+      @if (hayPendientes()) {
+        <section class="ag-rail__block ag-rail__block--pend">
+          <div class="ag-rail__head">
+            <i class="bi bi-list-check ag-rail__head-icon"></i>
+            <h2 class="ag-rail__title">Tienes pendiente</h2>
+            <span class="ag-rail__badge">{{ totalPendientes() }}</span>
+          </div>
+
+          <div class="ag-rail__body">
+            @if (informesEnBorrador().length > 0) {
+              <div class="ag-pend__grupo">
+                <div class="ag-pend__label">
+                  <i class="bi bi-file-earmark-text"></i> Informes en borrador
+                </div>
+                @for (informe of informesEnBorrador(); track informe.id) {
+                  <button class="ag-pend__item" type="button" (click)="irAlInforme(informe)">
+                    <span>{{ informe.cliente.nombre }} {{ informe.cliente.apellidos }}</span>
+                    <span class="ag-pend__meta">{{ informe.tipoInforme }}</span>
+                  </button>
+                }
+              </div>
+            }
+
+            @if (objetivosSinEvaluar().length > 0) {
+              <div class="ag-pend__grupo">
+                <div class="ag-pend__label">
+                  <i class="bi bi-bullseye"></i> Objetivos sin evaluar
+                </div>
+                @for (obj of objetivosSinEvaluar(); track obj.clienteObjetivoId) {
+                  <button class="ag-pend__item" type="button" (click)="irAlObjetivo(obj)">
+                    <span>{{ obj.cliente.nombre }} — {{ obj.objetivo }}</span>
+                  </button>
+                }
+              </div>
             }
           </div>
-        }
-      </div>
-    }
-    <!-- ╚═══════════════════════════════════════════════════╝ -->
+        </section>
+      }
 
+    </aside>
 
   </div>
 </div>
+
 
 <!-- ── Modal crear/editar evento ────────────────────────── -->
 @if (mostrarModalEvento()) {

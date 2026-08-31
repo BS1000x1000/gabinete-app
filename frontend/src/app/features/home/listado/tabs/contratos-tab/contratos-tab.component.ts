@@ -12,7 +12,7 @@ import { finalize } from 'rxjs';
 import { ContratosService } from '../../../../../services/contratos.service';
 import { TrabajadorService } from '../../../../../services/trabajadores.service';
 import { AuthService } from '../../../../../services/auth.service';
-import { ContratoServicio, CreateContratoPayload, SlotPayload, ModalidadSlot, DIAS, TIPO_COLOR, ESTADO_CONTRATO_LABEL } from '../../../../../interface/contrato.interface';
+import { ContratoServicio, CreateContratoPayload, SlotPayload, ModalidadSlot, PreviewReplanificacion, DIAS, TIPO_COLOR, ESTADO_CONTRATO_LABEL } from '../../../../../interface/contrato.interface';
 import { TipoSesion, TIPO_SESION_LABELS } from '../../../../../interface/sesion.interface';
 
 interface SlotForm {
@@ -59,18 +59,19 @@ function emptyForm(trabajadorId = ''): NuevoContratoForm {
 <div class="contratos-tab">
 
   <!-- Header -->
-  <div class="ct-header">
-    <div class="ct-header-left">
-      <h4 class="ct-title">
-        <i class="bi bi-file-earmark-ruled me-2"></i>Contratos de servicio
-      </h4>
-      <span *ngIf="contratosActivos().length" class="ct-count-badge">
-        {{ contratosActivos().length }} activo{{ contratosActivos().length !== 1 ? 's' : '' }}
-      </span>
+  <div class="gb-header">
+    <div>
+      <h2 class="gb-header__titulo">
+        <i class="bi bi-file-earmark-ruled"></i>Contratos de servicio
+        <span *ngIf="contratosActivos().length" class="gb-count">{{ contratosActivos().length }}</span>
+      </h2>
+      <p class="gb-header__sub">Horario semanal, cuota y vigencia de cada terapia</p>
     </div>
-    <button *ngIf="!auth.isRecep()" class="ct-btn-nuevo" (click)="abrirModal()" type="button">
-      <i class="bi bi-plus-circle me-1"></i> Nuevo contrato
-    </button>
+    <div class="gb-header__acciones">
+      <button *ngIf="!auth.isRecep()" class="gb-btn gb-btn--primary" (click)="abrirModal()" type="button">
+        <i class="bi bi-plus-lg"></i><span>Nuevo contrato</span>
+      </button>
+    </div>
   </div>
 
   <div *ngIf="errorGlobal()" class="ct-alert ct-alert-danger">
@@ -83,11 +84,11 @@ function emptyForm(trabajadorId = ''): NuevoContratoForm {
 
   <ng-container *ngIf="!cargando()">
 
-    <div *ngIf="!contratosActivos().length && !contratosHistorico().length" class="ct-empty">
-      <div class="ct-empty-icon"><i class="bi bi-file-earmark-ruled"></i></div>
-      <p class="ct-empty-title">Sin contratos de servicio</p>
-      <p class="ct-empty-desc">Crea el primero para empezar a gestionar cuotas mensuales</p>
-      <button *ngIf="!auth.isRecep()" class="ct-btn-nuevo" (click)="abrirModal()" type="button">
+    <div *ngIf="!contratosActivos().length && !contratosHistorico().length" class="gb-empty">
+      <div class="gb-empty__icono-wrap"><i class="bi bi-file-earmark-ruled"></i></div>
+      <p class="gb-empty__titulo">Sin contratos de servicio</p>
+      <p class="gb-empty__texto">Crea el primero para empezar a gestionar cuotas mensuales</p>
+      <button *ngIf="!auth.isRecep()" class="gb-btn gb-btn--primary" (click)="abrirModal()" type="button">
         <i class="bi bi-plus-circle me-1"></i> Crear primer contrato
       </button>
     </div>
@@ -322,8 +323,8 @@ function emptyForm(trabajadorId = ''): NuevoContratoForm {
     </div>
 
     <div class="ct-modal-footer">
-      <button class="ct-btn-ghost" (click)="cerrarModal()" type="button">Cancelar</button>
-      <button class="ct-btn-primary" [disabled]="creando() || !formValido()" (click)="crearContrato()" type="button">
+      <button class="gb-btn" (click)="cerrarModal()" type="button">Cancelar</button>
+      <button class="gb-btn gb-btn--primary" [disabled]="creando() || !formValido()" (click)="crearContrato()" type="button">
         <span *ngIf="creando()" class="spinner-border spinner-border-sm me-1" style="width:14px;height:14px"></span>
         <i *ngIf="!creando()" class="bi bi-check-circle me-1"></i>
         {{ creando() ? 'Creando…' : 'Crear contrato' }}
@@ -440,12 +441,89 @@ function emptyForm(trabajadorId = ''): NuevoContratoForm {
 
     </div>
 
-    <div class="ct-modal-footer">
-      <button class="ct-btn-ghost" (click)="cerrarEdicion()" type="button">Cancelar</button>
-      <button class="ct-btn-primary" [disabled]="guardandoEdicion()" (click)="guardarEdicion()" type="button">
-        <span *ngIf="guardandoEdicion()" class="spinner-border spinner-border-sm me-1" style="width:14px;height:14px"></span>
-        <i *ngIf="!guardandoEdicion()" class="bi bi-check-circle me-1"></i>
-        {{ guardandoEdicion() ? 'Guardando…' : 'Guardar cambios' }}
+    <!-- ═══ Vista previa del cambio de horario ═══ -->
+    <div *ngIf="preview() as p" class="ct-preview">
+      <h6 class="ct-preview__titulo">
+        <i class="bi bi-calendar-week me-2"></i>Qué pasará con las sesiones ya programadas
+      </h6>
+
+      <div class="ct-preview__cifras">
+        <div class="ct-cifra ct-cifra--mover" *ngIf="p.resumen.seMueven">
+          <strong>{{ p.resumen.seMueven }}</strong><span>se mueven</span>
+        </div>
+        <div class="ct-cifra ct-cifra--crear" *ngIf="p.resumen.seCrean">
+          <strong>{{ p.resumen.seCrean }}</strong><span>se crean</span>
+        </div>
+        <div class="ct-cifra ct-cifra--cancelar" *ngIf="p.resumen.seCancelan">
+          <strong>{{ p.resumen.seCancelan }}</strong><span>se cancelan</span>
+        </div>
+        <div class="ct-cifra" *ngIf="p.resumen.enFestivo">
+          <strong>{{ p.resumen.enFestivo }}</strong><span>en festivo</span>
+        </div>
+        <div class="ct-cifra" *ngIf="p.resumen.enVacaciones">
+          <strong>{{ p.resumen.enVacaciones }}</strong><span>en vacaciones</span>
+        </div>
+      </div>
+
+      <!-- Primeros movimientos, para que se vea que el cambio es el esperado -->
+      <div *ngIf="p.mover.length" class="ct-preview__lista">
+        <div *ngFor="let m of p.mover.slice(0, 5)" class="ct-preview__fila">
+          <span>{{ m.de | date:'EEE dd/MM HH:mm' }}</span>
+          <i class="bi bi-arrow-right"></i>
+          <strong>{{ m.a | date:'EEE dd/MM HH:mm' }}</strong>
+        </div>
+        <p *ngIf="p.mover.length > 5" class="ct-preview__resto">
+          …y {{ p.mover.length - 5 }} más
+        </p>
+      </div>
+
+      <!-- La cancelación del borde asusta sin contexto: su sustituta existe, solo
+           que fuera de los meses ya generados. -->
+      <p *ngIf="p.resumen.seCancelanPorVentana" class="ct-preview__nota">
+        <i class="bi bi-info-circle"></i>
+        De las canceladas, {{ p.resumen.seCancelanPorVentana }}
+        {{ p.resumen.seCancelanPorVentana === 1 ? 'lo es' : 'lo son' }} solo porque su
+        sustituta cae más allá de los meses ya generados. Aparecerá sola cuando se
+        amplíe la agenda: no se pierde ninguna sesión.
+      </p>
+
+      <div *ngIf="p.choques.length" class="ct-preview__aviso">
+        <i class="bi bi-exclamation-triangle"></i>
+        <div>
+          <strong>{{ p.choques.length }} choque{{ p.choques.length !== 1 ? 's' : '' }} de horario</strong>
+          <p class="mb-0">{{ p.choques[0].descripcion }}. Se puede continuar igualmente.</p>
+        </div>
+      </div>
+
+      <!-- La garantía de que no se reescribe historia clínica -->
+      <p class="ct-preview__intocables">
+        No se toca nada de esto:
+        {{ p.intocables.completadas }} completadas ·
+        {{ p.intocables.canceladas }} canceladas ·
+        {{ p.intocables.sueltas }} sueltas ·
+        {{ p.intocables.pasadas }} pasadas.
+        Las que se retiran se <strong>cancelan</strong>, no se borran.
+      </p>
+
+      <div class="ct-preview__acciones">
+        <button class="gb-btn" (click)="cancelarPreview()" type="button">Volver a editar</button>
+        <button class="gb-btn gb-btn--primary" [disabled]="aplicandoPreview()"
+                (click)="confirmarReplanificacion()" type="button">
+          <span *ngIf="aplicandoPreview()" class="spinner-border spinner-border-sm me-1" style="width:14px;height:14px"></span>
+          <i *ngIf="!aplicandoPreview()" class="bi bi-check2-all me-1"></i>
+          {{ aplicandoPreview() ? 'Aplicando…' : 'Aplicar cambio de horario' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="ct-modal-footer" *ngIf="!preview()">
+      <button class="gb-btn" (click)="cerrarEdicion()" type="button">Cancelar</button>
+      <button class="gb-btn gb-btn--primary"
+              [disabled]="guardandoEdicion() || cargandoPreview()"
+              (click)="guardarEdicion()" type="button">
+        <span *ngIf="guardandoEdicion() || cargandoPreview()" class="spinner-border spinner-border-sm me-1" style="width:14px;height:14px"></span>
+        <i *ngIf="!guardandoEdicion() && !cargandoPreview()" class="bi bi-check-circle me-1"></i>
+        {{ cargandoPreview() ? 'Calculando…' : (guardandoEdicion() ? 'Guardando…' : 'Guardar cambios') }}
       </button>
     </div>
   </div>
@@ -669,6 +747,7 @@ export class ContratosTabComponent implements OnInit {
 
   cerrarEdicion(): void {
     this.edicion.set(null);
+    this.preview.set(null);
     this.ficheroSel.set(null);
     this.errorEdicion.set(null);
   }
@@ -724,17 +803,110 @@ export class ContratosTabComponent implements OnInit {
    * El orden importa: primero los datos, después el documento, para que la subida
    * limpie el aviso de desfase que el propio guardado acaba de generar.
    */
+  /** Los slots del formulario, ya validados y en el formato del backend. */
+  private slotsDelFormulario(): SlotPayload[] | null {
+    const ed = this.edicion();
+    if (!ed) return null;
+    const validos = ed.slots.filter(
+      s => s.diaSemana !== '' && s.horaInicio && s.horaFin && s.duracionMinutos,
+    );
+    if (!validos.length) return null;
+    return validos.map(s => ({
+      diaSemana:       Number(s.diaSemana),
+      horaInicio:      s.horaInicio,
+      horaFin:         s.horaFin,
+      duracionMinutos: Number(s.duracionMinutos),
+      modalidad:       s.modalidad,
+    }));
+  }
+
+  /** ¿Ha cambiado el horario semanal respecto al que tiene el contrato? */
+  private horarioHaCambiado(slots: SlotPayload[]): boolean {
+    const ed = this.edicion();
+    if (!ed) return false;
+    const clave = (s: { diaSemana: number; horaInicio: string; horaFin: string }) =>
+      `${s.diaSemana}-${s.horaInicio}-${s.horaFin}`;
+    const antes = ed.contrato.slots.map(clave).sort().join('|');
+    const ahora = slots.map(clave).sort().join('|');
+    return antes !== ahora;
+  }
+
+  /**
+   * Si cambian los días de sesión, primero se enseña qué le pasaría a las
+   * sesiones ya programadas. Nada se toca hasta que el usuario lo confirma.
+   */
   guardarEdicion(): void {
     const ed = this.edicion();
     if (!ed || this.guardandoEdicion()) return;
 
-    const slotsValidos = ed.slots.filter(
-      s => s.diaSemana !== '' && s.horaInicio && s.horaFin && s.duracionMinutos,
-    );
-    if (!slotsValidos.length) {
+    const slots = this.slotsDelFormulario();
+    if (!slots) {
       this.errorEdicion.set('El contrato necesita al menos un día de sesión.');
       return;
     }
+
+    if (this.horarioHaCambiado(slots)) {
+      this.pedirVistaPrevia(ed.contrato.id, slots);
+      return;
+    }
+
+    this.guardarSinTocarSesiones(slots);
+  }
+
+  // ── Replanificación ─────────────────────────────────────────
+
+  preview          = signal<PreviewReplanificacion | null>(null);
+  cargandoPreview  = signal(false);
+  aplicandoPreview = signal(false);
+
+  private pedirVistaPrevia(contratoId: string, slots: SlotPayload[]): void {
+    this.cargandoPreview.set(true);
+    this.errorEdicion.set(null);
+
+    this.contratosService
+      .previewReplanificar(contratoId, slots)
+      .pipe(finalize(() => this.cargandoPreview.set(false)))
+      .subscribe({
+        next: plan => this.preview.set(plan),
+        error: err =>
+          this.errorEdicion.set(
+            err?.error?.message ?? 'No se pudo calcular el efecto del cambio de horario.',
+          ),
+      });
+  }
+
+  cancelarPreview(): void {
+    this.preview.set(null);
+  }
+
+  confirmarReplanificacion(): void {
+    const ed = this.edicion();
+    const plan = this.preview();
+    const slots = this.slotsDelFormulario();
+    if (!ed || !plan || !slots || this.aplicandoPreview()) return;
+
+    this.aplicandoPreview.set(true);
+    this.errorEdicion.set(null);
+
+    this.contratosService
+      .replanificar(ed.contrato.id, slots, plan.hash)
+      .pipe(finalize(() => this.aplicandoPreview.set(false)))
+      .subscribe({
+        next: () => {
+          // La replanificación ya guardó los slots; queda el resto del resumen
+          this.preview.set(null);
+          this.guardarSinTocarSesiones(slots);
+        },
+        error: err =>
+          this.errorEdicion.set(
+            err?.error?.message ?? 'No se pudo aplicar el cambio de horario.',
+          ),
+      });
+  }
+
+  private guardarSinTocarSesiones(slots: SlotPayload[]): void {
+    const ed = this.edicion();
+    if (!ed) return;
 
     this.guardandoEdicion.set(true);
     this.errorEdicion.set(null);
@@ -744,13 +916,7 @@ export class ContratosTabComponent implements OnInit {
         cuotaMensual: Number(ed.cuotaMensual),
         fechaFin:     ed.fechaFin || null,
         notas:        ed.notas,
-        slots: slotsValidos.map(s => ({
-          diaSemana:       Number(s.diaSemana),
-          horaInicio:      s.horaInicio,
-          horaFin:         s.horaFin,
-          duracionMinutos: Number(s.duracionMinutos),
-          modalidad:       s.modalidad,
-        })),
+        slots,
       })
       .subscribe({
         next: () => {

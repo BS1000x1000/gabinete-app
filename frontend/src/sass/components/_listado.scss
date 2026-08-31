@@ -95,9 +95,9 @@
   border: 1px solid $border-color;
 
   &.fchip-active {
-    background: #dcfce7;
-    color: #15803d;
-    border-color: #bbf7d0;
+    background: $success-light;
+    color: $success-dark;
+    border-color: $success-light;
   }
 
   &.fchip-inactive {
@@ -238,11 +238,19 @@
   &:not(.active) i { opacity: 0.75; }
 }
 
+// El lienzo de la pestaña. Antes no aportaba padding y cada pestaña se inventaba
+// el suyo (24px en cuatro, 20px en Contratos, 16px en Terapeutas), asi que el
+// marco parecia cambiar de tamaño al cambiar de pestaña. Ahora manda el contenedor.
 .ficha-tab-body {
   flex: 1;
   overflow-y: auto;
   @include custom-scrollbar(6px);
   min-width: 0;
+  padding: $spacing-lg;
+
+  @include respond-to('md') {
+    padding: $spacing-md;
+  }
 }
 
 // ========================================
@@ -250,7 +258,6 @@
 // ========================================
 
 .perfil-tab {
-  padding: $spacing-lg;
 
   @include respond-to('md') {
     padding: $spacing-md;
@@ -289,16 +296,28 @@
   background: $gray-50;
 }
 
+// El icono identifica el TEMA de la tarjeta, no un color arbitrario. Antes cada
+// uno llevaba el color escrito a mano en el HTML (incluido un rosa y un ambar que
+// no existian en la paleta), asi que la superficie mas mirada de la ficha no era
+// tematizable. Ahora el color sale del sistema.
 .perfil-card-icon {
   width: 32px;
   height: 32px;
-  border-radius: 8px;
+  border-radius: $border-radius;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 
   i { font-size: 0.9rem; }
+
+  &--personal      { background: $primary-light;   color: $primary-dark;   }
+  &--salud         { background: $danger-light;    color: $danger-dark;    }
+  &--familia       { background: $info-light;      color: $info-dark;      }
+  &--colegio       { background: $success-light;   color: $success-dark;   }
+  &--profesionales { background: $warning-light;   color: $warning-dark;   }
+  &--facturacion   { background: $secondary-light; color: $secondary-dark; }
+  &--rgpd          { background: $accent-light;    color: $accent-dark;    }
 }
 
 .perfil-card-title {
@@ -637,11 +656,11 @@
   font-weight: 600;
   display: inline-block;
 
-  &.badge-yes      { background: #dcfce7; color: #15803d; }
+  &.badge-yes      { background: $success-light; color: $success-dark; }
   &.badge-no       { background: $gray-100; color: $gray-500; }
-  &.badge-primary  { background: #dbeafe; color: #1d4ed8; }
-  &.badge-success  { background: #dcfce7; color: #15803d; }
-  &.badge-whatsapp { background: #dcfce7; color: #15803d; }
+  &.badge-primary  { background: $info-light; color: $info-dark; }
+  &.badge-success  { background: $success-light; color: $success-dark; }
+  &.badge-whatsapp { background: $success-light; color: $success-dark; }
 }
 
 .count-badge {
@@ -708,10 +727,10 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  border-bottom: 1px solid #e9ecef;
+  border-bottom: 1px solid $gray-200;
   flex-shrink: 0;
   min-height: 65px;
-  background: #fafafa;
+  background: $gray-50;
 }
 
 .drawer-title {
@@ -722,7 +741,7 @@
   h5 {
     font-size: 0.95rem;
     font-weight: 700;
-    color: #1e293b;
+    color: $gray-800;
     margin: 0;
   }
 
@@ -733,7 +752,7 @@
   width: 38px;
   height: 38px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, $primary 0%, $primary-dark 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -746,20 +765,20 @@
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  border: 1px solid #e9ecef;
+  border: 1px solid $gray-200;
   background: white;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: #64748b;
+  color: $gray-500;
   transition: all 0.15s ease;
   padding: 0;
 
   &:hover {
-    background: #f1f5f9;
-    color: #1e293b;
-    border-color: #cbd5e1;
+    background: $gray-100;
+    color: $gray-800;
+    border-color: $gray-300;
   }
 
   i { font-size: 0.85rem; }
@@ -772,30 +791,30 @@
 
   &::-webkit-scrollbar { width: 4px; }
   &::-webkit-scrollbar-track { background: transparent; }
-  &::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+  &::-webkit-scrollbar-thumb { background: $gray-300; border-radius: 4px; }
 
   .form-label {
     font-size: 0.8rem;
     font-weight: 600;
-    color: #475569;
+    color: $gray-600;
     margin-bottom: 4px;
   }
 
   .form-control,
   .form-select {
     font-size: 0.875rem;
-    border-color: #e2e8f0;
+    border-color: $gray-200;
     border-radius: 8px;
     padding: 7px 12px;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
 
     &:focus {
-      border-color: #6366f1;
+      border-color: $primary;
       box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
     }
 
     &.is-invalid {
-      border-color: #ef4444;
+      border-color: $danger;
       &:focus { box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1); }
     }
   }
@@ -806,16 +825,16 @@
   }
 
   .form-check-input:checked {
-    background-color: #6366f1;
-    border-color: #6366f1;
+    background-color: $primary;
+    border-color: $primary;
   }
 }
 
 .drawer-footer {
   padding: 16px 20px;
-  border-top: 1px solid #e9ecef;
+  border-top: 1px solid $gray-200;
   flex-shrink: 0;
-  background: #fafafa;
+  background: $gray-50;
 
   .btn {
     border-radius: 8px;
@@ -844,7 +863,7 @@
 
 .form-section {
   padding: 16px 0;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid $gray-100;
 
   &:last-child { border-bottom: none; }
 }
@@ -854,17 +873,17 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #94a3b8;
+  color: $gray-400;
   margin-bottom: 12px;
 }
 
 .contacto-section {
-  background: #f8fafc;
-  border: 1px solid #e9ecef !important;
+  background: $gray-50;
+  border: 1px solid $gray-200 !important;
   border-radius: 10px;
   padding: 16px !important;
   margin-bottom: 12px;
-  border-bottom: 1px solid #e9ecef !important;
+  border-bottom: 1px solid $gray-200 !important;
 }
 
 // ========================================

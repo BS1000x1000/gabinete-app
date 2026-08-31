@@ -74,6 +74,7 @@ model Trabajador {
   facturasEmitidas     Factura[]           @relation("FacturasEmitidas")
   contadorFacturas     ContadorFactura[]
   documentosSubidos    DocumentoCliente[]  @relation("DocumentosSubidos")
+  horarioLaboral       HorarioLaboral[]
 
   @@map("trabajadores")
 }
@@ -227,6 +228,14 @@ model Sesion {
   contratoId  String?           @map("id_contrato")
   contrato    ContratoServicio? @relation("SesionesContrato", fields: [contratoId], references: [id])
 
+  /// Un cliente no puede tener dos sesiones con el mismo terapeuta empezando en
+  /// el mismo instante. Es lo que hace que `skipDuplicates` funcione de verdad en
+  /// el generador del contrato y en el cron: hasta ahora la tabla no tenia ninguna
+  /// constraint unica, asi que `skipDuplicates` era un no-op silencioso.
+  /// Deliberadamente NO incluye el contrato: asi una sesion suelta (evaluacion,
+  /// extra) sigue pudiendo crearse a cualquier otra hora, o a la misma con otro
+  /// terapeuta, que es un caso real (reunion de colegio con dos hermanos).
+  @@unique([clienteId, trabajadorId, fechaHoraInicio])
   @@index([clienteId])
   @@index([trabajadorId])
   @@index([fechaHoraInicio])
@@ -770,6 +779,34 @@ model EventoParticipante {
   @@map("evento_participantes")
 }
 
+/// Jornada laboral declarada del terapeuta (p. ej. lunes, miercoles y viernes de
+/// 15:00 a 20:00). Convencion ISO 1=Lun..7=Dom, como ContratoSlot y HorarioAdmin.
+///
+/// Es INFORMATIVA: nunca bloquea crear ni mover una sesion, solo genera un aviso.
+/// El gabinete a veces necesita meter una sesion a deshora y la app no debe
+/// impedirselo. Siendo los terapeutas autonomos, su horario es suyo: la app lo
+/// usa para avisar de despistes, no para imponer una jornada.
+///
+/// Un terapeuta sin ninguna fila aqui no genera ningun aviso.
+///
+/// No se reutiliza `HorarioAdmin` porque significa lo contrario: aquello son
+/// bloques de tiempo OCUPADO por tareas administrativas dentro de la jornada.
+model HorarioLaboral {
+  id           String   @id @default(uuid())
+  trabajadorId String   @map("id_trabajador")
+  diaSemana    Int      @map("dia_semana")
+  horaInicio   String   @map("hora_inicio")
+  horaFin      String   @map("hora_fin")
+  activo       Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("fecha_creacion")
+  updatedAt    DateTime @updatedAt @map("ultima_actualizacion")
+
+  trabajador Trabajador @relation(fields: [trabajadorId], references: [id], onDelete: Cascade)
+
+  @@index([trabajadorId, diaSemana])
+  @@map("horarios_laborales")
+}
+
 model HorarioAdmin {
   id           String       @id @default(uuid())
   trabajadorId String       @map("trabajador_id")
@@ -830,6 +867,12 @@ model ContratoServicio {
   mimeTypeFirmado    String?   @map("mime_type_firmado")
   tamanoBytesFirmado Int?      @map("tamano_bytes_firmado")
   fechaSubidaFirmado DateTime? @map("fecha_subida_firmado")
+
+  /// Hasta que fecha se han generado ya las sesiones de este contrato. La
+  /// generacion es una ventana movil que un cron va empujando mes a mes, en vez
+  /// de crear un anio entero de golpe: cuanto mas lejos se genera, mas sesiones
+  /// hay que recolocar cuando la familia cambia de dia.
+  generadoHasta DateTime? @map("generado_hasta")
 
   /// Ultima vez que se tocaron los campos del resumen (cuota, vigencia, slots).
   /// Si es posterior a `fechaSubidaFirmado`, el PDF firmado ya no refleja los

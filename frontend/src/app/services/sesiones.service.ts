@@ -172,23 +172,12 @@ export class SesionesService {
   // GENERACIÓN AUTOMÁTICA
   // ========================================
 
-  /**
-   * Generar sesiones desde disponibilidad
+  /*
+   * `generarSesiones()` se retiro (2026-08-31) junto con su endpoint.
+   * El horario recurrente lo define el contrato; para una sesion suelta esta
+   * `createSesion()`, que ahora si tiene endpoint en el backend.
    */
-  generarSesiones(dto: {
-    clienteId: string;
-    trabajadorId: string;
-    fechaInicio: string;
-    fechaFin: string;
-    tipoSesion?: string;
-  }): Observable<any> {
-    return this.http
-      .post<WrappedResponse<any>>(`${this.api}/generar`, dto)
-      .pipe(
-        map((res) => res.data || res),
-        tap(() => {}),
-      );
-  }
+
 
   // ========================================
   // CALENDARIOS

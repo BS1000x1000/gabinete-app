@@ -7,21 +7,23 @@ export interface WizardStep {
 }
 
 /**
- * Orden del alta: primero quién es y quién responde por él, luego el contexto
- * (salud y colegio), y al final la operativa (horario y terapeuta).
+ * Orden del alta: quién es el niño, quién responde por él y su contexto de salud
+ * y colegio. Nada más.
  *
- * No hay paso de Objetivos a propósito: los objetivos GAS se dictaminan tras el
- * período de análisis con la pedagoga, no en el alta. Se definen desde la pestaña
- * Registro de la ficha del cliente.
+ * No hay paso de Horario ni de Asignación a propósito: el horario semanal y el
+ * terapeuta los define el CONTRATO, que es lo que firma la familia. Pedirlos aquí
+ * obligaba a teclear el mismo horario hasta tres veces y creaba una segunda
+ * fuente de verdad que competía con la del contrato.
+ *
+ * Tampoco hay paso de Objetivos: los GAS se dictaminan tras el período de
+ * análisis con la pedagoga, y se definen desde la pestaña Seguimiento.
  */
 export const WIZARD_STEPS: WizardStep[] = [
-  { id: 0, titulo: 'Datos básicos', icono: 'person',        completado: false, opcional: false },
-  { id: 1, titulo: 'Familia',       icono: 'people',        completado: false, opcional: false },
-  { id: 2, titulo: 'Sanitario',     icono: 'heart-pulse',   completado: false, opcional: true  },
-  { id: 3, titulo: 'Colegio',       icono: 'building',      completado: false, opcional: true  },
-  { id: 4, titulo: 'Horario',       icono: 'clock',         completado: false, opcional: false },
-  { id: 5, titulo: 'Asignación',    icono: 'person-badge',  completado: false, opcional: true  },
-  { id: 6, titulo: 'Resumen',       icono: 'check-circle',  completado: false, opcional: false },
+  { id: 0, titulo: 'Datos básicos', icono: 'person',       completado: false, opcional: false },
+  { id: 1, titulo: 'Familia',       icono: 'people',       completado: false, opcional: false },
+  { id: 2, titulo: 'Sanitario',     icono: 'heart-pulse',  completado: false, opcional: true  },
+  { id: 3, titulo: 'Colegio',       icono: 'building',     completado: false, opcional: true  },
+  { id: 4, titulo: 'Resumen',       icono: 'check-circle', completado: false, opcional: false },
 ];
 
 /** Especialistas del CENTRO ESCOLAR — atienden al alumno dentro del colegio. */

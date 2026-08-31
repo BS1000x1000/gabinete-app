@@ -15,9 +15,26 @@ import { PaginationDto } from 'src/common/dto/pagination.dto';
 export class ClientesService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * Terapia por defecto segun el rol de quien da de alta al cliente.
+   * Sirve para la auto-asignacion: el alta ya no pide terapeuta, pero sin
+   * ninguna asignacion el propio profesional dejaria de ver la ficha que acaba
+   * de crear (`findAll` filtra por `trabajadoresAsignados`). El contrato luego
+   * ajusta o añade las que hagan falta.
+   */
+  private terapiaPorRol(rol?: string): TipoSesion | null {
+    switch (rol) {
+      case 'PEDAGOGO': return TipoSesion.PEDAGOGIA;
+      case 'NEURO':    return TipoSesion.NEUROPSICOLOGIA;
+      case 'LOGOPEDA': return TipoSesion.LOGOPEDIA;
+      default:         return null; // ADMIN y RECEP ven todos los clientes igualmente
+    }
+  }
+
   async create(
     createClienteDto: CreateClienteDto,
     trabajadorId?: string,
+    rol?: string,
   ): Promise<ClienteWithRelations> {
     // El DNI es opcional: '' se normaliza a null para que varios clientes sin DNI
     // puedan convivir bajo el indice unico (en Postgres '' colisiona, NULL no).
@@ -145,14 +162,18 @@ export class ClientesService {
               clienteId: cliente.id,
               trabajadorId: asignacion.trabajadorId,
               tipoTerapia: asignacion.tipoTerapia,
-              horarios: {
-                create: asignacion.horarios.map((h) => ({
-                  diaSemana: h.diaSemana,
-                  horaInicio: h.horaInicio,
-                  horaFin: h.horaFin,
-                })),
-              },
             },
+          });
+        }
+      } else {
+        // El alta ya no pide terapeuta: quien crea la ficha se asigna solo. Sin
+        // ninguna asignacion, un terapeuta perderia de vista al cliente que
+        // acaba de dar de alta, porque `findAll` filtra por asignaciones activas.
+        // El contrato ajustara o añadira las que hagan falta.
+        const terapia = this.terapiaPorRol(rol);
+        if (trabajadorId && terapia) {
+          await tx.clienteTrabajador.create({
+            data: { clienteId: cliente.id, trabajadorId, tipoTerapia: terapia },
           });
         }
       }
@@ -510,18 +531,24 @@ export class ClientesService {
     };
   }
 
+  /**
+   * Actualiza los horarios de una asignacion cliente-terapeuta.
+   *
+   * YA NO TOCA LAS SESIONES (2026-08-31). Antes borraba las futuras y las
+   * recreaba, con tres efectos que nadie veia: perdia el `contratoId` -y con el
+   * la trazabilidad a facturacion-, no filtraba festivos ni vacaciones, y
+   * competia con el generador del contrato escribiendo en la misma tabla.
+   *
+   * El horario recurrente lo define el contrato. Para mover sesiones en bloque
+   * esta la replanificacion del contrato.
+   */
   async actualizarHorariosAsignacion(
     clienteId: string,
     asignacionId: string,
     horarios: { diaSemana: number; horaInicio: string; horaFin: string }[],
-    confirmarActualizacionSesiones: boolean = false,
   ) {
     const asignacion = await this.prisma.clienteTrabajador.findFirst({
       where: { id: asignacionId, clienteId },
-      include: {
-        trabajador: true,
-        horarios: true, // horarios actuales (antes de cambiar)
-      },
     });
 
     if (!asignacion) {
@@ -530,128 +557,27 @@ export class ClientesService {
       );
     }
 
-    if (horarios.length === 0) {
-      throw new BadRequestException('Debes proporcionar al menos un horario');
-    }
-
-    const ahora = new Date();
-
-    // 1. Buscar sesiones futuras de esta asignación cliente-trabajador
-    const sesionesFuturas = await this.prisma.sesion.findMany({
-      where: {
-        clienteId,
-        trabajadorId: asignacion.trabajadorId,
-        fechaHoraInicio: { gt: ahora },
-      },
-      select: {
-        id: true,
-        fechaHoraInicio: true,
-        fechaHoraFin: true,
-        tipoSesion: true,
-      },
-    });
-
-    // 2. Si hay sesiones futuras y el usuario NO ha confirmado → devolver aviso
-    if (sesionesFuturas.length > 0 && !confirmarActualizacionSesiones) {
-      return {
-        requiereConfirmacion: true,
-        ssesionesFuturas: sesionesFuturas.length,
-        mensaje: `Hay ${sesionesFuturas.length} sesiones futuras programadas para este terapeuta. ¿Quieres eliminarlas y regenerarlas con el nuevo horario?`,
-      };
-    }
-
-    // 3. Ejecutar todo en una transacción
-    await this.prisma.$transaction(async (tx) => {
-      // 3a. Reemplazar horarios
-      await tx.disponibilidadClienteTrabajador.deleteMany({
+    await this.prisma.$transaction([
+      this.prisma.disponibilidadClienteTrabajador.deleteMany({
         where: { clienteTrabajadorId: asignacionId },
-      });
-      await tx.disponibilidadClienteTrabajador.createMany({
+      }),
+      this.prisma.disponibilidadClienteTrabajador.createMany({
         data: horarios.map((h) => ({
           clienteTrabajadorId: asignacionId,
-          diaSemana: h.diaSemana,
+          diaSemana:  h.diaSemana,
           horaInicio: h.horaInicio,
-          horaFin: h.horaFin,
+          horaFin:    h.horaFin,
         })),
-      });
-
-      // 3b. Si hay sesiones futuras y el usuario confirmó → eliminar y regenerar
-      if (sesionesFuturas.length > 0 && confirmarActualizacionSesiones) {
-        // Borrar las sesiones futuras existentes
-        await tx.sesion.deleteMany({
-          where: {
-            clienteId,
-            trabajadorId: asignacion.trabajadorId,
-            fechaHoraInicio: { gt: ahora },
-          },
-        });
-
-        // Regenerar con el nuevo horario
-        // Rango: desde mañana hasta la fecha máxima de las sesiones eliminadas
-        const fechasExistentes = sesionesFuturas.map((s) => s.fechaHoraInicio);
-        const fechaMaxima = new Date(
-          Math.max(...fechasExistentes.map((f) => f.getTime())),
-        );
-
-        const sesionesNuevas: any[] = [];
-        const cursor = new Date(ahora);
-        cursor.setDate(cursor.getDate() + 1); // Empezar desde mañana
-        cursor.setHours(0, 0, 0, 0);
-
-        // Tomar el tipoSesion de la primera sesión eliminada
-        const tipoSesion = sesionesFuturas[0]?.tipoSesion ?? 'PEDAGOGIA';
-
-        while (cursor <= fechaMaxima) {
-          const diaSemana = cursor.getDay();
-          const horarioDelDia = horarios.find((h) => h.diaSemana === diaSemana);
-
-          if (horarioDelDia) {
-            const [hInicio, mInicio] = horarioDelDia.horaInicio
-              .split(':')
-              .map(Number);
-            const [hFin, mFin] = horarioDelDia.horaFin.split(':').map(Number);
-
-            const inicio = new Date(cursor);
-            inicio.setHours(hInicio, mInicio, 0, 0);
-
-            const fin = new Date(cursor);
-            fin.setHours(hFin, mFin, 0, 0);
-
-            sesionesNuevas.push({
-              fechaHoraInicio: inicio,
-              fechaHoraFin: fin,
-              estado: 'PROGRAMADA',
-              tipoSesion,
-              clienteId,
-              trabajadorId: asignacion.trabajadorId,
-            });
-          }
-
-          cursor.setDate(cursor.getDate() + 1);
-        }
-
-        if (sesionesNuevas.length > 0) {
-          await tx.sesion.createMany({ data: sesionesNuevas });
-        }
-      }
-    });
-
-    const sesionesMigradas =
-      confirmarActualizacionSesiones && sesionesFuturas.length > 0
-        ? `Se eliminaron ${sesionesFuturas.length} sesiones antiguas y se regeneraron con el nuevo horario.`
-        : '';
+      }),
+    ]);
 
     return {
-      requiereConfirmacion: false,
-      message:
-        `Horarios actualizados correctamente. ${sesionesMigradas}`.trim(),
+      message: 'Horarios actualizados. Las sesiones no se han modificado.',
       asignacionId,
       horariosActualizados: horarios.length,
-      sesionesMigradas: confirmarActualizacionSesiones
-        ? sesionesFuturas.length
-        : 0,
     };
   }
+
 
   /**
    * Estadísticas de objetivos del cliente

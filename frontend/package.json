@@ -31,7 +31,6 @@
     "@tiptap/extension-placeholder": "^3.20.1",
     "@tiptap/starter-kit": "^3.20.1",
     "@types/dompurify": "^3.0.5",
-    "angular-calendar": "^0.31.1",
     "bootstrap": "^5.3.8",
     "bootstrap-icons": "^1.13.1",
     "chart.js": "^4.5.1",

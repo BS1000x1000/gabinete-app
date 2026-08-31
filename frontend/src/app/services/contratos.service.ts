@@ -8,6 +8,8 @@ import {
   ContratoServicio,
   CreateContratoPayload,
   UpdateContratoPayload,
+  SlotPayload,
+  PreviewReplanificacion,
 } from '../interface/contrato.interface';
 
 interface WrappedResponse<T> { data: T; }
@@ -57,6 +59,32 @@ export class ContratosService {
     return this.http
       .patch<WrappedResponse<ContratoServicio>>(`${this.apiUrl}/${id}/finalizar`, {})
       .pipe(map(res => (res.data ?? res) as ContratoServicio));
+  }
+
+  /**
+   * Calcula qué le pasaría a las sesiones futuras con el horario nuevo.
+   * No escribe nada: es lo que se enseña antes de confirmar.
+   */
+  previewReplanificar(id: string, slots: SlotPayload[]) {
+    return this.http
+      .post<WrappedResponse<PreviewReplanificacion>>(
+        `${this.apiUrl}/${id}/replanificar/preview`,
+        { slots },
+      )
+      .pipe(map(res => (res.data ?? res) as PreviewReplanificacion));
+  }
+
+  /**
+   * Aplica la replanificación. El `hash` es el del plan que vio el usuario: si la
+   * agenda cambió por debajo, el backend lo rechaza en vez de aplicar otra cosa.
+   */
+  replanificar(id: string, slots: SlotPayload[], hashPrevisualizacion: string) {
+    return this.http
+      .post<WrappedResponse<{ aplicado: PreviewReplanificacion['resumen'] }>>(
+        `${this.apiUrl}/${id}/replanificar`,
+        { slots, hashPrevisualizacion },
+      )
+      .pipe(map(res => (res.data ?? res) as { aplicado: PreviewReplanificacion['resumen'] }));
   }
 
   /**

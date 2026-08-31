@@ -13,6 +13,8 @@ import {
 import { SesionAccionesService } from '../../../../../services/sesiones-acciones.service';
 import { SesionModalesComponent } from '../../../../../components/sesiones-modales/sesiones-modales.component';
 import { SesionesFiltrosService } from '../../../../../services/sesiones-filtros.service';
+import { NuevaSesionModalService } from '../../../../../services/nueva-sesion-modal.service';
+import { AuthService } from '../../../../../services/auth.service';
 
 @Component({
   selector: 'app-sesiones-tab',
@@ -25,6 +27,13 @@ export class SesionesTabComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private accionesSvc = inject(SesionAccionesService);
   private readonly filtrosSvc = inject(SesionesFiltrosService);
+  private readonly nuevaSesionSvc = inject(NuevaSesionModalService);
+  readonly auth = inject(AuthService);
+
+  /** Sesión suelta (evaluación, extra) con este cliente ya fijado. */
+  abrirNuevaSesion(): void {
+    this.nuevaSesionSvc.open(this.clienteId());
+  }
 
   // --- Estado ---
   clienteId = signal<string>('');

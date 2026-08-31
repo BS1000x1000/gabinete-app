@@ -83,11 +83,13 @@ describe('ClientesController', () => {
       const dto = { nombre: 'Ana', apellidos: 'García', dni: '12345678A' };
       const cliente = mockCliente();
       service.create.mockResolvedValue(cliente);
-      const req = { user: { userId: 'admin-1' } };
+      // El rol viaja al servicio: con el se auto-asigna al terapeuta que da de
+      // alta, para que no pierda de vista la ficha que acaba de crear.
+      const req = { user: { userId: 'admin-1', rol: 'PEDAGOGO' } };
 
       const result = await controller.create(dto as any, req as any);
 
-      expect(service.create).toHaveBeenCalledWith(dto, 'admin-1');
+      expect(service.create).toHaveBeenCalledWith(dto, 'admin-1', 'PEDAGOGO');
       expect(result).toEqual(cliente);
     });
   });

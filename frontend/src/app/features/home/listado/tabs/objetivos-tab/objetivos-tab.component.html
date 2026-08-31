@@ -22,14 +22,14 @@
         </div>
       </div>
       <div class="objetivos-toolbar">
-        <button *ngIf="!modoEdicion()" class="btn btn-primary btn-sm" (click)="activarModoEdicion()">
+        <button *ngIf="!modoEdicion()" class="gb-btn gb-btn--primary gb-btn--sm" (click)="activarModoEdicion()">
           <i class="bi bi-pencil me-2"></i>Editar Objetivos
         </button>
         <ng-container *ngIf="modoEdicion()">
-          <button class="btn btn-success btn-sm" (click)="guardarCambios()" [disabled]="cargando()">
+          <button class="gb-btn gb-btn--primary gb-btn--sm" (click)="guardarCambios()" [disabled]="cargando()">
             <i class="bi bi-check2 me-1"></i>Guardar
           </button>
-          <button class="btn btn-outline-secondary btn-sm" (click)="cancelarEdicion()">
+          <button class="gb-btn gb-btn--sm" (click)="cancelarEdicion()">
             <i class="bi bi-x me-1"></i>Cancelar
           </button>
         </ng-container>
@@ -41,10 +41,10 @@
     <!-- ══ MODO VISUALIZACIÓN ════════════════════════════════════ -->
     <div *ngIf="!modoEdicion()">
 
-      <div *ngIf="objetivosAgrupados().length === 0" class="objetivos-empty">
+      <div *ngIf="objetivosAgrupados().length === 0" class="gb-empty gb-empty--inline">
         <i class="bi bi-inbox"></i>
         <p>Este cliente no tiene objetivos asignados aún.</p>
-        <button class="btn btn-primary btn-sm mt-2" (click)="activarModoEdicion()">
+        <button class="gb-btn gb-btn--primary gb-btn--sm" (click)="activarModoEdicion()">
           <i class="bi bi-plus-circle me-2"></i>Asignar Objetivos
         </button>
       </div>
@@ -88,7 +88,7 @@
                   </span>
                   <span
                     *ngIf="objetivo.nivelGASActual === null || objetivo.nivelGASActual === undefined"
-                    class="badge bg-secondary bg-opacity-25 text-secondary"
+                    class="gb-badge"
                     style="font-size: 0.72rem;"
                   >
                     Sin evaluar
@@ -144,10 +144,10 @@
                 </div>
 
                 <div *ngIf="modoGas() === 'ver'" class="gas-action-btns">
-                  <button class="btn btn-primary btn-sm" (click)="activarModoEvaluar()">
+                  <button class="gb-btn gb-btn--primary gb-btn--sm" (click)="activarModoEvaluar()">
                     <i class="bi bi-clipboard2-check me-1"></i>Nueva evaluación
                   </button>
-                  <button class="btn btn-outline-secondary btn-sm" (click)="activarModoDefinir()">
+                  <button class="gb-btn gb-btn--sm" (click)="activarModoDefinir()">
                     <i class="bi bi-table me-1"></i>
                     {{ resumenGas()!.nivelesDefinidos ? 'Editar tabla' : 'Definir tabla' }}
                   </button>
@@ -164,7 +164,7 @@
                     El <strong>nivel -2</strong> es la situación de partida;
                     el <strong>nivel 0</strong> es el logro esperado.
                   </p>
-                  <button class="btn btn-sm btn-link text-muted flex-shrink-0" (click)="modoGas.set('ver')">Cancelar</button>
+                  <button class="gb-btn gb-btn--ghost gb-btn--sm" (click)="modoGas.set('ver')">Cancelar</button>
                 </div>
 
                 <div class="mb-3">
@@ -190,11 +190,11 @@
                 </div>
 
                 <div class="d-flex gap-2">
-                  <button class="btn btn-success btn-sm" (click)="guardarNiveles()" [disabled]="cargandoGas()">
+                  <button class="gb-btn gb-btn--primary gb-btn--sm" (click)="guardarNiveles()" [disabled]="cargandoGas()">
                     <span *ngIf="cargandoGas()" class="spinner-border spinner-border-sm me-1"></span>
                     <i *ngIf="!cargandoGas()" class="bi bi-check2 me-1"></i>Guardar tabla
                   </button>
-                  <button class="btn btn-outline-secondary btn-sm" (click)="modoGas.set('ver')">Cancelar</button>
+                  <button class="gb-btn gb-btn--sm" (click)="modoGas.set('ver')">Cancelar</button>
                 </div>
               </div>
 
@@ -204,7 +204,7 @@
               <div *ngIf="modoGas() === 'evaluar'">
                 <div class="d-flex justify-content-between align-items-center mb-2 gap-2">
                   <p class="gas-evaluar-hint">Selecciona el nivel actual del alumno:</p>
-                  <button class="btn btn-sm btn-link text-muted" (click)="modoGas.set('ver')">Cancelar</button>
+                  <button class="gb-btn gb-btn--ghost gb-btn--sm" (click)="modoGas.set('ver')">Cancelar</button>
                 </div>
 
                 <div class="gas-niveles-grid">
@@ -237,14 +237,14 @@
 
                 <div class="d-flex gap-2">
                   <button
-                    class="btn btn-primary btn-sm"
+                    class="gb-btn gb-btn--primary gb-btn--sm"
                     (click)="guardarEvaluacion()"
                     [disabled]="nuevaEval().nivel === null || cargandoGas()"
                   >
                     <span *ngIf="cargandoGas()" class="spinner-border spinner-border-sm me-1"></span>
                     <i *ngIf="!cargandoGas()" class="bi bi-check2 me-1"></i>Registrar evaluación
                   </button>
-                  <button class="btn btn-outline-secondary btn-sm" (click)="modoGas.set('ver')">Cancelar</button>
+                  <button class="gb-btn gb-btn--sm" (click)="modoGas.set('ver')">Cancelar</button>
                 </div>
               </div>
 
@@ -286,7 +286,7 @@
                 <div *ngIf="!resumenGas()!.nivelesDefinidos" class="gas-sin-tabla">
                   <i class="bi bi-info-circle"></i>
                   La tabla GAS aún no está definida para este objetivo.
-                  <button class="btn btn-link btn-sm p-0 ms-1" (click)="activarModoDefinir()">Definir ahora</button>
+                  <button class="gb-btn gb-btn--ghost gb-btn--sm" (click)="activarModoDefinir()">Definir ahora</button>
                 </div>
 
                 <!-- Historial de evaluaciones -->
@@ -351,10 +351,10 @@
         <div class="top-objetivos__grid">
           <div *ngFor="let obj of estadisticas()?.objetivosMasTrabajados" class="top-objetivo-item">
             <div class="top-objetivo-info">
-              <span class="badge bg-secondary me-1">{{ obj.area }}</span>
+              <span class="gb-badge me-1">{{ obj.area }}</span>
               <span>{{ obj.titulo }}</span>
             </div>
-            <span class="badge bg-primary">{{ obj.veces }}x</span>
+            <span class="gb-badge gb-badge--acento">{{ obj.veces }}x</span>
           </div>
         </div>
       </div>

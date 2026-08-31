@@ -42,11 +42,27 @@ export function esFestivo(
   return festivos.some(f => mismoDia(fecha, f.fecha));
 }
 
+/** Medianoche local del dia de `fecha`, para poder comparar dias naturales. */
+function inicioDelDia(fecha: Date): number {
+  return new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate()).getTime();
+}
+
+/**
+ * Un periodo de vacaciones cubre DIAS COMPLETOS, extremos incluidos.
+ *
+ * Se compara por dia natural y no por instante a proposito: `fechaInicio` y
+ * `fechaFin` se guardan a las 12:00 UTC (`vacaciones.service.ts`), asi que una
+ * comparacion directa dejaba fuera la tarde del ultimo dia y la mañana del
+ * primero — y ahi se colaban sesiones generadas en pleno periodo de vacaciones.
+ */
 export function enVacaciones(
   fecha: Date,
   periodos: Array<{ fechaInicio: Date; fechaFin: Date }>,
 ): boolean {
-  return periodos.some(p => fecha >= p.fechaInicio && fecha <= p.fechaFin);
+  const dia = inicioDelDia(fecha);
+  return periodos.some(
+    p => dia >= inicioDelDia(p.fechaInicio) && dia <= inicioDelDia(p.fechaFin),
+  );
 }
 
 export function combinarFechaHora(fecha: Date, hora: string): Date {

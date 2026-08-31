@@ -55,8 +55,8 @@
   &.rol-admin      { background: #6366f1; }
   &.rol-logopeda   { background: #0ea5e9; }
   &.rol-neuro      { background: #8b5cf6; }
-  &.rol-to         { background: #f59e0b; }
-  &.rol-pedagogia  { background: #10b981; }
+  &.rol-to         { background: $warning; }
+  &.rol-pedagogia  { background: $success; }
   &.rol-recepcion  { background: $secondary; }
   &.rol-terapeuta  { background: $primary; }
   &.rol-default    { background: $gray-400; }
@@ -69,9 +69,9 @@
   &.rol-admin      { background: #ede9fe; color: #6d28d9; border-color: #c4b5fd; }
   &.rol-logopeda   { background: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
   &.rol-neuro      { background: #f3e8ff; color: #7e22ce; border-color: #d8b4fe; }
-  &.rol-to         { background: #fef3c7; color: #92400e; border-color: #fde68a; }
-  &.rol-pedagogia  { background: #d1fae5; color: #065f46; border-color: #6ee7b7; }
-  &.rol-recepcion  { background: #dbeafe; color: #1e40af; border-color: #93c5fd; }
+  &.rol-to         { background: $warning-light; color: #92400e; border-color: #fde68a; }
+  &.rol-pedagogia  { background: $success-light; color: #065f46; border-color: #6ee7b7; }
+  &.rol-recepcion  { background: $info-light; color: #1e40af; border-color: #93c5fd; }
   &.rol-terapeuta  { background: $primary-ultra-light; color: darken($primary, 10%); border-color: $primary-light; }
   &.rol-default    { background: $gray-100; color: $gray-600; }
 }
@@ -141,7 +141,7 @@
   align-items: center;
   padding: 10px 14px;
   border-radius: $border-radius;
-  background: #d1fae5;
+  background: $success-light;
   color: #065f46;
   border: 1px solid #6ee7b7;
   font-size: 0.82rem;
@@ -260,8 +260,8 @@
 
   &.badge-logopeda   { background: #e0f2fe; color: #0369a1; }
   &.badge-neuro      { background: #f3e8ff; color: #7e22ce; }
-  &.badge-to         { background: #fef3c7; color: #92400e; }
-  &.badge-pedagogo   { background: #d1fae5; color: #065f46; }
+  &.badge-to         { background: $warning-light; color: #92400e; }
+  &.badge-pedagogo   { background: $success-light; color: #065f46; }
   &.badge-psico      { background: #fce7f3; color: #9d174d; }
   &.badge-default    { background: $gray-100; color: $gray-600; }
 }

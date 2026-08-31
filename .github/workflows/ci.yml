@@ -36,6 +36,8 @@ jobs:
       DATABASE_URL: postgresql://ci:ci@localhost:5432/gabinete_test
       SECRET: test-ci-secret
       NODE_ENV: test
+      # Misma zona que produccion: las fechas de sesion se construyen en hora local
+      TZ: Europe/Madrid
 
     steps:
       - name: Checkout code

@@ -25,6 +25,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+# Las sesiones se guardan como TIMESTAMP sin zona y se construyen con setHours(),
+# es decir en hora local del proceso. Sin esto el contenedor corre en UTC y una
+# sesion de las 17:00 creada en local aparece a las 15:00 creada en produccion.
+ENV TZ=Europe/Madrid
 
 WORKDIR /app
 

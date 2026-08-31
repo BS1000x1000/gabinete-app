@@ -50,8 +50,6 @@ export class NuevoClienteWizardComponent {
   formColegio!: FormGroup;
   formFamilia!: FormGroup;
   formSanitario!: FormGroup;
-  formHorario!: FormGroup;
-  formAsignacion!: FormGroup;
 
   consentimientoMarcado = signal(false);
   trabajadores = this.trabajadorSvc.trabajadores;
@@ -70,8 +68,6 @@ export class NuevoClienteWizardComponent {
       colegio: this.formColegio,
       familia: this.formFamilia,
       sanitario: this.formSanitario,
-      horario: this.formHorario,
-      asignacion: this.formAsignacion,
     });
     if (this.esUltimoPaso()) return pasoValido && this.consentimientoMarcado();
     return pasoValido;
@@ -93,10 +89,6 @@ export class NuevoClienteWizardComponent {
     this.formColegio = this.formsService.crearFormColegio();
     this.formFamilia = this.formsService.crearFormFamilia();
     this.formSanitario = this.formsService.crearFormSanitario();
-    this.formHorario = this.formsService.crearFormHorario();
-    this.formAsignacion = this.formsService.crearFormAsignacion();
-
-    this.agregarAsignacion();
   }
 
   private setupFormListeners() {
@@ -106,24 +98,10 @@ export class NuevoClienteWizardComponent {
     this.formFamilia.valueChanges.subscribe(() =>
       this.formChanged.update((v) => v + 1),
     );
-    this.formHorario.valueChanges.subscribe(() =>
-      this.formChanged.update((v) => v + 1),
-    );
-    this.formAsignacion.valueChanges.subscribe(() =>
-      this.formChanged.update((v) => v + 1),
-    );
   }
 
   get contactos(): FormArray {
     return this.formFamilia.get('contactos') as FormArray;
-  }
-
-  get disponibilidades(): FormArray {
-    return this.formHorario.get('disponibilidades') as FormArray;
-  }
-
-  get horariosAsignacion(): FormArray {
-    return this.formAsignacion.get('horarios') as FormArray;
   }
 
   /** Profesionales sanitarios externos (psicologo, logopeda...). */
@@ -142,23 +120,6 @@ export class NuevoClienteWizardComponent {
 
   eliminarContacto(index: number) {
     if (this.contactos.length > 1) this.contactos.removeAt(index);
-  }
-
-  agregarDisponibilidad() {
-    this.disponibilidades.push(this.formsService.crearDisponibilidad());
-  }
-
-  eliminarDisponibilidad(index: number) {
-    if (this.disponibilidades.length > 1) this.disponibilidades.removeAt(index);
-  }
-
-  agregarHorarioAsignacion() {
-    this.horariosAsignacion.push(this.formsService.crearHorarioAsignacion());
-  }
-
-  eliminarHorarioAsignacion(index: number) {
-    if (this.horariosAsignacion.length > 1)
-      this.horariosAsignacion.removeAt(index);
   }
 
   // ── Especialistas: sugeridos (chip) + libres (input) ────────
@@ -262,18 +223,6 @@ export class NuevoClienteWizardComponent {
     return dias[Number(dia)] || '';
   }
 
-  getTrabajadorSeleccionado(): any {
-    const trabajadorId = this.formAsignacion.get('trabajadorId')?.value;
-    if (!trabajadorId) return null;
-    return this.trabajadores().find((t) => t.id === trabajadorId);
-  }
-
-  getNombreTrabajadorSeleccionado(): string {
-    const trabajador = this.getTrabajadorSeleccionado();
-    if (!trabajador) return 'No seleccionado';
-    return `${trabajador.nombre} ${trabajador.apellidos}`;
-  }
-
   /**
    * El boton sigue activo aunque el paso no valide: bloquearlo sin explicar por que
    * deja al usuario atascado sin pistas. Al pulsar, revelamos los errores.
@@ -302,9 +251,7 @@ export class NuevoClienteWizardComponent {
       case 0: return this.formDatosBasicos;
       case 1: return this.formFamilia;
       case 2: return this.formSanitario;
-      case 3: return this.formColegio;
-      case 4: return this.formHorario;
-      default: return this.formAsignacion;
+      default: return this.formColegio;
     }
   }
 
@@ -335,14 +282,6 @@ export class NuevoClienteWizardComponent {
 
     if (paso === 3 && this.formColegio.invalid) {
       motivos.push('Revisa el email o el telefono del colegio.');
-    }
-
-    if (paso === 4) {
-      if (this.disponibilidades.length === 0) {
-        motivos.push('Anade al menos un tramo de disponibilidad.');
-      } else if (this.formHorario.invalid) {
-        motivos.push('Algun tramo esta incompleto o la hora de fin no es posterior a la de inicio.');
-      }
     }
 
     if (this.esUltimoPaso() && !this.consentimientoMarcado()) {
@@ -377,7 +316,6 @@ export class NuevoClienteWizardComponent {
   private crearCliente() {
     this.isSubmitting.set(true);
 
-    const asignacionesAgrupadas = this.agruparAsignacionesPorTrabajador();
 
     const clienteData = {
       nombre: this.formDatosBasicos.value.nombre,
@@ -448,13 +386,8 @@ export class NuevoClienteWizardComponent {
         ),
       },
 
-      disponibilidad: this.disponibilidades.value.map((d: any) => ({
-        diaSemana: Number(d.diaSemana),
-        horaInicio: d.horaInicio,
-        horaFin: d.horaFin,
-      })),
-
-      asignaciones: asignacionesAgrupadas,
+      // Sin horario ni terapeuta: los define el contrato. El backend asigna
+      // automaticamente a quien da de alta para que no pierda de vista la ficha.
 
       consentimientoRgpd: this.consentimientoMarcado(),
     };
@@ -474,50 +407,6 @@ export class NuevoClienteWizardComponent {
     });
   }
 
-  private agruparAsignacionesPorTrabajador() {
-    // Si no hay asignaciones, retornar array vacío
-    if (!this.asignaciones || this.asignaciones.length === 0) {
-      return [];
-    }
-
-    const asignacionesMap = new Map<string, any>();
-
-    this.asignaciones.value.forEach((asig: any) => {
-      // Validar que tenga los datos necesarios
-      if (
-        !asig.trabajadorId ||
-        !asig.tipoTerapia ||
-        asig.disponibilidadIndex === null
-      ) {
-        return; // Saltar asignaciones incompletas
-      }
-
-      const key = `${asig.trabajadorId}-${asig.tipoTerapia}`;
-
-      const dispSeleccionada =
-        this.disponibilidadesDisponibles[asig.disponibilidadIndex];
-
-      if (!dispSeleccionada) {
-        return; // Saltar si no hay disponibilidad seleccionada
-      }
-
-      if (!asignacionesMap.has(key)) {
-        asignacionesMap.set(key, {
-          trabajadorId: asig.trabajadorId,
-          tipoTerapia: asig.tipoTerapia,
-          horarios: [],
-        });
-      }
-
-      asignacionesMap.get(key).horarios.push({
-        diaSemana: Number(dispSeleccionada.diaSemana),
-        horaInicio: asig.horaInicio,
-        horaFin: asig.horaFin,
-      });
-    });
-
-    return Array.from(asignacionesMap.values());
-  }
 
   private finalizarCreacion(cliente: any) {
     this.isSubmitting.set(false);
@@ -552,10 +441,6 @@ export class NuevoClienteWizardComponent {
       especialistas: (v.especialistas ?? []).filter((e: string) => !!e?.trim()),
     };
   }
-  getResumenHorario() {
-    return this.disponibilidades.value;
-  }
-
   toggleConsentimiento() {
     this.consentimientoMarcado.update((v) => !v);
   }
@@ -566,9 +451,7 @@ export class NuevoClienteWizardComponent {
       this.formDatosBasicos.dirty ||
       this.formFamilia.dirty ||
       this.formColegio.dirty ||
-      this.formSanitario.dirty ||
-      this.formHorario.dirty ||
-      this.formAsignacion.dirty
+      this.formSanitario.dirty
     );
   }
 
@@ -593,76 +476,6 @@ export class NuevoClienteWizardComponent {
     this.cerrar.emit();
   }
 
-  get asignaciones(): FormArray {
-    return this.formAsignacion.get('asignaciones') as FormArray;
-  }
-
-  get disponibilidadesDisponibles() {
-    return this.disponibilidades.value.map((d: any, index: number) => ({
-      index,
-      diaSemana: d.diaSemana,
-      horaInicio: d.horaInicio,
-      horaFin: d.horaFin,
-      diaNombre: this.getDiaNombre(d.diaSemana),
-    }));
-  }
-
-  agregarAsignacion() {
-    this.asignaciones.push(this.formsService.crearAsignacionEspecifica());
-
-    const index = this.asignaciones.length - 1;
-    this.asignaciones
-      .at(index)
-      .get('disponibilidadIndex')
-      ?.valueChanges.subscribe((dispIndex) => {
-        this.autoCompletarHorario(index, dispIndex);
-      });
-  }
-
-  private autoCompletarHorario(
-    asignacionIndex: number,
-    disponibilidadIndex: number | string | null,
-  ) {
-    if (disponibilidadIndex === null || disponibilidadIndex === '') return;
-
-    const disponibilidad =
-      this.disponibilidadesDisponibles[disponibilidadIndex];
-
-    if (!disponibilidad) return;
-
-    const asignacion = this.asignaciones.at(asignacionIndex);
-
-    asignacion.patchValue(
-      { horaInicio: disponibilidad.horaInicio, horaFin: disponibilidad.horaFin },
-      { emitEvent: false },
-    );
-  }
-
-  eliminarAsignacion(index: number) {
-    if (this.asignaciones.length > 1) {
-      this.asignaciones.removeAt(index);
-    }
-  }
-
-  getDisponibilidadSeleccionada(index: number) {
-    const asignacion = this.asignaciones.at(index);
-    const dispIndex = asignacion?.get('disponibilidadIndex')?.value;
-
-    if (dispIndex === '' || dispIndex === null) return null;
-
-    return this.disponibilidadesDisponibles[dispIndex];
-  }
-
-  getNombreTrabajador(trabajadorId: string): string {
-    const trabajador = this.trabajadores().find((t) => t.id === trabajadorId);
-    if (!trabajador) return '';
-    return `${trabajador.nombre} ${trabajador.apellidos}`;
-  }
-
-  getNombreTrabajadorCorto(trabajadorId: string): string {
-    const trabajador = this.trabajadores().find((t) => t.id === trabajadorId);
-    return trabajador?.nombre || '';
-  }
 }
 
 export default NuevoClienteWizardComponent;

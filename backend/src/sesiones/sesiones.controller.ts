@@ -15,8 +15,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { SesionesService } from './sesiones.service';
-import { GenerarSesionesDto } from './dto/generar-sesiones.dto';
 import { CompletarSesionDto } from './dto/completar-sesion.dto';
+import { CreateSesionDto } from './dto/create-sesion.dto';
 import { CancelarSesionDto } from './dto/cancelar-sesion.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/roles/roles.guard';
@@ -34,12 +34,16 @@ export class SesionesController {
   // 🔥 RUTAS ESPECÍFICAS PRIMERO (SIN :id)
   // ==========================================
 
-  @Post('generar')
+  /**
+   * Crea una sesion suelta (evaluacion, extra, reunion). El horario recurrente
+   * se define en el contrato, no aqui.
+   */
+  @Post()
   @Roles(...ROLES_CLINICOS)
   @HttpCode(HttpStatus.CREATED)
-  async generarSesiones(@Body() generarSesionesDto: GenerarSesionesDto) {
-    this.logger.log('POST /sesiones/generar');
-    return this.sesionesService.generarSesiones(generarSesionesDto);
+  async create(@Body() dto: CreateSesionDto) {
+    this.logger.log(`POST /sesiones - Cliente: ${dto.clienteId}`);
+    return this.sesionesService.create(dto);
   }
 
   @Get('hoy')

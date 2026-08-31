@@ -1,0 +1,11 @@
+-- Ventana movil de generacion de sesiones.
+--
+-- Hasta ahora, crear un contrato generaba un anio entero de sesiones de golpe
+-- (51 filas de un solo contrato). Cuanto mas lejos se genera, mas sesiones hay
+-- que recolocar cuando la familia cambia de dia, y mas filas de citas que quiza
+-- nunca ocurran. Pasa a generarse una ventana de 3 meses que un cron mensual va
+-- empujando; `generado_hasta` marca por donde va.
+--
+-- Aditiva y nullable: los contratos existentes quedan con NULL y el cron los
+-- adopta en su primera pasada.
+ALTER TABLE "contratos_servicio" ADD COLUMN "generado_hasta" TIMESTAMP(3);

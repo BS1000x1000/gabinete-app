@@ -62,7 +62,7 @@ export class ClientesController {
     this.logger.log(
       `📋 POST /api/clientes - ${createClienteDto.nombre} ${createClienteDto.apellidos}`,
     );
-    return this.clientesService.create(createClienteDto, req.user?.userId);
+    return this.clientesService.create(createClienteDto, req.user?.userId, req.user?.rol);
   }
 
   /**
@@ -204,17 +204,15 @@ export class ClientesController {
     @Body()
     body: {
       horarios: { diaSemana: number; horaInicio: string; horaFin: string }[];
-      confirmarActualizacionSesiones?: boolean;
     },
   ) {
     this.logger.log(
-      `🕐 PATCH /api/clientes/${clienteId}/asignaciones/${asignacionId}/horarios - confirmar: ${body.confirmarActualizacionSesiones ?? false}`,
+      `🕐 PATCH /api/clientes/${clienteId}/asignaciones/${asignacionId}/horarios`,
     );
     return this.clientesService.actualizarHorariosAsignacion(
       clienteId,
       asignacionId,
       body.horarios,
-      body.confirmarActualizacionSesiones ?? false,
     );
   }
 

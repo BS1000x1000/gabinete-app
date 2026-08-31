@@ -122,53 +122,11 @@ export class WizardFormsService {
     });
   }
 
-  // ========================================
-  // HORARIO
-  // ========================================
-  crearFormHorario(): FormGroup {
-    return this.fb.group({
-      disponibilidades: this.fb.array([this.crearDisponibilidad()]),
-    });
-  }
 
-  crearDisponibilidad(): FormGroup {
-    return this.fb.group(
-      {
-        diaSemana: ['', Validators.required],
-        horaInicio: ['', Validators.required],
-        horaFin: ['', Validators.required],
-      },
-      { validators: rangoHorarioValido },
-    );
-  }
 
-  // ========================================
-  // ASIGNACIÓN
-  // ========================================
-  crearFormAsignacion(): FormGroup {
-    return this.fb.group({
-      asignaciones: this.fb.array([]), // ✅ Array de asignaciones
-    });
-  }
 
   // Crear una asignación específica
-  crearAsignacionEspecifica(): FormGroup {
-    return this.fb.group({
-      disponibilidadIndex: ['', Validators.required], // Índice del horario general
-      trabajadorId: ['', Validators.required],
-      tipoTerapia: ['', Validators.required],
-      horaInicio: ['', Validators.required], // Hora específica dentro del rango
-      horaFin: ['', Validators.required],
-    });
-  }
 
-  crearHorarioAsignacion(): FormGroup {
-    return this.fb.group({
-      diaSemana: ['', Validators.required],
-      horaInicio: ['', Validators.required],
-      horaFin: ['', Validators.required],
-    });
-  }
 
   crearEspecialista(valor = ''): FormControl {
     return this.fb.control(valor, Validators.required);

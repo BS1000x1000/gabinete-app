@@ -213,8 +213,8 @@
   &.active { background: #f8f9fa; }
 
   // Accent por categoría al activarse
-  &--cliente.active  { border-left-color: #7c6fd6; }
-  &--informe.active  { border-left-color: #5a9de8; }
+  &--cliente.active  { border-left-color: $primary; }
+  &--informe.active  { border-left-color: $secondary; }
   &--sesion.active   { border-left-color: #20c997; }
 }
 
@@ -265,13 +265,13 @@
   flex-shrink: 0;
 
   &--cliente {
-    background: rgba(#7c6fd6, 0.12);
-    color: #7c6fd6;
+    background: rgba($primary, 0.12);
+    color: $primary;
   }
 
   &--informe {
-    background: rgba(#5a9de8, 0.12);
-    color: #5a9de8;
+    background: rgba($secondary, 0.12);
+    color: $secondary;
     font-size: 1rem;
   }
 

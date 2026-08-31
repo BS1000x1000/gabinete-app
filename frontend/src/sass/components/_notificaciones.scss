@@ -17,7 +17,7 @@
 
   &:hover {
     background: var(--color-bg-hover, #f0f0f0);
-    color: var(--color-primary, #7c6fd6);
+    color: var(--color-primary, $primary);
   }
 }
 
@@ -37,8 +37,8 @@
   right: 0;
   width: 360px;
   max-height: 520px;
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: $white;
+  border: 1px solid $gray-200;
   border-radius: 0.75rem;
   box-shadow: $shadow-lg;
   z-index: 1050;

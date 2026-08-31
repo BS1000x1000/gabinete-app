@@ -12,7 +12,7 @@
           </label>
           <button
             *ngIf="editandoId()"
-            class="btn btn-link btn-sm text-muted p-0"
+            class="gb-btn gb-btn--ghost gb-btn--sm"
             (click)="cancelarEdicion()"
             type="button"
           >
@@ -140,14 +140,14 @@
         </label>
         <div class="registro-form-actions">
           <button
-            class="btn btn-outline-secondary btn-sm"
+            class="gb-btn gb-btn--sm"
             (click)="limpiar()"
             [disabled]="cargando()"
           >
             Limpiar
           </button>
           <button
-            class="btn btn-primary btn-sm px-4"
+            class="gb-btn gb-btn--primary gb-btn--sm"
             (click)="guardar()"
             [disabled]="!nuevoContenido().trim() || cargando()"
           >
@@ -219,7 +219,7 @@
     <!-- Lista de registros -->
     <div class="historial-list">
       @if (registrosFiltrados().length === 0) {
-        <div class="historial-empty">
+        <div class="gb-empty gb-empty--inline">
           <i class="bi bi-folder2-open"></i>
           <p>No se encontraron registros para esta selección.</p>
         </div>

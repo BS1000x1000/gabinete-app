@@ -3,6 +3,9 @@ import {
   computed,
   inject,
   signal,
+  viewChild,
+  ElementRef,
+  HostListener,
   type OnInit,
   DestroyRef,
 } from '@angular/core';
@@ -16,7 +19,6 @@ import { AuthService } from '../../../services/auth.service';
 import {
   EstadoSesion,
   TipoSesion,
-  ModalidadSesion,
   SesionData,
   TIPO_SESION_LABELS,
   ESTADO_SESION_LABELS,
@@ -28,6 +30,7 @@ import { TrabajadorService, Trabajador } from '../../../services/trabajadores.se
 import {
   CalendarioDiario,
   CalendarioSemanal,
+  DiaSemana,
 } from '../../../interface/calendario.interface';
 import { SesionModalesComponent } from '../../../components/sesiones-modales/sesiones-modales.component';
 import { ConfirmModalComponent } from '../../../shared/components/confirm-modal/confirm-modal.component';
@@ -58,6 +61,17 @@ const TIPO_COLORES: Record<string, string> = {
   REUNION_COLEGIO: '#6b7280',
 };
 
+export type VistaAgenda = 'dia' | 'semana';
+
+const VISTA_STORAGE_KEY = 'agenda.vista';
+
+/** Chip de la tira de estadisticas de la barra superior. */
+export interface StatChip {
+  valor: number;
+  label: string;
+  tono: 'base' | 'success' | 'primary' | 'danger';
+}
+
 @Component({
   selector: 'app-agenda',
   standalone: true,
@@ -83,6 +97,29 @@ export class AgendaComponent implements OnInit {
   readonly ESTADO_SESION_LABELS: any = ESTADO_SESION_LABELS;
   readonly EstadoSesion = EstadoSesion;
 
+  // ── Vista: dia o semana ─────────────────────────────────────
+  // Es la unica preferencia de la pantalla; se recuerda entre sesiones igual
+  // que los filtros del listado (Hito C).
+  readonly vista = signal<VistaAgenda>(this.leerVistaGuardada());
+
+  private leerVistaGuardada(): VistaAgenda {
+    try {
+      return localStorage.getItem(VISTA_STORAGE_KEY) === 'dia' ? 'dia' : 'semana';
+    } catch {
+      return 'semana';
+    }
+  }
+
+  setVista(v: VistaAgenda): void {
+    if (this.vista() === v) return;
+    this.vista.set(v);
+    try {
+      localStorage.setItem(VISTA_STORAGE_KEY, v);
+    } catch {
+      // Modo privado: la vista simplemente no se recuerda.
+    }
+  }
+
   // Selector de terapeuta (solo para ADMIN/RECEP)
   readonly canVerTodo = computed(() => this.auth.canVerTodo());
   readonly trabajadores = signal<Trabajador[]>([]);
@@ -96,6 +133,11 @@ export class AgendaComponent implements OnInit {
     this.loadSemana();
   }
 
+  /** Entrada desde el select de la barra: cadena vacia significa "todos". */
+  onCambiarTerapeuta(id: string): void {
+    this.seleccionarTerapeuta(this.trabajadores().find((t) => t.id === id) ?? null);
+  }
+
   getTrabajadorIniciales(t: Trabajador): string {
     return `${t.nombre.charAt(0)}${t.apellidos.charAt(0)}`.toUpperCase();
   }
@@ -106,7 +148,9 @@ export class AgendaComponent implements OnInit {
   isLoadingDia = signal(false);
   isLoadingSemana = signal(false);
   fechaSeleccionada = signal<Date>(new Date());
-  bannerColapsado = signal(false);
+
+  /** Menu desplegable "+ Nuevo" de la barra superior. */
+  menuNuevoAbierto = signal(false);
 
   // Festivos y vacaciones en agenda
   private festivosAgenda = signal<Festivo[]>([]);
@@ -213,14 +257,16 @@ export class AgendaComponent implements OnInit {
     return [...sItems, ...eItems].sort((a, b) => a.sortKey.localeCompare(b.sortKey));
   });
 
-  // Alertas urgentes para el banner
+  // Alertas urgentes. Viven en el rail, no en un banner que empuja el contenido:
+  // la campana del header ya las lista agrupadas por prioridad.
   readonly alertasUrgentes = computed(() =>
     this.notifSvc
       .noLeidas()
       .filter((n) => n.prioridad === 'URGENTE' || n.prioridad === 'ALTA'),
   );
+
   // ── Pendientes (rescatado del dashboard huerfano) ───────────
-  // Tareas que no son urgentes -de eso ya avisa el banner- pero que conviene
+  // Tareas que no son urgentes -de eso ya avisan las alertas- pero que conviene
   // no perder de vista: informes a medio escribir y objetivos sin evaluar.
   private readonly miDia = this.dashboardSvc.miDia;
 
@@ -245,24 +291,43 @@ export class AgendaComponent implements OnInit {
     this.router.navigate(['/home/listado', obj.cliente.id, 'progreso']);
   }
 
-  // ── Accesos rapidos ─────────────────────────────────────────
+  irANotificacion(alerta: { accionUrl?: string | null }): void {
+    if (alerta.accionUrl) this.router.navigateByUrl(alerta.accionUrl);
+  }
+
+  // ── Accesos rapidos (menu "+ Nuevo" de la barra) ────────────
+
+  toggleMenuNuevo(event: Event): void {
+    event.stopPropagation();
+    this.menuNuevoAbierto.update((v) => !v);
+  }
+
+  @HostListener('document:click')
+  cerrarMenuNuevo(): void {
+    if (this.menuNuevoAbierto()) this.menuNuevoAbierto.set(false);
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    this.menuNuevoAbierto.set(false);
+  }
+
   abrirRegistro(): void {
+    this.menuNuevoAbierto.set(false);
     this.registroDrawerSvc.openVacio();
   }
 
   abrirNuevaSesion(): void {
+    this.menuNuevoAbierto.set(false);
     this.nuevaSesionSvc.open();
   }
 
   irANuevoCliente(): void {
+    this.menuNuevoAbierto.set(false);
     this.router.navigate(['/home/clientes'], { queryParams: { nuevo: true } });
   }
 
-  readonly hayAlertas = computed(
-    () => this.alertasUrgentes().length > 0 && !this.bannerColapsado(),
-  );
-
-  // Sesiones del día mapeadas para las acciones
+  // Sesiones del dia mapeadas para las acciones
   readonly sesiones = computed(() => {
     const cal = this.calendarioDiario();
     if (!cal) return [];
@@ -287,7 +352,7 @@ export class AgendaComponent implements OnInit {
     }));
   });
 
-  // Stats del día
+  // Stats del dia
   readonly totalSesiones = computed(
     () => this.calendarioDiario()?.totalSesiones ?? 0,
   );
@@ -301,6 +366,30 @@ export class AgendaComponent implements OnInit {
     () => this.calendarioDiario()?.estadisticas.canceladas ?? 0,
   );
 
+  /** Tira unica de estadisticas: refleja el rango que se esta viendo. */
+  readonly statsRango = computed<StatChip[]>(() => {
+    if (this.vista() === 'dia') {
+      if (this.totalSesiones() === 0) return [];
+      const chips: StatChip[] = [
+        { valor: this.totalSesiones(), label: 'sesiones', tono: 'base' },
+        { valor: this.sesionesCompletadas(), label: 'completadas', tono: 'success' },
+        { valor: this.sesionesProgramadas(), label: 'programadas', tono: 'primary' },
+      ];
+      if (this.sesionesCanceladas() > 0) {
+        chips.push({ valor: this.sesionesCanceladas(), label: 'canceladas', tono: 'danger' });
+      }
+      return chips;
+    }
+    const r = this.resumenSemana();
+    if (!r) return [];
+    return [
+      { valor: r.totalSesiones, label: 'sesiones', tono: 'base' },
+      { valor: r.completadas, label: 'completadas', tono: 'success' },
+      { valor: r.programadas, label: 'programadas', tono: 'primary' },
+      { valor: r.clientesUnicos, label: 'clientes', tono: 'base' },
+    ];
+  });
+
   // Fecha formateada
   readonly fechaFormateada = computed(() =>
     this.fechaSeleccionada().toLocaleDateString('es-ES', {
@@ -310,6 +399,16 @@ export class AgendaComponent implements OnInit {
       year: 'numeric',
     }),
   );
+
+  /** Cabecera compacta del rail. */
+  readonly fechaCorta = computed(() =>
+    this.fechaSeleccionada().toLocaleDateString('es-ES', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+    }),
+  );
+
   readonly esHoy = computed(() => {
     const hoy = new Date();
     return hoy.toDateString() === this.fechaSeleccionada().toDateString();
@@ -326,45 +425,108 @@ export class AgendaComponent implements OnInit {
   });
   readonly resumenSemana = computed(() => this.calendarioSemanal()?.resumen);
 
-  // ── Grid semanal tipo Teams ──────────────────────────────────
-  readonly HORA_INICIO = 8;
-  readonly HORA_FIN = 22;
-  readonly PX_POR_HORA = 64;
-  readonly alturaGrid = (this.HORA_FIN - this.HORA_INICIO) * this.PX_POR_HORA;
-  readonly horasCount = this.HORA_FIN - this.HORA_INICIO;
-
-  readonly horasGrid: string[] = Array.from(
-    { length: this.horasCount + 1 },
-    (_, i) => `${String(this.HORA_INICIO + i).padStart(2, '0')}:00`,
+  /** Titulo del rango en la barra: un solo control para las dos vistas. */
+  readonly tituloRango = computed(() =>
+    this.vista() === 'semana' ? this.semanaTitulo() : this.fechaFormateada(),
   );
 
-  minutosActualesEnGrid = signal<number | null>(null);
+  readonly isLoading = computed(() => this.isLoadingDia() || this.isLoadingSemana());
 
-  calcularTop(horaInicio: string): number {
+  // ── Rejilla ──────────────────────────────────────────────────
+  // Las columnas son los 7 dias de la semana o solo el seleccionado.
+  readonly columnas = computed<DiaSemana[]>(() => {
+    const dias = this.diasSemana();
+    if (this.vista() === 'semana') return dias;
+    const sel = this.fechaISO();
+    return dias.filter((d) => d.fecha === sel);
+  });
+
+  /**
+   * Ventana horaria minima. Sin ella una semana floja dejaria una rejilla de
+   * dos horas que "baila" al cambiar de semana.
+   */
+  private readonly VENTANA_MINIMA_H = 6;
+
+  /**
+   * Horas a pintar, deducidas de la actividad ya cargada. Los limites son solo
+   * del relleno (una hora de respiro arriba y abajo), nunca de los datos: la
+   * ventana envuelve siempre toda la actividad, asi que ninguna sesion puede
+   * quedar recortada.
+   */
+  readonly rangoHoras = computed<{ inicio: number; fin: number }>(() => {
+    const marcas: number[] = [];
+    const push = (hhmm: string) => {
+      const [h, m] = hhmm.split(':').map(Number);
+      if (!Number.isNaN(h)) marcas.push(h + (m || 0) / 60);
+    };
+
+    for (const dia of this.diasSemana()) {
+      for (const s of dia.sesiones) {
+        push(s.horaInicio);
+        push(s.horaFin);
+      }
+    }
+    for (const ev of this.eventosAgenda()) {
+      push(isoToHHMM(ev.fechaHoraInicio));
+      push(isoToHHMM(ev.fechaHoraFin));
+    }
+
+    if (marcas.length === 0) return { inicio: 9, fin: 19 };
+
+    let inicio = Math.max(0, Math.floor(Math.min(...marcas)) - 1);
+    let fin = Math.min(24, Math.ceil(Math.max(...marcas)) + 1);
+
+    while (fin - inicio < this.VENTANA_MINIMA_H && (fin < 24 || inicio > 0)) {
+      if (fin < 24) fin++;
+      else inicio--;
+    }
+    return { inicio, fin };
+  });
+
+  readonly horasCount = computed(() => this.rangoHoras().fin - this.rangoHoras().inicio);
+
+  readonly horasGrid = computed<string[]>(() =>
+    Array.from(
+      { length: this.horasCount() + 1 },
+      (_, i) => `${String(this.rangoHoras().inicio + i).padStart(2, '0')}:00`,
+    ),
+  );
+
+  /** Posicion vertical en % del rango visible. Nada se mide en px. */
+  calcularTopPct(horaInicio: string): number {
     const [h, m] = horaInicio.split(':').map(Number);
-    return Math.max(0, (this.minutosDesdeInicio(h, m) / 60) * this.PX_POR_HORA);
+    const pct = ((h + (m || 0) / 60 - this.rangoHoras().inicio) / this.horasCount()) * 100;
+    return Math.min(100, Math.max(0, pct));
   }
 
-  calcularAltura(duracion: number): number {
-    return Math.max(18, (duracion / 60) * this.PX_POR_HORA);
+  calcularAlturaPct(duracionMin: number): number {
+    return Math.max(0, (duracionMin / 60 / this.horasCount()) * 100);
+  }
+
+  /** Posicion de la i-esima linea horaria del rango. */
+  lineaPct(i: number): number {
+    return (i / this.horasCount()) * 100;
   }
 
   getEventoBg(tipo: string): string {
     return this.getTipoColor(tipo) + '1a';
   }
 
-  private minutosDesdeInicio(h: number, m: number): number {
-    return h * 60 + m - this.HORA_INICIO * 60;
+  // Indicador de "ahora": minutos desde medianoche, refrescado cada minuto.
+  private readonly ahoraMinutos = signal(this.minutosDelDia(new Date()));
+
+  readonly ahoraPct = computed<number | null>(() => {
+    const pct =
+      ((this.ahoraMinutos() / 60 - this.rangoHoras().inicio) / this.horasCount()) * 100;
+    return pct >= 0 && pct <= 100 ? pct : null;
+  });
+
+  private minutosDelDia(d: Date): number {
+    return d.getHours() * 60 + d.getMinutes();
   }
 
-  private actualizarHoraActual(): void {
-    const ahora = new Date();
-    const minutos = this.minutosDesdeInicio(ahora.getHours(), ahora.getMinutes());
-    const maxMin = this.horasCount * 60;
-    this.minutosActualesEnGrid.set(
-      minutos >= 0 && minutos <= maxMin ? (minutos / 60) * this.PX_POR_HORA : null,
-    );
-  }
+  // Contenedor scrollable de la rejilla: solo para situar "ahora" al cargar.
+  private readonly gridScroll = viewChild<ElementRef<HTMLDivElement>>('gridScroll');
 
   ngOnInit() {
     // Alimenta el panel de pendientes. RECEP no tiene informes ni objetivos propios.
@@ -391,8 +553,10 @@ export class AgendaComponent implements OnInit {
     }
     this.loadDia();
     this.loadSemana();
-    this.actualizarHoraActual();
-    const timer = setInterval(() => this.actualizarHoraActual(), 60_000);
+    const timer = setInterval(
+      () => this.ahoraMinutos.set(this.minutosDelDia(new Date())),
+      60_000,
+    );
     this.destroyRef.onDestroy(() => clearInterval(timer));
   }
 
@@ -434,24 +598,31 @@ export class AgendaComponent implements OnInit {
           this.eventosAgenda.set(eventos);
           this.resumenHoras.set(horas);
           this.isLoadingSemana.set(false);
+          setTimeout(() => this.situarEnAhora());
         },
         error: () => this.isLoadingSemana.set(false),
       });
   }
 
-  // ── Navegación por día ───────────────────────────────────
-
-  diaAnterior() {
-    const f = new Date(this.fechaSeleccionada());
-    f.setDate(f.getDate() - 1);
-    this.fechaSeleccionada.set(f);
-    this.loadDia();
-    this.loadSemana();
+  /**
+   * Con el rango adaptativo la rejilla suele caber entera; solo cuando no cabe
+   * hace falta desplazarla, y entonces la hora actual va a un tercio del alto.
+   */
+  private situarEnAhora(): void {
+    const el = this.gridScroll()?.nativeElement;
+    if (!el || el.scrollHeight <= el.clientHeight) return;
+    const pct = this.ahoraPct();
+    if (pct === null) return;
+    el.scrollTop = Math.max(0, (pct / 100) * el.scrollHeight - el.clientHeight / 3);
   }
 
-  diaSiguiente() {
+  // ── Navegacion temporal ──────────────────────────────────────
+  // Un solo par de flechas: el paso lo marca la vista activa.
+
+  desplazar(delta: number): void {
+    const paso = this.vista() === 'semana' ? 7 : 1;
     const f = new Date(this.fechaSeleccionada());
-    f.setDate(f.getDate() + 1);
+    f.setDate(f.getDate() + delta * paso);
     this.fechaSeleccionada.set(f);
     this.loadDia();
     this.loadSemana();
@@ -463,8 +634,9 @@ export class AgendaComponent implements OnInit {
     this.loadSemana();
   }
 
+  /** Clic en cabecera o columna: elige el dia dentro de la semana ya cargada. */
   irADia(fechaISO: string) {
-    // Usar mediodía para evitar desplazamiento por zona horaria
+    // Usar mediodia para evitar desplazamiento por zona horaria
     const nueva = new Date(fechaISO + 'T12:00:00');
     this.fechaSeleccionada.set(nueva);
     this.loadDia();
@@ -472,24 +644,6 @@ export class AgendaComponent implements OnInit {
 
   esDiaSeleccionado(fechaISO: string): boolean {
     return fechaISO === this.fechaISO();
-  }
-
-  // ── Navegación por semana (panel derecho) ────────────────
-
-  semanaAnterior() {
-    const f = new Date(this.fechaSeleccionada());
-    f.setDate(f.getDate() - 7);
-    this.fechaSeleccionada.set(f);
-    this.loadDia();
-    this.loadSemana();
-  }
-
-  semanaSiguiente() {
-    const f = new Date(this.fechaSeleccionada());
-    f.setDate(f.getDate() + 7);
-    this.fechaSeleccionada.set(f);
-    this.loadDia();
-    this.loadSemana();
   }
 
   // ── Acciones sobre sesiones ──────────────────────────────
@@ -514,7 +668,8 @@ export class AgendaComponent implements OnInit {
 
   // ── Notificaciones ───────────────────────────────────────
 
-  descartarAlerta(id: string) {
+  descartarAlerta(id: string, event?: Event) {
+    event?.stopPropagation();
     this.notifSvc
       .descartar(id)
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -527,15 +682,18 @@ export class AgendaComponent implements OnInit {
     return this.eventosPorFecha().get(fechaISO) ?? [];
   }
 
-  getEventoTop(evento: EventoAgenda): number {
-    return this.calcularTop(this.isoToHHMM(evento.fechaHoraInicio));
+  getEventoTopPct(evento: EventoAgenda): number {
+    return this.calcularTopPct(this.isoToHHMM(evento.fechaHoraInicio));
   }
 
-  getEventoAltura(evento: EventoAgenda): number {
+  getEventoDuracion(evento: EventoAgenda): number {
     const inicio = new Date(evento.fechaHoraInicio);
     const fin = new Date(evento.fechaHoraFin);
-    const durMin = (fin.getTime() - inicio.getTime()) / 60000;
-    return this.calcularAltura(durMin);
+    return (fin.getTime() - inicio.getTime()) / 60000;
+  }
+
+  getEventoAlturaPct(evento: EventoAgenda): number {
+    return this.calcularAlturaPct(this.getEventoDuracion(evento));
   }
 
   getEventoColor(evento: EventoAgenda): string {
@@ -551,6 +709,7 @@ export class AgendaComponent implements OnInit {
   // ── Modal crear/editar evento ────────────────────────────
 
   abrirModalNuevoEvento(fechaISO?: string, horaISO?: string) {
+    this.menuNuevoAbierto.set(false);
     const fecha = fechaISO ?? this.fechaISO();
     const hora = horaISO ? this.isoToHHMM(horaISO) : '09:00';
     const [h, m] = hora.split(':').map(Number);
@@ -680,6 +839,7 @@ export class AgendaComponent implements OnInit {
       COMPLETADA: 'completada',
       CANCELADA_CON_AVISO: 'cancelada-aviso',
       CANCELADA_SIN_AVISO: 'cancelada-sin',
+      VACACIONES: 'vacaciones',
     };
     return map[estado] ?? 'default';
   }

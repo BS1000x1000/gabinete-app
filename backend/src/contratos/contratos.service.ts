@@ -12,6 +12,7 @@ import { CreateContratoDto } from './dto/create-contrato.dto';
 import { UpdateContratoDto } from './dto/update-contrato.dto';
 import { ContratosPdfService } from './contratos-pdf.service';
 import { StorageService } from '../common/storage/storage.service';
+import { HORIZONTE_GENERACION_MESES } from './contratos.constants';
 import { randomUUID } from 'crypto';
 import {
   addMonths,
@@ -113,9 +114,38 @@ export class ContratosService {
       include: CONTRATO_INCLUDE,
     });
 
-    this.generarSesionesContrato(contrato.id).catch(err =>
-      console.error(`Error generando sesiones para contrato ${contrato.id}:`, err),
-    );
+    // El contrato es tambien la declaracion de que este terapeuta atiende a este
+    // niño. Se asegura la asignacion porque es lo que gobierna el control de
+    // acceso: sin ella, el propio terapeuta dejaria de ver la ficha.
+    await this.prisma.clienteTrabajador.upsert({
+      where: {
+        clienteId_trabajadorId_tipoTerapia: {
+          clienteId:   contrato.clienteId,
+          trabajadorId: contrato.trabajadorId,
+          tipoTerapia: contrato.tipoSesion,
+        },
+      },
+      create: {
+        clienteId:    contrato.clienteId,
+        trabajadorId: contrato.trabajadorId,
+        tipoTerapia:  contrato.tipoSesion,
+      },
+      update: { activo: true },
+    });
+
+    // Se espera a proposito. Antes iba fire-and-forget con un `.catch(console.error)`:
+    // si fallaba, el contrato quedaba creado pero sin ninguna sesion y nadie se
+    // enteraba hasta que la familia preguntaba por su cita.
+    try {
+      const creadas = await this.generarSesionesContrato(contrato.id);
+      this.logger.log(`Contrato ${contrato.id}: ${creadas} sesiones generadas`);
+    } catch (err) {
+      // El contrato ya existe y es valido; lo que falla es su calendario. Se
+      // informa en la respuesta para que la UI lo pueda decir, en vez de fingir
+      // que todo fue bien.
+      this.logger.error(`Contrato ${contrato.id}: fallo la generacion de sesiones`, err);
+      return { ...contrato, avisoGeneracion: 'El contrato se creo, pero no se pudieron generar sus sesiones. Revisa el horario y vuelve a intentarlo.' };
+    }
 
     return contrato;
   }
@@ -131,8 +161,32 @@ export class ContratosService {
 
     if (!contrato.slots.length) return 0;
 
-    const fechaInicio = contrato.fechaInicio;
-    const fechaFin    = contrato.fechaFin ?? addMonths(fechaInicio, 12);
+    // Ventana movil: se genera desde donde se quedo la ultima vez (o desde el
+    // inicio del contrato) y solo unos meses por delante. El cron mensual la va
+    // empujando. Generar el contrato entero de golpe obligaba a recolocar
+    // decenas de sesiones ante cualquier cambio de horario.
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+
+    const desde = [contrato.fechaInicio, contrato.generadoHasta, hoy]
+      .filter((d): d is Date => !!d)
+      .reduce((a, b) => (a > b ? a : b));
+
+    const limiteVentana = addMonths(hoy, HORIZONTE_GENERACION_MESES);
+    const fechaFin = contrato.fechaFin && contrato.fechaFin < limiteVentana
+      ? new Date(contrato.fechaFin)
+      : limiteVentana;
+
+    // El fin de ventana cubre el DIA COMPLETO. `generarFechasRecurrentes` ya
+    // incluye las sesiones de ese ultimo dia (pone el fin a las 23:59), asi que
+    // si `generadoHasta` se guardase a las 00:00 quedaria una sesion creada por
+    // el generador pero fuera de su propia ventana: invisible para el
+    // recolocador, que la dejaria en el dia viejo al cambiar el horario.
+    fechaFin.setHours(23, 59, 59, 999);
+
+    if (fechaFin <= desde) return 0;
+
+    const fechaInicio = desde;
     const anos        = añosCubiertos(fechaInicio, fechaFin);
     const provincia   = contrato.cliente.provincia;
 
@@ -167,10 +221,23 @@ export class ContratosService {
       }));
     });
 
+    // Se marca la ventana aunque no haya salido ninguna sesion (todo festivos o
+    // vacaciones): si no, el cron reintentaria el mismo tramo cada mes.
+    await this.prisma.contratoServicio.update({
+      where: { id: contratoId },
+      data: { generadoHasta: fechaFin },
+    });
+
     if (!sesiones.length) return 0;
 
-    await this.prisma.sesion.createMany({ data: sesiones, skipDuplicates: true });
-    return sesiones.length;
+    // `skipDuplicates` ahora si protege: la tabla tiene un indice unico sobre
+    // (cliente, trabajador, inicio). Esto hace el cron idempotente, asi que
+    // ejecutarlo de mas no cuesta nada y ejecutarlo de menos si.
+    const { count } = await this.prisma.sesion.createMany({
+      data: sesiones,
+      skipDuplicates: true,
+    });
+    return count;
   }
 
   async findAll(user: { userId: string; rol: string }) {

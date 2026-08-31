@@ -3,9 +3,9 @@ import { FormGroup, FormArray } from '@angular/forms';
 
 /**
  * Reglas de avance del wizard. Orden:
- * 0 Datos básicos · 1 Familia · 2 Sanitario · 3 Colegio · 4 Horario · 5 Asignación · 6 Resumen
+ * 0 Datos básicos · 1 Familia · 2 Sanitario · 3 Colegio · 4 Resumen
  *
- * Los pasos opcionales (Sanitario, Colegio, Asignación) dejan avanzar vacíos, pero
+ * Los pasos opcionales (Sanitario, Colegio) dejan avanzar vacíos, pero
  * NO con datos a medias que tengan errores: un email mal escrito debe frenar aquí,
  * no reventar al guardar el cliente entero.
  */
@@ -18,8 +18,6 @@ export class WizardValidationService {
       colegio: FormGroup;
       familia: FormGroup;
       sanitario: FormGroup;
-      horario: FormGroup;
-      asignacion: FormGroup;
     },
   ): boolean {
     switch (paso) {
@@ -42,16 +40,7 @@ export class WizardValidationService {
       case 3: // Colegio — opcional, pero sin errores
         return forms.colegio.valid;
 
-      case 4: {
-        // Horario — obligatorio: al menos un tramo, con rangos coherentes
-        const disponibilidades = forms.horario.get('disponibilidades') as FormArray;
-        return forms.horario.valid && disponibilidades.length > 0;
-      }
-
-      case 5: // Asignación — opcional (puede asignarse más tarde)
-        return forms.asignacion.valid;
-
-      case 6: // Resumen
+      case 4: // Resumen
         return true;
 
       default:

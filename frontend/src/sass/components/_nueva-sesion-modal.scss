@@ -2,7 +2,7 @@
 // MODAL NUEVA SESIÓN
 // ================================================
 
-$nsm-primary:       #7c6fd6;
+$nsm-primary:       $primary;
 $nsm-primary-dark:  #6559c0;
 $nsm-primary-soft:  rgba(124, 111, 214, 0.1);
 $nsm-primary-ring:  rgba(124, 111, 214, 0.25);
@@ -33,7 +33,7 @@ $nsm-transition:    0.25s cubic-bezier(0.4, 0, 0.2, 1);
   max-height: calc(100vh - 48px);
   display: flex;
   flex-direction: column;
-  background: #fff;
+  background: $white;
   border-radius: 16px;
   box-shadow: 0 20px 60px rgba(20, 17, 40, 0.25);
   border: 1px solid $nsm-border;
@@ -62,7 +62,7 @@ $nsm-transition:    0.25s cubic-bezier(0.4, 0, 0.2, 1);
   gap: 12px;
   padding: 20px 24px;
   border-bottom: 1px solid $nsm-border;
-  background: linear-gradient(135deg, #f9f8ff 0%, #ffffff 100%);
+  background: linear-gradient(135deg, #f9f8ff 0%, $white 100%);
   flex-shrink: 0;
 }
 
@@ -204,7 +204,7 @@ $nsm-transition:    0.25s cubic-bezier(0.4, 0, 0.2, 1);
     outline: none;
     border-color: $nsm-primary;
     box-shadow: 0 0 0 3px $nsm-primary-ring;
-    background: #fff;
+    background: $white;
   }
 
   &--error {
@@ -239,7 +239,7 @@ $nsm-transition:    0.25s cubic-bezier(0.4, 0, 0.2, 1);
     outline: none;
     border-color: $nsm-primary;
     box-shadow: 0 0 0 3px $nsm-primary-ring;
-    background: #fff;
+    background: $white;
   }
 }
 
@@ -326,7 +326,7 @@ $nsm-transition:    0.25s cubic-bezier(0.4, 0, 0.2, 1);
 
   &--primary {
     background: $nsm-primary;
-    color: #fff;
+    color: $white;
     box-shadow: 0 4px 12px rgba(124, 111, 214, 0.35);
 
     &:hover:not(:disabled) {
@@ -347,7 +347,7 @@ $nsm-transition:    0.25s cubic-bezier(0.4, 0, 0.2, 1);
   width: 14px;
   height: 14px;
   border: 2px solid rgba(255, 255, 255, 0.4);
-  border-top-color: #fff;
+  border-top-color: $white;
   border-radius: 50%;
   animation: nsm-spin 0.7s linear infinite;
 }

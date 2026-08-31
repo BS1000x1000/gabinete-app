@@ -1,349 +1,145 @@
 // ============================================================
-// AGENDA — Vista operativa principal (Fase 2 rediseño UX)
-// Dos paneles: sesiones del día | calendario semanal
+// AGENDA — Pantalla de inicio de la aplicación
+//
+// Modelo: UNA sola superficie a altura de aplicación. La página no
+// scrollea nunca; solo lo hacen la rejilla y el rail, por separado.
+//
+//   .ag-shell      altura fija = viewport - header
+//     .ag-toolbar  un control de fecha, una vista, una tira de stats
+//     .ag-body     rejilla (1fr) + rail (320px)
+//
+// La rejilla se posiciona en PORCENTAJES del rango horario visible,
+// nunca en px: así se estira para llenar el hueco cuando la jornada
+// cabe, y solo scrollea cuando de verdad no cabe.
 // ============================================================
 
-// ── Página contenedora ───────────────────────────────────────
+$wg-time-col: 52px;
+$ag-rail-width: 320px;
+$ag-px-hora-min: 44px;   // suelo de legibilidad de una hora
 
-.ag-page {
-  display: flex;
-  flex-direction: column;
-  min-height: 100%;
+// ── Contenedor de altura fija ─────────────────────────────────
+
+.ag-shell {
+  // El header ocupa $header-height MÁS su borde inferior de 1px: sin restarlo
+  // la página se pasa un píxel y aparece una barra de scroll fantasma.
+  height: calc(100vh - #{$header-height} - 1px);
+  display: grid;
+  grid-template-rows: auto 1fr;
+  overflow: hidden;
+  background: $bg-body;
 }
 
-// ── Selector de terapeuta (ADMIN/RECEP) ──────────────────────
+// ── Barra única ───────────────────────────────────────────────
 
-.ag-therapist-bar {
-  display: flex;
-  align-items: center;
-  gap: $spacing-xs;
-  padding: 8px $spacing-lg;
+.ag-toolbar {
   background: $white;
   border-bottom: 1px solid $border-color-light;
+  padding: 10px $spacing-lg 8px;
   flex-shrink: 0;
-  flex-wrap: wrap;
-  overflow-x: auto;
-
-  &::-webkit-scrollbar { height: 0; }
-}
-
-.ag-therapist-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
-  border-radius: $border-radius-full;
-  border: 1.5px solid $border-color;
-  background: $white;
-  color: $gray-600;
-  font-size: $font-size-xs;
-  font-weight: $font-weight-medium;
-  cursor: pointer;
-  transition: $transition-fast;
-  white-space: nowrap;
-  flex-shrink: 0;
-
-  i { font-size: 0.7rem; }
-
-  &__avatar {
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: $primary-light;
-    color: $primary;
-    font-size: 0.58rem;
-    font-weight: $font-weight-bold;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    transition: $transition-fast;
-  }
-
-  &:hover:not(&--active) {
-    border-color: $primary;
-    color: $primary;
-    background: $primary-ultra-light;
-
-    .ag-therapist-chip__avatar {
-      background: $primary;
-      color: $white;
-    }
-  }
-
-  &--active {
-    border-color: $primary;
-    background: $primary;
-    color: $white;
-
-    .ag-therapist-chip__avatar {
-      background: rgba($white, 0.25);
-      color: $white;
-    }
-  }
-}
-
-// ── Banner de alertas ────────────────────────────────────────
-
-.ag-banner {
-  background: $warning-light;
-  border-bottom: 1px solid rgba($warning, 0.35);
-  animation: ag-slide-down 0.25s ease;
-  flex-shrink: 0;
-
-  &__inner {
-    display: flex;
-    align-items: center;
-    gap: $spacing-md;
-    padding: 10px $spacing-lg;
-    max-width: 1400px;
-    margin: 0 auto;
-    width: 100%;
-  }
-
-  &__icon {
-    color: $warning-dark;
-    font-size: 1rem;
-    flex-shrink: 0;
-  }
-
-  &__body {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    gap: $spacing-md;
-    flex-wrap: wrap;
-    min-width: 0;
-  }
-
-  &__count {
-    font-size: $font-size-sm;
-    font-weight: $font-weight-semibold;
-    color: $warning-dark;
-    white-space: nowrap;
-  }
-
-  &__list {
-    display: flex;
-    align-items: center;
-    gap: $spacing-sm;
-    flex-wrap: wrap;
-  }
-
-  &__item {
-    font-size: $font-size-sm;
-    color: darken($warning-dark, 10%);
-  }
-
-  &__more {
-    font-size: $font-size-xs;
-    color: $warning-dark;
-    background: rgba($warning, 0.2);
-    padding: 2px 8px;
-    border-radius: $border-radius-full;
-  }
-
-  &__close {
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: none;
-    border: none;
-    color: $warning-dark;
-    cursor: pointer;
-    border-radius: $border-radius-sm;
-    flex-shrink: 0;
-    transition: $transition-fast;
-    font-size: 0.8rem;
-
-    &:hover {
-      background: rgba($warning, 0.25);
-    }
-  }
-}
-
-@keyframes ag-slide-down {
-  from { opacity: 0; transform: translateY(-8px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-// ── Layout de dos paneles ─────────────────────────────────────
-
-.ag-layout {
-  display: grid;
-  grid-template-columns: 340px 1fr;
-  gap: $spacing-lg;
-  padding: $spacing-lg;
-  flex: 1;
-  max-width: 1600px;
-  margin: 0 auto;
-  width: 100%;
-  box-sizing: border-box;
-  align-items: start;
-
-  @media (max-width: $breakpoint-xl) {
-    grid-template-columns: 300px 1fr;
-  }
-
-  @media (max-width: $breakpoint-lg) {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto;
-  }
 
   @media (max-width: $breakpoint-md) {
-    padding: $spacing-md;
+    padding: 10px $spacing-md 8px;
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
     gap: $spacing-md;
-  }
-
-  @media (max-width: $breakpoint-sm) {
-    padding: $spacing-sm;
-    gap: $spacing-sm;
+    flex-wrap: wrap;
   }
 }
 
-// ── Paneles base ──────────────────────────────────────────────
-
-.ag-panel {
-  background: $white;
-  border-radius: $border-radius-xl;
-  box-shadow: $shadow-card;
-  overflow: hidden;
-
-  &--sessions {
-    display: flex;
-    flex-direction: column;
-    min-height: 480px;
-    position: sticky;
-    top: calc(#{$header-height} + #{$spacing-lg});
-    max-height: calc(100vh - #{$header-height} - #{$spacing-lg * 2});
-    overflow: hidden;
-  }
-
-  &--calendar {
-    display: flex;
-    flex-direction: column;
-    max-height: calc(100vh - #{$header-height} - #{$spacing-lg * 2});
-    overflow: hidden;
-  }
-}
-
-// ── Cabecera del día (panel izquierdo) ───────────────────────
-
-.ag-day-header {
-  display: flex;
-  align-items: center;
-  gap: $spacing-sm;
-  padding: $spacing-md $spacing-lg;
-  border-bottom: 1px solid $border-color-light;
-  flex-shrink: 0;
-}
-
-.ag-day-info {
-  flex: 1;
+// Navegación temporal
+.ag-nav {
   display: flex;
   align-items: center;
   gap: $spacing-sm;
   min-width: 0;
-}
+  flex: 1;
 
-.ag-day-title {
-  font-size: $font-size-lg;
-  font-weight: $font-weight-semibold;
-  color: $gray-900;
-  margin: 0;
-  text-transform: capitalize;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  &__hoy {
+    padding: 5px 14px;
+    border-radius: $border-radius-sm;
+    border: 1px solid $border-color;
+    background: $white;
+    color: $gray-700;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    cursor: pointer;
+    transition: $transition-color;
+    flex-shrink: 0;
 
-  @media (max-width: $breakpoint-md) {
-    font-size: $font-size-base;
-  }
-}
+    &:hover:not(:disabled) {
+      border-color: $primary;
+      background: $primary-ultra-light;
+      color: $primary-dark;
+    }
 
-.ag-hoy-badge {
-  font-size: $font-size-xs;
-  font-weight: $font-weight-semibold;
-  color: $primary;
-  background: $primary-light;
-  padding: 3px 10px;
-  border-radius: $border-radius-full;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
+    &:disabled {
+      opacity: 0.45;
+      cursor: default;
+    }
 
-.ag-hoy-link {
-  font-size: $font-size-xs;
-  color: $gray-400;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 3px 8px;
-  border-radius: $border-radius-full;
-  transition: $transition-fast;
-  white-space: nowrap;
-  flex-shrink: 0;
-
-  &:hover {
-    background: $primary-ultra-light;
-    color: $primary;
-  }
-}
-
-.ag-nav-btn {
-  width: 32px;
-  height: 32px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: $white;
-  border: 1px solid $border-color;
-  border-radius: $border-radius;
-  color: $gray-500;
-  cursor: pointer;
-  transition: $transition-fast;
-
-  &:hover:not(:disabled) {
-    border-color: $primary;
-    color: $primary;
-    background: $primary-ultra-light;
+    &:focus-visible { outline: 2px solid $primary; outline-offset: 1px; }
   }
 
-  &:disabled {
-    opacity: 0.35;
-    cursor: not-allowed;
-  }
-}
-
-.ag-refresh-btn {
-  width: 30px;
-  height: 30px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  border: none;
-  color: $gray-400;
-  cursor: pointer;
-  border-radius: $border-radius;
-  transition: $transition-fast;
-
-  &:hover:not(:disabled) {
-    color: $primary;
-    background: $primary-ultra-light;
+  &__arrows {
+    display: flex;
+    gap: 2px;
+    flex-shrink: 0;
   }
 
-  &:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
+  &__arrow {
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: $border-radius-sm;
+    border: 1px solid transparent;
+    background: transparent;
+    color: $gray-500;
+    cursor: pointer;
+    transition: $transition-color;
+
+    i { font-size: 0.85rem; }
+
+    &:hover:not(:disabled) {
+      background: $primary-ultra-light;
+      color: $primary;
+    }
+
+    &:disabled { opacity: 0.4; cursor: default; }
+    &:focus-visible { outline: 2px solid $primary; outline-offset: 1px; }
   }
 
-  &--spinning i {
-    animation: ag-spin 0.8s linear infinite;
+  // El título es el ancla de la pantalla: lo más grande de la barra.
+  &__title {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-bold;
+    color: $gray-900;
+    letter-spacing: -0.3px;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+    // Solo la primera letra en mayúscula: "martes, 1 de septiembre"
+    &::first-letter { text-transform: uppercase; }
+
+    @media (max-width: $breakpoint-md) {
+      font-size: $font-size-base;
+    }
+  }
+
+  &__loading {
+    width: 13px;
+    height: 13px;
+    border: 2px solid $primary-light;
+    border-top-color: $primary;
+    border-radius: 50%;
+    animation: ag-spin 0.7s linear infinite;
+    flex-shrink: 0;
   }
 }
 
@@ -351,273 +147,581 @@
   to { transform: rotate(360deg); }
 }
 
-// ── Banners festivo / vacaciones (panel izquierdo) ───────────
-
-.ag-day-festivo-banner {
+// Acciones de la derecha
+.ag-actions {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px $spacing-lg;
-  background: rgba($danger, 0.06);
-  border-bottom: 1px solid rgba($danger, 0.15);
-  color: $danger;
-  font-size: $font-size-xs;
-  font-weight: $font-weight-medium;
-  flex-shrink: 0;
-
-  i { font-size: 0.75rem; }
-}
-
-.ag-day-vacacion-banner {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px $spacing-lg;
-  background: rgba($secondary, 0.06);
-  border-bottom: 1px solid rgba($secondary, 0.15);
-  color: $secondary;
-  font-size: $font-size-xs;
-  font-weight: $font-weight-medium;
-  flex-shrink: 0;
-
-  i { font-size: 0.75rem; }
-}
-
-// ── Strip de estadísticas ─────────────────────────────────────
-
-.ag-stats-strip {
-  display: flex;
-  align-items: center;
-  gap: $spacing-xs;
-  padding: 8px $spacing-lg;
-  background: $gray-50;
-  border-bottom: 1px solid $border-color-light;
-  flex-shrink: 0;
-  flex-wrap: wrap;
-}
-
-.ag-stat {
-  font-size: $font-size-xs;
-  color: $gray-500;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-
-  strong {
-    color: $gray-800;
-    font-weight: $font-weight-semibold;
-  }
-
-  i { font-size: 0.75rem; }
-
-  &--success { color: $success; }
-  &--primary  { color: $primary; }
-  &--danger   { color: $danger; }
-}
-
-.ag-stat-sep {
-  color: $gray-300;
-  font-size: $font-size-xs;
-}
-
-// ── Lista de sesiones ─────────────────────────────────────────
-
-.ag-sessions-list {
-  flex: 1;
-  padding: $spacing-md;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  overflow-y: auto;
-  min-height: 0;
-}
-
-// ── Tarjeta de sesión ─────────────────────────────────────────
-
-.ag-card {
-  display: flex;
-  align-items: stretch;
-  background: $white;
-  border: 1px solid $border-color-light;
-  border-radius: $border-radius-lg;
-  overflow: hidden;
-  transition: $transition-base;
-
-  &:hover {
-    border-color: rgba(var(--tipo-color-rgb, 124, 111, 214), 0.35);
-    box-shadow: 0 2px 12px rgba($primary, 0.12);
-
-    .ag-card-actions {
-      opacity: 1;
-    }
-  }
-
-  // Sesión pasada (programada pero hora ya pasó)
-  &--pasada {
-    opacity: 0.65;
-  }
-
-  // Skeleton de carga
-  &--skeleton {
-    border-color: $border-color-light;
-    pointer-events: none;
-    animation: ag-pulse 1.6s ease-in-out infinite;
-
-    .ag-card-indicator {
-      background: $gray-200;
-    }
-  }
-}
-
-@keyframes ag-pulse {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.55; }
-}
-
-// Columna de hora
-.ag-card-time {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 12px 14px;
-  min-width: 72px;
-  background: $gray-50;
-  border-right: 1px solid $border-color-light;
-  gap: 1px;
-  flex-shrink: 0;
-}
-
-.ag-time-start {
-  font-size: $font-size-base;
-  font-weight: $font-weight-semibold;
-  color: $gray-800;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.3px;
-}
-
-.ag-time-sep {
-  font-size: $font-size-xs;
-  color: $gray-300;
-}
-
-.ag-time-end {
-  font-size: $font-size-xs;
-  color: $gray-400;
-  font-variant-numeric: tabular-nums;
-}
-
-// Indicador de color por tipo
-.ag-card-indicator {
-  width: 3px;
-  flex-shrink: 0;
-  background: var(--tipo-color, #{$primary});
-  opacity: 0.85;
-}
-
-// Cuerpo de la tarjeta
-.ag-card-body {
-  flex: 1;
-  padding: 12px $spacing-md;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  min-width: 0;
-}
-
-.ag-card-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   gap: $spacing-sm;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
-.ag-card-sub {
+// Selector de vista (Día | Semana)
+.ag-seg {
   display: flex;
-  align-items: center;
-  gap: $spacing-xs;
-  flex-wrap: wrap;
-}
-
-.ag-client-name {
-  font-size: $font-size-base;
-  font-weight: $font-weight-semibold;
-  color: $gray-900;
+  border: 1px solid $border-color;
+  border-radius: $border-radius-sm;
   overflow: hidden;
+  background: $white;
 
-  flex: 1;
-  min-width: 0;
-}
+  &__btn {
+    padding: 5px 14px;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    background: transparent;
+    color: $gray-500;
+    border: none;
+    cursor: pointer;
+    transition: $transition-color;
+    white-space: nowrap;
 
-.ag-tipo {
-  font-size: 0.7rem;
-  font-weight: $font-weight-semibold;
-  padding: 2px 8px;
-  border-radius: $border-radius-full;
-  letter-spacing: 0.2px;
-  white-space: nowrap;
-}
+    & + & { border-left: 1px solid $border-color; }
 
-.ag-curso {
-  font-size: $font-size-xs;
-  color: $gray-400;
-}
+    &:hover:not(&--active) {
+      background: $primary-ultra-light;
+      color: $primary;
+    }
 
-// Badges de estado
-.ag-estado {
-  font-size: 0.68rem;
-  font-weight: $font-weight-semibold;
-  padding: 2px 9px;
-  border-radius: $border-radius-full;
-  white-space: nowrap;
-  flex-shrink: 0;
-  letter-spacing: 0.1px;
+    &--active {
+      background: $primary;
+      color: $white;
+      font-weight: $font-weight-semibold;
+    }
 
-  &--programada {
-    background: $primary-light;
-    color: $primary-dark;
-  }
-  &--completada {
-    background: $success-light;
-    color: $success-dark;
-  }
-  &--cancelada-aviso {
-    background: $warning-light;
-    color: $warning-dark;
-  }
-  &--cancelada-sin {
-    background: $danger-light;
-    color: $danger-dark;
-  }
-  &--default {
-    background: $gray-100;
-    color: $gray-600;
+    &:focus-visible { outline: 2px solid $primary; outline-offset: -2px; }
   }
 }
 
-// Columna de acciones (visible en hover)
-.ag-card-actions {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 8px 10px;
-  opacity: 0;
-  transition: opacity $animation-duration-base $animation-timing;
-  flex-shrink: 0;
+// Selector de terapeuta — mismo patrón que Estadísticas
+.ag-select {
+  max-width: 200px;
+  padding: 5px 10px;
+  font-size: $font-size-sm;
+  color: $gray-700;
+  background: $white;
+  border: 1px solid $border-color;
+  border-radius: $border-radius-sm;
+  cursor: pointer;
+  font-family: $font-family-base;
+
+  &:focus {
+    outline: none;
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba($primary, 0.12);
+  }
+
+  @media (max-width: $breakpoint-md) { max-width: 150px; }
 }
 
-.ag-action {
+// Menú «+ Nuevo»
+.ag-new {
+  position: relative;
+
+  &__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $white;
+    background: $primary;
+    border: 1px solid $primary;
+    border-radius: $border-radius-sm;
+    cursor: pointer;
+    transition: $transition-color;
+    white-space: nowrap;
+
+    i { font-size: 0.8rem; }
+
+    &:hover { background: $primary-dark; border-color: $primary-dark; }
+    &:focus-visible { outline: 2px solid $primary-dark; outline-offset: 1px; }
+  }
+
+  &__caret {
+    font-size: 0.62rem !important;
+    opacity: 0.8;
+  }
+
+  &__menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    min-width: 190px;
+    background: $white;
+    border: 1px solid $border-color-light;
+    border-radius: $border-radius;
+    box-shadow: $shadow-lg;
+    padding: 5px;
+    z-index: $z-dropdown;
+    animation: ag-menu-in 0.14s $animation-timing;
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    width: 100%;
+    padding: 7px 10px;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: $gray-700;
+    text-align: left;
+    background: transparent;
+    border: none;
+    border-radius: $border-radius-sm;
+    cursor: pointer;
+    transition: $transition-color;
+
+    i {
+      font-size: 0.9rem;
+      color: $gray-400;
+      transition: color $animation-duration-fast $animation-timing;
+    }
+
+    &:hover {
+      background: $primary-ultra-light;
+      color: $primary-dark;
+      i { color: $primary; }
+    }
+
+    &:focus-visible { outline: 2px solid $primary; outline-offset: -2px; }
+  }
+
+  &__sep {
+    height: 1px;
+    background: $border-color-light;
+    margin: 4px 6px;
+  }
+}
+
+@keyframes ag-menu-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+// Botón de icono (refrescar)
+.ag-icon-btn {
   width: 30px;
   height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: $border-radius-sm;
+  border: 1px solid $border-color;
+  background: $white;
+  color: $gray-500;
+  cursor: pointer;
+  transition: $transition-color;
+
+  i { font-size: 0.9rem; display: block; }
+
+  &:hover:not(:disabled) {
+    border-color: $primary;
+    background: $primary-ultra-light;
+    color: $primary;
+  }
+
+  &:disabled { opacity: 0.5; cursor: default; }
+  &:focus-visible { outline: 2px solid $primary; outline-offset: 1px; }
+
+  &--spinning i { animation: ag-spin 0.7s linear infinite; }
+}
+
+// Tira única de estadísticas
+.ag-stats {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+
+  &__item {
+    font-size: $font-size-xs;
+    color: $gray-500;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+
+    strong {
+      font-weight: $font-weight-bold;
+      color: $gray-800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    // Un punto de color delante hace la tira legible de un vistazo
+    // sin recurrir a iconos, que a este tamaño solo añaden ruido.
+    &--success strong { color: $success-dark; }
+    &--primary strong { color: $primary; }
+    &--danger  strong { color: $danger-dark; }
+
+    &--horas {
+      color: $primary;
+      font-weight: $font-weight-semibold;
+      i { font-size: 0.7rem; }
+    }
+  }
+}
+
+// ── Cuerpo: rejilla + rail ────────────────────────────────────
+
+.ag-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) $ag-rail-width;
+  gap: $spacing-md;
+  padding: $spacing-md;
+  min-height: 0;      // deja que los hijos encojan dentro del shell
+  overflow: hidden;
+
+  @media (max-width: $breakpoint-xl) {
+    grid-template-columns: minmax(0, 1fr) 290px;
+  }
+
+  @media (max-width: $breakpoint-md) {
+    padding: $spacing-sm;
+    gap: $spacing-sm;
+  }
+}
+
+.ag-panel {
+  background: $white;
+  border-radius: $border-radius-xl;
+  box-shadow: $shadow-card;
+  overflow: hidden;
+  min-height: 0;
+
+  &--calendar {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+// ── Rail derecho ──────────────────────────────────────────────
+// Scrollea como una unidad: un solo gesto para todo lo secundario.
+
+.ag-rail {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  padding-right: 2px;
+
+  @include custom-scrollbar(5px, transparent, $gray-200);
+
+  &__block {
+    background: $white;
+    border-radius: $border-radius-xl;
+    box-shadow: $shadow-card;
+    overflow: hidden;
+    flex-shrink: 0;
+
+    &--alertas { border-top: 3px solid $warning; }
+  }
+
+  &__head {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 11px $spacing-md 9px;
+    border-bottom: 1px solid $border-color-light;
+  }
+
+  &__head-icon {
+    font-size: 0.85rem;
+    color: $gray-400;
+    flex-shrink: 0;
+
+    &--warn { color: $warning; }
+  }
+
+  &__title {
+    flex: 1;
+    margin: 0;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-bold;
+    color: $gray-800;
+    letter-spacing: -0.1px;
+    @include truncate;
+
+    &--fecha {
+      font-size: $font-size-base;
+      &::first-letter { text-transform: uppercase; }
+    }
+  }
+
+  &__badge {
+    padding: 1px 8px;
+    font-size: 0.68rem;
+    font-weight: $font-weight-bold;
+    color: $gray-600;
+    background: $gray-100;
+    border-radius: $border-radius-full;
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+
+    &--warn { color: $warning-dark; background: $warning-light; }
+    &--hoy  { color: $primary; background: $primary-light; }
+  }
+
+  &__body {
+    padding: $spacing-sm $spacing-md $spacing-md;
+
+    &--lista {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+  }
+
+  &__aviso {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    padding: 6px $spacing-md;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-medium;
+    border-bottom: 1px solid $border-color-light;
+
+    i { font-size: 0.75rem; }
+
+    &--festivo  { color: $danger-dark;  background: rgba($danger, 0.06); }
+    &--vacacion { color: $secondary-dark; background: rgba($secondary, 0.07); }
+  }
+
+  &__more {
+    margin: 6px 0 0;
+    font-size: $font-size-xs;
+    color: $gray-400;
+    text-align: center;
+  }
+}
+
+// Alertas dentro del rail
+.ag-alerta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 7px;
+  border-radius: $border-radius-sm;
+  cursor: pointer;
+  transition: $transition-color;
+
+  & + & { margin-top: 2px; }
+
+  &:hover { background: $warning-light; }
+
+  &__texto {
+    flex: 1;
+    font-size: $font-size-xs;
+    color: $gray-700;
+    line-height: 1.35;
+    @include text-clamp(2);
+  }
+
+  &--urgente &__texto {
+    color: $danger-dark;
+    font-weight: $font-weight-semibold;
+  }
+
+  &__close {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    color: $gray-300;
+    border-radius: $border-radius-sm;
+    cursor: pointer;
+    flex-shrink: 0;
+    font-size: 0.8rem;
+    transition: $transition-color;
+
+    &:hover { background: rgba($warning, 0.25); color: $warning-dark; }
+  }
+}
+
+// ── Tarjeta del día (rail, 320px) ─────────────────────────────
+// Tres líneas apiladas: a este ancho la disposición horizontal
+// anterior (hora | indicador | cuerpo | acciones) no cabía.
+
+.ag-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 10px 8px 12px;
+  background: $white;
+  border: 1px solid $border-color-light;
+  border-left: 3px solid var(--tipo-color, #{$primary});
   border-radius: $border-radius;
+  transition: $transition-base;
+
+  &:hover {
+    border-color: $border-color;
+    border-left-color: var(--tipo-color, #{$primary});
+    box-shadow: 0 2px 10px rgba($primary, 0.1);
+
+    .ag-card__acciones { opacity: 1; }
+  }
+
+  // Sesión programada cuya hora ya pasó
+  &--pasada { opacity: 0.6; }
+
+  &--evento {
+    cursor: pointer;
+    border-left-style: dashed;
+    background: $gray-50;
+  }
+
+  &--virtual { background: repeating-linear-gradient(
+      135deg,
+      $gray-50,
+      $gray-50 6px,
+      rgba($gray-100, 0.7) 6px,
+      rgba($gray-100, 0.7) 12px
+    );
+  }
+
+  &--skeleton {
+    pointer-events: none;
+    border-left-color: $gray-200;
+    animation: ag-pulse 1.6s ease-in-out infinite;
+    gap: 6px;
+  }
+
+  &__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $spacing-xs;
+  }
+
+  &__hora {
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    color: $gray-600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.1px;
+    white-space: nowrap;
+  }
+
+  &__hora-sep {
+    color: $gray-300;
+    margin: 0 1px;
+  }
+
+  &__nombre {
+    margin: 0;
+    font-size: $font-size-base;
+    font-weight: $font-weight-semibold;
+    color: $gray-900;
+    line-height: 1.25;
+    @include truncate;
+  }
+
+  &__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $spacing-xs;
+    min-height: 22px;
+  }
+
+  &__meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: $font-size-xs;
+    color: $gray-500;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  // El elipsis no funciona sobre un contenedor flex: el texto necesita su
+  // propia caja para recortarse con "…" en lugar de cortarse a hueso.
+  &__meta-text {
+    min-width: 0;
+    @include truncate;
+  }
+
+  &__curso {
+    color: $gray-400;
+  }
+
+  &__acciones {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity $animation-duration-base $animation-timing;
+
+    // En táctil no hay hover: las acciones deben verse siempre.
+    @media (hover: none) { opacity: 1; }
+  }
+
+  // Accesible por teclado: al tabular a una acción, se revela el grupo.
+  &:focus-within .ag-card__acciones { opacity: 1; }
+}
+
+@keyframes ag-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.55; }
+}
+
+.ag-tipo-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ag-virtual-icon {
+  font-size: 0.72rem;
+  color: $gray-400;
+  flex-shrink: 0;
+}
+
+.ag-virtual-icon-sm {
+  font-size: 0.55rem;
+  opacity: 0.75;
+  margin-left: 2px;
+}
+
+// Badges de estado
+.ag-estado {
+  font-size: 0.65rem;
+  font-weight: $font-weight-semibold;
+  padding: 1px 8px;
+  border-radius: $border-radius-full;
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: 0.1px;
+
+  &--programada       { background: $primary-light;   color: $primary-dark; }
+  &--completada       { background: $success-light;   color: $success-dark; }
+  &--cancelada-aviso  { background: $warning-light;   color: $warning-dark; }
+  &--cancelada-sin    { background: $danger-light;    color: $danger-dark; }
+  &--vacaciones       { background: $secondary-light; color: $secondary-dark; }
+  &--default          { background: $gray-100;        color: $gray-600; }
+}
+
+.ag-action {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: $border-radius-sm;
   border: none;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 0.82rem;
   transition: $transition-fast;
 
   &--success {
@@ -635,6 +739,8 @@
     color: $gray-600;
     &:hover { background: $primary-light; color: $primary; }
   }
+
+  &:focus-visible { outline: 2px solid $primary; outline-offset: 1px; }
 }
 
 // Skeletons
@@ -643,9 +749,9 @@
   border-radius: $border-radius-sm;
 
   &--xs { height: 10px; width: 40px; }
-  &--sm { height: 12px; width: 52px; }
-  &--md { height: 14px; width: 120px; }
-  &--lg { height: 16px; width: 180px; }
+  &--sm { height: 11px; width: 72px; }
+  &--md { height: 12px; width: 110px; }
+  &--lg { height: 15px; width: 160px; }
 }
 
 // ── Estado vacío ──────────────────────────────────────────────
@@ -655,144 +761,92 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: $spacing-4xl $spacing-lg;
-  gap: $spacing-sm;
-  flex: 1;
+  padding: $spacing-xl $spacing-md;
+  gap: $spacing-xs;
   text-align: center;
 }
 
 .ag-empty__icon {
-  width: 56px;
-  height: 56px;
+  width: 44px;
+  height: 44px;
   border-radius: $border-radius-xl;
   background: $primary-ultra-light;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: $spacing-sm;
+  margin-bottom: $spacing-xs;
 
   i {
-    font-size: 1.5rem;
+    font-size: 1.2rem;
     color: $lila-suave;
   }
 }
 
 .ag-empty__title {
-  font-size: $font-size-base;
+  font-size: $font-size-sm;
   font-weight: $font-weight-semibold;
-  color: $gray-700;
+  color: $gray-600;
   margin: 0;
 }
 
 .ag-empty__sub {
-  font-size: $font-size-sm;
+  font-size: $font-size-xs;
   color: $gray-400;
   margin: 0;
-  text-transform: capitalize;
 }
 
-// ── Panel derecho: Grid semanal tipo Teams ────────────────────
+// ── Pendientes ────────────────────────────────────────────────
 
-// Barra de navegación
-.ag-wg-nav {
-  display: flex;
-  align-items: center;
-  gap: $spacing-xs;
-  padding: 10px $spacing-md;
-  border-bottom: 1px solid $border-color-light;
-  flex-shrink: 0;
-}
+.ag-pend {
+  &__grupo {
+    & + & { margin-top: 0.7rem; }
+  }
 
-.ag-wg-nav__btn {
-  width: 28px;
-  height: 28px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  border: 1px solid $border-color;
-  border-radius: $border-radius-sm;
-  color: $gray-400;
-  cursor: pointer;
-  font-size: 0.7rem;
-  transition: $transition-fast;
+  &__label {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-bottom: 0.25rem;
+    font-size: 0.68rem;
+    font-weight: $font-weight-bold;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: $gray-400;
+  }
 
-  &:hover {
-    border-color: $primary;
-    color: $primary;
-    background: $primary-ultra-light;
+  &__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.35rem 0.5rem;
+    font-size: $font-size-xs;
+    text-align: left;
+    color: $gray-700;
+    background: transparent;
+    border: none;
+    border-radius: $border-radius-sm;
+    cursor: pointer;
+    transition: $transition-color;
+
+    &:hover { background: $primary-ultra-light; color: $primary-dark; }
+    &:focus-visible { outline: 2px solid $primary; outline-offset: -2px; }
+
+    > span:first-child { @include truncate; }
+  }
+
+  &__meta {
+    flex-shrink: 0;
+    font-size: 0.65rem;
+    color: $gray-400;
   }
 }
 
-.ag-wg-nav__center {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: $spacing-sm;
-  justify-content: center;
-  min-width: 0;
-}
+// ============================================================
+// REJILLA SEMANAL
+// ============================================================
 
-.ag-wg-nav__title {
-  font-size: $font-size-xs;
-  font-weight: $font-weight-semibold;
-  color: $gray-600;
-  text-align: center;
-  text-transform: capitalize;
-  white-space: nowrap;
-}
-
-.ag-wg-nav__hoy {
-  font-size: 0.68rem;
-  font-weight: $font-weight-semibold;
-  color: $primary;
-  background: $primary-light;
-  border: none;
-  border-radius: $border-radius-full;
-  padding: 2px 10px;
-  cursor: pointer;
-  transition: $transition-fast;
-  white-space: nowrap;
-  flex-shrink: 0;
-
-  &:hover {
-    background: $primary;
-    color: $white;
-  }
-}
-
-// Stats rápidas
-.ag-wg-stats {
-  display: flex;
-  align-items: center;
-  gap: $spacing-xs;
-  padding: 5px $spacing-md;
-  background: $gray-50;
-  border-bottom: 1px solid $border-color-light;
-  flex-shrink: 0;
-  flex-wrap: wrap;
-}
-
-.ag-wg-stat {
-  font-size: $font-size-xs;
-  color: $gray-500;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-
-  strong { color: $gray-800; font-weight: $font-weight-semibold; }
-  i { font-size: 0.7rem; }
-
-  &--success { color: $success; }
-}
-
-.ag-wg-stat-sep {
-  color: $gray-300;
-  font-size: $font-size-xs;
-}
-
-// Loading state
 .ag-wg-loading {
   display: flex;
   align-items: center;
@@ -801,20 +855,17 @@
   padding: $spacing-4xl;
 }
 
-// ── El grid en sí ─────────────────────────────────────────────
-
-$wg-time-col: 48px;
-
 .ag-week-grid {
   display: flex;
   flex-direction: column;
   flex: 1;
   overflow: hidden;
+  min-height: 0;
 
-  // ── Header días ──────────────────────────────────────────
+  // ── Cabecera de días ─────────────────────────────────────
   &__header {
     display: grid;
-    grid-template-columns: $wg-time-col repeat(7, 1fr);
+    grid-template-columns: #{$wg-time-col} repeat(var(--cols, 7), minmax(0, 1fr));
     border-bottom: 1px solid $border-color;
     flex-shrink: 0;
     background: $white;
@@ -881,54 +932,6 @@ $wg-time-col: 48px;
     line-height: 1;
   }
 
-  // ── Área scrollable ───────────────────────────────────────
-  &__scroll {
-    flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
-    min-height: 0;
-
-    &::-webkit-scrollbar { width: 5px; }
-    &::-webkit-scrollbar-track { background: transparent; }
-    &::-webkit-scrollbar-thumb {
-      background: $gray-200;
-      border-radius: 3px;
-      &:hover { background: $gray-300; }
-    }
-  }
-
-  // ── Body: rejilla de tiempo ───────────────────────────────
-  &__body {
-    display: grid;
-    grid-template-columns: $wg-time-col repeat(7, 1fr);
-    position: relative;
-  }
-
-  &__time-col {
-    position: relative;
-    border-right: 1px solid $border-color-light;
-    background: $white;
-  }
-
-  &__time-label {
-    position: absolute;
-    right: 5px;
-    left: 0;
-    text-align: right;
-    font-size: 0.58rem;
-    color: $gray-400;
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-    transform: translateY(-50%);
-    pointer-events: none;
-
-    &--first {
-      transform: none;
-      top: 2px !important;
-    }
-  }
-
-  // ── Festivo / Vacaciones — cabecera ──────────────────────────
   &__day-header--festivo {
     .ag-week-grid__day-name { color: $danger !important; }
   }
@@ -954,6 +957,57 @@ $wg-time-col: 48px;
     line-height: 1;
   }
 
+  // ── Área scrollable ───────────────────────────────────────
+  &__scroll {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0;
+
+    @include custom-scrollbar(5px, transparent, $gray-200);
+  }
+
+  // ── Cuerpo ────────────────────────────────────────────────
+  // La clave del rediseño: la altura se estira para llenar el hueco
+  // cuando la jornada cabe, y solo crece (y scrollea) cuando el
+  // rango horario no da de sí a 44px por hora.
+  &__body {
+    display: grid;
+    grid-template-columns: #{$wg-time-col} repeat(var(--cols, 7), minmax(0, 1fr));
+    position: relative;
+    height: max(100%, calc(var(--horas, 10) * #{$ag-px-hora-min}));
+  }
+
+  &__time-col {
+    position: relative;
+    border-right: 1px solid $border-color-light;
+    background: $white;
+  }
+
+  &__time-label {
+    position: absolute;
+    right: 6px;
+    left: 0;
+    text-align: right;
+    font-size: 0.6rem;
+    color: $gray-400;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    transform: translateY(-50%);
+    pointer-events: none;
+
+    // Primera y última etiqueta se meten hacia dentro: centradas sobre su
+    // línea sobresaldrían del área de scroll y la recortarían.
+    &--first {
+      transform: none;
+      top: 2px !important;
+    }
+
+    &--last {
+      transform: translateY(-100%);
+    }
+  }
+
   // ── Columnas de día ───────────────────────────────────────
   &__day-col {
     position: relative;
@@ -961,28 +1015,15 @@ $wg-time-col: 48px;
     cursor: pointer;
     transition: background $animation-duration-fast $animation-timing;
 
-    // &:hover {
-    //   background: rgba($primary, 0.012);
-    // }
-
-    &--today {
-      background: rgba($primary, 0.018);
-    }
-
-    &--selected {
-      background: rgba($primary, 0.03);
-    }
-
-    &--festivo {
-      background: rgba($gray-500, 0.06);
-    }
+    &--today    { background: rgba($primary, 0.018); }
+    &--selected { background: rgba($primary, 0.03); }
+    &--festivo  { background: rgba($gray-500, 0.06); }
 
     &--vacacion:not(&--festivo) {
       background: rgba($primary, 0.04);
     }
   }
 
-  // Líneas de hora
   &__hour-line {
     position: absolute;
     left: 0;
@@ -991,7 +1032,6 @@ $wg-time-col: 48px;
     pointer-events: none;
   }
 
-  // Líneas de media hora
   &__half-line {
     position: absolute;
     left: 0;
@@ -1031,11 +1071,14 @@ $wg-time-col: 48px;
     }
   }
 
-  // ── Bloques de sesión ─────────────────────────────────────
+  // ── Bloques ───────────────────────────────────────────────
+  // Posicionados en %, con un suelo en px para que una sesión
+  // corta siga siendo clicable.
   &__event {
     position: absolute;
     left: 2px;
     right: 2px;
+    min-height: 15px;
     border-radius: $border-radius-sm;
     padding: 3px 5px;
     cursor: pointer;
@@ -1120,44 +1163,61 @@ $wg-time-col: 48px;
   }
 }
 
-// ── Botón + Evento en toolbar de semana ──────────────────────
-
-.ag-wg-nav__evento-btn {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 5px 10px;
-  border-radius: $border-radius-sm;
-  border: 1px solid $primary;
-  background: $primary-ultra-light;
-  color: $primary;
-  font-size: 0.78rem;
-  font-weight: $font-weight-semibold;
+.ag-week-grid__event-online-icon {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  font-size: 0.65rem;
+  opacity: 0.75;
+  z-index: 2;
   cursor: pointer;
-  transition: $transition-fast;
-  white-space: nowrap;
 
-  &:hover {
-    background: $primary-light;
+  &:hover { opacity: 1; }
+}
+
+// ── Botón Meet (verde Google Meet) ───────────────────────────
+
+.btn-meet {
+  background: #00897b;
+  color: $white;
+  font-size: 0.7rem;
+  font-weight: $font-weight-semibold;
+  padding: 0.18rem 0.5rem;
+  border-radius: $border-radius-sm;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: 0.01em;
+  transition: background 0.15s ease, opacity 0.15s ease;
+
+  i { font-size: 0.72rem; }
+
+  &:hover:not(:disabled) { background: #00796b; }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
   }
 
-  i { font-size: 0.85rem; }
+  &--dashboard {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+  }
 }
 
-// ── Stat de horas en resumen semanal ─────────────────────────
-
-.ag-wg-stat--horas {
-  color: $primary;
-  font-weight: $font-weight-semibold;
-}
-
-// ── Modal evento de agenda ────────────────────────────────────
+// ============================================================
+// MODAL DE EVENTO DE AGENDA
+// ============================================================
 
 .ag-modal-backdrop {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.4);
-  z-index: 1050;
+  z-index: $z-modal;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1425,9 +1485,7 @@ $wg-time-col: 48px;
     gap: 5px;
     transition: $transition-fast;
 
-    & + & {
-      border-left: 1px solid $border-color;
-    }
+    & + & { border-left: 1px solid $border-color; }
 
     &--active {
       background: $primary;
@@ -1441,183 +1499,51 @@ $wg-time-col: 48px;
   }
 }
 
-// ── Botón Meet (verde Google Meet) ───────────────────────────
-
-.btn-meet {
-  background: #00897b;
-  color: $white;
-  font-size: 0.72rem;
-  font-weight: $font-weight-semibold;
-  padding: 0.2rem 0.55rem;
-  border-radius: $border-radius-sm;
-  border: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  cursor: pointer;
-  white-space: nowrap;
-  flex-shrink: 0;
-  letter-spacing: 0.01em;
-  transition: background 0.15s ease, opacity 0.15s ease;
-
-  i { font-size: 0.75rem; }
-
-  &:hover:not(:disabled) {
-    background: #00796b;
-  }
-
-  &:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
-  }
-
-  &--dashboard {
-    font-size: 0.7rem;
-    padding: 0.2rem 0.5rem;
-  }
-}
-
-// ── Icono de cámara en bloque semanal (grid) ─────────────────
-
-.ag-week-grid__event-online-icon {
-  position: absolute;
-  top: 2px;
-  right: 4px;
-  font-size: 0.65rem;
-  opacity: 0.75;
-  z-index: 2;
-  cursor: pointer;
-
-  &:hover {
-    opacity: 1;
-  }
-}
-
 // ============================================================
-// ACCESOS RÁPIDOS Y PENDIENTES
-// La agenda es la pantalla de inicio: además del día y la semana,
-// da entrada a las acciones repetidas y a lo que queda a medias.
+// RESPONSIVE
+// Por debajo de lg se abandona el modelo de altura fija: en una
+// pantalla estrecha una rejilla con la altura bloqueada es peor
+// que una página que scrollea con normalidad.
 // ============================================================
 
-.ag-quick {
-  display: flex;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-  padding: 0 $spacing-lg;
-  max-width: 1600px;
-  margin: 0 auto;
-  width: 100%;
-  box-sizing: border-box;
-
-  @media (max-width: $breakpoint-md) { padding: 0 $spacing-md; }
-
-  &__btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.4rem 0.8rem;
-    font-size: $font-size-sm;
-    font-weight: $font-weight-semibold;
-    color: $gray-700;
-    background: $white;
-    border: 1px solid $gray-200;
-    border-radius: $border-radius-sm;
-    cursor: pointer;
-    transition: $transition-color;
-
-    i { font-size: 0.9rem; }
-
-    &:hover {
-      border-color: $primary-light;
-      background: $primary-ultra-light;
-      color: $primary-dark;
-    }
-
-    &:focus-visible { outline: 2px solid $primary; outline-offset: 1px; }
-
-    &--primary {
-      background: $primary;
-      border-color: $primary;
-      color: $white;
-
-      &:hover { background: $primary-dark; border-color: $primary-dark; color: $white; }
-    }
+@media (max-width: $breakpoint-lg) {
+  .ag-shell {
+    height: auto;
+    min-height: calc(100vh - #{$header-height});
+    overflow: visible;
   }
+
+  .ag-body {
+    grid-template-columns: 1fr;
+    overflow: visible;
+  }
+
+  .ag-panel--calendar {
+    // Alto de trabajo razonable en tablet, con su scroll interno.
+    height: 62vh;
+    min-height: 380px;
+  }
+
+  .ag-rail {
+    overflow: visible;
+    max-height: none;
+  }
+
+  .ag-card__acciones { opacity: 1; }
 }
 
-.ag-panel--pendientes {
-  padding: $spacing-md;
-}
-
-.ag-pend {
-  &__header {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    margin-bottom: 0.6rem;
-
-    i { color: $warning; }
-
-    h2 {
-      flex: 1;
-      margin: 0;
-      font-size: $font-size-sm;
-      font-weight: $font-weight-bold;
-      color: $gray-800;
-    }
+@media (max-width: $breakpoint-md) {
+  .ag-toolbar__row {
+    gap: $spacing-sm;
   }
 
-  &__badge {
-    padding: 0.1rem 0.45rem;
-    font-size: 0.68rem;
-    font-weight: $font-weight-bold;
-    color: $warning-dark;
-    background: $warning-light;
-    border-radius: $border-radius-full;
-    font-variant-numeric: tabular-nums;
-  }
-
-  &__grupo {
-    & + & { margin-top: 0.7rem; }
-  }
-
-  &__label {
-    display: flex;
-    align-items: center;
-    gap: 0.3rem;
-    margin-bottom: 0.25rem;
-    font-size: 0.68rem;
-    font-weight: $font-weight-bold;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: $gray-400;
-  }
-
-  &__item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
+  .ag-actions {
     width: 100%;
-    padding: 0.35rem 0.5rem;
-    font-size: $font-size-xs;
-    text-align: left;
-    color: $gray-700;
-    background: transparent;
-    border: none;
-    border-radius: $border-radius-sm;
-    cursor: pointer;
-    transition: $transition-color;
-
-    &:hover { background: $primary-ultra-light; color: $primary-dark; }
-    &:focus-visible { outline: 2px solid $primary; outline-offset: -2px; }
-
-    > span:first-child { @include truncate; }
+    margin-left: 0;
+    justify-content: flex-start;
   }
 
-  &__meta {
-    flex-shrink: 0;
-    font-size: 0.65rem;
-    color: $gray-400;
+  .ag-nav {
+    flex: 1 1 100%;
   }
 }

@@ -83,3 +83,30 @@ export interface UpdateContratoPayload {
   notas?:        string;
   slots?:        SlotPayload[];
 }
+
+/**
+ * Vista previa de una replanificación: qué le pasa a las sesiones futuras si se
+ * cambia el horario del contrato. No escribe nada hasta que se confirma.
+ */
+export interface PreviewReplanificacion {
+  hash: string;
+  desde: string;
+  hasta: string;
+  mover:    { sesionId: string; de: string; a: string; finNuevo: string }[];
+  crear:    { inicio: string; fin: string; modalidad: ModalidadSlot }[];
+  cancelar: { sesionId: string; inicio: string; motivo: 'SLOT_ELIMINADO' | 'FIN_DE_VENTANA' }[];
+  omitidas: { fecha: string; motivo: 'FESTIVO' | 'VACACIONES'; detalle: string }[];
+  choques:  { inicio: string; conSesionId: string; descripcion: string }[];
+  /** Lo que NO se toca: la prueba de que no se reescribe historia clínica. */
+  intocables: { completadas: number; canceladas: number; sueltas: number; pasadas: number };
+  resumen: {
+    seMueven: number;
+    seCrean: number;
+    seCancelan: number;
+    /** De las canceladas, cuántas son solo por el borde de la ventana generada. */
+    seCancelanPorVentana: number;
+    enFestivo: number;
+    enVacaciones: number;
+    choques: number;
+  };
+}

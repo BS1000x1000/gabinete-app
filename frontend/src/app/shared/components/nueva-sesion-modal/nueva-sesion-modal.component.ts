@@ -73,7 +73,7 @@ export class NuevaSesionModalComponent implements OnDestroy {
 
   private onOpen(): void {
     this.form.reset({
-      clienteId: '', trabajadorId: '', tipoSesion: 'PEDAGOGIA',
+      clienteId: this.modalSvc.clientePreseleccionado() ?? '', trabajadorId: '', tipoSesion: 'PEDAGOGIA',
       fecha: this.hoy(), horaInicio: '', horaFin: '', notas: '',
     });
     this.saveError.set(null);

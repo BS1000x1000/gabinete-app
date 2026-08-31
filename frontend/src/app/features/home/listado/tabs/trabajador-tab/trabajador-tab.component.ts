@@ -9,7 +9,6 @@ import {
 import { ConfirmModalComponent } from '../../../../../shared/components/confirm-modal/confirm-modal.component';
 import { ActivatedRoute } from '@angular/router';
 import { ClientesService } from '../../../../../services/cliente.service';
-import { SesionesService } from '../../../../../services/sesiones.service';
 import { TrabajadorService } from '../../../../../services/trabajadores.service';
 import { TipoSesion, TIPO_SESION_LABELS } from '../../../../../interface/sesion.interface';
 
@@ -37,7 +36,6 @@ interface Asignacion {
 })
 export class TrabajadorTabComponent implements OnInit {
   private clientesSvc = inject(ClientesService);
-  private sesionesSvc = inject(SesionesService);
   private trabajadorSvc = inject(TrabajadorService);
   private route = inject(ActivatedRoute);
   private fb = inject(FormBuilder);
@@ -88,10 +86,6 @@ export class TrabajadorTabComponent implements OnInit {
   asignacionEditando = signal<Asignacion | null>(null);
   guardandoHorarios = signal(false);
   errorHorarios = signal<string | null>(null);
-  confirmacionPendiente = signal<{
-    sesionesFuturas: number;
-    mensaje: string;
-  } | null>(null);
 
   formHorarios = this.fb.group({
     horarios: this.fb.array([]),
@@ -101,41 +95,15 @@ export class TrabajadorTabComponent implements OnInit {
     return this.formHorarios.get('horarios') as FormArray;
   }
 
-  // ─── MODAL: GENERAR SESIONES ───────────────────────────────
-  mostrarModalGenerar = signal(false);
   asignacionSeleccionada = signal<Asignacion | null>(null);
-  generando = signal(false);
-  resultadoGeneracion = signal<{ sesionesCreadas: number } | null>(null);
-  errorGeneracion = signal<string | null>(null);
 
   pendingAction = signal<(() => void) | null>(null);
   confirmMsg    = signal('');
-
-  fechaHoy = new Date().toISOString().split('T')[0];
-  fechaUnAnio = new Date(new Date().setFullYear(new Date().getFullYear() + 1))
-    .toISOString()
-    .split('T')[0];
-
-  formGenerar = this.fb.group({
-    fechaInicio: [this.fechaHoy, Validators.required],
-    fechaFin: [this.fechaUnAnio, Validators.required],
-    tipoSesion: ['PEDAGOGIA', Validators.required],
-  });
-
-  fechaInicioSignal = signal<string>(this.fechaHoy);
-  fechaFinSignal = signal<string>(this.fechaUnAnio);
 
   // ─── LIFECYCLE ─────────────────────────────────────────────
   ngOnInit() {
     this.clienteId = this.route.parent?.snapshot.paramMap.get('id') || '';
     if (this.clienteId) this.cargarAsignaciones();
-
-    this.formGenerar.get('fechaInicio')!.valueChanges.subscribe((v) => {
-      if (v) this.fechaInicioSignal.set(v);
-    });
-    this.formGenerar.get('fechaFin')!.valueChanges.subscribe((v) => {
-      if (v) this.fechaFinSignal.set(v);
-    });
   }
 
   private crearHorarioGroup(diaSemana = '', horaInicio = '', horaFin = '') {
@@ -240,7 +208,6 @@ export class TrabajadorTabComponent implements OnInit {
       this.horariosEditar.push(this.crearHorarioGroup());
     }
     this.errorHorarios.set(null);
-    this.confirmacionPendiente.set(null);
     this.mostrarModalHorarios.set(true);
   }
 
@@ -248,7 +215,6 @@ export class TrabajadorTabComponent implements OnInit {
     this.mostrarModalHorarios.set(false);
     this.asignacionEditando.set(null);
     this.errorHorarios.set(null);
-    this.confirmacionPendiente.set(null);
   }
 
   agregarHorarioEditar() {
@@ -259,7 +225,7 @@ export class TrabajadorTabComponent implements OnInit {
     if (this.horariosEditar.length > 1) this.horariosEditar.removeAt(i);
   }
 
-  guardarHorarios(confirmar: boolean = false) {
+  guardarHorarios() {
     if (this.formHorarios.invalid) {
       this.formHorarios.markAllAsTouched();
       return;
@@ -276,21 +242,13 @@ export class TrabajadorTabComponent implements OnInit {
       horaFin: h.horaFin,
     }));
 
+    // Ya no hay paso de confirmacion: actualizar estos horarios no toca ninguna
+    // sesion. Las sesiones las gobierna el contrato.
     this.clientesSvc
-      .actualizarHorarios(this.clienteId, asignacion.id, horarios, confirmar)
+      .actualizarHorarios(this.clienteId, asignacion.id, horarios)
       .subscribe({
-        next: (res) => {
+        next: () => {
           this.guardandoHorarios.set(false);
-
-          // El backend pide confirmación → mostrar aviso en el modal
-          if (res.requiereConfirmacion) {
-            this.confirmacionPendiente.set({
-              sesionesFuturas: res.sesionesFuturas,
-              mensaje: res.mensaje,
-            });
-            return;
-          }
-
           this.cerrarModalHorarios();
           this.cargarAsignaciones();
         },
@@ -303,68 +261,15 @@ export class TrabajadorTabComponent implements OnInit {
       });
   }
 
-  // Confirmar la actualización con migración de sesiones
-  confirmarActualizacionHorarios() {
-    this.confirmacionPendiente.set(null);
-    this.guardarHorarios(true);
-  }
-
-  // ─── GENERAR SESIONES ──────────────────────────────────────
-  abrirModalGenerar(asignacion: Asignacion) {
-    this.asignacionSeleccionada.set(asignacion);
-    this.resultadoGeneracion.set(null);
-    this.errorGeneracion.set(null);
-    this.formGenerar.patchValue({
-      tipoSesion: asignacion.tipoTerapia,
-      fechaInicio: this.fechaHoy,
-      fechaFin: this.fechaUnAnio,
-    });
-    this.fechaInicioSignal.set(this.fechaHoy);
-    this.fechaFinSignal.set(this.fechaUnAnio);
-    this.mostrarModalGenerar.set(true);
-  }
-
-  cerrarModalGenerar() {
-    this.mostrarModalGenerar.set(false);
-    this.asignacionSeleccionada.set(null);
-    this.resultadoGeneracion.set(null);
-    this.errorGeneracion.set(null);
-  }
-
-  generarSesiones() {
-    if (this.formGenerar.invalid) return;
-    const asignacion = this.asignacionSeleccionada();
-    if (!asignacion) return;
-
-    this.generando.set(true);
-    this.errorGeneracion.set(null);
-    this.resultadoGeneracion.set(null);
-
-    const { fechaInicio, fechaFin, tipoSesion } = this.formGenerar.value;
-
-    this.sesionesSvc
-      .generarSesiones({
-        clienteId: this.clienteId,
-        trabajadorId: asignacion.trabajador.id,
-        fechaInicio: fechaInicio!,
-        fechaFin: fechaFin!,
-        tipoSesion: tipoSesion!,
-      })
-      .subscribe({
-        next: (res) => {
-          this.generando.set(false);
-          this.resultadoGeneracion.set({
-            sesionesCreadas: res.sesionesCreadas,
-          });
-        },
-        error: (err) => {
-          this.generando.set(false);
-          this.errorGeneracion.set(
-            err?.error?.message || 'Error al generar sesiones.',
-          );
-        },
-      });
-  }
+  /*
+   * El bloque "Generar sesiones" se retiro (2026-08-31). Generaba sesiones desde
+   * los horarios de la asignacion, en paralelo al generador del contrato y sin
+   * saber de el: dos fuentes escribiendo la misma tabla. Ademas no respetaba
+   * festivos ni vacaciones y dejaba las sesiones sin contrato, con lo que no eran
+   * facturables ni se cancelaban al finalizar el contrato.
+   *
+   * El horario recurrente se define ahora en la pestaña Contratos.
+   */
 
   // ─── DESASIGNAR ────────────────────────────────────────────
   desasignarTrabajador(asignacionId: string) {
@@ -408,23 +313,6 @@ export class TrabajadorTabComponent implements OnInit {
     );
   });
 
-  sesionesEstimadas = computed(() => {
-    const asig = this.asignacionSeleccionada();
-    const fi = this.fechaInicioSignal();
-    const ff = this.fechaFinSignal();
-    if (!asig || !fi || !ff) return 0;
-    const inicio = new Date(fi + 'T12:00:00');
-    const fin = new Date(ff + 'T12:00:00');
-    if (inicio > fin) return 0;
-    const dias = new Set(asig.horarios.map((h) => h.diaSemana));
-    let count = 0;
-    const cur = new Date(inicio);
-    while (cur <= fin) {
-      if (dias.has(cur.getDay())) count++;
-      cur.setDate(cur.getDate() + 1);
-    }
-    return count;
-  });
 }
 
 export default TrabajadorTabComponent;

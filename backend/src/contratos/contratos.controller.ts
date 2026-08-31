@@ -21,6 +21,9 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { MulterExceptionFilter } from '../common/filters/multer-exception.filter';
 import { ContratosService, TAMANO_MAX_CONTRATO } from './contratos.service';
 import type { FicheroContrato } from './contratos.service';
+import { ContratosReplanificacionService } from './contratos-replanificacion.service';
+import { ContratosCronService } from './contratos-cron.service';
+import { ReplanificarContratoDto } from './dto/replanificar-contrato.dto';
 import { CreateContratoDto } from './dto/create-contrato.dto';
 import { UpdateContratoDto } from './dto/update-contrato.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -33,7 +36,24 @@ import { ROLES_CLINICOS } from '../roles/roles.constants';
 export class ContratosController {
   private readonly logger = new Logger(ContratosController.name);
 
-  constructor(private readonly contratosService: ContratosService) {}
+  constructor(
+    private readonly contratosService: ContratosService,
+    private readonly replanificacion: ContratosReplanificacionService,
+    private readonly cron: ContratosCronService,
+  ) {}
+
+  /**
+   * Fuerza la extension de la ventana de generacion. Existe para poder recuperar
+   * a mano si el cron mensual no llego a ejecutarse (contenedor caido el dia 1).
+   * Es idempotente: ejecutarlo de mas no duplica nada.
+   */
+  @Post('cron/ventana')
+  @Roles('ADMIN')
+  @HttpCode(HttpStatus.OK)
+  async forzarVentana() {
+    this.logger.warn('POST /contratos/cron/ventana (manual)');
+    return this.cron.extenderVentana('manual');
+  }
 
   @Post()
   @Roles(...ROLES_CLINICOS)
@@ -73,6 +93,39 @@ export class ContratosController {
   finalizar(@Param('id') id: string, @Req() req: any) {
     this.logger.log(`PATCH /contratos/${id}/finalizar`);
     return this.contratosService.finalizar(id, req.user);
+  }
+
+  /**
+   * Vista previa de una replanificación: qué sesiones se mueven, cuáles se crean
+   * o se cancelan, cuáles caen en festivo o vacaciones y con qué chocan.
+   * No escribe nada.
+   */
+  @Post(':id/replanificar/preview')
+  @Roles(...ROLES_CLINICOS)
+  @HttpCode(HttpStatus.OK)
+  async previewReplanificar(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ReplanificarContratoDto,
+    @Req() req: any,
+  ) {
+    this.logger.log(`POST /contratos/${id}/replanificar/preview`);
+    return this.replanificacion.preview(id, dto, req.user);
+  }
+
+  /**
+   * Aplica la replanificación. Exige la firma de la vista previa: si la agenda
+   * cambió por debajo, se rechaza en vez de aplicar un plan que nadie aprobó.
+   */
+  @Post(':id/replanificar')
+  @Roles(...ROLES_CLINICOS)
+  @HttpCode(HttpStatus.OK)
+  async replanificar(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ReplanificarContratoDto,
+    @Req() req: any,
+  ) {
+    this.logger.warn(`POST /contratos/${id}/replanificar`);
+    return this.replanificacion.aplicar(id, dto, req.user);
   }
 
   /**

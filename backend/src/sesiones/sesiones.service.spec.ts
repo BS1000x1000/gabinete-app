@@ -4,6 +4,7 @@ import { EstadoSesion, TipoSesion } from '@prisma/client';
 import { SesionesService } from './sesiones.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { BonosService } from '../bonos/bonos.service';
+import { HorariosLaboralesService } from '../horarios-laborales/horarios-laborales.service';
 
 // ── Mock factories ──────────────────────────────────────────────────────────
 const mockSesion = (overrides: Record<string, any> = {}) => ({
@@ -50,6 +51,10 @@ const makePrismaMock = () => ({
   },
   cliente: {
     update: jest.fn(),
+    findFirst: jest.fn(),
+  },
+  trabajador: {
+    findUnique: jest.fn(),
   },
   $transaction: jest.fn(),
 });
@@ -73,6 +78,8 @@ describe('SesionesService', () => {
         SesionesService,
         { provide: PrismaService, useValue: prisma },
         { provide: BonosService, useValue: bonosService },
+        // Los avisos no bloquean nada: por defecto, ninguno
+        { provide: HorariosLaboralesService, useValue: { evaluarAvisos: jest.fn().mockResolvedValue([]) } },
       ],
     }).compile();
 
@@ -177,84 +184,52 @@ describe('SesionesService', () => {
     });
   });
 
-  // ── generarSesiones ─────────────────────────────────────────────────────
-  describe('generarSesiones()', () => {
+  // ── create (sesion suelta) ──────────────────────────────────────────────
+  describe('create()', () => {
     const dto = {
       clienteId: 'cliente-1',
       trabajadorId: 'trabajador-1',
-      fechaInicio: '2026-03-09', // lunes
-      fechaFin: '2026-03-15',   // domingo
+      fechaHoraInicio: '2026-03-09T16:00:00.000Z',
+      fechaHoraFin: '2026-03-09T17:00:00.000Z',
       tipoSesion: TipoSesion.PEDAGOGIA,
-    };
+    } as any;
 
-    it('lanza NotFoundException si no hay asignación activa', async () => {
-      prisma.clienteTrabajador.findFirst.mockResolvedValue(null);
-
-      await expect(service.generarSesiones(dto)).rejects.toThrow(NotFoundException);
+    beforeEach(() => {
+      prisma.cliente.findFirst.mockResolvedValue({ id: 'cliente-1' });
+      prisma.trabajador.findUnique.mockResolvedValue({ id: 'trabajador-1' });
+      prisma.sesion.create.mockResolvedValue({ id: 'ses-1' });
     });
 
-    it('lanza BadRequestException si la asignación no tiene horarios', async () => {
-      prisma.clienteTrabajador.findFirst.mockResolvedValue(
-        mockAsignacion({ horarios: [] }),
-      );
-
-      await expect(service.generarSesiones(dto)).rejects.toThrow(BadRequestException);
+    it('crea la sesion suelta', async () => {
+      await expect(service.create(dto)).resolves.toMatchObject({ id: 'ses-1' });
+      expect(prisma.sesion.create).toHaveBeenCalledTimes(1);
     });
 
-    it('lanza BadRequestException si ya existen sesiones en el rango', async () => {
-      prisma.clienteTrabajador.findFirst.mockResolvedValue(mockAsignacion());
-      prisma.sesion.count.mockResolvedValue(3);
-
-      await expect(service.generarSesiones(dto)).rejects.toThrow(BadRequestException);
+    // Lo que la protege del recolocador y del cron del contrato
+    it('la deja sin contrato, para que ningun proceso automatico la mueva', async () => {
+      await service.create(dto);
+      const data = prisma.sesion.create.mock.calls[0][0].data;
+      expect(data.contratoId).toBeUndefined();
     });
 
-    it('lanza BadRequestException si ningún día del rango coincide con los horarios', async () => {
-      // Horarios solo para sábado (6), pero el rango lunes-domingo debería generar sesiones
-      // Aquí probamos un rango que no contiene el día configurado (martes=2, miercoles=3)
-      // Usamos un rango de solo martes (2026-03-10) con horario solo para sábado
-      prisma.clienteTrabajador.findFirst.mockResolvedValue(
-        mockAsignacion({ horarios: [{ diaSemana: 6, horaInicio: '10:00', horaFin: '11:00' }] }),
-      );
-      prisma.sesion.count.mockResolvedValue(0);
-      prisma.$transaction.mockResolvedValue(undefined);
-
-      const dtoSinCoincidencia = {
-        ...dto,
-        fechaInicio: '2026-03-10', // martes
-        fechaFin: '2026-03-11',    // miércoles — no hay sábado en este rango
-      };
-
-      await expect(service.generarSesiones(dtoSinCoincidencia)).rejects.toThrow(BadRequestException);
+    it('rechaza que la hora de fin no sea posterior a la de inicio', async () => {
+      await expect(
+        service.create({ ...dto, fechaHoraFin: dto.fechaHoraInicio }),
+      ).rejects.toThrow(BadRequestException);
+      expect(prisma.sesion.create).not.toHaveBeenCalled();
     });
 
-    it('crea sesiones correctamente para los días coincidentes', async () => {
-      prisma.clienteTrabajador.findFirst.mockResolvedValue(mockAsignacion());
-      prisma.sesion.count.mockResolvedValue(0);
+    it('lanza NotFoundException si el cliente no existe o esta borrado', async () => {
+      prisma.cliente.findFirst.mockResolvedValue(null);
+      await expect(service.create(dto)).rejects.toThrow(NotFoundException);
+    });
 
-      let sesionesCreadas: any[] = [];
-      prisma.$transaction.mockImplementation(async (cb) => {
-        const tx = {
-          sesion: {
-            createMany: jest.fn().mockImplementation(({ data }) => {
-              sesionesCreadas = data;
-              return Promise.resolve({ count: data.length });
-            }),
-          },
-          cliente: {
-            update: jest.fn().mockResolvedValue({}),
-          },
-        };
-        return cb(tx);
-      });
-
-      const result = await service.generarSesiones(dto);
-
-      // Semana 9-15 marzo 2026: lunes 9 (día 1) y miércoles 11 (día 3) coinciden con horarios
-      expect(result.sesionesCreadas).toBe(2);
-      expect(sesionesCreadas).toHaveLength(2);
-      expect(result.message).toContain('2');
+    it('lanza NotFoundException si el trabajador no existe', async () => {
+      prisma.trabajador.findUnique.mockResolvedValue(null);
+      await expect(service.create(dto)).rejects.toThrow(NotFoundException);
     });
   });
+
 
   // ── remove ──────────────────────────────────────────────────────────────
   describe('remove()', () => {

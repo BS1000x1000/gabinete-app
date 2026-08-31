@@ -1,12 +1,13 @@
 import {
   Injectable,
+  Logger,
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EstadoSesion, TipoSesion, ModalidadSesion } from '@prisma/client';
-import { GenerarSesionesDto } from './dto/generar-sesiones.dto';
 import { CompletarSesionDto } from './dto/completar-sesion.dto';
+import { CreateSesionDto } from './dto/create-sesion.dto';
 import { SesionWithRelations, sesionInclude } from './sesiones.types';
 import {
   startOfWeek,
@@ -19,127 +20,101 @@ import {
 } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { BonosService } from 'src/bonos/bonos.service';
+import { HorariosLaboralesService } from '../horarios-laborales/horarios-laborales.service';
 
 @Injectable()
 export class SesionesService {
+  private readonly logger = new Logger(SesionesService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly bonosService: BonosService,
+    private readonly horariosLaborales: HorariosLaboralesService,
   ) {}
 
   /**
-   * Generar sesiones automáticamente desde la disponibilidad del cliente
+   * Crea una sesion suelta: evaluacion, sesion extra que se cobra aparte,
+   * reunion. Queda con `contratoId` null a proposito, que es lo que la protege
+   * de los procesos automaticos del contrato.
+   *
+   * No valida solapes a proposito: el gabinete a veces necesita meter una sesion
+   * a deshora y la app no debe impedirselo. El aviso visual es cosa del frontend.
    */
-  async generarSesiones(dto: GenerarSesionesDto) {
-    // 1. Verificar que la asignación cliente-trabajador existe y está activa
-    const asignacion = await this.prisma.clienteTrabajador.findFirst({
-      where: {
-        clienteId: dto.clienteId,
-        trabajadorId: dto.trabajadorId,
-        activo: true,
+  async create(dto: CreateSesionDto) {
+    const inicio = new Date(dto.fechaHoraInicio);
+    const fin = new Date(dto.fechaHoraFin);
+
+    if (Number.isNaN(inicio.getTime()) || Number.isNaN(fin.getTime())) {
+      throw new BadRequestException('Fechas no validas');
+    }
+    if (fin <= inicio) {
+      throw new BadRequestException('La hora de fin debe ser posterior a la de inicio');
+    }
+
+    const cliente = await this.prisma.cliente.findFirst({
+      where: { id: dto.clienteId, deletedAt: null },
+      select: { id: true },
+    });
+    if (!cliente) {
+      throw new NotFoundException(`Cliente ${dto.clienteId} no encontrado`);
+    }
+
+    const trabajador = await this.prisma.trabajador.findUnique({
+      where: { id: dto.trabajadorId },
+      select: { id: true },
+    });
+    if (!trabajador) {
+      throw new NotFoundException(`Trabajador ${dto.trabajadorId} no encontrado`);
+    }
+
+    this.logger.log(
+      `Sesion suelta ${dto.tipoSesion} para cliente ${dto.clienteId} el ${dto.fechaHoraInicio}`,
+    );
+
+    // Los avisos se calculan pero NO impiden crear: solape, fuera de jornada o
+    // vacaciones se informan y el profesional decide. Se devuelven junto a la
+    // sesion para que la UI los enseñe.
+    const avisos = await this.horariosLaborales.evaluarAvisos({
+      trabajadorId: dto.trabajadorId,
+      clienteId:    dto.clienteId,
+      inicio,
+      fin,
+    });
+
+    const sesion = await this.prisma.sesion.create({
+      data: {
+        clienteId:       dto.clienteId,
+        trabajadorId:    dto.trabajadorId,
+        fechaHoraInicio: inicio,
+        fechaHoraFin:    fin,
+        tipoSesion:      dto.tipoSesion,
+        ...(dto.modalidad ? { modalidad: dto.modalidad } : {}),
+        ...(dto.notas ? { notas: dto.notas } : {}),
       },
       include: {
-        cliente: true,
-        trabajador: true,
-        horarios: true, // DisponibilidadClienteTrabajador
+        cliente:    { select: { id: true, nombre: true, apellidos: true } },
+        trabajador: { select: { id: true, nombre: true, apellidos: true } },
       },
     });
 
-    if (!asignacion) {
-      throw new NotFoundException(
-        `No existe una asignación activa entre el cliente y el trabajador`,
-      );
-    }
-
-    if (asignacion.horarios.length === 0) {
-      throw new BadRequestException(
-        'La asignación no tiene horarios configurados. Añade horarios al terapeuta desde la ficha del cliente.',
-      );
-    }
-
-    // 2. Comprobar duplicados: sesiones ya existentes en ese rango
-    const sesionesExistentes = await this.prisma.sesion.count({
-      where: {
-        clienteId: dto.clienteId,
-        trabajadorId: dto.trabajadorId,
-        fechaHoraInicio: {
-          gte: new Date(dto.fechaInicio),
-          lte: new Date(dto.fechaFin + 'T23:59:59'),
-        },
-      },
-    });
-
-    if (sesionesExistentes > 0) {
-      throw new BadRequestException(
-        `Ya existen ${sesionesExistentes} sesiones en ese rango de fechas para esta asignación. Elige otro rango o elimina las existentes.`,
-      );
-    }
-
-    // 3. Generar sesiones iterando día a día
-    const sesionesACrear: any[] = [];
-    const fechaActual = new Date(dto.fechaInicio + 'T12:00:00'); // Mediodía para evitar cambios de día por DST
-    const fechaFin = new Date(dto.fechaFin + 'T23:59:59');
-
-    while (fechaActual <= fechaFin) {
-      const diaSemana = fechaActual.getDay(); // 0=Dom, 1=Lun...
-      const horarioDelDia = asignacion.horarios.find(
-        (h) => h.diaSemana === diaSemana,
-      );
-
-      if (horarioDelDia) {
-        const [hInicio, mInicio] = horarioDelDia.horaInicio
-          .split(':')
-          .map(Number);
-        const [hFin, mFin] = horarioDelDia.horaFin.split(':').map(Number);
-
-        const fechaHoraInicio = new Date(fechaActual);
-        fechaHoraInicio.setHours(hInicio, mInicio, 0, 0);
-
-        const fechaHoraFin = new Date(fechaActual);
-        fechaHoraFin.setHours(hFin, mFin, 0, 0);
-
-        sesionesACrear.push({
-          fechaHoraInicio,
-          fechaHoraFin,
-          estado: EstadoSesion.PROGRAMADA,
-          tipoSesion: dto.tipoSesion || TipoSesion.PEDAGOGIA,
-          clienteId: dto.clienteId,
-          trabajadorId: dto.trabajadorId,
-        });
-      }
-
-      fechaActual.setDate(fechaActual.getDate() + 1);
-    }
-
-    if (sesionesACrear.length === 0) {
-      throw new BadRequestException(
-        'No se generaron sesiones. Verifica que los días de los horarios coincidan con el rango de fechas seleccionado.',
-      );
-    }
-
-    // 4. Crear sesiones + actualizar fechaInicio del cliente en transacción
-    await this.prisma.$transaction(async (tx) => {
-      await tx.sesion.createMany({ data: sesionesACrear });
-
-      // Actualizar fechaInicio del cliente si no la tiene todavía
-      if (!asignacion.cliente.fechaInicio) {
-        await tx.cliente.update({
-          where: { id: dto.clienteId },
-          data: { fechaInicio: new Date(dto.fechaInicio) },
-        });
-      }
-    });
-
-    return {
-      message: `Se generaron ${sesionesACrear.length} sesiones correctamente`,
-      sesionesCreadas: sesionesACrear.length,
-      fechaInicio: dto.fechaInicio,
-      fechaFin: dto.fechaFin,
-      cliente: `${asignacion.cliente.nombre} ${asignacion.cliente.apellidos}`,
-      trabajador: `${asignacion.trabajador.nombre} ${asignacion.trabajador.apellidos}`,
-      tipoTerapia: asignacion.tipoTerapia,
-    };
+    return { ...sesion, avisos };
   }
+
+  /*
+   * `generarSesiones()` se retiro (2026-08-31).
+   *
+   * Generaba sesiones a partir de `ClienteTrabajador.horarios`, en paralelo al
+   * generador del contrato, sin que ninguno supiera del otro: dos fuentes de
+   * verdad escribiendo en la misma tabla. Ademas no respetaba festivos ni
+   * vacaciones y dejaba `contratoId` a null, con lo que las sesiones no eran
+   * trazables a facturacion y `finalizar()` de un contrato no podia cancelarlas
+   * -eso dejo 46 sesiones zombi en la BD de pruebas-.
+   *
+   * El horario recurrente lo define ahora el contrato:
+   * `ContratosService.generarSesionesContrato()`. Para una sesion suelta
+   * (evaluacion, extra) esta `POST /sesiones`.
+   */
+
 
   /**
    * Obtener sesiones de un trabajador en un rango de fechas
