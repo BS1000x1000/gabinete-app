@@ -19,6 +19,8 @@ import {
   ESPECIALISTAS_SANITARIOS,
 } from './models/wizard-step.interface';
 import { TrabajadorService } from '../../services/trabajadores.service';
+import { AuthService } from '../../services/auth.service';
+import { TIPO_SESION_LABELS, TipoSesion } from '../../interface/sesion.interface';
 import { EdadPipe } from '../../shared/pipes/edad.pipe';
 import { ConfirmModalComponent } from '../../shared/components/confirm-modal/confirm-modal.component';
 
@@ -33,6 +35,7 @@ export class NuevoClienteWizardComponent {
   private clientesSvc = inject(ClientesService);
   private formsService = inject(WizardFormsService);
   private trabajadorSvc = inject(TrabajadorService);
+  private auth = inject(AuthService);
   private validationService = inject(WizardValidationService);
 
   @Output() cerrar = new EventEmitter<void>();
@@ -50,12 +53,27 @@ export class NuevoClienteWizardComponent {
   formColegio!: FormGroup;
   formFamilia!: FormGroup;
   formSanitario!: FormGroup;
+  formAsignacion!: FormGroup;
 
   consentimientoMarcado = signal(false);
   trabajadores = this.trabajadorSvc.trabajadores;
 
   readonly ESPECIALISTAS_COLEGIO = ESPECIALISTAS_COLEGIO;
   readonly ESPECIALISTAS_SANITARIOS = ESPECIALISTAS_SANITARIOS;
+  readonly TIPOS_TERAPIA = (Object.keys(TIPO_SESION_LABELS) as TipoSesion[]).map(
+    (value) => ({ value, label: TIPO_SESION_LABELS[value] }),
+  );
+
+  /**
+   * Mismo mapa que usa el backend en `terapiaPorRol` (clientes.service.ts): un
+   * rol clinico se precarga solo, ADMIN y RECEP eligen a mano porque su rol no
+   * determina ninguna terapia.
+   */
+  private static readonly TERAPIA_POR_ROL: Record<string, TipoSesion> = {
+    PEDAGOGO: TipoSesion.PEDAGOGIA,
+    NEURO: TipoSesion.NEUROPSICOLOGIA,
+    LOGOPEDA: TipoSesion.LOGOPEDIA,
+  };
 
   pasoActualData = computed(() => this.pasos[this.pasoActual()]);
   esPrimerPaso = computed(() => this.pasoActual() === 0);
@@ -89,6 +107,17 @@ export class NuevoClienteWizardComponent {
     this.formColegio = this.formsService.crearFormColegio();
     this.formFamilia = this.formsService.crearFormFamilia();
     this.formSanitario = this.formsService.crearFormSanitario();
+    this.formAsignacion = this.formsService.crearFormAsignacion();
+    this.precargarAsignacion();
+  }
+
+  /** Precarga al usuario actual como terapeuta del cliente que esta dando de alta. */
+  private precargarAsignacion(): void {
+    const rol = this.auth.userRoleCodigo();
+    this.formAsignacion.patchValue({
+      trabajadorId: this.auth.currentTrabajadorId() ?? '',
+      tipoTerapia: NuevoClienteWizardComponent.TERAPIA_POR_ROL[rol] ?? '',
+    });
   }
 
   private setupFormListeners() {
@@ -98,6 +127,16 @@ export class NuevoClienteWizardComponent {
     this.formFamilia.valueChanges.subscribe(() =>
       this.formChanged.update((v) => v + 1),
     );
+    this.formAsignacion.valueChanges.subscribe(() =>
+      this.formChanged.update((v) => v + 1),
+    );
+    // Al apagar "recibe apoyos" el bloque de especialistas se oculta: hay que
+    // vaciarlo o quedaria un control con Validators.required invisible
+    // bloqueando el paso sin que se vea que falla.
+    this.formColegio.get('apoyos')?.valueChanges.subscribe((recibeApoyos) => {
+      if (!recibeApoyos) this.especialistasColegio.clear();
+      this.formChanged.update((v) => v + 1);
+    });
   }
 
   get contactos(): FormArray {
@@ -205,6 +244,11 @@ export class NuevoClienteWizardComponent {
     return this.contactos.controls.filter((c) => c.get('esPrincipal')?.value === true).length;
   }
 
+  /** Al menos un tutor legal: es quien firma el contrato y los consentimientos. */
+  get contactosTutoresLegales(): number {
+    return this.contactos.controls.filter((c) => c.get('esTutorLegal')?.value === true).length;
+  }
+
   /** Marca todo el formulario como tocado para revelar los errores al intentar avanzar. */
   private revelarErrores(form: FormGroup): void {
     form.markAllAsTouched();
@@ -274,6 +318,11 @@ export class NuevoClienteWizardComponent {
       const principales = this.contactosPrincipales;
       if (principales === 0) motivos.push('Marca cual es el contacto principal.');
       if (principales > 1) motivos.push('Solo puede haber un contacto principal.');
+      if (this.contactosTutoresLegales === 0) {
+        motivos.push(
+          'Marca al menos un tutor legal: es quien firma el contrato y los consentimientos.',
+        );
+      }
     }
 
     if (paso === 2 && this.formSanitario.invalid) {
@@ -316,6 +365,7 @@ export class NuevoClienteWizardComponent {
   private crearCliente() {
     this.isSubmitting.set(true);
 
+    const asignacion = this.formAsignacion.value;
 
     const clienteData = {
       nombre: this.formDatosBasicos.value.nombre,
@@ -377,18 +427,37 @@ export class NuevoClienteWizardComponent {
         ),
       },
 
-      // Escolar: situacion DEL NINO en el centro (no del centro en si)
+      // Escolar: situacion DEL NINO en el centro (no del centro en si).
+      // Los campos que el switch oculta tampoco viajan: si no hay adaptaciones
+      // no hay tipo, y si no hay apoyos no hay especialistas del centro.
       datosEscolares: {
         adaptaciones: this.formColegio.value.adaptaciones || false,
-        tipoAdaptaciones: this.formColegio.value.tipoAdaptaciones || null,
+        tipoAdaptaciones: this.formColegio.value.adaptaciones
+          ? this.formColegio.value.tipoAdaptaciones || null
+          : null,
         apoyos: this.formColegio.value.apoyos || false,
-        especialistas: (this.formColegio.value.especialistas || []).filter(
-          (e: string) => !!e?.trim(),
-        ),
+        especialistas: this.formColegio.value.apoyos
+          ? (this.formColegio.value.especialistas || []).filter(
+              (e: string) => !!e?.trim(),
+            )
+          : [],
       },
 
-      // Sin horario ni terapeuta: los define el contrato. El backend asigna
-      // automaticamente a quien da de alta para que no pierda de vista la ficha.
+      // El horario y la cuota los define el contrato; aqui solo se deja atado el
+      // terapeuta para que el cliente no nazca sin nadie asignado. Si se deja
+      // vacio, el backend cae en su auto-asignacion por rol (que no aplica a
+      // ADMIN ni RECEP, de ahi que el resumen avise).
+      ...(asignacion.trabajadorId && asignacion.tipoTerapia
+        ? {
+            asignaciones: [
+              {
+                trabajadorId: asignacion.trabajadorId,
+                tipoTerapia: asignacion.tipoTerapia,
+                horarios: [],
+              },
+            ],
+          }
+        : {}),
 
       consentimientoRgpd: this.consentimientoMarcado(),
     };
@@ -437,11 +506,25 @@ export class NuevoClienteWizardComponent {
     const v = this.formColegio.value;
     return {
       adaptaciones: v.adaptaciones ?? false,
-      tipoAdaptaciones: v.tipoAdaptaciones ?? '',
+      tipoAdaptaciones: v.adaptaciones ? (v.tipoAdaptaciones ?? '') : '',
       apoyos: v.apoyos ?? false,
-      especialistas: (v.especialistas ?? []).filter((e: string) => !!e?.trim()),
+      especialistas: v.apoyos
+        ? (v.especialistas ?? []).filter((e: string) => !!e?.trim())
+        : [],
     };
   }
+  /** Terapeuta elegido en el resumen, o null si el alta se guarda sin asignar. */
+  getResumenAsignacion() {
+    const { trabajadorId, tipoTerapia } = this.formAsignacion.value;
+    if (!trabajadorId || !tipoTerapia) return null;
+
+    const t = this.trabajadores().find((w) => w.id === trabajadorId);
+    return {
+      nombre: t ? `${t.nombre} ${t.apellidos}` : 'el terapeuta seleccionado',
+      terapia: TIPO_SESION_LABELS[tipoTerapia as TipoSesion] ?? tipoTerapia,
+    };
+  }
+
   toggleConsentimiento() {
     this.consentimientoMarcado.update((v) => !v);
   }

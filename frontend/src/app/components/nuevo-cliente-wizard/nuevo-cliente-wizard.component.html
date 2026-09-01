@@ -701,7 +701,7 @@
               ></textarea>
             </div>
 
-            <div class="col-12">
+            <div class="col-12" *ngIf="formColegio.get('apoyos')?.value">
               <label class="form-label">Especialistas del centro</label>
               <p class="wz-hint">
                 Profesionales que atienden al alumno dentro del colegio.
@@ -819,17 +819,40 @@
               <dt class="col-sm-4">Colegio:</dt>
               <dd class="col-sm-8">{{ getResumenColegio().nombre }}</dd>
 
+              <dt class="col-sm-4" *ngIf="getResumenColegio().direccionColegio">
+                Dirección:
+              </dt>
+              <dd class="col-sm-8" *ngIf="getResumenColegio().direccionColegio">
+                {{ getResumenColegio().direccionColegio }}
+              </dd>
+
               <dt class="col-sm-4" *ngIf="getResumenColegio().contactoUno">
                 Contacto 1:
               </dt>
               <dd class="col-sm-8" *ngIf="getResumenColegio().contactoUno">
                 {{ getResumenColegio().contactoUno }}
+                <small class="text-muted d-block">
+                  <span *ngIf="getResumenColegio().telefono">
+                    <i class="bi bi-telephone me-1"></i>{{ getResumenColegio().telefono }}
+                  </span>
+                  <span *ngIf="getResumenColegio().email">
+                    · <i class="bi bi-envelope me-1"></i>{{ getResumenColegio().email }}
+                  </span>
+                </small>
               </dd>
               <dt class="col-sm-4" *ngIf="getResumenColegio().contactoDos">
                 Contacto 2:
               </dt>
               <dd class="col-sm-8" *ngIf="getResumenColegio().contactoDos">
                 {{ getResumenColegio().contactoDos }}
+                <small class="text-muted d-block">
+                  <span *ngIf="getResumenColegio().telefonoDos">
+                    <i class="bi bi-telephone me-1"></i>{{ getResumenColegio().telefonoDos }}
+                  </span>
+                  <span *ngIf="getResumenColegio().emailDos">
+                    · <i class="bi bi-envelope me-1"></i>{{ getResumenColegio().emailDos }}
+                  </span>
+                </small>
               </dd>
             </dl>
           </div>
@@ -851,12 +874,19 @@
               <span *ngIf="contacto.esPago" class="badge bg-success ms-1"
                 >Pagador</span
               >
+              <span *ngIf="contacto.esTutorLegal" class="badge bg-warning text-dark ms-1"
+                >Tutor legal</span
+              >
               <br />
               <small class="text-muted">
                 <i class="bi bi-telephone me-1"></i>{{ contacto.telefono }}
                 <span *ngIf="contacto.email">
                   · <i class="bi bi-envelope me-1"></i
                   >{{ contacto.email }}</span
+                >
+                <span *ngIf="contacto.dni">
+                  · <i class="bi bi-card-text me-1"></i
+                  >{{ contacto.dni }}</span
                 >
               </small>
             </div>
@@ -918,18 +948,54 @@
             </dl>
           </div>
 
-          <!-- El horario y el terapeuta ya no se piden en el alta: los define el
-               contrato, que es lo que firma la familia. -->
-          <div class="resumen-section resumen-section--nota">
+          <!-- El horario y la cuota los define el contrato; el terapeuta se ata
+               aquí para que la ficha no nazca sin nadie asignado. -->
+          <div class="resumen-section" [formGroup]="formAsignacion">
             <h5 class="resumen-section-titulo">
-              <i class="bi bi-info-circle me-2"></i>
-              Siguiente paso
+              <i class="bi bi-person-badge me-2"></i>
+              Terapeuta asignado
             </h5>
-            <p class="mb-0 small text-muted">
-              Al guardar, el cliente queda dado de alta y asignado a ti. El
-              <strong>horario semanal, el terapeuta y la cuota</strong> se definen creando su
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label" for="asignacion-trabajador">Terapeuta</label>
+                <select
+                  id="asignacion-trabajador"
+                  class="form-select"
+                  formControlName="trabajadorId"
+                >
+                  <option value="">Sin asignar</option>
+                  <option *ngFor="let t of trabajadores()" [value]="t.id">
+                    {{ t.nombre }} {{ t.apellidos }}
+                  </option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="asignacion-terapia">Tipo de terapia</label>
+                <select
+                  id="asignacion-terapia"
+                  class="form-select"
+                  formControlName="tipoTerapia"
+                >
+                  <option value="">Seleccionar...</option>
+                  <option *ngFor="let tipo of TIPOS_TERAPIA" [value]="tipo.value">
+                    {{ tipo.label }}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <p class="mb-0 mt-3 small text-muted" *ngIf="getResumenAsignacion() as a">
+              El cliente queda asignado a <strong>{{ a.nombre }}</strong> para
+              <strong>{{ a.terapia }}</strong>. El
+              <strong>horario semanal y la cuota</strong> se definen creando su
               <strong>contrato de servicio</strong>, desde la pestaña Contratos de su ficha.
               Ahí es donde se generan también sus sesiones.
+            </p>
+            <p class="mb-0 mt-3 small resumen-aviso" *ngIf="!getResumenAsignacion()">
+              <i class="bi bi-exclamation-triangle me-1"></i>
+              El cliente quedará <strong>sin terapeuta asignado</strong>. Podrás asignarlo
+              más adelante desde la pestaña Terapeutas de su ficha, o al crear su contrato
+              de servicio.
             </p>
           </div>
 

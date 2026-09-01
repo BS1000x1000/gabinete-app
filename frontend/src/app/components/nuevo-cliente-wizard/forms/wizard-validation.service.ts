@@ -25,13 +25,18 @@ export class WizardValidationService {
         return forms.datosBasicos.valid;
 
       case 1: {
-        // Familia — obligatorio: al menos un contacto y exactamente un principal
+        // Familia — obligatorio: al menos un contacto, exactamente un principal
+        // y al menos un tutor legal (sin el, el contrato no se puede generar:
+        // contratos-pdf.service.ts exige un familiar con esTutorLegal).
         const contactos = forms.familia.get('contactos') as FormArray;
         if (!forms.familia.valid || contactos.length === 0) return false;
         const principales = contactos.controls.filter(
           (c) => c.get('esPrincipal')?.value === true,
         ).length;
-        return principales === 1;
+        const tutores = contactos.controls.filter(
+          (c) => c.get('esTutorLegal')?.value === true,
+        ).length;
+        return principales === 1 && tutores >= 1;
       }
 
       case 2: // Sanitario — opcional, pero sin errores

@@ -118,11 +118,12 @@ export class ClienteDrawerComponent implements OnDestroy {
 
   // ── Escuchar cambios del drawer para prellenar ──
   constructor() {
-    // Rellenar formularios cuando se abre el drawer
-    import('@angular/core').then(({ effect }) => {
-      // Usamos computed reactivo para detectar apertura
+    // Al apagar "recibe apoyos" el bloque de especialistas se oculta: hay que
+    // vaciarlo o quedaria un control con Validators.required invisible
+    // bloqueando el guardado sin que se vea que falla.
+    this.formColegio.get('apoyos')?.valueChanges.subscribe((recibeApoyos) => {
+      if (!recibeApoyos) this.especialistasColegio.clear();
     });
-    // Alternativa: watch state changes via a getter in template
   }
 
   /** Llamado desde el template cuando el drawer abre */
@@ -182,6 +183,7 @@ export class ClienteDrawerComponent implements OnDestroy {
         dni:               [f.dni ?? ''],
         esContactoPrincipal: [f.esContactoPrincipal ?? false],
         esResponsablePago:   [f.esResponsablePago ?? false],
+        esTutorLegal:        [f.esTutorLegal ?? false],
         whatsapp:            [f.whatsapp ?? false],
       }));
     });
@@ -229,6 +231,7 @@ export class ClienteDrawerComponent implements OnDestroy {
       dni:               [''],
       esContactoPrincipal: [false],
       esResponsablePago:   [false],
+      esTutorLegal:        [false],
       whatsapp:            [true],
     }));
   }
@@ -331,6 +334,7 @@ export class ClienteDrawerComponent implements OnDestroy {
         dni:                 c.dni      || null,
         esContactoPrincipal: c.esContactoPrincipal ?? false,
         esResponsablePago:   c.esResponsablePago   ?? false,
+        esTutorLegal:        c.esTutorLegal        ?? false,
         whatsapp:            c.whatsapp             ?? false,
       };
 
@@ -379,11 +383,13 @@ export class ClienteDrawerComponent implements OnDestroy {
         // El colegio y la situación escolar del niño son entidades distintas:
         // se guardan en dos endpoints y el segundo depende del primero.
         next: () => {
+          // Los campos que el switch oculta tampoco se guardan: si no hay
+          // adaptaciones no hay tipo, y si no hay apoyos no hay especialistas.
           this.clientesSvc.updateEscolar(clienteId, {
             adaptaciones:     v.adaptaciones!,
-            tipoAdaptaciones: v.tipoAdaptaciones!,
+            tipoAdaptaciones: v.adaptaciones ? v.tipoAdaptaciones! : '',
             apoyos:           v.apoyos!,
-            especialistas:    this.especialistasColegio.value,
+            especialistas:    v.apoyos ? this.especialistasColegio.value : [],
           }).subscribe({ next: () => res(), error: rej });
         },
         error: rej,

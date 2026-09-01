@@ -182,9 +182,6 @@
   align-items: stretch;
   border-bottom: 2px solid $gray-100;
   flex-shrink: 0;
-  overflow-x: auto;
-  @include custom-scrollbar(4px);
-
   // Separa el grupo de configuracion sin dibujar una linea dura
   &__sep {
     flex: 1 1 auto;
@@ -219,7 +216,6 @@
   &.active {
     color: $primary;
     border-bottom-color: $primary;
-    background: lighten($primary, 48%);
   }
 
   @include respond-to('md') {
@@ -660,6 +656,7 @@
   &.badge-no       { background: $gray-100; color: $gray-500; }
   &.badge-primary  { background: $info-light; color: $info-dark; }
   &.badge-success  { background: $success-light; color: $success-dark; }
+  &.badge-tutor    { background: $warning-light; color: $warning-dark; }
   &.badge-whatsapp { background: $success-light; color: $success-dark; }
 }
 

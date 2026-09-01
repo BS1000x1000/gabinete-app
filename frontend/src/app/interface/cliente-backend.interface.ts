@@ -26,6 +26,7 @@ interface FamiliarBackend {
   dni?: string;
   esResponsablePago?: boolean;
   esContactoPrincipal?: boolean;
+  esTutorLegal?: boolean;
   whatsapp?: boolean;
 }
 

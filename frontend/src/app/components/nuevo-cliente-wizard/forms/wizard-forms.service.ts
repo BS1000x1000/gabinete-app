@@ -130,6 +130,21 @@ export class WizardFormsService {
   // Crear una asignación específica
 
 
+  // ========================================
+  // ASIGNACION INICIAL (terapeuta + terapia)
+  // ========================================
+  /**
+   * Opcional: un alta en lista de espera puede no tener terapeuta todavia.
+   * Si se rellena, viaja como `asignaciones` en el alta; el horario y la cuota
+   * los sigue definiendo el contrato.
+   */
+  crearFormAsignacion(): FormGroup {
+    return this.fb.group({
+      trabajadorId: [''],
+      tipoTerapia: [''],
+    });
+  }
+
   crearEspecialista(valor = ''): FormControl {
     return this.fb.control(valor, Validators.required);
   }

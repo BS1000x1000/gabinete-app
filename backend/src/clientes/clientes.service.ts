@@ -827,6 +827,8 @@ export class ClientesService {
         ...(data.apellidos          !== undefined && { apellidos: data.apellidos }),
         ...(data.parentesco         !== undefined && { parentesco: data.parentesco }),
         ...(data.telefono           !== undefined && { telefono: data.telefono }),
+        ...(data.email              !== undefined && { email: data.email ?? '' }),
+        ...(data.dni                !== undefined && { dni: data.dni ?? '' }),
         ...(data.esContactoPrincipal!== undefined && { esContactoPrincipal: data.esContactoPrincipal }),
         ...(data.esTutorLegal !== undefined && { esTutorLegal: data.esTutorLegal }),
         ...(data.esResponsablePago  !== undefined && { esResponsablePago: data.esResponsablePago }),

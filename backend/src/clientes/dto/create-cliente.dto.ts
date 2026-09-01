@@ -307,9 +307,10 @@ export class CreateClienteDto {
   @Type(() => DatosEscolaresDto)
   datosEscolares?: DatosEscolaresDto;
 
-  // ✅ NUEVO: Asignación a trabajador
+  // Asignaciones cliente-trabajador creadas junto con el alta
   @IsOptional()
-  @ValidateNested()
+  @IsArray()
+  @ValidateNested({ each: true })
   @Type(() => AsignacionTrabajadorDto)
   asignaciones?: AsignacionTrabajadorDto[];
 

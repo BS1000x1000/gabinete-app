@@ -316,6 +316,11 @@
   gap: $spacing-lg;
 }
 
+// Aviso dentro del resumen (p. ej. alta sin terapeuta asignado)
+.resumen-aviso {
+  color: $warning-dark;
+}
+
 .resumen-section {
   padding: $spacing-lg;
   background: $primary-ultra-light;
