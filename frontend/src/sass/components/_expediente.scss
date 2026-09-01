@@ -246,6 +246,122 @@
   li { margin-bottom: 2px; }
 }
 
+// =============================================
+// Datos de firma del consentimiento de datos
+// =============================================
+// Paso intermedio entre elegir el PDF firmado y subirlo. Existe porque el
+// consentimiento RGPD necesita saber qué tutor firmó y qué casillas marcó, y
+// este es el único momento en que ese dato se conoce.
+
+.exp-firma-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-md;
+  background: rgba($gray-900, 0.45);
+  overflow-y: auto;
+}
+
+.exp-firma {
+  width: 100%;
+  max-width: 30rem;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: $spacing-lg;
+  background: $bg-card;
+  border-radius: $border-radius-lg;
+  box-shadow: $shadow-lg;
+
+  &__titulo {
+    margin: 0 0 4px;
+    font-size: $font-size-base;
+    font-weight: $font-weight-semibold;
+    color: $gray-800;
+  }
+
+  &__intro {
+    margin: 0 0 $spacing-md;
+    font-size: $font-size-xs;
+    line-height: 1.55;
+    color: $gray-600;
+  }
+
+  &__fichero {
+    margin: 0 0 $spacing-md;
+    padding: 6px 10px;
+    border-radius: $border-radius-sm;
+    background: $primary-ultra-light;
+    font-size: $font-size-xs;
+    color: $primary-dark;
+    word-break: break-all;
+  }
+
+  &__campo { margin-bottom: $spacing-md; }
+
+  &__label {
+    display: block;
+    margin-bottom: 4px;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    color: $gray-700;
+  }
+
+  &__select,
+  &__input {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid $border-color;
+    border-radius: $border-radius-sm;
+    background: $white;
+    font-family: inherit;
+    font-size: $font-size-sm;
+    color: $gray-800;
+    outline: none;
+
+    &:focus {
+      border-color: $primary;
+      box-shadow: 0 0 0 2px rgba($primary, 0.12);
+    }
+  }
+
+  &__check {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 6px;
+    font-size: $font-size-xs;
+    line-height: 1.5;
+    color: $gray-700;
+    cursor: pointer;
+
+    input[type='checkbox'] {
+      margin-top: 2px;
+      flex-shrink: 0;
+      accent-color: $primary;
+      cursor: pointer;
+    }
+  }
+
+  &__aviso {
+    margin: 6px 0 0;
+    font-size: $font-size-xs;
+    line-height: 1.45;
+    color: $danger-dark;
+  }
+
+  &__acciones {
+    display: flex;
+    justify-content: flex-end;
+    gap: $spacing-sm;
+    margin-top: $spacing-lg;
+    padding-top: $spacing-sm;
+    border-top: 1px solid $border-color;
+  }
+}
+
 @media (max-width: $breakpoint-md) {
   .exp-doc {
     grid-template-columns: 3px 1fr auto;

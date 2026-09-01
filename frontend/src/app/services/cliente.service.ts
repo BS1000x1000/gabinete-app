@@ -124,8 +124,6 @@ export class ClientesService {
             provincia: c.provincia,
             fechaAlta: new Date(c.fechaAlta),
             fechaInicio: c.fechaInicio ? new Date(c.fechaInicio) : new Date(),
-            autorizaDatosPersonales: c.consentimientoRgpd ?? false,
-            autorizaDatosImagen: c.consentimientoRgpd ?? false,
             objetivosResumen: {
               total: c.objetivosGeneralesAsignados?.length || 0,
               activos:
@@ -434,12 +432,49 @@ export class ClientesService {
   // RGPD — CONSENTIMIENTO
   // ========================================
 
-  registrarConsentimiento(
+  /**
+   * Registro manual (solo ADMIN): el papel se firmo fuera de la app y hay que
+   * adjuntar el escaneado. El camino normal es subir el consentimiento firmado
+   * desde el expediente, en la pestana de Documentacion.
+   */
+  registrarConsentimientoManual(
     clienteId: string,
-    dto: { familiarId: string; aceptado: boolean; versionTexto: string; textoConsentimiento: string },
+    fichero: File,
+    datos: {
+      familiarId: string;
+      versionTexto: string;
+      motivoRegistroManual: string;
+      fechaFirma?: string;
+      autorizaInformesTerceros: boolean;
+      autorizaCoordinacionCentro: boolean;
+      autorizaImagenes: boolean;
+      consentimientoMenor14: boolean;
+    },
+  ): Observable<ConsentimientoRgpdBackend> {
+    const form = new FormData();
+    form.append('fichero', fichero);
+    Object.entries(datos).forEach(([clave, valor]) => {
+      if (valor !== undefined && valor !== null) form.append(clave, String(valor));
+    });
+
+    return this.http
+      .post<WrappedResponse<ConsentimientoRgpdBackend>>(
+        `${this.api}/${clienteId}/consentimiento`,
+        form,
+      )
+      .pipe(map((res) => res.data ?? (res as any)));
+  }
+
+  /** El tutor que revoca lo resuelve el backend: aqui solo va el motivo. */
+  revocarConsentimiento(
+    clienteId: string,
+    motivo: string,
   ): Observable<ConsentimientoRgpdBackend> {
     return this.http
-      .post<WrappedResponse<ConsentimientoRgpdBackend>>(`${this.api}/${clienteId}/consentimiento`, dto)
+      .post<WrappedResponse<ConsentimientoRgpdBackend>>(
+        `${this.api}/${clienteId}/consentimiento/revocar`,
+        { motivo },
+      )
       .pipe(map((res) => res.data ?? (res as any)));
   }
 

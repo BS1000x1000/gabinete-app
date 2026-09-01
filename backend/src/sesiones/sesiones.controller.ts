@@ -22,6 +22,7 @@ import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/roles/roles.guard';
 import { Roles } from 'src/roles/roles.decorator';
 import { ROLES_CLINICOS } from 'src/roles/roles.constants';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 @Controller('sesiones')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -121,9 +122,12 @@ export class SesionesController {
   }
 
   @Get('cliente/:clienteId')
-  async findByCliente(@Param('clienteId') clienteId: string) {
+  async findByCliente(
+    @Param('clienteId') clienteId: string,
+    @Query() pagination: PaginationDto,
+  ) {
     this.logger.log(`GET /sesiones/cliente/${clienteId}`);
-    return this.sesionesService.findByCliente(clienteId);
+    return this.sesionesService.findByCliente(clienteId, pagination);
   }
 
   // ==========================================

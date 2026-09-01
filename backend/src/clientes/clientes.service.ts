@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -101,9 +102,13 @@ export class ClientesService {
           fechaInicio: fechaInicioISO,
           colegioId: colegioId,
           idCarpetaDrive: createClienteDto.idCarpetaDrive,
-          consentimientoRgpd: createClienteDto.consentimientoRgpd ?? false,
-          consentimientoFecha: createClienteDto.consentimientoRgpd ? new Date() : null,
-          consentimientoTrabajadorId: createClienteDto.consentimientoRgpd ? (trabajadorId ?? null) : null,
+          // El alta nunca otorga el consentimiento: en este momento la familia
+          // aun no ha firmado nada (el documento se genera con el contrato, que
+          // es posterior). Nace pendiente, y la regla 10 avisa hasta que se sube
+          // el consentimiento de datos firmado.
+          consentimientoRgpd: false,
+          consentimientoFecha: null,
+          consentimientoTrabajadorId: null,
 
           contactosFamiliares: createClienteDto.familiares
             ? {
@@ -650,13 +655,10 @@ export class ClientesService {
   async update(
     id: string,
     updateDto: Partial<CreateClienteDto> & {
-      autorizaDatosPersonales?: boolean;
-      autorizaDatosImagen?: boolean;
       email?: string;
       movil?: string;
       fechaAlta?: string;
     },
-    trabajadorId?: string,
   ): Promise<ClienteWithRelations> {
     const updateData: any = {};
 
@@ -679,15 +681,9 @@ export class ClientesService {
       updateData.fechaInicio = new Date(updateDto.fechaInicio);
     if (updateDto.fechaAlta !== undefined)
       updateData.fechaAlta = new Date(updateDto.fechaAlta);
-    if (updateDto.autorizaDatosPersonales !== undefined)
-      updateData.autorizaDatosPersonales = updateDto.autorizaDatosPersonales;
-    if (updateDto.autorizaDatosImagen !== undefined)
-      updateData.autorizaDatosImagen = updateDto.autorizaDatosImagen;
-    if (updateDto.consentimientoRgpd !== undefined) {
-      updateData.consentimientoRgpd = updateDto.consentimientoRgpd;
-      updateData.consentimientoFecha = updateDto.consentimientoRgpd ? new Date() : null;
-      updateData.consentimientoTrabajadorId = updateDto.consentimientoRgpd ? (trabajadorId ?? null) : null;
-    }
+    // El consentimiento RGPD no se toca por aqui: lo escribe solo
+    // ConsentimientosService, contra un documento firmado. Un PATCH generico no
+    // puede cambiarlo sin dejar rastro en el historico.
     if (updateDto.colegio?.id !== undefined)
       updateData.colegioId = updateDto.colegio.id;
 
@@ -957,57 +953,34 @@ export class ClientesService {
     });
   }
 
-  // ── CONSENTIMIENTO RGPD ───────────────────────────────────
+  // ── ACCESO A LA FICHA ─────────────────────────────────────
 
-  async registrarConsentimiento(
+  /**
+   * Mismo criterio que `documentos` e `informes`: gestion lo ve todo, un
+   * terapeuta solo los clientes que tiene asignados. Publico porque el
+   * controlador lo necesita antes de delegar en `ConsentimientosService`.
+   */
+  async assertAccesoCliente(
     clienteId: string,
-    trabajadorId: string,
-    dto: { familiarId: string; aceptado: boolean; versionTexto: string; textoConsentimiento: string; ipRegistro?: string },
-  ) {
-    const cliente = await this.prisma.cliente.findFirst({ where: { id: clienteId, ...WHERE_NOT_DELETED } });
-    if (!cliente) throw new NotFoundException(`Cliente ${clienteId} no encontrado`);
-
-    const familiar = await this.prisma.familiar.findFirst({ where: { id: dto.familiarId, clienteId } });
-    if (!familiar) throw new NotFoundException(`Familiar ${dto.familiarId} no pertenece al cliente`);
-
-    const registro = await this.prisma.consentimientoRgpd.create({
-      data: {
-        clienteId,
-        familiarId: dto.familiarId,
-        trabajadorId,
-        aceptado: dto.aceptado,
-        versionTexto: dto.versionTexto,
-        textoConsentimiento: dto.textoConsentimiento,
-        ipRegistro: dto.ipRegistro,
-      },
-      include: { familiar: { select: { nombre: true, apellidos: true, parentesco: true } } },
+    user?: { userId: string; rol: string },
+  ): Promise<void> {
+    const cliente = await this.prisma.cliente.findFirst({
+      where: { id: clienteId, ...WHERE_NOT_DELETED },
+      select: { id: true },
     });
+    if (!cliente) {
+      throw new NotFoundException(`Cliente ${clienteId} no encontrado`);
+    }
 
-    // Actualizar cache en Cliente para consultas rápidas
-    await this.prisma.cliente.update({
-      where: { id: clienteId },
-      data: {
-        consentimientoRgpd: dto.aceptado,
-        consentimientoFecha: new Date(),
-        consentimientoTrabajadorId: trabajadorId,
-      },
+    if (!user || user.rol === 'ADMIN' || user.rol === 'RECEP') return;
+
+    const asignacion = await this.prisma.clienteTrabajador.findFirst({
+      where: { clienteId, trabajadorId: user.userId, activo: true },
+      select: { id: true },
     });
-
-    return registro;
-  }
-
-  async getHistoricoConsentimientos(clienteId: string) {
-    const cliente = await this.prisma.cliente.findFirst({ where: { id: clienteId, ...WHERE_NOT_DELETED } });
-    if (!cliente) throw new NotFoundException(`Cliente ${clienteId} no encontrado`);
-
-    return this.prisma.consentimientoRgpd.findMany({
-      where: { clienteId },
-      orderBy: { fechaRegistro: 'desc' },
-      include: {
-        familiar: { select: { nombre: true, apellidos: true, parentesco: true } },
-        trabajador: { select: { nombre: true, apellidos: true } },
-      },
-    });
+    if (!asignacion) {
+      throw new ForbiddenException('No tienes acceso a la ficha de este cliente');
+    }
   }
 
   // ── DATOS PAGADOR (FACTURACIÓN) ──────────────────────────

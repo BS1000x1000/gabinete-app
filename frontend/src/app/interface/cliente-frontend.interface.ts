@@ -14,8 +14,10 @@ export interface ClienteData {
   numeroDeSesiones?: string;
   fechaAlta: Date;
   fechaInicio: Date;
-  autorizaDatosImagen: boolean;
-  autorizaDatosPersonales: boolean;
+  // Los permisos concretos (imagenes, coordinacion con el centro, informes de
+  // terceros) NO viven aqui: son alcances del consentimiento firmado y se leen
+  // del historico, en el panel RGPD del perfil. Tenerlos aqui derivados de un
+  // unico booleano era decir que se autoriza lo que no se ha autorizado.
   
   // ✅ NUEVO: Objetivos generales asignados (resumen)
   objetivosResumen?: {

@@ -5,6 +5,7 @@ import { CalendarioContratoService } from './calendario-contrato.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { PdfModule } from '../common/pdf/pdf.module';
 import { DocumentosModule } from '../documentos/documentos.module';
+import { ConsentimientosModule } from '../consentimientos/consentimientos.module';
 import { ContratosPdfService } from '../contratos/contratos-pdf.service';
 
 /**
@@ -21,7 +22,7 @@ import { ContratosPdfService } from '../contratos/contratos-pdf.service';
  * `StorageService`, que tambien se declara en cada modulo que lo usa.
  */
 @Module({
-  imports: [PrismaModule, PdfModule, DocumentosModule],
+  imports: [PrismaModule, PdfModule, DocumentosModule, ConsentimientosModule],
   controllers: [ExpedienteController],
   providers: [ExpedienteService, CalendarioContratoService, ContratosPdfService],
   exports: [ExpedienteService],

@@ -19,6 +19,8 @@ import {
 } from '../contratos/contratos-pdf.service';
 import { CONTRATO_PDF_INCLUDE } from '../contratos/contratos.include';
 import { buildContratoHtml } from '../contratos/templates/contrato.template';
+import { ConsentimientosService } from '../consentimientos/consentimientos.service';
+import { FirmaExpedienteDto } from '../consentimientos/dto/consentimiento.dto';
 import * as PlantillaContrato from '../contratos/templates/contrato.template';
 import * as PlantillaInformado from './templates/consentimiento-informado.template';
 import * as PlantillaDatos from './templates/consentimiento-datos.template';
@@ -65,6 +67,7 @@ export class ExpedienteService {
     private readonly documentos: DocumentosService,
     private readonly pdf: PdfGeneratorService,
     private readonly contratosPdf: ContratosPdfService,
+    private readonly consentimientos: ConsentimientosService,
   ) {}
 
   // ============================================================
@@ -300,11 +303,16 @@ export class ExpedienteService {
   /**
    * Registra la versión firmada que devuelve la familia. El PDF firmado entra
    * como un documento más, enlazado al generado al que sustituye.
+   *
+   * Para el consentimiento de datos hacen falta además el tutor que firma y las
+   * casillas que marcó: sin eso el registro no acredita nada, así que se exigen
+   * aquí y no se aceptan por defecto.
    */
   async registrarFirmado(
     documentoGeneradoId: string,
     fichero: { originalname: string; mimetype: string; size: number; buffer: Buffer },
     user: UsuarioPeticion,
+    datosFirma: FirmaExpedienteDto = {},
   ) {
     const generado = await this.prisma.documentoCliente.findUnique({
       where: { id: documentoGeneradoId },
@@ -319,6 +327,20 @@ export class ExpedienteService {
     }
 
     const def = DOCUMENTOS_EXPEDIENTE.find(d => d.categoria === generado.categoria)!;
+
+    // Se comprueba antes de subir nada: si el tutor falta o no lo es, no
+    // queremos dejar un PDF huerfano en el bucket y un consentimiento a medias.
+    if (generado.categoria === CategoriaDocumento.CONSENTIMIENTO_DATOS) {
+      if (!datosFirma.familiarId) {
+        throw new BadRequestException(
+          'Indica el tutor legal que ha firmado el consentimiento de datos',
+        );
+      }
+      await this.consentimientos.assertTutorLegal(
+        generado.clienteId,
+        datosFirma.familiarId,
+      );
+    }
 
     const firmado = await this.documentos.create(
       {
@@ -342,16 +364,23 @@ export class ExpedienteService {
     });
 
     // Firmar el consentimiento de datos es lo que de verdad acredita el
-    // consentimiento RGPD; hasta ahora ese booleano se marcaba a mano.
+    // consentimiento RGPD: aquí es donde nace la fila del histórico, con el PDF
+    // firmado como evidencia y la versión de plantilla que la familia leyó.
     if (generado.categoria === CategoriaDocumento.CONSENTIMIENTO_DATOS) {
-      await this.prisma.cliente.update({
-        where: { id: generado.clienteId },
-        data: {
-          consentimientoRgpd: true,
-          consentimientoFecha: new Date(),
-          consentimientoTrabajadorId: user.userId,
+      await this.consentimientos.registrar(
+        generado.clienteId,
+        {
+          familiarId: datosFirma.familiarId!,
+          versionTexto: def.version,
+          documentoId: firmado.id,
+          fechaFirma: datosFirma.fechaFirma ? new Date(datosFirma.fechaFirma) : null,
+          autorizaInformesTerceros: datosFirma.autorizaInformesTerceros ?? false,
+          autorizaCoordinacionCentro: datosFirma.autorizaCoordinacionCentro ?? false,
+          autorizaImagenes: datosFirma.autorizaImagenes ?? false,
+          consentimientoMenor14: datosFirma.consentimientoMenor14 ?? false,
         },
-      });
+        user,
+      );
     }
 
     this.logger.log(`Documento ${generado.categoria} firmado para cliente ${generado.clienteId}`);

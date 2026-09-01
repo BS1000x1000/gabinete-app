@@ -39,6 +39,16 @@ export interface EstadoExpediente {
   documentos: FilaExpediente[];
 }
 
+/** Lo que hay que saber del consentimiento de datos al recibirlo firmado. */
+export interface DatosFirmaConsentimiento {
+  familiarId: string;
+  fechaFirma?: string;
+  autorizaInformesTerceros: boolean;
+  autorizaCoordinacionCentro: boolean;
+  autorizaImagenes: boolean;
+  consentimientoMenor14: boolean;
+}
+
 export interface ResultadoGeneracion {
   generados: number;
   omitidos: number;
@@ -113,9 +123,27 @@ export class ExpedienteService {
       .pipe(map(res => res.data ?? (res as any)));
   }
 
-  subirFirmado(documentoId: string, fichero: File): Observable<unknown> {
+  /**
+   * Sube el PDF que devuelve la familia firmado.
+   *
+   * Para el consentimiento de datos viajan ademas el tutor legal que firma y
+   * las casillas que marco: es lo que convierte la subida en un consentimiento
+   * registrado, con evidencia y con version de plantilla.
+   */
+  subirFirmado(
+    documentoId: string,
+    fichero: File,
+    datosFirma?: DatosFirmaConsentimiento,
+  ): Observable<unknown> {
     const form = new FormData();
     form.append('fichero', fichero);
+    if (datosFirma) {
+      Object.entries(datosFirma).forEach(([clave, valor]) => {
+        if (valor !== undefined && valor !== null && valor !== '') {
+          form.append(clave, String(valor));
+        }
+      });
+    }
     return this.http
       .post<WrappedResponse<unknown>>(
         `${this.api}/documento/${documentoId}/firmado`,

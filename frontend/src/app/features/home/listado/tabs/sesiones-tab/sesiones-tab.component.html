@@ -76,7 +76,7 @@
           *ngFor="let op of opcionesEstado"
           class="filtro-pill"
           [class.active]="filtroEstado() === op.value"
-          (click)="filtroEstado.set(op.value)"
+          (click)="setFiltroEstado(op.value)"
         >
           {{ op.label }}
         </button>
@@ -91,7 +91,7 @@
       <select
         class="form-select form-select-sm"
         [ngModel]="filtroMes()"
-        (ngModelChange)="filtroMes.set($event)"
+        (ngModelChange)="setFiltroMes($event)"
       >
         <option value="">Todos los meses</option>
         <option *ngFor="let m of mesesDisponibles()" [value]="m.value">
@@ -163,6 +163,10 @@
       <span *ngIf="sesionesFiltradas().length !== sesiones().length">
         de {{ sesiones().length }} totales
       </span>
+      <span *ngIf="hayMasEnServidor()" class="text-warning">
+        · este cliente tiene {{ totalEnServidor() }} sesiones; se han cargado las
+        {{ sesiones().length }} más recientes
+      </span>
     </div>
 
     <table class="sesiones-table">
@@ -180,7 +184,7 @@
       </thead>
       <tbody>
         <tr
-          *ngFor="let sesion of sesionesFiltradas()"
+          *ngFor="let sesion of pag.items()"
           class="sesion-row"
           [class.row-cancelada]="
             sesion.estado === EstadoSesion.CANCELADA_CON_AVISO ||
@@ -279,6 +283,14 @@
         </tr>
       </tbody>
     </table>
+
+    <app-paginacion
+      [pagina]="pag.paginaActual()"
+      [totalPaginas]="pag.totalPaginas()"
+      [rango]="pag.rango()"
+      etiqueta="sesiones"
+      (cambioPagina)="pag.irAPagina($event)"
+    />
   </div>
 </div>
 <app-sesion-modales [onRefresh]="cargarSesiones.bind(this)" />

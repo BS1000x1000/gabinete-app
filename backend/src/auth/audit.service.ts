@@ -6,7 +6,9 @@ export type AuditEvento =
   | 'LOGIN_FAIL'
   | 'LOGOUT'
   | 'PASSWORD_CHANGE'
-  | 'ACCESO_FICHA';
+  | 'ACCESO_FICHA'
+  /// Otorgado o revocado: la accion concreta va en `metadata.accion`.
+  | 'CONSENTIMIENTO_RGPD';
 
 @Injectable()
 export class AuditService {

@@ -215,6 +215,89 @@
         </div>
       </section>
 
+
+      <!-- ═══ Datos de la firma del consentimiento de datos ═══
+           Este es el momento en que se sabe quién firmó y qué autorizó, y el
+           único en que puede registrarse con el PDF como evidencia. -->
+      <div *ngIf="mostrarFormFirma()" class="exp-firma-overlay" (click)="cerrarFormFirma()">
+        <div class="exp-firma" (click)="$event.stopPropagation()">
+          <h3 class="exp-firma__titulo">
+            <i class="bi bi-pen me-1"></i> Consentimiento de datos firmado
+          </h3>
+          <p class="exp-firma__intro">
+            Al registrarlo, este cliente pasará a constar con el consentimiento RGPD otorgado.
+            Indica quién lo firmó y qué casillas marcó en el documento.
+          </p>
+
+          <p class="exp-firma__fichero" *ngIf="firmaFichero() as f">
+            <i class="bi bi-file-earmark-pdf me-1"></i>{{ f.name }}
+          </p>
+
+          <div *ngIf="errorExpediente()" class="exp-aviso exp-aviso--error">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ errorExpediente() }}
+          </div>
+
+          <div class="exp-firma__campo">
+            <label class="exp-firma__label" for="firma-tutor">Tutor legal que ha firmado *</label>
+            <select id="firma-tutor" class="exp-firma__select"
+                    [ngModel]="firmaForm().familiarId"
+                    (ngModelChange)="patchFirma('familiarId', $event)">
+              <option value="">Seleccionar tutor legal…</option>
+              <option *ngFor="let t of tutoresLegales()" [value]="t.id">
+                {{ t.nombre }} {{ t.apellidos }} — {{ t.parentesco }}
+              </option>
+            </select>
+            <p *ngIf="!tutoresLegales().length" class="exp-firma__aviso">
+              <i class="bi bi-exclamation-circle me-1"></i>
+              Ningún familiar consta como tutor legal. Márcalo en la pestaña Perfil, sección
+              Familia: solo un tutor legal puede consentir por un menor.
+            </p>
+          </div>
+
+          <div class="exp-firma__campo">
+            <label class="exp-firma__label" for="firma-fecha">Fecha que figura en el documento</label>
+            <input id="firma-fecha" class="exp-firma__input" type="date"
+                   [ngModel]="firmaForm().fechaFirma"
+                   (ngModelChange)="patchFirma('fechaFirma', $event)" />
+          </div>
+
+          <div class="exp-firma__campo">
+            <label class="exp-firma__label">Casillas marcadas por la familia</label>
+            <label class="exp-firma__check">
+              <input type="checkbox" [ngModel]="firmaForm().autorizaInformesTerceros"
+                     (ngModelChange)="patchFirma('autorizaInformesTerceros', $event)" />
+              <span>Trabajar con informes médicos o psicológicos aportados por la familia</span>
+            </label>
+            <label class="exp-firma__check">
+              <input type="checkbox" [ngModel]="firmaForm().autorizaCoordinacionCentro"
+                     (ngModelChange)="patchFirma('autorizaCoordinacionCentro', $event)" />
+              <span>Coordinación e intercambio de documentación con el centro educativo</span>
+            </label>
+            <label class="exp-firma__check">
+              <input type="checkbox" [ngModel]="firmaForm().autorizaImagenes"
+                     (ngModelChange)="patchFirma('autorizaImagenes', $event)" />
+              <span>Fotografías y grabaciones de sesión para registro interno</span>
+            </label>
+            <label class="exp-firma__check">
+              <input type="checkbox" [ngModel]="firmaForm().consentimientoMenor14"
+                     (ngModelChange)="patchFirma('consentimientoMenor14', $event)" />
+              <span>El/la menor de 14 o más años ha firmado también</span>
+            </label>
+          </div>
+
+          <div class="exp-firma__acciones">
+            <button class="gb-btn" type="button" (click)="cerrarFormFirma()">Cancelar</button>
+            <button class="gb-btn gb-btn--primary" type="button"
+                    [disabled]="!firmaForm().familiarId || subiendoFirmadoDe() !== null"
+                    (click)="confirmarFirmaConsentimiento()">
+              <span *ngIf="subiendoFirmadoDe()" class="spinner-border spinner-border-sm me-1"></span>
+              <i *ngIf="!subiendoFirmadoDe()" class="bi bi-check-circle me-1"></i>
+              Registrar consentimiento
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- ═══ Filtros: origen + categoría contextual ═══ -->
       <div *ngIf="filas().todas.length > 0" class="doc-filtros">
         <div class="doc-segmented" role="group" aria-label="Filtrar por origen">
@@ -572,7 +655,7 @@
 
           <tbody>
             <tr
-              *ngFor="let fila of filasPagina()"
+              *ngFor="let fila of pag.items()"
               class="doc-fila"
               [class.doc-fila--externo]="fila.origen === 'documento'"
               tabindex="0"
@@ -643,26 +726,14 @@
         </table>
 
         <!-- ═══ Paginación ═══ -->
-        <div *ngIf="filasFiltradas().length > 0" class="doc-paginacion">
-          <span class="doc-paginacion__rango">
-            {{ rangoMostrado().desde }}–{{ rangoMostrado().hasta }} de {{ rangoMostrado().total }}
-          </span>
-          <div *ngIf="totalPaginas() > 1" class="doc-paginacion__nav">
-            <button
-              [disabled]="paginaActual() === 1"
-              (click)="irAPagina(paginaActual() - 1)"
-              aria-label="Página anterior"
-            ><i class="bi bi-chevron-left"></i></button>
-            <span class="doc-paginacion__pagina">
-              Página {{ paginaActual() }} de {{ totalPaginas() }}
-            </span>
-            <button
-              [disabled]="paginaActual() === totalPaginas()"
-              (click)="irAPagina(paginaActual() + 1)"
-              aria-label="Página siguiente"
-            ><i class="bi bi-chevron-right"></i></button>
-          </div>
-        </div>
+        <app-paginacion
+          *ngIf="filasFiltradas().length > 0"
+          [pagina]="pag.paginaActual()"
+          [totalPaginas]="pag.totalPaginas()"
+          [rango]="pag.rango()"
+          etiqueta="documentos"
+          (cambioPagina)="pag.irAPagina($event)"
+        />
       </div>
 
     </div>

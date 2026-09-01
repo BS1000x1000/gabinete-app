@@ -1025,18 +1025,6 @@
   &:focus { border-color: $primary; box-shadow: 0 0 0 2px rgba($primary, 0.12); }
 }
 
-.rgpd-texto-box {
-  background: white;
-  border: 1px solid $border-color;
-  border-radius: $border-radius-sm;
-  padding: $spacing-sm $spacing-md;
-  font-size: 0.78rem;
-  line-height: 1.7;
-  color: $gray-600;
-  max-height: 120px;
-  overflow-y: auto;
-}
-
 .rgpd-form-check {
   display: flex;
   align-items: flex-start;
@@ -1053,7 +1041,7 @@
     cursor: pointer;
   }
 
-  label { cursor: pointer; line-height: 1.5; }
+  span { cursor: pointer; line-height: 1.5; }
 }
 
 // Historial
@@ -1115,6 +1103,119 @@
     font-size: 0.75rem;
     color: $gray-400;
   }
+}
+
+// El texto del consentimiento ya no se muestra aquí: la familia firma el PDF
+// que genera el backend. En su lugar hay evidencia — versión, documento y las
+// autorizaciones concretas que marcó.
+.rgpd-version {
+  font-size: 0.72rem;
+  background: $white;
+  border: 1px solid $border-color;
+  border-radius: 4px;
+  padding: 1px 6px;
+  color: $gray-600;
+}
+
+// Enlace al PDF firmado. Es un botón porque abre una URL prefirmada.
+.rgpd-doc-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 0.8rem;
+  color: $primary;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover { text-decoration: underline; }
+}
+
+.rgpd-aviso-link {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: darken($warning, 18%);
+}
+
+// Se firmó un borrador de la plantilla: más grave que un aviso normal.
+.rgpd-aviso--borrador {
+  color: $danger;
+  background: lighten($danger, 40%);
+  border-color: lighten($danger, 25%);
+}
+
+// ── Autorizaciones concretas ─────────────────────────────────
+// Las tres casillas del documento son consentimientos separados: se puede
+// consentir el tratamiento y negar las grabaciones.
+.rgpd-alcances {
+  margin-top: $spacing-sm;
+
+  &-title {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: $gray-500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+  }
+}
+
+.rgpd-alcance {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: $gray-700;
+  padding: 2px 0;
+
+  i { color: $success; margin-top: 2px; flex-shrink: 0; }
+
+  &--no {
+    color: $gray-400;
+    i { color: $gray-300; }
+  }
+}
+
+.rgpd-input,
+.rgpd-textarea {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid $border-color;
+  border-radius: $border-radius-sm;
+  font-size: 0.85rem;
+  font-family: inherit;
+  background: $white;
+  color: $gray-800;
+  outline: none;
+
+  &:focus { border-color: $primary; box-shadow: 0 0 0 2px rgba($primary, 0.12); }
+}
+
+.rgpd-textarea { resize: vertical; line-height: 1.5; }
+
+.rgpd-file {
+  width: 100%;
+  font-size: 0.8rem;
+  color: $gray-700;
+}
+
+.rgpd-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $spacing-md;
+
+  @media (max-width: 640px) { grid-template-columns: 1fr; }
+}
+
+.rgpd-historial-motivo {
+  font-size: 0.75rem;
+  font-style: italic;
+  color: $gray-500;
+  line-height: 1.5;
 }
 
 // ── Sección Facturación / Datos pagador ──────────────────────

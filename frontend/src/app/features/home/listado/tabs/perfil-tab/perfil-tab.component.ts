@@ -1,5 +1,6 @@
 import {
   Component,
+  computed,
   inject,
   signal,
   OnInit,
@@ -7,29 +8,27 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ClientesService } from '../../../../../services/cliente.service';
 import { DrawerService, DrawerSection } from '../../../../../services/drawer.service';
 import { ClienteDrawerComponent } from '../../../../../shared/components/cliente-drawer/cliente-drawer.component';
-import { ConfirmModalComponent } from '../../../../../shared/components/confirm-modal/confirm-modal.component';
 import { AuthService } from '../../../../../services/auth.service';
 import { ConsentimientoRgpdBackend } from '../../../../../interface/cliente-backend.interface';
+import { DocumentosService } from '../../../../../services/documentos.service';
 import { finalize } from 'rxjs';
 
-export const TEXTO_CONSENTIMIENTO = `Don/Doña _______________, en calidad de padre/madre/tutor legal del menor, \
-CONSIENTE expresamente el tratamiento de los datos de salud del menor por parte del gabinete, \
-con la finalidad de prestar servicios de atención terapéutica y pedagógica, conforme al Art. 9.2.a \
-del Reglamento (UE) 2016/679 (RGPD) y el Art. 7 de la LOPD-GDD 3/2018. El responsable del tratamiento \
-conservará estos datos durante el tiempo de prestación del servicio y el mínimo legal posterior (Ley 41/2002). \
-Puede ejercer sus derechos de acceso, rectificación, supresión, portabilidad y oposición en la dirección \
-del gabinete o consultando la Política de Privacidad de la aplicación.`;
-
-export const VERSION_TEXTO = 'v1.0-2026-04';
+/**
+ * Aqui vivia el texto del consentimiento y su version, escritos a mano en el
+ * frontend. Se han quitado: la familia firma el PDF que genera el backend
+ * (`consentimiento-datos.template.ts`), y ese es el texto y la version que
+ * quedan registrados. Tener una segunda copia aqui significaba guardar como
+ * "texto aceptado" algo que la familia nunca habia visto.
+ */
 
 @Component({
   standalone: true,
   selector: 'app-perfil-tab',
-  imports: [CommonModule, FormsModule, ClienteDrawerComponent, ConfirmModalComponent],
+  imports: [CommonModule, FormsModule, RouterLink, ClienteDrawerComponent],
   templateUrl: './perfil-tab.component.html',
 })
 export class PerfilTabComponent implements OnInit {
@@ -37,6 +36,7 @@ export class PerfilTabComponent implements OnInit {
   readonly clientesSvc = inject(ClientesService);
   private drawerSvc   = inject(DrawerService);
   readonly auth       = inject(AuthService);
+  private documentosSvc = inject(DocumentosService);
 
   @ViewChild(ClienteDrawerComponent) drawer!: ClienteDrawerComponent;
 
@@ -102,24 +102,34 @@ export class PerfilTabComponent implements OnInit {
     this.pagadorForm.update(f => ({ ...f, [k]: v }));
   }
 
-  // ── RGPD legacy ────────────────────────────────────
-  guardandoRgpd = signal(false);
-  errorRgpd     = signal<string | null>(null);
-  exportando    = signal(false);
-
-  // ── Consentimiento nuevo ────────────────────────────
-  historico             = signal<ConsentimientoRgpdBackend[]>([]);
-  cargandoHistorico     = signal(false);
-  mostrarHistorial      = signal(false);
-  mostrarForm           = signal(false);
-  familiarSeleccionado  = signal('');
-  checkAceptado         = signal(false);
+  // ── Consentimiento RGPD ─────────────────────────────
+  // El panel es de lectura: el consentimiento nace al subir el PDF firmado en
+  // la pestana Documentacion. Aqui solo se consulta, se revoca y — para ADMIN —
+  // se registra el papel que se firmo fuera de la app.
+  exportando              = signal(false);
+  historico               = signal<ConsentimientoRgpdBackend[]>([]);
+  cargandoHistorico       = signal(false);
+  mostrarHistorial        = signal(false);
   guardandoConsentimiento = signal(false);
-  errorConsentimiento   = signal<string | null>(null);
-  mostrarConfirmRevocar = signal(false);
+  errorConsentimiento     = signal<string | null>(null);
 
-  readonly textoConsentimiento = TEXTO_CONSENTIMIENTO;
-  readonly versionTexto        = VERSION_TEXTO;
+  /** Revocacion: hace falta un motivo, asi que es un formulario, no un modal. */
+  mostrarFormRevocar = signal(false);
+  motivoRevocacion   = signal('');
+
+  /** Registro manual (solo ADMIN). */
+  mostrarFormManual = signal(false);
+  ficheroManual     = signal<File | null>(null);
+  manualForm        = signal({
+    familiarId: '',
+    versionTexto: '',
+    motivoRegistroManual: '',
+    fechaFirma: '',
+    autorizaInformesTerceros: false,
+    autorizaCoordinacionCentro: false,
+    autorizaImagenes: false,
+    consentimientoMenor14: false,
+  });
 
   get clienteId(): string {
     return this.route.parent?.snapshot.paramMap.get('id') ?? '';
@@ -151,70 +161,137 @@ export class PerfilTabComponent implements OnInit {
     this.mostrarHistorial.update(v => !v);
   }
 
-  // ── Formulario ──────────────────────────────────────
-  abrirForm(): void {
-    this.familiarSeleccionado.set('');
-    this.checkAceptado.set(false);
-    this.errorConsentimiento.set(null);
-    this.mostrarForm.set(true);
-  }
-
-  cancelarForm(): void {
-    this.mostrarForm.set(false);
-  }
-
-  confirmarConsentimiento(): void {
-    if (!this.familiarSeleccionado() || !this.checkAceptado()) return;
-    this.guardandoConsentimiento.set(true);
-    this.errorConsentimiento.set(null);
-
-    this.clientesSvc.registrarConsentimiento(this.clienteId, {
-      familiarId: this.familiarSeleccionado(),
-      aceptado: true,
-      versionTexto: this.versionTexto,
-      textoConsentimiento: this.textoConsentimiento,
-    }).subscribe({
-      next: () => {
-        this.guardandoConsentimiento.set(false);
-        this.mostrarForm.set(false);
-        this.clientesSvc.loadAll(this.clienteId).subscribe();
-        this.cargarHistorico();
-      },
-      error: (err) => {
-        this.guardandoConsentimiento.set(false);
-        this.errorConsentimiento.set(err?.error?.message ?? 'Error al registrar el consentimiento');
-      },
-    });
-  }
-
   // ── Revocar ─────────────────────────────────────────
-  abrirConfirmRevocar(): void {
-    this.mostrarConfirmRevocar.set(true);
+  // Quien revoca es el tutor que consintio, y eso lo resuelve el backend. Antes
+  // se mandaba desde aqui un `familiar.id` que el backend nunca devolvia, asi
+  // que la revocacion fallaba en silencio.
+  abrirFormRevocar(): void {
+    this.motivoRevocacion.set('');
+    this.errorConsentimiento.set(null);
+    this.mostrarFormRevocar.set(true);
   }
 
   cancelarRevocar(): void {
-    this.mostrarConfirmRevocar.set(false);
+    this.mostrarFormRevocar.set(false);
   }
 
   confirmarRevocar(): void {
-    const ultimoConsentimiento = this.historico().find(c => c.aceptado);
-    if (!ultimoConsentimiento) return;
+    const motivo = this.motivoRevocacion().trim();
+    if (motivo.length < 5) {
+      this.errorConsentimiento.set('Indica el motivo de la revocación.');
+      return;
+    }
 
-    this.mostrarConfirmRevocar.set(false);
     this.guardandoConsentimiento.set(true);
+    this.errorConsentimiento.set(null);
 
-    this.clientesSvc.registrarConsentimiento(this.clienteId, {
-      familiarId: ultimoConsentimiento.familiar.id,
-      aceptado: false,
-      versionTexto: this.versionTexto,
-      textoConsentimiento: this.textoConsentimiento,
-    }).subscribe({
-      next: () => {
-        this.guardandoConsentimiento.set(false);
-        this.clientesSvc.loadAll(this.clienteId).subscribe();
-        this.cargarHistorico();
+    this.clientesSvc.revocarConsentimiento(this.clienteId, motivo)
+      .pipe(finalize(() => this.guardandoConsentimiento.set(false)))
+      .subscribe({
+        next: () => {
+          this.mostrarFormRevocar.set(false);
+          this.clientesSvc.loadAll(this.clienteId).subscribe();
+          this.cargarHistorico();
+        },
+        error: (err: any) => {
+          this.errorConsentimiento.set(
+            err?.error?.message ?? 'No se pudo registrar la revocación',
+          );
+        },
+      });
+  }
+
+  // ── Registro manual (ADMIN) ─────────────────────────
+  // Solo para el papel firmado fuera de la app: la cartera anterior, o una
+  // familia que trae el documento en mano. Exige el escaneado.
+  abrirFormManual(): void {
+    this.ficheroManual.set(null);
+    this.manualForm.set({
+      familiarId: '',
+      versionTexto: '',
+      motivoRegistroManual: '',
+      fechaFirma: '',
+      autorizaInformesTerceros: false,
+      autorizaCoordinacionCentro: false,
+      autorizaImagenes: false,
+      consentimientoMenor14: false,
+    });
+    this.errorConsentimiento.set(null);
+    this.mostrarFormManual.set(true);
+  }
+
+  cancelarFormManual(): void {
+    this.mostrarFormManual.set(false);
+  }
+
+  patchManual<K extends keyof ReturnType<typeof this.manualForm>>(
+    clave: K,
+    valor: ReturnType<typeof this.manualForm>[K],
+  ): void {
+    this.manualForm.update(f => ({ ...f, [clave]: valor }));
+  }
+
+  onFicheroManual(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const fichero = input.files?.[0] ?? null;
+    if (fichero && fichero.type !== 'application/pdf') {
+      this.errorConsentimiento.set('El consentimiento firmado debe ser un PDF.');
+      input.value = '';
+      return;
+    }
+    this.errorConsentimiento.set(null);
+    this.ficheroManual.set(fichero);
+  }
+
+  readonly puedeGuardarManual = computed(() => {
+    const f = this.manualForm();
+    return (
+      Boolean(this.ficheroManual()) &&
+      Boolean(f.familiarId) &&
+      f.versionTexto.trim().length > 0 &&
+      f.motivoRegistroManual.trim().length >= 10
+    );
+  });
+
+  guardarManual(): void {
+    const fichero = this.ficheroManual();
+    if (!fichero || !this.puedeGuardarManual()) return;
+
+    const f = this.manualForm();
+    this.guardandoConsentimiento.set(true);
+    this.errorConsentimiento.set(null);
+
+    this.clientesSvc.registrarConsentimientoManual(this.clienteId, fichero, {
+      familiarId: f.familiarId,
+      versionTexto: f.versionTexto.trim(),
+      motivoRegistroManual: f.motivoRegistroManual.trim(),
+      ...(f.fechaFirma ? { fechaFirma: new Date(f.fechaFirma).toISOString() } : {}),
+      autorizaInformesTerceros: f.autorizaInformesTerceros,
+      autorizaCoordinacionCentro: f.autorizaCoordinacionCentro,
+      autorizaImagenes: f.autorizaImagenes,
+      consentimientoMenor14: f.consentimientoMenor14,
+    })
+      .pipe(finalize(() => this.guardandoConsentimiento.set(false)))
+      .subscribe({
+        next: () => {
+          this.mostrarFormManual.set(false);
+          this.clientesSvc.loadAll(this.clienteId).subscribe();
+          this.cargarHistorico();
+        },
+        error: (err: any) => {
+          this.errorConsentimiento.set(
+            err?.error?.message ?? 'No se pudo registrar el consentimiento',
+          );
+        },
+      });
+  }
+
+  /** Abre el PDF firmado que acredita el consentimiento (URL prefirmada). */
+  abrirDocumento(documentoId: string): void {
+    this.documentosSvc.abrir(documentoId).subscribe({
+      error: () => {
+        this.errorConsentimiento.set('No se pudo abrir el documento firmado');
       },
-      error: () => this.guardandoConsentimiento.set(false),
     });
   }
 
@@ -229,18 +306,44 @@ export class PerfilTabComponent implements OnInit {
     });
   }
 
-  // ── Helpers ─────────────────────────────────────────
-  // ngModel bridge para el signal de select
-  get familiarSeleccionadoModel(): string { return this.familiarSeleccionado(); }
-  set familiarSeleccionadoModel(v: string) { this.familiarSeleccionado.set(v); }
+  // ── Estado derivado ─────────────────────────────────
 
-  get ultimoConsentimientoActivo(): ConsentimientoRgpdBackend | undefined {
-    return this.historico().find(c => c.aceptado);
-  }
+  /**
+   * El ultimo hecho registrado, sea otorgar o revocar. El historico llega
+   * ordenado de mas nuevo a mas viejo, asi que es el primero.
+   *
+   * Antes esto buscaba el primer registro `aceptado`, con lo que un cliente que
+   * habia revocado seguia figurando como "Otorgado" para siempre.
+   */
+  readonly ultimoConsentimiento = computed<ConsentimientoRgpdBackend | null>(
+    () => this.historico()[0] ?? null,
+  );
 
-  get tieneConsentimientoActivo(): boolean {
-    return !!this.ultimoConsentimientoActivo;
-  }
+  readonly consentimientoVigente = computed(
+    () => this.ultimoConsentimiento()?.aceptado ?? false,
+  );
+
+  /** Tres estados distintos: nunca se dio, esta vigente, o se retiro. */
+  readonly estadoConsentimiento = computed<'PENDIENTE' | 'OTORGADO' | 'REVOCADO'>(() => {
+    const ultimo = this.ultimoConsentimiento();
+    if (!ultimo) return 'PENDIENTE';
+    return ultimo.aceptado ? 'OTORGADO' : 'REVOCADO';
+  });
+
+  /**
+   * La plantilla del consentimiento de datos sigue sin validar (base legal y
+   * plazos pendientes del dictamen). Si lo que se firmo fue un borrador, quien
+   * lea la ficha tiene que verlo.
+   */
+  readonly firmadoSobreBorrador = computed(() => {
+    const ultimo = this.ultimoConsentimiento();
+    return Boolean(ultimo?.aceptado && ultimo.versionTexto?.includes('borrador'));
+  });
+
+  /** Solo un tutor legal puede consentir por un menor (LOPDGDD art. 7). */
+  readonly tutoresLegales = computed(() =>
+    this.familiares().filter((f: any) => f.esTutorLegal),
+  );
 }
 
 export default PerfilTabComponent;

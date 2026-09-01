@@ -64,30 +64,43 @@ describe('SesionesService', () => {
   // ── getSesionesByCliente() ──────────────────────────────────────
 
   describe('getSesionesByCliente()', () => {
-    it('hace GET a la URL correcta', () => {
+    // El endpoint pagina: { success, data: { data, total, page, limit } }
+    const URL = `${API}/cliente/cliente-1?limit=500`;
+    const wrapPag = (data: any[], total = data.length) => ({
+      success: true,
+      data: { data, total, page: 1, limit: 500 },
+    });
+
+    it('hace GET a la URL correcta pidiendo el maximo permitido', () => {
       service.getSesionesByCliente('cliente-1').subscribe();
-      const req = httpMock.expectOne(`${API}/cliente/cliente-1`);
+      const req = httpMock.expectOne(URL);
       expect(req.request.method).toBe('GET');
-      req.flush({ success: true, data: [] });
+      req.flush(wrapPag([]));
     });
 
     it('establece el signal sesiones con los datos recibidos', () => {
       const sesiones = [makeSesion()];
       service.getSesionesByCliente('cliente-1').subscribe();
-      httpMock.expectOne(`${API}/cliente/cliente-1`).flush({ success: true, data: sesiones });
+      httpMock.expectOne(URL).flush(wrapPag(sesiones));
       expect(service.sesiones()).toEqual(sesiones);
+    });
+
+    it('guarda el total del servidor para poder detectar el truncado', () => {
+      service.getSesionesByCliente('cliente-1').subscribe();
+      httpMock.expectOne(URL).flush(wrapPag([makeSesion()], 743));
+      expect(service.totalServidor()).toBe(743);
     });
 
     it('pone isLoading en false tras respuesta exitosa', () => {
       service.getSesionesByCliente('cliente-1').subscribe();
-      httpMock.expectOne(`${API}/cliente/cliente-1`).flush({ success: true, data: [] });
+      httpMock.expectOne(URL).flush(wrapPag([]));
       expect(service.isLoading()).toBeFalse();
     });
 
     it('pone isLoading en false tras error HTTP', () => {
       service.getSesionesByCliente('cliente-1').subscribe({ error: () => {} });
       httpMock
-        .expectOne(`${API}/cliente/cliente-1`)
+        .expectOne(URL)
         .flush('Error', { status: 500, statusText: 'Server Error' });
       expect(service.isLoading()).toBeFalse();
     });

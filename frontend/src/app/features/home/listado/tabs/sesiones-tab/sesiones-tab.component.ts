@@ -15,11 +15,13 @@ import { SesionModalesComponent } from '../../../../../components/sesiones-modal
 import { SesionesFiltrosService } from '../../../../../services/sesiones-filtros.service';
 import { NuevaSesionModalService } from '../../../../../services/nueva-sesion-modal.service';
 import { AuthService } from '../../../../../services/auth.service';
+import { PaginacionComponent } from '../../../../../shared/components/paginacion/paginacion.component';
+import { crearPaginacion } from '../../../../../shared/utils/paginacion';
 
 @Component({
   selector: 'app-sesiones-tab',
   standalone: true,
-  imports: [CommonModule, FormsModule, SesionModalesComponent],
+  imports: [CommonModule, FormsModule, SesionModalesComponent, PaginacionComponent],
   templateUrl: './sesiones-tab.component.html',
 })
 export class SesionesTabComponent implements OnInit {
@@ -99,6 +101,27 @@ export class SesionesTabComponent implements OnInit {
 
     return [...futuras, ...pasadas];
   });
+
+  /** Tabla densa: cabe mas por pagina que una lista de tarjetas. */
+  readonly pag = crearPaginacion(this.sesionesFiltradas, 15);
+
+  /** El servidor corta en 500 filas: avisar en vez de perder historial en silencio. */
+  readonly hayMasEnServidor = computed(() => {
+    const total = this.sesionesService.totalServidor();
+    return total !== null && total > this.sesiones().length;
+  });
+  readonly totalEnServidor = computed(() => this.sesionesService.totalServidor() ?? 0);
+
+  // --- Filtros: cambiar de filtro devuelve a la primera pagina ---
+  setFiltroEstado(valor: string): void {
+    this.filtroEstado.set(valor);
+    this.pag.reiniciar();
+  }
+
+  setFiltroMes(valor: string): void {
+    this.filtroMes.set(valor);
+    this.pag.reiniciar();
+  }
 
   // --- Computed: estadísticas ---
   stats = computed(() => {
@@ -301,6 +324,7 @@ export class SesionesTabComponent implements OnInit {
 
   limpiarFiltros(): void {
     this.filtrosSvc.resetear();
+    this.pag.reiniciar();
   }
 }
 

@@ -21,8 +21,6 @@ const mockClienteData = () => ({
   provincia: 'Madrid',
   fechaAlta: new Date('2024-01-01'),
   fechaInicio: new Date('2024-01-10'),
-  autorizaDatosPersonales: true,
-  autorizaDatosImagen: true,
   objetivosResumen: { total: 0, activos: 0 },
 });
 

@@ -33,26 +33,37 @@ describe('RegistrosService', () => {
 
   // ── getRegistrosByCliente ─────────────────────────────────────────────────
   describe('getRegistrosByCliente()', () => {
-    it('hace GET a /registros/cliente/:clienteId', () => {
+    // El endpoint pagina: { success, data: { data, total, page, limit } }
+    const URL = `${API}/cliente/cliente-1?limit=500`;
+    const wrapPag = (data: any[], total = data.length) =>
+      wrap({ data, total, page: 1, limit: 500 });
+
+    it('hace GET a /registros/cliente/:clienteId pidiendo el maximo permitido', () => {
       service.getRegistrosByCliente('cliente-1').subscribe();
 
-      const req = httpMock.expectOne(`${API}/cliente/cliente-1`);
+      const req = httpMock.expectOne(URL);
       expect(req.request.method).toBe('GET');
-      req.flush(wrap([]));
+      req.flush(wrapPag([]));
     });
 
     it('actualiza el signal registros', () => {
       const data = [mockRegistro(), mockRegistro({ id: 'reg-2' })];
       service.getRegistrosByCliente('cliente-1').subscribe();
 
-      httpMock.expectOne(`${API}/cliente/cliente-1`).flush(wrap(data));
+      httpMock.expectOne(URL).flush(wrapPag(data));
 
       expect(service.registros()).toHaveSize(2);
     });
 
+    it('guarda el total del servidor para poder detectar el truncado', () => {
+      service.getRegistrosByCliente('cliente-1').subscribe();
+      httpMock.expectOne(URL).flush(wrapPag([mockRegistro()], 412));
+      expect(service.totalServidor()).toBe(412);
+    });
+
     it('desactiva isLoading al completar', () => {
       service.getRegistrosByCliente('cliente-1').subscribe();
-      httpMock.expectOne(`${API}/cliente/cliente-1`).flush(wrap([]));
+      httpMock.expectOne(URL).flush(wrapPag([]));
       expect(service.isLoading()).toBe(false);
     });
   });

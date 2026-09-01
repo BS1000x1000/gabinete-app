@@ -47,6 +47,8 @@ export const createPrismaMock = () => {
     colegio: modelMock(),
     tokenRevocado: modelMock(),
     auditLog: modelMock(),
+    consentimientoRgpd: modelMock(),
+    documentoCliente: modelMock(),
     // Fichaje (modelo sin schema Prisma, por si el módulo lo usa)
     fichaje: modelMock(),
     $connect: jest.fn().mockResolvedValue(undefined),

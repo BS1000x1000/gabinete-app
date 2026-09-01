@@ -385,17 +385,30 @@
       </div>
       <div class="perfil-card-body">
 
-        <!-- Estado del consentimiento -->
+        <!-- ── Estado ────────────────────────────────────────────
+             Panel de evidencia, no formulario: el consentimiento nace al subir
+             el PDF firmado en la pestaña Documentación. -->
         <div class="rgpd-estado">
           <div class="rgpd-estado-badge">
-            <span class="mini-badge" [class.badge-yes]="tieneConsentimientoActivo" [class.badge-no]="!tieneConsentimientoActivo">
-              <i class="bi me-1" [class.bi-shield-check]="tieneConsentimientoActivo" [class.bi-shield-exclamation]="!tieneConsentimientoActivo"></i>
-              {{ tieneConsentimientoActivo ? 'Otorgado' : 'Pendiente' }}
+            <span
+              class="mini-badge"
+              [class.badge-yes]="estadoConsentimiento() === 'OTORGADO'"
+              [class.badge-no]="estadoConsentimiento() !== 'OTORGADO'">
+              <i
+                class="bi me-1"
+                [class.bi-shield-check]="estadoConsentimiento() === 'OTORGADO'"
+                [class.bi-shield-x]="estadoConsentimiento() === 'REVOCADO'"
+                [class.bi-shield-exclamation]="estadoConsentimiento() === 'PENDIENTE'"></i>
+              {{
+                estadoConsentimiento() === 'OTORGADO' ? 'Otorgado'
+                  : estadoConsentimiento() === 'REVOCADO' ? 'Revocado'
+                  : 'Pendiente'
+              }}
             </span>
           </div>
 
-          <!-- Detalle cuando hay consentimiento activo -->
-          <ng-container *ngIf="tieneConsentimientoActivo && ultimoConsentimientoActivo as c">
+          <!-- Detalle del último hecho registrado -->
+          <ng-container *ngIf="ultimoConsentimiento() as c">
             <div class="rgpd-detalle">
               <div class="dato-row">
                 <span class="dato-label">Tutor legal</span>
@@ -403,84 +416,244 @@
                   <span class="text-muted ms-1 small">({{ c.familiar.parentesco }})</span>
                 </span>
               </div>
+              <div class="dato-row" *ngIf="c.fechaFirma">
+                <span class="dato-label">Firmado el</span>
+                <span class="dato-valor">{{ c.fechaFirma | date: 'dd/MM/yyyy' }}</span>
+              </div>
               <div class="dato-row">
-                <span class="dato-label">Recogido por</span>
+                <span class="dato-label">{{ c.aceptado ? 'Registrado por' : 'Revocado por' }}</span>
                 <span class="dato-valor">{{ c.trabajador.nombre }} {{ c.trabajador.apellidos }}
                   · {{ c.fechaRegistro | date: 'dd/MM/yyyy' }}
                 </span>
               </div>
               <div class="dato-row">
-                <span class="dato-label">Versión</span>
-                <span class="dato-valor">{{ c.versionTexto }}</span>
+                <span class="dato-label">Versión del texto</span>
+                <span class="dato-valor">
+                  <code class="rgpd-version">{{ c.versionTexto }}</code>
+                </span>
+              </div>
+              <div class="dato-row" *ngIf="c.motivoRegistroManual">
+                <span class="dato-label">{{ c.aceptado ? 'Registro manual' : 'Motivo' }}</span>
+                <span class="dato-valor">{{ c.motivoRegistroManual }}</span>
+              </div>
+              <div class="dato-row" *ngIf="c.documento as doc">
+                <span class="dato-label">Documento firmado</span>
+                <span class="dato-valor">
+                  <button class="rgpd-doc-link" type="button" (click)="abrirDocumento(doc.id)">
+                    <i class="bi bi-file-earmark-pdf me-1"></i>{{ doc.nombre }}
+                  </button>
+                </span>
+              </div>
+            </div>
+
+            <!-- La plantilla de protección de datos sigue sin validar: si lo que
+                 se firmó fue un borrador, quien lea la ficha tiene que verlo. -->
+            <div *ngIf="firmadoSobreBorrador()" class="rgpd-aviso rgpd-aviso--borrador">
+              <i class="bi bi-exclamation-diamond-fill me-1"></i>
+              Se firmó una versión <strong>borrador</strong> de la plantilla. Cuando llegue el
+              dictamen de protección de datos habrá que recabar la firma sobre el texto definitivo.
+            </div>
+
+            <!-- Alcances: son consentimientos separados y revocables aparte -->
+            <div *ngIf="c.aceptado" class="rgpd-alcances">
+              <div class="rgpd-alcances-title">Autorizaciones concretas</div>
+              <div class="rgpd-alcance" [class.rgpd-alcance--no]="!c.autorizaInformesTerceros">
+                <i class="bi" [class.bi-check-circle-fill]="c.autorizaInformesTerceros" [class.bi-x-circle]="!c.autorizaInformesTerceros"></i>
+                Trabajar con informes médicos o psicológicos aportados por la familia
+              </div>
+              <div class="rgpd-alcance" [class.rgpd-alcance--no]="!c.autorizaCoordinacionCentro">
+                <i class="bi" [class.bi-check-circle-fill]="c.autorizaCoordinacionCentro" [class.bi-x-circle]="!c.autorizaCoordinacionCentro"></i>
+                Coordinación e intercambio de documentación con el centro educativo
+              </div>
+              <div class="rgpd-alcance" [class.rgpd-alcance--no]="!c.autorizaImagenes">
+                <i class="bi" [class.bi-check-circle-fill]="c.autorizaImagenes" [class.bi-x-circle]="!c.autorizaImagenes"></i>
+                Fotografías y grabaciones de sesión para registro interno
+              </div>
+              <div class="rgpd-alcance" [class.rgpd-alcance--no]="!c.consentimientoMenor14">
+                <i class="bi" [class.bi-check-circle-fill]="c.consentimientoMenor14" [class.bi-x-circle]="!c.consentimientoMenor14"></i>
+                El/la menor de 14 o más años ha firmado también
               </div>
             </div>
           </ng-container>
 
-          <!-- Aviso cuando no hay consentimiento -->
-          <div *ngIf="!tieneConsentimientoActivo && !mostrarForm()" class="rgpd-aviso">
+          <!-- Sin ningún registro -->
+          <div *ngIf="estadoConsentimiento() === 'PENDIENTE'" class="rgpd-aviso">
             <i class="bi bi-exclamation-triangle-fill me-1"></i>
-            Sin consentimiento registrado. Obligatorio para tratar datos de salud (Art. 9 RGPD / LOPD-GDD Art. 7).
+            Sin consentimiento registrado. Obligatorio para tratar datos de salud
+            (Art. 9 RGPD / LOPD-GDD Art. 7).
+            <a class="rgpd-aviso-link" [routerLink]="['/home/listado', clienteId, 'documentacion']">
+              Ir a Documentación para generar y subir el consentimiento firmado
+            </a>
           </div>
         </div>
 
-        <!-- Acciones principales -->
-        <div *ngIf="!mostrarForm() && !mostrarConfirmRevocar()" class="rgpd-acciones">
-          <button *ngIf="!tieneConsentimientoActivo" class="btn-rgpd btn-rgpd-primary" type="button" (click)="abrirForm()">
-            <i class="bi bi-plus-circle me-1"></i> Registrar consentimiento
-          </button>
-          <button *ngIf="tieneConsentimientoActivo" class="btn-rgpd btn-rgpd-danger" type="button"
+        <!-- ── Acciones ──────────────────────────────────────── -->
+        <div *ngIf="!mostrarFormRevocar() && !mostrarFormManual()" class="rgpd-acciones">
+          <button
+            *ngIf="consentimientoVigente()"
+            class="btn-rgpd btn-rgpd-danger"
+            type="button"
             [disabled]="guardandoConsentimiento()"
-            (click)="abrirConfirmRevocar()">
+            (click)="abrirFormRevocar()">
             <i class="bi bi-x-circle me-1"></i> Revocar
           </button>
+
           <button class="btn-rgpd btn-rgpd-ghost" type="button" (click)="toggleHistorial()">
             <i class="bi" [class.bi-clock-history]="!mostrarHistorial()" [class.bi-chevron-up]="mostrarHistorial()"></i>
             {{ mostrarHistorial() ? 'Ocultar historial' : 'Ver historial' }}
             <span *ngIf="historico().length" class="count-badge ms-1">{{ historico().length }}</span>
           </button>
+
+          <!-- Excepción, no procedimiento: el papel firmado fuera de la app. -->
+          <button
+            *ngIf="auth.isAdmin() && !consentimientoVigente()"
+            class="btn-rgpd btn-rgpd-ghost"
+            type="button"
+            (click)="abrirFormManual()">
+            <i class="bi bi-upload me-1"></i> Registrar firmado fuera de la app
+          </button>
         </div>
 
-        <!-- ── Formulario de consentimiento ── -->
-        <div *ngIf="mostrarForm()" class="rgpd-form">
+        <div *ngIf="errorConsentimiento() && !mostrarFormRevocar() && !mostrarFormManual()"
+             class="perfil-alert-chip chip-danger mt-2">
+          <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ errorConsentimiento() }}
+        </div>
+
+        <!-- ── Revocar ───────────────────────────────────────── -->
+        <div *ngIf="mostrarFormRevocar()" class="rgpd-form">
           <div class="rgpd-form-title">
-            <i class="bi bi-pen-fill me-1"></i> Registrar consentimiento informado
+            <i class="bi bi-shield-x me-1"></i> Revocar el consentimiento
           </div>
 
           <div *ngIf="errorConsentimiento()" class="perfil-alert-chip chip-danger mb-2">
             <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ errorConsentimiento() }}
           </div>
 
+          <p class="rgpd-form-hint">
+            Queda registrada la retirada y se avisa a la dirección. El historial clínico
+            <strong>no se borra</strong>: la Ley 41/2002 obliga a conservarlo un mínimo de cinco años.
+          </p>
+
           <div class="rgpd-form-field">
-            <label class="rgpd-form-label">Tutor legal que consiente *</label>
-            <select class="rgpd-select" [(ngModel)]="familiarSeleccionadoModel">
-              <option value="">Seleccionar familiar…</option>
-              <option *ngFor="let f of familiares()" [value]="f.id">
-                {{ f.nombre }} {{ f.apellidos }} — {{ f.parentesco }}
-              </option>
-            </select>
-            <p *ngIf="!familiares().length" class="rgpd-form-hint text-danger">
-              <i class="bi bi-exclamation-circle me-1"></i>
-              No hay familiares registrados. Añade primero un tutor legal en la sección Familia.
+            <label class="rgpd-form-label" for="motivo-revoca">Motivo de la revocación *</label>
+            <textarea
+              id="motivo-revoca"
+              class="rgpd-textarea"
+              rows="2"
+              placeholder="Ej.: la familia solicita por escrito la retirada del consentimiento"
+              [ngModel]="motivoRevocacion()"
+              (ngModelChange)="motivoRevocacion.set($event)"></textarea>
+          </div>
+
+          <div class="rgpd-form-actions">
+            <button class="btn-rgpd btn-rgpd-ghost" type="button" (click)="cancelarRevocar()">Cancelar</button>
+            <button
+              class="btn-rgpd btn-rgpd-danger"
+              type="button"
+              [disabled]="guardandoConsentimiento()"
+              (click)="confirmarRevocar()">
+              <span *ngIf="guardandoConsentimiento()" class="spinner-border spinner-border-sm me-1" style="width:12px;height:12px"></span>
+              <i *ngIf="!guardandoConsentimiento()" class="bi bi-x-circle me-1"></i>
+              Registrar revocación
+            </button>
+          </div>
+        </div>
+
+        <!-- ── Registro manual (ADMIN) ───────────────────────── -->
+        <div *ngIf="mostrarFormManual()" class="rgpd-form">
+          <div class="rgpd-form-title">
+            <i class="bi bi-upload me-1"></i> Registrar un consentimiento firmado fuera de la app
+          </div>
+
+          <div *ngIf="errorConsentimiento()" class="perfil-alert-chip chip-danger mb-2">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ errorConsentimiento() }}
+          </div>
+
+          <p class="rgpd-form-hint">
+            Solo para papeles firmados antes de usar la aplicación o entregados en mano.
+            El camino normal es generar el documento desde el contrato y subir el firmado en
+            <strong>Documentación</strong>.
+          </p>
+
+          <div class="rgpd-form-field">
+            <label class="rgpd-form-label" for="manual-fichero">Consentimiento firmado (PDF) *</label>
+            <input id="manual-fichero" class="rgpd-file" type="file" accept="application/pdf"
+                   (change)="onFicheroManual($event)" />
+            <p class="rgpd-form-hint" *ngIf="ficheroManual() as f">
+              <i class="bi bi-file-earmark-pdf me-1"></i>{{ f.name }}
             </p>
           </div>
 
           <div class="rgpd-form-field">
-            <label class="rgpd-form-label">Texto del consentimiento (versión {{ versionTexto }})</label>
-            <div class="rgpd-texto-box">{{ textoConsentimiento }}</div>
+            <label class="rgpd-form-label" for="manual-tutor">Tutor legal que firmó *</label>
+            <select id="manual-tutor" class="rgpd-select"
+                    [ngModel]="manualForm().familiarId"
+                    (ngModelChange)="patchManual('familiarId', $event)">
+              <option value="">Seleccionar tutor legal…</option>
+              <option *ngFor="let f of tutoresLegales()" [value]="f.id">
+                {{ f.nombre }} {{ f.apellidos }} — {{ f.parentesco }}
+              </option>
+            </select>
+            <p *ngIf="!tutoresLegales().length" class="rgpd-form-hint text-danger">
+              <i class="bi bi-exclamation-circle me-1"></i>
+              Ningún familiar consta como tutor legal. Márcalo primero en la sección Familia:
+              solo un tutor legal puede consentir por un menor.
+            </p>
           </div>
 
-          <div class="rgpd-form-check">
-            <input type="checkbox" id="chk-acepta" [checked]="checkAceptado()" (change)="checkAceptado.set(!checkAceptado())" />
-            <label for="chk-acepta">El tutor/a ha leído y acepta expresamente el texto anterior</label>
+          <div class="rgpd-form-row">
+            <div class="rgpd-form-field">
+              <label class="rgpd-form-label" for="manual-version">Versión del texto firmado *</label>
+              <input id="manual-version" class="rgpd-input" type="text"
+                     placeholder="Ej.: papel externo 2024"
+                     [ngModel]="manualForm().versionTexto"
+                     (ngModelChange)="patchManual('versionTexto', $event)" />
+            </div>
+            <div class="rgpd-form-field">
+              <label class="rgpd-form-label" for="manual-fecha">Fecha de la firma</label>
+              <input id="manual-fecha" class="rgpd-input" type="date"
+                     [ngModel]="manualForm().fechaFirma"
+                     (ngModelChange)="patchManual('fechaFirma', $event)" />
+            </div>
+          </div>
+
+          <div class="rgpd-form-field">
+            <label class="rgpd-form-label" for="manual-motivo">Por qué se registra fuera del expediente *</label>
+            <textarea id="manual-motivo" class="rgpd-textarea" rows="2"
+                      placeholder="Ej.: familia dada de alta antes de usar la aplicación; original en el archivador"
+                      [ngModel]="manualForm().motivoRegistroManual"
+                      (ngModelChange)="patchManual('motivoRegistroManual', $event)"></textarea>
+          </div>
+
+          <div class="rgpd-form-field">
+            <label class="rgpd-form-label">Casillas marcadas en el documento</label>
+            <label class="rgpd-form-check">
+              <input type="checkbox" [ngModel]="manualForm().autorizaInformesTerceros"
+                     (ngModelChange)="patchManual('autorizaInformesTerceros', $event)" />
+              <span>Trabajar con informes médicos o psicológicos aportados por la familia</span>
+            </label>
+            <label class="rgpd-form-check">
+              <input type="checkbox" [ngModel]="manualForm().autorizaCoordinacionCentro"
+                     (ngModelChange)="patchManual('autorizaCoordinacionCentro', $event)" />
+              <span>Coordinación e intercambio de documentación con el centro educativo</span>
+            </label>
+            <label class="rgpd-form-check">
+              <input type="checkbox" [ngModel]="manualForm().autorizaImagenes"
+                     (ngModelChange)="patchManual('autorizaImagenes', $event)" />
+              <span>Fotografías y grabaciones de sesión para registro interno</span>
+            </label>
+            <label class="rgpd-form-check">
+              <input type="checkbox" [ngModel]="manualForm().consentimientoMenor14"
+                     (ngModelChange)="patchManual('consentimientoMenor14', $event)" />
+              <span>El/la menor de 14 o más años ha firmado también</span>
+            </label>
           </div>
 
           <div class="rgpd-form-actions">
-            <button class="btn-rgpd btn-rgpd-ghost" type="button" (click)="cancelarForm()">Cancelar</button>
-            <button
-              class="btn-rgpd btn-rgpd-primary"
-              type="button"
-              [disabled]="!familiarSeleccionado() || !checkAceptado() || guardandoConsentimiento()"
-              (click)="confirmarConsentimiento()">
+            <button class="btn-rgpd btn-rgpd-ghost" type="button" (click)="cancelarFormManual()">Cancelar</button>
+            <button class="btn-rgpd btn-rgpd-primary" type="button"
+                    [disabled]="!puedeGuardarManual() || guardandoConsentimiento()"
+                    (click)="guardarManual()">
               <span *ngIf="guardandoConsentimiento()" class="spinner-border spinner-border-sm me-1" style="width:12px;height:12px"></span>
               <i *ngIf="!guardandoConsentimiento()" class="bi bi-check-circle me-1"></i>
               Registrar consentimiento
@@ -488,19 +661,7 @@
           </div>
         </div>
 
-        <!-- ── Confirmar revocación ── -->
-        <app-confirm-modal
-          *ngIf="mostrarConfirmRevocar()"
-          title="¿Revocar consentimiento?"
-          message="Se registrará la revocación del consentimiento RGPD. El responsable del tratamiento deberá gestionar las consecuencias conforme a la normativa."
-          confirmLabel="Sí, revocar"
-          confirmClass="btn-danger"
-          icon="bi-shield-x"
-          (confirmed)="confirmarRevocar()"
-          (cancelled)="cancelarRevocar()">
-        </app-confirm-modal>
-
-        <!-- ── Historial de consentimientos ── -->
+        <!-- ── Historial ─────────────────────────────────────── -->
         <div *ngIf="mostrarHistorial()" class="rgpd-historial">
           <div class="rgpd-historial-title">Historial de consentimientos</div>
           <div *ngIf="cargandoHistorico()" class="gb-empty gb-empty--inline">
@@ -517,7 +678,14 @@
               <span class="rgpd-historial-estado">{{ h.aceptado ? 'Otorgado' : 'Revocado' }}</span>
               <span class="rgpd-historial-fecha">{{ h.fechaRegistro | date: 'dd/MM/yyyy HH:mm' }}</span>
               <span class="rgpd-historial-familiar">{{ h.familiar.nombre }} {{ h.familiar.apellidos }} ({{ h.familiar.parentesco }})</span>
-              <span class="rgpd-historial-trabajador">Recogido por: {{ h.trabajador.nombre }} {{ h.trabajador.apellidos }} · {{ h.versionTexto }}</span>
+              <span class="rgpd-historial-trabajador">
+                {{ h.aceptado ? 'Registrado por' : 'Revocado por' }}:
+                {{ h.trabajador.nombre }} {{ h.trabajador.apellidos }} · {{ h.versionTexto }}
+              </span>
+              <span class="rgpd-historial-motivo" *ngIf="h.motivoRegistroManual">{{ h.motivoRegistroManual }}</span>
+              <button *ngIf="h.documento as doc" class="rgpd-doc-link" type="button" (click)="abrirDocumento(doc.id)">
+                <i class="bi bi-file-earmark-pdf me-1"></i>Ver documento firmado
+              </button>
             </div>
           </div>
         </div>

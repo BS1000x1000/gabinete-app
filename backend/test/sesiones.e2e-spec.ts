@@ -73,9 +73,10 @@ describe('Sesiones (e2e)', () => {
       expect(res.status).toBe(401);
     });
 
-    it('devuelve las sesiones del cliente', async () => {
+    it('devuelve las sesiones del cliente paginadas', async () => {
       const sesiones = [testSesion(), testSesion({ id: 'sesion-e2e-2' })];
       prisma.sesion.findMany.mockResolvedValue(sesiones);
+      prisma.sesion.count.mockResolvedValue(2);
 
       const res = await request(app.getHttpServer())
         .get('/api/sesiones/cliente/cliente-e2e-1')
@@ -83,8 +84,25 @@ describe('Sesiones (e2e)', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(Array.isArray(res.body.data)).toBe(true);
-      expect(res.body.data).toHaveLength(2);
+      // Sobre doble: el ResponseInterceptor envuelve el sobre de paginacion
+      expect(Array.isArray(res.body.data.data)).toBe(true);
+      expect(res.body.data.data).toHaveLength(2);
+      expect(res.body.data.total).toBe(2);
+    });
+
+    it('respeta page y limit de la query', async () => {
+      prisma.sesion.findMany.mockResolvedValue([testSesion()]);
+      prisma.sesion.count.mockResolvedValue(500);
+
+      const res = await request(app.getHttpServer())
+        .get('/api/sesiones/cliente/cliente-e2e-1?page=2&limit=10')
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.total).toBe(500);
+      expect(prisma.sesion.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ skip: 10, take: 10 }),
+      );
     });
   });
 

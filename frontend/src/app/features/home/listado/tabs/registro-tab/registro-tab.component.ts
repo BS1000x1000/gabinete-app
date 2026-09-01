@@ -21,11 +21,13 @@ import {
   ETIQUETAS_OPCIONALES,
   RegistroDiario,
 } from '../../../../../interface/registro-diario.interface';
+import { PaginacionComponent } from '../../../../../shared/components/paginacion/paginacion.component';
+import { crearPaginacion } from '../../../../../shared/utils/paginacion';
 
 @Component({
   standalone: true,
   selector: 'app-registro-tab',
-  imports: [CommonModule, FormsModule, TiptapEditorComponent],
+  imports: [CommonModule, FormsModule, TiptapEditorComponent, PaginacionComponent],
   templateUrl: './registro-tab.component.html',
 })
 export class RegistroTabComponent implements OnInit {
@@ -109,6 +111,32 @@ export class RegistroTabComponent implements OnInit {
 
     return list;
   });
+
+  /** Tarjetas altas: menos por pagina que en una tabla. */
+  readonly pag = crearPaginacion(this.registrosFiltrados, 6);
+
+  /** El servidor pagina a 500: avisar en vez de perder historial en silencio. */
+  readonly hayMasEnServidor = computed(() => {
+    const total = this.fichajeSvc.totalServidor();
+    return total !== null && total > this.registros().length;
+  });
+  readonly totalEnServidor = computed(() => this.fichajeSvc.totalServidor() ?? 0);
+
+  // --- Filtros: cambiar de filtro devuelve a la primera pagina ---
+  setFiltro(valor: string): void {
+    this.filtro.set(valor);
+    this.pag.reiniciar();
+  }
+
+  setFiltroEtiqueta(valor: EtiquetaRegistro | null): void {
+    this.filtroEtiqueta.set(valor);
+    this.pag.reiniciar();
+  }
+
+  setFiltroObjetivo(valor: string): void {
+    this.filtroObjetivoId.set(valor);
+    this.pag.reiniciar();
+  }
 
   objetivosSeleccionadosCount = computed(() => Object.keys(this.objetivosNotasMap()).length);
 

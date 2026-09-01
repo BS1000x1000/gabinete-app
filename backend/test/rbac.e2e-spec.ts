@@ -282,6 +282,95 @@ describe('RBAC (e2e)', () => {
     });
   });
 
+
+  // ── Consentimiento RGPD ──────────────────────────────────────────────────
+  // El registro manual es la excepcion (papel firmado fuera de la app) y queda
+  // en ADMIN; revocar lo puede hacer tambien quien atiende a la familia.
+
+  describe('/api/clientes/:id/consentimiento — registro manual solo ADMIN', () => {
+    it('RECEP: POST /api/clientes/c1/consentimiento → 403', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/api/clientes/c1/consentimiento')
+        .set('Authorization', `Bearer ${tokenRecep}`)
+        .field('familiarId', '11111111-1111-4111-8111-111111111111')
+        .field('versionTexto', 'papel externo 2024')
+        .field('motivoRegistroManual', 'cartera anterior a la app')
+        .attach('fichero', Buffer.from('%PDF-fake'), 'firmado.pdf');
+
+      expect(res.status).toBe(403);
+    });
+
+    it('PEDAGOGO: POST /api/clientes/c1/consentimiento → 403', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/api/clientes/c1/consentimiento')
+        .set('Authorization', `Bearer ${tokenPedagogo}`)
+        .field('familiarId', '11111111-1111-4111-8111-111111111111')
+        .field('versionTexto', 'papel externo 2024')
+        .field('motivoRegistroManual', 'cartera anterior a la app')
+        .attach('fichero', Buffer.from('%PDF-fake'), 'firmado.pdf');
+
+      expect(res.status).toBe(403);
+    });
+
+    it('ADMIN sin adjuntar el escaneado → 400: sin evidencia no se registra', async () => {
+      prisma.cliente.findFirst.mockResolvedValue({ id: 'c1' });
+
+      const res = await request(app.getHttpServer())
+        .post('/api/clientes/c1/consentimiento')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .field('familiarId', '11111111-1111-4111-8111-111111111111')
+        .field('versionTexto', 'papel externo 2024')
+        .field('motivoRegistroManual', 'cartera anterior a la app');
+
+      expect(res.status).toBe(400);
+    });
+  });
+
+  describe('/api/clientes/:id/consentimiento/revocar', () => {
+    it('no se puede revocar lo que nunca se otorgó → 400', async () => {
+      prisma.cliente.findFirst.mockResolvedValue({ id: 'c1' });
+      prisma.consentimientoRgpd.findFirst.mockResolvedValue(null);
+
+      const res = await request(app.getHttpServer())
+        .post('/api/clientes/c1/consentimiento/revocar')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({ motivo: 'la familia lo solicita por escrito' });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('sin motivo → 400', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/api/clientes/c1/consentimiento/revocar')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({});
+
+      expect(res.status).toBe(400);
+    });
+  });
+
+  describe('Alta de cliente — nace sin consentimiento', () => {
+    it('el alta ya no acepta declarar el consentimiento: se rechaza el campo', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/api/clientes')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({
+          nombre: 'Ana',
+          apellidos: 'García',
+          fechaNacimiento: '2016-01-01',
+          domicilio: 'Calle X',
+          provincia: 'Madrid',
+          ciudad: 'Madrid',
+          curso: '3EP',
+          // Este campo ya no existe en el DTO. Con forbidNonWhitelisted, mandarlo
+          // es un 400: nadie puede volver a declarar una firma que no ha ocurrido.
+          consentimientoRgpd: true,
+        });
+
+      expect(res.status).toBe(400);
+    });
+  });
+
   // ── Sin token → 401 (verificación de JwtAuthGuard activo) ────────────────
 
   describe('Sin token', () => {

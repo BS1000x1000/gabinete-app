@@ -9,6 +9,7 @@ import { EstadoSesion, TipoSesion, ModalidadSesion } from '@prisma/client';
 import { CompletarSesionDto } from './dto/completar-sesion.dto';
 import { CreateSesionDto } from './dto/create-sesion.dto';
 import { SesionWithRelations, sesionInclude } from './sesiones.types';
+import { PaginationDto } from '../common/dto/pagination.dto';
 import {
   startOfWeek,
   endOfWeek,
@@ -154,13 +155,25 @@ export class SesionesService {
   /**
    * Obtener sesiones de un cliente
    */
-  async findByCliente(clienteId: string, limit = 500): Promise<SesionWithRelations[]> {
-    return await this.prisma.sesion.findMany({
-      where: { clienteId },
-      include: sesionInclude,
-      orderBy: { fechaHoraInicio: 'desc' },
-      take: limit,
-    });
+  async findByCliente(clienteId: string, pagination: PaginationDto = {}) {
+    // Devuelve `total` a proposito: antes se cortaba en 500 filas en silencio y
+    // el frontend no tenia forma de saber que faltaba historial.
+    const { page = 1, limit = 100 } = pagination;
+    const skip = (page - 1) * limit;
+    const where = { clienteId };
+
+    const [data, total] = await Promise.all([
+      this.prisma.sesion.findMany({
+        where,
+        include: sesionInclude,
+        orderBy: { fechaHoraInicio: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.sesion.count({ where }),
+    ]);
+
+    return { data, total, page, limit };
   }
 
   /**

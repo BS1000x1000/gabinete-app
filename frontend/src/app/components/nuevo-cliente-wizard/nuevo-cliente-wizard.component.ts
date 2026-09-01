@@ -55,7 +55,6 @@ export class NuevoClienteWizardComponent {
   formSanitario!: FormGroup;
   formAsignacion!: FormGroup;
 
-  consentimientoMarcado = signal(false);
   trabajadores = this.trabajadorSvc.trabajadores;
 
   readonly ESPECIALISTAS_COLEGIO = ESPECIALISTAS_COLEGIO;
@@ -87,7 +86,6 @@ export class NuevoClienteWizardComponent {
       familia: this.formFamilia,
       sanitario: this.formSanitario,
     });
-    if (this.esUltimoPaso()) return pasoValido && this.consentimientoMarcado();
     return pasoValido;
   });
 
@@ -333,10 +331,6 @@ export class NuevoClienteWizardComponent {
       motivos.push('Revisa el email o el telefono del colegio.');
     }
 
-    if (this.esUltimoPaso() && !this.consentimientoMarcado()) {
-      motivos.push('Debes confirmar el consentimiento RGPD para crear el cliente.');
-    }
-
     return motivos;
   });
 
@@ -458,8 +452,6 @@ export class NuevoClienteWizardComponent {
             ],
           }
         : {}),
-
-      consentimientoRgpd: this.consentimientoMarcado(),
     };
 
     this.clientesSvc.create(clienteData).subscribe({
@@ -523,10 +515,6 @@ export class NuevoClienteWizardComponent {
       nombre: t ? `${t.nombre} ${t.apellidos}` : 'el terapeuta seleccionado',
       terapia: TIPO_SESION_LABELS[tipoTerapia as TipoSesion] ?? tipoTerapia,
     };
-  }
-
-  toggleConsentimiento() {
-    this.consentimientoMarcado.update((v) => !v);
   }
 
   private tieneDatosIngresados(): boolean {

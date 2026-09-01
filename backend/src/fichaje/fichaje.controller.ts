@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   HttpCode,
   HttpStatus,
   Logger,
@@ -18,6 +19,7 @@ import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/roles/roles.guard';
 import { Roles } from 'src/roles/roles.decorator';
 import { ROLES_CLINICOS } from 'src/roles/roles.constants';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 @Controller('registros')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -42,9 +44,12 @@ export class FichajeController {
   }
 
   @Get('cliente/:clienteId')
-  async findByCliente(@Param('clienteId') clienteId: string) {
+  async findByCliente(
+    @Param('clienteId') clienteId: string,
+    @Query() pagination: PaginationDto,
+  ) {
     this.logger.log(`Obteniendo registros del cliente: ${clienteId}`);
-    return this.fichajeService.findByCliente(clienteId);
+    return this.fichajeService.findByCliente(clienteId, pagination);
   }
 
   @Get('trabajador/:trabajadorId')

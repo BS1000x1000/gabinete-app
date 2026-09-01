@@ -47,7 +47,7 @@ Stack: **Angular 19** (frontend) + **NestJS 11** (backend) + **Prisma 5** + **Po
 Serverless Container (backend) + Object Storage (ficheros) + Transactional Email. Frontend Angular
 en **Cloudflare Pages**. CI/CD por **GitHub Actions** (push a `main` → build → registry → redeploy).
 
-**Current state (2026-06)**: clinical nucleus complete and **tests green** (250 unit + 51 E2E with a real Postgres in CI). Code hardening done: n8n removed, Dockerfile built & image pushed to Scaleway registry, Object Storage persistence for report PDFs implemented, rate limiting + Helmet + CORS-to-FRONTEND_URL in place, CI workflow with Postgres service. **Infra in progress on Scaleway**: account + billing alert + DPA validated + HDS question sent; Container Registry + image; Object Storage bucket (`gabinete-archivos`). **Pending**: create the managed DB + the Serverless Container (≈6 July), then activate the deploy pipeline. No domain yet. See `CONTEXTO_…md` §14 for the live deployment status.
+**Current state (2026-06)**: clinical nucleus complete and **tests green** (367 unit + 58 E2E with a real Postgres in CI). Code hardening done: n8n removed, Dockerfile built & image pushed to Scaleway registry, Object Storage persistence for report PDFs implemented, rate limiting + Helmet + CORS-to-FRONTEND_URL in place, CI workflow with Postgres service. **Infra in progress on Scaleway**: account + billing alert + DPA validated + HDS question sent; Container Registry + image; Object Storage bucket (`gabinete-archivos`). **Pending**: create the managed DB + the Serverless Container (≈6 July), then activate the deploy pipeline. No domain yet. See `CONTEXTO_…md` §14 for the live deployment status.
 
 ---
 
@@ -59,8 +59,8 @@ en **Cloudflare Pages**. CI/CD por **GitHub Actions** (push a `main` → build �
 npm run start:dev        # Dev server with watch (port 3000)
 npm run build            # Production build
 npm run lint             # ESLint with auto-fix
-npm test                 # Jest unit tests (250 passing)
-npm run test:e2e         # E2E tests (supertest) — 51 passing
+npm test                 # Jest unit tests (367 passing)
+npm run test:e2e         # E2E tests (supertest) — 58 passing
 npm run test:cov         # Coverage report
 npx jest src/foo/foo.spec.ts   # Single spec file
 ```
@@ -109,6 +109,7 @@ Standard pattern: `module → controller → service → dto/types`. All DB acce
 | `export` | PDF/Excel exports (sesiones, bonos). Puppeteer + ExcelJS. |
 | `fichaje` | Daily record CRUD + objective linking. ROLES_CLINICOS only. |
 | `gas` | GAS evaluation. ROLES_CLINICOS only for mutations. |
+| `consentimientos` | **Único** escritor del consentimiento RGPD. Histórico inmutable + alcances granulares + caché en `Cliente`. Sin controlador: lo consumen `clientes` y `expediente`. Ver §"Consentimiento RGPD". |
 | `roles` | Role CRUD. |
 | `health` | Health check endpoint. |
 
@@ -301,12 +302,51 @@ effect(() => {
 - GAS: `ObjetivoGeneral` → `ClienteObjetivo` (with 5-level descriptors -2..+2) → `EvaluacionGAS`
 - `RegistroDiario` → `RegistroDiarioObjetivo` (M:N with objectives)
 - `Notificacion` per therapist, 10 types, 4 priority levels (URGENTE/ALTA/MEDIA/BAJA)
-- `Cliente.consentimientoRgpd Bool` + `consentimientoFecha DateTime?` — RGPD tracking
+- `Cliente.consentimientoRgpd Bool` + `consentimientoFecha` + `consentimientoTrabajadorId` —
+  **caché derivada**, no fuente de verdad (ver §"Consentimiento RGPD")
 - `Trabajador.numeroColegiado String?` + `especialidad String?`
 
-> **Nota de modelo (a revisar):** para datos de salud de menores, el consentimiento es más matizado
-> que un booleano (consentimiento parental, umbral de los 14 años en España). `consentimientoRgpd
-> Bool` puede quedarse corto. No bloquea, pero tenerlo en el radar al evolucionar el modelo.
+### Consentimiento RGPD — una sola fuente de verdad
+
+`ConsentimientoRgpd` es la fuente de verdad y es de **solo añadir**: cada fila es un hecho
+ocurrido (se otorgó o se revocó) y nunca se edita. El estado actual es la fila más reciente,
+no "la primera aceptada".
+
+**Solo `ConsentimientosService` escribe el consentimiento.** Ni el alta, ni el `PATCH` de
+cliente, ni el frontend. Antes lo escribían cuatro sitios con criterios distintos y la
+pestaña del perfil podía contradecir a los listados.
+
+Los dos únicos caminos, y los dos aportan documento:
+
+| Camino | Quién | Endpoint |
+|---|---|---|
+| Subir el consentimiento de datos firmado desde el expediente (el normal) | ROLES_CLINICOS + RECEP | `POST /expediente/documento/:id/firmado` |
+| Registro manual del papel firmado fuera de la app (excepción) | ADMIN | `POST /clientes/:id/consentimiento` (multipart, exige el escaneado) |
+
+Revocación: `POST /clientes/:id/consentimiento/revocar` con `{ motivo }`. El tutor que revoca
+lo resuelve el backend a partir del último consentimiento vigente — **no se acepta del
+navegador**. No corta el acceso clínico (Ley 41/2002 obliga a conservar el historial): deja
+la fila, escribe en `AuditLog` y notifica a ADMIN con prioridad `URGENTE`.
+
+**Alcances granulares.** El PDF que firma la familia
+(`expediente/templates/consentimiento-datos.template.ts`) tiene tres casillas independientes
+más el consentimiento del propio menor, y se guardan por separado porque son revocables por
+separado: `autorizaInformesTerceros`, `autorizaCoordinacionCentro`, `autorizaImagenes`,
+`consentimientoMenor14`. Usa `ConsentimientosService.puedeCoordinarConCentro()` antes de
+mandar nada al colegio. **No** derives estos permisos del booleano de `Cliente`.
+
+Reglas que conviene no romper:
+- Solo un familiar con `esTutorLegal` puede consentir (LOPDGDD art. 7). Se valida **antes** de
+  subir el PDF, para no dejar ficheros huérfanos en el bucket.
+- `versionTexto` es la `PLANTILLA_VERSION` real del documento firmado. Nunca una constante del
+  frontend: el texto que la familia firma es el PDF del backend, y no debe existir una segunda
+  copia en `perfil-tab`.
+- El alta **no** otorga consentimiento. El cliente nace pendiente y la regla 10 avisa; el
+  wizard solo informa de que los documentos se generarán con el contrato.
+
+Frontend: `perfil-tab` es un **panel de evidencia** (estado, tutor, versión, enlace al PDF,
+alcances, histórico) más revocar y —solo ADMIN— el registro manual. El paso que pide tutor y
+casillas al subir el firmado vive en `informes-tab` (pestaña Documentación).
 
 ### Environment
 
@@ -411,8 +451,8 @@ Complex form sections use a shared `ClienteDrawerComponent` with sections: `pers
 ## Testing
 
 ### Backend — current state
-- **Unit**: 250 tests, 19 suites — all green. Jest + @nestjs/testing.
-- **E2E**: 51 tests, 6 suites — all green. supertest + Jest. `test/helpers/create-app.ts` + `test/helpers/prisma-mock.ts`. `ThrottlerGuard` overridden in `create-app.ts`. CI (`ci.yml`) runs a real Postgres service + `prisma migrate deploy` before the suite.
+- **Unit**: 367 tests, 27 suites — all green. Jest + @nestjs/testing.
+- **E2E**: 58 tests, 6 suites — all green. supertest + Jest. `test/helpers/create-app.ts` + `test/helpers/prisma-mock.ts`. `ThrottlerGuard` overridden in `create-app.ts`. CI (`ci.yml`) runs a real Postgres service + `prisma migrate deploy` before the suite.
 
 ### Controller spec pattern
 ```typescript

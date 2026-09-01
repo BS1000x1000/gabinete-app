@@ -67,13 +67,30 @@ interface ObjetivoGeneralAsignado {
   };
 }
 
+/**
+ * Un hecho del historico de consentimiento: se otorgo o se revoco.
+ * `documento` es el PDF firmado que lo acredita.
+ */
 export interface ConsentimientoRgpdBackend {
   id: string;
   aceptado: boolean;
+  /** Version de la plantilla que la familia firmo. */
   versionTexto: string;
-  textoConsentimiento: string;
   fechaRegistro: string;
-  ipRegistro?: string;
+  /** La fecha escrita en el papel, si se conoce. */
+  fechaFirma?: string | null;
+  /** Motivo de la revocacion, o por que se registro fuera del expediente. */
+  motivoRegistroManual?: string | null;
+
+  /** Las tres casillas del documento, mas el consentimiento del propio menor. */
+  autorizaInformesTerceros: boolean;
+  autorizaCoordinacionCentro: boolean;
+  autorizaImagenes: boolean;
+  consentimientoMenor14: boolean;
+
+  documentoId?: string | null;
+  documento?: { id: string; nombre: string; mimeType: string } | null;
+
   familiar: {
     id: string;
     nombre: string;

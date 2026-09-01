@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Get,
   Post,
@@ -22,6 +23,7 @@ import { RolesGuard } from '../roles/roles.guard';
 import { Roles } from '../roles/roles.decorator';
 import { ROLES_CLINICOS } from '../roles/roles.constants';
 import { ExpedienteService } from './expediente.service';
+import { FirmaExpedienteDto } from '../consentimientos/dto/consentimiento.dto';
 import { MulterExceptionFilter } from '../common/filters/multer-exception.filter';
 import type { FicheroSubido } from '../documentos/dto/documento.dto';
 import { TAMANO_MAX_BYTES } from '../documentos/documentos.service';
@@ -95,7 +97,14 @@ export class ExpedienteController {
     return this.expediente.marcarEnviado(documentoId, req.user);
   }
 
-  /** Sube la version firmada que devuelve la familia. */
+  /**
+   * Sube la version firmada que devuelve la familia.
+   *
+   * Para el consentimiento de datos llegan ademas, en el mismo multipart, el
+   * tutor legal que firma y las casillas que marco: es el momento en que se
+   * conoce ese dato y el unico en que se puede registrar con evidencia. Los
+   * otros dos documentos no los necesitan y el body llega vacio.
+   */
   @Post('documento/:documentoId/firmado')
   @Roles(...ROLES_CLINICOS, 'RECEP')
   @UseInterceptors(FileInterceptor('fichero', { limits: { fileSize: TAMANO_MAX_BYTES } }))
@@ -104,9 +113,15 @@ export class ExpedienteController {
   registrarFirmado(
     @Param('documentoId', ParseUUIDPipe) documentoId: string,
     @UploadedFile() fichero: FicheroSubido,
+    @Body() datosFirma: FirmaExpedienteDto,
     @Req() req: any,
   ) {
     this.logger.log(`POST /expediente/documento/${documentoId}/firmado`);
-    return this.expediente.registrarFirmado(documentoId, fichero, req.user);
+    return this.expediente.registrarFirmado(
+      documentoId,
+      fichero,
+      req.user,
+      datosFirma,
+    );
   }
 }

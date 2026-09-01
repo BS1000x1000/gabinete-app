@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { ConfirmModalComponent } from '../../../../../shared/components/confirm-modal/confirm-modal.component';
+import { PaginacionComponent } from '../../../../../shared/components/paginacion/paginacion.component';
+import { crearPaginacion } from '../../../../../shared/utils/paginacion';
 import { ActivatedRoute, Router } from '@angular/router';
 import { formatearFechaCorta } from '../../../../../shared/utils/date';
 import { ClientesService } from '../../../../../services/cliente.service';
@@ -35,6 +37,7 @@ import {
 import {
   ExpedienteService,
   EstadoExpediente,
+  DatosFirmaConsentimiento,
   FilaExpediente as FilaExpedienteInicial,
 } from '../../../../../services/expediente.service';
 
@@ -109,7 +112,7 @@ function periodoTexto(desde?: string | null, hasta?: string | null): string {
 @Component({
   standalone: true,
   selector: 'app-informes-tab',
-  imports: [CommonModule, FormsModule, ConfirmModalComponent],
+  imports: [CommonModule, FormsModule, ConfirmModalComponent, PaginacionComponent],
   templateUrl: './informes-tab.component.html',
 })
 export default class InformesTabComponent implements OnInit {
@@ -208,6 +211,27 @@ export default class InformesTabComponent implements OnInit {
   descargandoPrevia = signal<string | null>(null);
   expedientePlegado = signal(false);
 
+  /**
+   * Paso intermedio para el consentimiento de datos: el fichero se queda aqui
+   * hasta saber quien firmo y que autorizo. Nada se sube antes.
+   */
+  mostrarFormFirma = signal(false);
+  firmaDocumentoId = signal<string | null>(null);
+  firmaFichero = signal<File | null>(null);
+  firmaForm = signal({
+    familiarId: '',
+    fechaFirma: '',
+    autorizaInformesTerceros: false,
+    autorizaCoordinacionCentro: false,
+    autorizaImagenes: false,
+    consentimientoMenor14: false,
+  });
+
+  /** Solo un tutor legal puede consentir por un menor (LOPDGDD art. 7). */
+  readonly tutoresLegales = computed(() =>
+    this.clientesSvc.contactosFamiliares().filter((f: any) => f.esTutorLegal),
+  );
+
   readonly hayExpediente = computed(() => {
     const e = this.expediente();
     return !!e && e.documentos.some(d => d.documentoId !== null);
@@ -237,8 +261,6 @@ export default class InformesTabComponent implements OnInit {
   filtroCategoria = signal<string>('todos');
   ordenCampo      = signal<'fecha' | 'nombre' | 'categoria'>('fecha');
   ordenAsc        = signal(false);
-  pagina          = signal(1);
-  readonly POR_PAGINA = 12;
 
   /** Normaliza informes y documentos a una fila común para poder listarlos juntos. */
   readonly filas = computed<FilaExpediente>(() => {
@@ -316,24 +338,7 @@ export default class InformesTabComponent implements OnInit {
     });
   });
 
-  readonly totalPaginas = computed(() =>
-    Math.max(1, Math.ceil(this.filasFiltradas().length / this.POR_PAGINA)),
-  );
-
-  /** Página saneada: si un filtro reduce los resultados, no queda una página vacía. */
-  readonly paginaActual = computed(() => Math.min(this.pagina(), this.totalPaginas()));
-
-  readonly filasPagina = computed(() => {
-    const inicio = (this.paginaActual() - 1) * this.POR_PAGINA;
-    return this.filasFiltradas().slice(inicio, inicio + this.POR_PAGINA);
-  });
-
-  readonly rangoMostrado = computed(() => {
-    const total = this.filasFiltradas().length;
-    if (total === 0) return { desde: 0, hasta: 0, total };
-    const desde = (this.paginaActual() - 1) * this.POR_PAGINA + 1;
-    return { desde, hasta: Math.min(desde + this.POR_PAGINA - 1, total), total };
-  });
+  readonly pag = crearPaginacion(this.filasFiltradas, 12);
 
   readonly hayFiltrosActivos = computed(
     () => !!this.busqueda().trim() || this.filtroOrigen() !== 'todos' || this.filtroCategoria() !== 'todos',
@@ -342,24 +347,24 @@ export default class InformesTabComponent implements OnInit {
   setOrigen(origen: OrigenFila | 'todos'): void {
     this.filtroOrigen.set(origen);
     this.filtroCategoria.set('todos'); // las categorías dependen del origen
-    this.pagina.set(1);
+    this.pag.reiniciar();
   }
 
   setCategoria(key: string): void {
     this.filtroCategoria.set(key);
-    this.pagina.set(1);
+    this.pag.reiniciar();
   }
 
   setBusqueda(valor: string): void {
     this.busqueda.set(valor);
-    this.pagina.set(1);
+    this.pag.reiniciar();
   }
 
   limpiarFiltros(): void {
     this.busqueda.set('');
     this.filtroOrigen.set('todos');
     this.filtroCategoria.set('todos');
-    this.pagina.set(1);
+    this.pag.reiniciar();
   }
 
   ordenarPor(campo: 'fecha' | 'nombre' | 'categoria'): void {
@@ -368,11 +373,7 @@ export default class InformesTabComponent implements OnInit {
       this.ordenCampo.set(campo);
       this.ordenAsc.set(campo !== 'fecha'); // texto asc por defecto, fechas desc
     }
-    this.pagina.set(1);
-  }
-
-  irAPagina(n: number): void {
-    this.pagina.set(Math.min(Math.max(1, n), this.totalPaginas()));
+    this.pag.reiniciar();
   }
 
   cargarDocumentos(): void {
@@ -461,7 +462,14 @@ export default class InformesTabComponent implements OnInit {
     });
   }
 
-  /** Sube el PDF que devuelve la familia firmado. */
+  /**
+   * Sube el PDF que devuelve la familia firmado.
+   *
+   * El contrato y el consentimiento informado suben directos. El consentimiento
+   * de datos no: es lo que acredita el consentimiento RGPD, y para eso hace
+   * falta saber qué tutor legal firmó y qué casillas marcó. Se abre un paso
+   * intermedio antes de subir nada.
+   */
   onFirmadoSeleccionado(fila: FilaExpedienteInicial, event: Event): void {
     const input = event.target as HTMLInputElement;
     const fichero = input.files?.[0];
@@ -480,17 +488,78 @@ export default class InformesTabComponent implements OnInit {
     }
 
     this.errorExpediente.set(null);
-    this.subiendoFirmadoDe.set(fila.documentoId);
+
+    if (fila.categoria === 'CONSENTIMIENTO_DATOS') {
+      this.abrirFormFirmaConsentimiento(fila, fichero);
+      return;
+    }
+
+    this.subirFirmado(fila.documentoId, fichero);
+  }
+
+  private subirFirmado(
+    documentoId: string,
+    fichero: File,
+    datosFirma?: DatosFirmaConsentimiento,
+  ): void {
+    this.subiendoFirmadoDe.set(documentoId);
     this.expedienteSvc
-      .subirFirmado(fila.documentoId, fichero)
+      .subirFirmado(documentoId, fichero, datosFirma)
       .pipe(finalize(() => this.subiendoFirmadoDe.set(null)))
       .subscribe({
         next: () => {
+          this.cerrarFormFirma();
           this.cargarExpediente();
           this.cargarDocumentos();
         },
         error: err => this.errorExpediente.set(mensajeError(err)),
       });
+  }
+
+  // ── Datos de firma del consentimiento de datos ──────────────
+
+  abrirFormFirmaConsentimiento(fila: FilaExpedienteInicial, fichero: File): void {
+    this.firmaDocumentoId.set(fila.documentoId);
+    this.firmaFichero.set(fichero);
+    this.firmaForm.set({
+      familiarId: '',
+      fechaFirma: '',
+      autorizaInformesTerceros: false,
+      autorizaCoordinacionCentro: false,
+      autorizaImagenes: false,
+      consentimientoMenor14: false,
+    });
+    this.errorExpediente.set(null);
+    this.mostrarFormFirma.set(true);
+  }
+
+  cerrarFormFirma(): void {
+    this.mostrarFormFirma.set(false);
+    this.firmaFichero.set(null);
+    this.firmaDocumentoId.set(null);
+  }
+
+  patchFirma<K extends keyof ReturnType<typeof this.firmaForm>>(
+    clave: K,
+    valor: ReturnType<typeof this.firmaForm>[K],
+  ): void {
+    this.firmaForm.update(f => ({ ...f, [clave]: valor }));
+  }
+
+  confirmarFirmaConsentimiento(): void {
+    const documentoId = this.firmaDocumentoId();
+    const fichero = this.firmaFichero();
+    const f = this.firmaForm();
+    if (!documentoId || !fichero || !f.familiarId) return;
+
+    this.subirFirmado(documentoId, fichero, {
+      familiarId: f.familiarId,
+      ...(f.fechaFirma ? { fechaFirma: new Date(f.fechaFirma).toISOString() } : {}),
+      autorizaInformesTerceros: f.autorizaInformesTerceros,
+      autorizaCoordinacionCentro: f.autorizaCoordinacionCentro,
+      autorizaImagenes: f.autorizaImagenes,
+      consentimientoMenor14: f.consentimientoMenor14,
+    });
   }
 
   toggleExpediente(): void {

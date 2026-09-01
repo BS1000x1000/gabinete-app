@@ -128,6 +128,8 @@ model Cliente {
   fechaInicio                DateTime? @map("fecha_inicio")
   fechaAlta                  DateTime? @default(now()) @map("fecha_alta")
   activo                     Boolean   @default(true)
+  /// Cache derivada del ultimo ConsentimientoRgpd. Solo la escribe
+  /// ConsentimientosService; nadie mas debe tocar estos tres campos.
   consentimientoRgpd         Boolean   @default(false) @map("consentimiento_rgpd")
   consentimientoFecha        DateTime? @map("consentimiento_fecha")
   consentimientoTrabajadorId String?   @map("consentimiento_trabajador_id")
@@ -622,6 +624,9 @@ model DocumentoCliente {
   subidoPorId String     @map("id_subido_por")
   subidoPor   Trabajador @relation("DocumentosSubidos", fields: [subidoPorId], references: [id])
 
+  /// El consentimiento RGPD que este documento acredita, si lo es.
+  consentimiento ConsentimientoRgpd?
+
   @@index([clienteId])
   @@index([clienteId, categoria])
   @@index([createdAt])
@@ -759,22 +764,45 @@ model TokenRevocado {
 // CONSENTIMIENTO RGPD (historico por cliente)
 // ============================================================
 
+/// Fuente de verdad del consentimiento RGPD. Cada fila es un hecho ocurrido
+/// (se otorgo o se revoco) y nunca se modifica: el historico se lee entero.
 model ConsentimientoRgpd {
-  id                  String   @id @default(uuid())
-  aceptado            Boolean // true = acepta, false = revoca
-  versionTexto        String   @map("version_texto") // ej: "v1.0-2026-04"
-  textoConsentimiento String   @map("texto_consentimiento") @db.Text // texto completo aceptado
-  fechaRegistro       DateTime @default(now()) @map("fecha_registro")
-  ipRegistro          String?  @map("ip_registro") // si se recoge online
+  id           String  @id @default(uuid())
+  aceptado     Boolean // true = acepta, false = revoca
+  /// Version de la plantilla que la familia firmo, p. ej.
+  /// "consentimiento-datos-v1-2026-09". El RAT exige poder decir que texto exacto acepto.
+  versionTexto String  @map("version_texto")
+
+  /// Solo para registros manuales sin plantilla conocida. Cuando hay documento,
+  /// la evidencia es el PDF y no una copia del texto.
+  textoConsentimiento  String?   @map("texto_consentimiento") @db.Text
+  fechaRegistro        DateTime  @default(now()) @map("fecha_registro")
+  /// La fecha que la familia escribe en el papel, distinta de cuando se registra.
+  fechaFirma           DateTime? @map("fecha_firma")
+  ipRegistro           String?   @map("ip_registro")
+  /// Por que se registro fuera del circuito de firma del expediente.
+  motivoRegistroManual String?   @map("motivo_registro_manual") @db.Text
+
+  /// Las tres casillas que la familia marca por separado en el documento, mas
+  /// el consentimiento del propio menor si tiene 14 o mas anos (LOPDGDD art. 7).
+  autorizaInformesTerceros   Boolean @default(false) @map("autoriza_informes_terceros")
+  autorizaCoordinacionCentro Boolean @default(false) @map("autoriza_coordinacion_centro")
+  autorizaImagenes           Boolean @default(false) @map("autoriza_imagenes")
+  consentimientoMenor14      Boolean @default(false) @map("consentimiento_menor_14")
+
+  /// La evidencia: el PDF firmado que devolvio la familia.
+  documentoId String?           @unique @map("id_documento")
+  documento   DocumentoCliente? @relation(fields: [documentoId], references: [id], onDelete: SetNull)
 
   clienteId    String     @map("id_cliente")
   cliente      Cliente    @relation(fields: [clienteId], references: [id])
   familiarId   String     @map("id_familiar") // tutor legal que consiente
   familiar     Familiar   @relation(fields: [familiarId], references: [id])
-  trabajadorId String     @map("id_trabajador") // quien lo registró
+  trabajadorId String     @map("id_trabajador") // quien lo registra en la app
   trabajador   Trabajador @relation(fields: [trabajadorId], references: [id])
 
   @@index([clienteId])
+  @@index([clienteId, fechaRegistro])
   @@map("consentimientos_rgpd")
 }
 

@@ -29,6 +29,8 @@ export class SesionesService {
   sesiones = signal<SesionData[]>([]);
   selectedId = signal<string>('');
   isLoading = signal(false);
+  /** Total en servidor de la ultima carga por cliente: delata el truncado. */
+  totalServidor = signal<number | null>(null);
 
   // ========================================
   // CRUD BÁSICO
@@ -39,10 +41,17 @@ export class SesionesService {
    */
   getSesionesByCliente(clienteId: string): Observable<SesionData[]> {
     this.isLoading.set(true);
+    // El endpoint pagina; se pide el maximo permitido (PaginationDto: Max 500) y
+    // se pagina en cliente, porque el orden de la tabla (futuras asc + pasadas
+    // desc) no se reproduce con un skip/take.
     return this.http
-      .get<WrappedResponse<SesionData[]>>(`${this.api}/cliente/${clienteId}`)
+      .get<any>(`${this.api}/cliente/${clienteId}?limit=500`)
       .pipe(
-        map((res) => res.data || res), // ✅ Extraer data
+        // La respuesta va doblemente envuelta: { success, data: { data, total, ... } }
+        map((res: any) => {
+          this.totalServidor.set(res?.data?.total ?? null);
+          return (res?.data?.data ?? res?.data ?? res) as SesionData[];
+        }),
         tap({
           next: (sesiones) => {
             this.sesiones.set(sesiones);

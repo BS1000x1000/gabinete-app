@@ -22,6 +22,8 @@ export class RegistrosService {
   // Estado reactivo de los registros del cliente actual
   registros = signal<RegistroDiario[]>([]);
   isLoading = signal(false);
+  /** Total en servidor de la ultima carga por cliente: delata el truncado. */
+  totalServidor = signal<number | null>(null);
 
   // ========================================
   // CRUD
@@ -32,10 +34,16 @@ export class RegistrosService {
    */
   getRegistrosByCliente(clienteId: string): Observable<RegistroDiario[]> {
     this.isLoading.set(true);
+    // El endpoint pagina; se pide el maximo permitido (PaginationDto: Max 500) y
+    // se pagina en cliente, porque los filtros de la pestana son en memoria.
     return this.http
-      .get<WrappedResponse<RegistroDiario[]>>(`${this.api}/cliente/${clienteId}`)
+      .get<any>(`${this.api}/cliente/${clienteId}?limit=500`)
       .pipe(
-        map((res) => res.data || res),
+        // La respuesta va doblemente envuelta: { success, data: { data, total, ... } }
+        map((res: any) => {
+          this.totalServidor.set(res?.data?.total ?? null);
+          return (res?.data?.data ?? res?.data ?? res) as RegistroDiario[];
+        }),
         tap({
           next: (res) => {
             this.registros.set(res);

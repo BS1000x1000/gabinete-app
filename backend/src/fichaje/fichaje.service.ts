@@ -7,6 +7,7 @@ import {
 import { EtiquetaRegistro } from '@prisma/client';
 import { CreateRegistroDiarioDto, ObjetivoTrabajadoDto, UpdateRegistroDiarioDto } from './dto/create-registro.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { PaginationDto } from '../common/dto/pagination.dto';
 
 @Injectable()
 export class FichajeService {
@@ -140,21 +141,34 @@ export class FichajeService {
   }
 
   /* ---------- READ (por Cliente) ---------- */
-  async findByCliente(clienteId: string): Promise<any[]> {
+  // Pagina a proposito: antes traia el historial entero sin tope, con un include
+  // anidado a tres niveles, y crecia sin limite con los anos de tratamiento.
+  async findByCliente(clienteId: string, pagination: PaginationDto = {}) {
     try {
       const cliente = await this.prisma.cliente.findUnique({ where: { id: clienteId } });
       if (!cliente) throw new NotFoundException('Cliente no encontrado');
 
-      return await this.prisma.registroDiario.findMany({
-        where: { clienteId },
-        include: {
-          trabajador: { select: { id: true, nombre: true, apellidos: true } },
-          objetivosGeneralesTrabajados: {
-            include: { objetivoGeneral: { include: { areaDesarrollo: true } } },
+      const { page = 1, limit = 100 } = pagination;
+      const skip = (page - 1) * limit;
+      const where = { clienteId };
+
+      const [data, total] = await Promise.all([
+        this.prisma.registroDiario.findMany({
+          where,
+          include: {
+            trabajador: { select: { id: true, nombre: true, apellidos: true } },
+            objetivosGeneralesTrabajados: {
+              include: { objetivoGeneral: { include: { areaDesarrollo: true } } },
+            },
           },
-        },
-        orderBy: { fechaRegistro: 'desc' },
-      });
+          orderBy: { fechaRegistro: 'desc' },
+          skip,
+          take: limit,
+        }),
+        this.prisma.registroDiario.count({ where }),
+      ]);
+
+      return { data, total, page, limit };
     } catch (err) {
       if (err instanceof NotFoundException) throw err;
       throw new InternalServerErrorException(`Error al obtener registros del cliente: ${err.message}`);

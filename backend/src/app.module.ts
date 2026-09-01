@@ -27,6 +27,7 @@ import { EventosAgendaModule } from './eventos-agenda/eventos-agenda.module';
 import { HorariosAdminModule } from './horarios-admin/horarios-admin.module';
 import { ContratosModule } from './contratos/contratos.module';
 import { ExpedienteModule } from './expediente/expediente.module';
+import { ConsentimientosModule } from './consentimientos/consentimientos.module';
 import { FestivosModule } from './festivos/festivos.module';
 import { VacacionesModule } from './vacaciones/vacaciones.module';
 import { FacturasModule } from './facturas/facturas.module';
@@ -66,6 +67,7 @@ import { FacturasModule } from './facturas/facturas.module';
     HorariosAdminModule,
     ContratosModule,
     ExpedienteModule,
+    ConsentimientosModule,
     FestivosModule,
     VacacionesModule,
     FacturasModule,

@@ -180,7 +180,7 @@
           @for (opcion of ["Todo", "Hoy", "Semana", "Mes"]; track opcion) {
             <button
               type="button"
-              (click)="filtro.set(opcion)"
+              (click)="setFiltro(opcion)"
               class="filtro-pill"
               [class.active]="filtro() === opcion"
             >
@@ -193,7 +193,7 @@
           <select
             class="rd-filter-select"
             [ngModel]="filtroEtiqueta()"
-            (ngModelChange)="filtroEtiqueta.set($event || null)"
+            (ngModelChange)="setFiltroEtiqueta($event || null)"
           >
             <option [ngValue]="null">Todas las etiquetas</option>
             @for (et of etiquetasOpcionales; track et) {
@@ -205,7 +205,7 @@
           <select
             class="rd-filter-select"
             [ngModel]="filtroObjetivoId()"
-            (ngModelChange)="filtroObjetivoId.set($event)"
+            (ngModelChange)="setFiltroObjetivo($event)"
           >
             <option value="">Todos los objetivos</option>
             @for (obj of todosLosObjetivos(); track obj.objetivoGeneralId) {
@@ -225,7 +225,7 @@
         </div>
       } @else {
         <div class="rd-list">
-          @for (reg of registrosFiltrados(); track reg.id) {
+          @for (reg of pag.items(); track reg.id) {
             @let expanded = isExpanded(reg.id!);
             <div
               class="rd-card"
@@ -316,12 +316,26 @@
             </div>
           }
         </div>
+
+        <app-paginacion
+          [pagina]="pag.paginaActual()"
+          [totalPaginas]="pag.totalPaginas()"
+          [rango]="pag.rango()"
+          etiqueta="registros"
+          (cambioPagina)="pag.irAPagina($event)"
+        />
       }
     </div>
 
     <!-- Footer -->
     <div class="historial-footer">
       Total de registros: {{ registrosFiltrados().length }}
+      @if (hayMasEnServidor()) {
+        <span class="text-warning">
+          · este cliente tiene {{ totalEnServidor() }}; se han cargado los
+          {{ registros().length }} más recientes
+        </span>
+      }
     </div>
 
   </div>

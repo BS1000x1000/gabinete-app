@@ -3,6 +3,8 @@ import { NotFoundException } from '@nestjs/common';
 import { ClientesController } from './clientes.controller';
 import { ClientesService } from './clientes.service';
 import { AuditService } from '../auth/audit.service';
+import { ConsentimientosService } from '../consentimientos/consentimientos.service';
+import { DocumentosService } from '../documentos/documentos.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TipoSesion } from '@prisma/client';
 
@@ -54,6 +56,16 @@ describe('ClientesController', () => {
       providers: [
         { provide: ClientesService, useValue: service },
         { provide: AuditService, useValue: { registrar: jest.fn() } },
+        {
+          provide: ConsentimientosService,
+          useValue: {
+            registrar: jest.fn(),
+            revocar: jest.fn(),
+            historico: jest.fn(),
+            assertTutorLegal: jest.fn(),
+          },
+        },
+        { provide: DocumentosService, useValue: { create: jest.fn() } },
       ],
     })
       .overrideGuard(JwtAuthGuard)
@@ -70,7 +82,7 @@ describe('ClientesController', () => {
       service.findAll.mockResolvedValue(clientes);
 
       const mockReq = { user: { userId: 'admin-1', rol: 'ADMIN' } };
-      const result = await controller.findAll(mockReq as any);
+      const result = await controller.findAll(mockReq as any, {} as any);
 
       expect(service.findAll).toHaveBeenCalledTimes(1);
       expect(result).toEqual(clientes);
@@ -172,11 +184,12 @@ describe('ClientesController', () => {
       const dto = { nombre: 'Ana María' };
       const actualizado = mockCliente({ nombre: 'Ana María' });
       service.update.mockResolvedValue(actualizado);
-      const req = { user: { userId: 'admin-1' } };
 
-      const result = await controller.update('cliente-1', dto as any, req as any);
+      const result = await controller.update('cliente-1', dto as any);
 
-      expect(service.update).toHaveBeenCalledWith('cliente-1', dto, 'admin-1');
+      // Sin trabajadorId: el PATCH ya no escribe el consentimiento, asi que no
+      // hay nada que atribuir a nadie.
+      expect(service.update).toHaveBeenCalledWith('cliente-1', dto);
       expect(result).toEqual(actualizado);
     });
   });

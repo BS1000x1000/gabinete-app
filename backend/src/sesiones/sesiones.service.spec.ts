@@ -248,10 +248,13 @@ describe('SesionesService', () => {
     it('devuelve las sesiones del cliente ordenadas por fecha desc', async () => {
       const sesiones = [mockSesion(), mockSesion({ id: 'sesion-2' })];
       prisma.sesion.findMany.mockResolvedValue(sesiones);
+      prisma.sesion.count.mockResolvedValue(2);
 
       const result = await service.findByCliente('cliente-1');
 
-      expect(result).toEqual(sesiones);
+      // Sobre paginado: el truncado deja de ser silencioso porque viaja `total`
+      expect(result.data).toEqual(sesiones);
+      expect(result.total).toBe(2);
       expect(prisma.sesion.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { clienteId: 'cliente-1' },

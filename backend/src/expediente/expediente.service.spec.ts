@@ -6,6 +6,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { DocumentosService } from '../documentos/documentos.service';
 import { PdfGeneratorService } from '../common/pdf/pdf-generator.service';
 import { ContratosPdfService } from '../contratos/contratos-pdf.service';
+import { ConsentimientosService } from '../consentimientos/consentimientos.service';
 
 const USER = { userId: 'trab-1', rol: 'ADMIN' };
 
@@ -47,6 +48,7 @@ describe('ExpedienteService', () => {
   let documentos: any;
   let pdf: any;
   let contratosPdf: any;
+  let consentimientos: any;
 
   beforeEach(async () => {
     prisma = {
@@ -72,6 +74,10 @@ describe('ExpedienteService', () => {
       construirDatos: jest.fn().mockResolvedValue(datosPlantilla),
       faltantes: jest.fn().mockReturnValue([]),
     };
+    consentimientos = {
+      registrar: jest.fn().mockResolvedValue({ id: 'cons-1' }),
+      assertTutorLegal: jest.fn().mockResolvedValue(undefined),
+    };
 
     const mod = await Test.createTestingModule({
       providers: [
@@ -80,6 +86,7 @@ describe('ExpedienteService', () => {
         { provide: DocumentosService, useValue: documentos },
         { provide: PdfGeneratorService, useValue: pdf },
         { provide: ContratosPdfService, useValue: contratosPdf },
+        { provide: ConsentimientosService, useValue: consentimientos },
       ],
     }).compile();
 
@@ -228,7 +235,15 @@ describe('ExpedienteService', () => {
       });
     });
 
-    it('firmar el consentimiento de datos acredita el consentimiento RGPD del cliente', async () => {
+    const datosFirma = {
+      familiarId: 'fam-1',
+      autorizaInformesTerceros: true,
+      autorizaCoordinacionCentro: false,
+      autorizaImagenes: true,
+      consentimientoMenor14: false,
+    };
+
+    const mockConsentimientoDatos = () =>
       prisma.documentoCliente.findUnique.mockResolvedValue({
         id: 'doc-9',
         clienteId: 'cliente-1',
@@ -237,14 +252,54 @@ describe('ExpedienteService', () => {
         estadoFirma: EstadoFirmaDocumento.GENERADO,
       });
 
-      await service.registrarFirmado('doc-9', fichero, USER);
+    it('firmar el consentimiento de datos lo registra con su evidencia y sus alcances', async () => {
+      mockConsentimientoDatos();
 
-      expect(prisma.cliente.update).toHaveBeenCalledWith(
+      await service.registrarFirmado('doc-9', fichero, USER, datosFirma);
+
+      const definicion = DOCUMENTOS_EXPEDIENTE.find(
+        d => d.categoria === CategoriaDocumento.CONSENTIMIENTO_DATOS,
+      )!;
+
+      expect(consentimientos.registrar).toHaveBeenCalledWith(
+        'cliente-1',
         expect.objectContaining({
-          where: { id: 'cliente-1' },
-          data: expect.objectContaining({ consentimientoRgpd: true }),
+          familiarId: 'fam-1',
+          // La version es la de la plantilla que la familia leyo, no una constante suelta.
+          versionTexto: definicion.version,
+          // El PDF firmado es lo que acredita el consentimiento.
+          documentoId: 'doc-CONSENTIMIENTO_DATOS',
+          autorizaInformesTerceros: true,
+          autorizaCoordinacionCentro: false,
+          autorizaImagenes: true,
+          consentimientoMenor14: false,
         }),
+        USER,
       );
+    });
+
+    it('sin tutor legal no sube nada: el PDF no llega al bucket', async () => {
+      mockConsentimientoDatos();
+
+      await expect(
+        service.registrarFirmado('doc-9', fichero, USER, {}),
+      ).rejects.toBeInstanceOf(BadRequestException);
+
+      expect(documentos.create).not.toHaveBeenCalled();
+      expect(consentimientos.registrar).not.toHaveBeenCalled();
+    });
+
+    it('si el familiar no es tutor legal, tampoco sube nada', async () => {
+      mockConsentimientoDatos();
+      consentimientos.assertTutorLegal.mockRejectedValueOnce(
+        new BadRequestException('no es tutor legal'),
+      );
+
+      await expect(
+        service.registrarFirmado('doc-9', fichero, USER, datosFirma),
+      ).rejects.toBeInstanceOf(BadRequestException);
+
+      expect(documentos.create).not.toHaveBeenCalled();
     });
 
     it('firmar el contrato NO toca el consentimiento RGPD', async () => {
@@ -258,6 +313,7 @@ describe('ExpedienteService', () => {
 
       await service.registrarFirmado('doc-1', fichero, USER);
 
+      expect(consentimientos.registrar).not.toHaveBeenCalled();
       expect(prisma.cliente.update).not.toHaveBeenCalled();
     });
 

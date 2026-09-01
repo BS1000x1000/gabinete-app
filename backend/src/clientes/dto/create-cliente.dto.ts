@@ -314,10 +314,9 @@ export class CreateClienteDto {
   @Type(() => AsignacionTrabajadorDto)
   asignaciones?: AsignacionTrabajadorDto[];
 
-  // RGPD — fecha derivada server-side al crear
-  @IsOptional()
-  @IsBoolean()
-  consentimientoRgpd?: boolean;
+  // El consentimiento RGPD no se declara en el alta: en ese momento la familia
+  // todavia no ha firmado nada. Se registra al subir el documento firmado, via
+  // `POST /expediente/documento/:id/firmado`.
 }
 
 /**
@@ -397,11 +396,6 @@ export class UpdateClienteDto {
   @Type(() => DatosEscolaresDto)
   datosEscolares?: DatosEscolaresDto;
 
-  @IsOptional()
-  @IsBoolean()
-  consentimientoRgpd?: boolean;
-
-  @IsOptional()
-  @IsDateString()
-  consentimientoFecha?: string;
+  // Ni aqui: un PATCH generico no puede otorgar ni retirar un consentimiento
+  // sin dejar rastro. Ver `ConsentimientosService`.
 }

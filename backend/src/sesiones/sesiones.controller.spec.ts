@@ -139,14 +139,14 @@ describe('SesionesController', () => {
 
   // ── findByCliente ──────────────────────────────────────────────────────────
   describe('findByCliente()', () => {
-    it('devuelve las sesiones del cliente', async () => {
-      const sesiones = [mockSesion()];
-      service.findByCliente.mockResolvedValue(sesiones);
+    it('devuelve las sesiones del cliente y propaga la paginacion', async () => {
+      const pagina = { data: [mockSesion()], total: 1, page: 1, limit: 100 };
+      service.findByCliente.mockResolvedValue(pagina);
 
-      const result = await controller.findByCliente('cliente-1');
+      const result = await controller.findByCliente('cliente-1', { page: 1, limit: 100 });
 
-      expect(service.findByCliente).toHaveBeenCalledWith('cliente-1');
-      expect(result).toEqual(sesiones);
+      expect(service.findByCliente).toHaveBeenCalledWith('cliente-1', { page: 1, limit: 100 });
+      expect(result).toEqual(pagina);
     });
   });
 

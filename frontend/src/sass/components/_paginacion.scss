@@ -1,0 +1,49 @@
+// ── Paginación compartida (app-paginacion) ───────────────────
+// Movido desde _documentacion.scss al extraer el componente común.
+
+.gb-paginacion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-sm;
+  padding: 0.5rem 0.75rem;
+  background: $gray-50;
+  border-top: 1px solid $gray-200;
+
+  &__rango {
+    font-size: $font-size-xs;
+    color: $gray-500;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__nav {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+
+    button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.75rem;
+      height: 1.75rem;
+      color: $gray-600;
+      background: $white;
+      border: 1px solid $gray-200;
+      border-radius: $border-radius-sm;
+      cursor: pointer;
+      transition: $transition-color;
+
+      &:hover:not(:disabled) { border-color: $primary; color: $primary-dark; }
+      &:disabled { opacity: 0.4; cursor: not-allowed; }
+      &:focus-visible { outline: 2px solid $primary; outline-offset: 1px; }
+    }
+  }
+
+  &__pagina {
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    color: $gray-600;
+    font-variant-numeric: tabular-nums;
+  }
+}

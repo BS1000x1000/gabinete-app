@@ -7,7 +7,7 @@ const mkPrisma = () => ({
   cliente:{findUnique:jest.fn()},
   objetivoGeneral:{findMany:jest.fn()},
   sesion:{findUnique:jest.fn(),update:jest.fn()},
-  registroDiario:{findUnique:jest.fn(),findMany:jest.fn(),create:jest.fn(),update:jest.fn(),delete:jest.fn()},
+  registroDiario:{findUnique:jest.fn(),findMany:jest.fn(),count:jest.fn(),create:jest.fn(),update:jest.fn(),delete:jest.fn()},
   registroDiarioObjetivo:{deleteMany:jest.fn()},
   $transaction: jest.fn(),
 });
@@ -69,12 +69,25 @@ describe('FichajeService', () => {
 
   describe('findByCliente()', () => {
     it('NotFound si cliente no existe', async()=>{ prisma.cliente.findUnique.mockResolvedValue(null); await expect(svc.findByCliente('cx')).rejects.toThrow(NotFoundException); });
-    it('devuelve registros del cliente', async()=>{
+    it('devuelve registros del cliente paginados', async()=>{
       prisma.cliente.findUnique.mockResolvedValue({id:'c1'});
       const registros=[{id:'rd1'},{id:'rd2'}];
       prisma.registroDiario.findMany.mockResolvedValue(registros);
+      prisma.registroDiario.count.mockResolvedValue(2);
       const r = await svc.findByCliente('c1');
-      expect(r).toHaveLength(2);
+      expect(r.data).toHaveLength(2);
+      expect(r.total).toBe(2);
+    });
+
+    it('aplica skip y take a partir de page y limit', async()=>{
+      prisma.cliente.findUnique.mockResolvedValue({id:'c1'});
+      prisma.registroDiario.findMany.mockResolvedValue([]);
+      prisma.registroDiario.count.mockResolvedValue(120);
+      const r = await svc.findByCliente('c1', { page: 3, limit: 20 });
+      expect(prisma.registroDiario.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ skip: 40, take: 20 }),
+      );
+      expect(r.total).toBe(120);
     });
   });
 

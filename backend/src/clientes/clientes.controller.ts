@@ -2,6 +2,9 @@ import {
   Controller,
   Post,
   Body,
+  UploadedFile,
+  UseInterceptors,
+  UseFilters,
   HttpCode,
   HttpStatus,
   Logger,
@@ -10,6 +13,7 @@ import {
   Delete,
   Patch,
   NotFoundException,
+  BadRequestException,
   Query,
   Req,
   UseGuards,
@@ -25,7 +29,16 @@ import { RolesGuard } from 'src/roles/roles.guard';
 import { Roles } from 'src/roles/roles.decorator';
 import { ROLES_CLINICOS, ROLES_GESTION } from 'src/roles/roles.constants';
 import { AuditService } from 'src/auth/audit.service';
-import { CreateConsentimientoDto } from './dto/create-consentimiento.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ConsentimientosService } from 'src/consentimientos/consentimientos.service';
+import {
+  RegistroManualConsentimientoDto,
+  RevocarConsentimientoDto,
+} from 'src/consentimientos/dto/consentimiento.dto';
+import { DocumentosService, TAMANO_MAX_BYTES } from 'src/documentos/documentos.service';
+import type { FicheroSubido } from 'src/documentos/dto/documento.dto';
+import { MulterExceptionFilter } from 'src/common/filters/multer-exception.filter';
+import { CategoriaDocumento, EstadoFirmaDocumento, OrigenDocumento } from '@prisma/client';
 
 @Controller('clientes')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -35,6 +48,8 @@ export class ClientesController {
   constructor(
     private readonly clientesService: ClientesService,
     private readonly auditService: AuditService,
+    private readonly consentimientos: ConsentimientosService,
+    private readonly documentos: DocumentosService,
   ) {}
 
   // ========================================
@@ -295,19 +310,88 @@ export class ClientesController {
 
   /**
    * POST /api/clientes/:id/consentimiento
-   * Registra un consentimiento RGPD firmado por el tutor legal
+   *
+   * Vía excepcional para el papel que se firmó fuera de la app: la cartera
+   * anterior, o una familia que trae el documento en mano. El camino normal es
+   * subir el consentimiento firmado desde el expediente
+   * (`POST /expediente/documento/:id/firmado`), que es el que nace del PDF que
+   * generó la propia app.
+   *
+   * Exige el escaneado: sin evidencia no se registra. Queda en ADMIN porque es
+   * la excepción, no el procedimiento.
    */
   @Post(':id/consentimiento')
-  @Roles(...ROLES_CLINICOS)
+  @Roles('ADMIN')
+  @UseInterceptors(FileInterceptor('fichero', { limits: { fileSize: TAMANO_MAX_BYTES } }))
+  @UseFilters(new MulterExceptionFilter(TAMANO_MAX_BYTES))
   @HttpCode(HttpStatus.CREATED)
   async registrarConsentimiento(
     @Param('id') clienteId: string,
-    @Body() dto: CreateConsentimientoDto,
+    @UploadedFile() fichero: FicheroSubido,
+    @Body() dto: RegistroManualConsentimientoDto,
     @Req() req: any,
   ) {
-    this.logger.log(`📝 POST /api/clientes/${clienteId}/consentimiento`);
-    dto.ipRegistro = dto.ipRegistro ?? req.ip;
-    return this.clientesService.registrarConsentimiento(clienteId, req.user.userId, dto);
+    this.logger.log(`📝 POST /api/clientes/${clienteId}/consentimiento (manual)`);
+
+    if (!fichero) {
+      throw new BadRequestException(
+        'Adjunta el consentimiento firmado: sin el documento no hay nada que acredite el registro',
+      );
+    }
+
+    // Antes de subir nada: si el familiar no es tutor legal, no dejamos el
+    // fichero huérfano en el bucket.
+    await this.consentimientos.assertTutorLegal(clienteId, dto.familiarId);
+
+    const documento = await this.documentos.create(
+      {
+        clienteId,
+        categoria: CategoriaDocumento.CONSENTIMIENTO_DATOS,
+        nombre: 'Consentimiento para el tratamiento de datos personales (firmado)',
+      },
+      fichero,
+      req.user,
+      {
+        origen: OrigenDocumento.SUBIDO,
+        estadoFirma: EstadoFirmaDocumento.FIRMADO,
+        plantillaVersion: dto.versionTexto,
+      },
+    );
+
+    return this.consentimientos.registrar(
+      clienteId,
+      {
+        familiarId: dto.familiarId,
+        versionTexto: dto.versionTexto,
+        documentoId: documento.id,
+        fechaFirma: dto.fechaFirma ? new Date(dto.fechaFirma) : null,
+        motivoRegistroManual: dto.motivoRegistroManual,
+        ipRegistro: req.ip,
+        autorizaInformesTerceros: dto.autorizaInformesTerceros ?? false,
+        autorizaCoordinacionCentro: dto.autorizaCoordinacionCentro ?? false,
+        autorizaImagenes: dto.autorizaImagenes ?? false,
+        consentimientoMenor14: dto.consentimientoMenor14 ?? false,
+      },
+      req.user,
+    );
+  }
+
+  /**
+   * POST /api/clientes/:id/consentimiento/revocar
+   *
+   * El tutor que revoca es el que consintió: lo resuelve el backend. Pedírselo
+   * al navegador era justo lo que hacía fallar la revocación en silencio.
+   */
+  @Post(':id/consentimiento/revocar')
+  @Roles(...ROLES_CLINICOS, 'RECEP')
+  @HttpCode(HttpStatus.CREATED)
+  async revocarConsentimiento(
+    @Param('id') clienteId: string,
+    @Body() dto: RevocarConsentimientoDto,
+    @Req() req: any,
+  ) {
+    this.logger.warn(`🚫 POST /api/clientes/${clienteId}/consentimiento/revocar`);
+    return this.consentimientos.revocar(clienteId, dto.motivo, req.user, req.ip);
   }
 
   /**
@@ -315,9 +399,16 @@ export class ClientesController {
    * Historial de consentimientos RGPD del cliente
    */
   @Get(':id/consentimientos')
-  async getHistoricoConsentimientos(@Param('id') clienteId: string) {
+  @Roles(...ROLES_CLINICOS, 'RECEP')
+  async getHistoricoConsentimientos(
+    @Param('id') clienteId: string,
+    @Req() req: any,
+  ) {
     this.logger.log(`📋 GET /api/clientes/${clienteId}/consentimientos`);
-    return this.clientesService.getHistoricoConsentimientos(clienteId);
+    // Mismo criterio de acceso que la documentación: un terapeuta solo ve los
+    // clientes que tiene asignados.
+    await this.clientesService.assertAccesoCliente(clienteId, req.user);
+    return this.consentimientos.historico(clienteId);
   }
 
   /**
@@ -396,10 +487,9 @@ export class ClientesController {
   async update(
     @Param('id') id: string,
     @Body() updateClienteDto: Partial<CreateClienteDto>,
-    @Req() req: any,
   ): Promise<ClienteWithRelations> {
     this.logger.log(`📋 PATCH /api/clientes/${id}`);
-    return this.clientesService.update(id, updateClienteDto, req.user?.userId);
+    return this.clientesService.update(id, updateClienteDto);
   }
 
   /**
