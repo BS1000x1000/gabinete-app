@@ -95,8 +95,7 @@
   border: 1px solid $border-color;
 
   &.fchip-active {
-    background: $success-light;
-    color: $success-dark;
+    @include badge-tono($success-light, $success-dark, $success);
     border-color: $success-light;
   }
 
@@ -173,66 +172,19 @@
   overflow: hidden;
 }
 
-// Tab navigation (5 tabs)
-// Dos grupos: el uso diario a la izquierda y la configuracion del caso
-// empujada a la derecha. Flex en vez de rejilla fija porque el numero de
-// pestañas cambia segun el rol.
-.ficha-tabs {
-  display: flex;
-  align-items: stretch;
-  border-bottom: 2px solid $gray-100;
-  flex-shrink: 0;
-  // Separa el grupo de configuracion sin dibujar una linea dura
-  &__sep {
-    flex: 1 1 auto;
-    min-width: $spacing-md;
-  }
-}
+// Navegación por pestañas de la ficha. Mismo patrón que la subnav de
+// Administración (`abstracts/_mixins.scss`): la barra de la ficha del cliente y
+// la del trabajador se dibujaban con otro idioma —borde de 2px con indicador de
+// 3px que no encajaba, dos pesos visuales de pestaña y un separador flexible que
+// empujaba «Terapeutas» al extremo derecho— y no se parecían a nada más de la app.
+// `.ficha-panel` no tiene padding propio (lo pone `.ficha-tab-body`), así que la
+// barra se apoya sola en el borde superior de la tarjeta y su línea llega de lado
+// a lado; solo necesita su sangría interior.
+// La sangría de la barra es la misma que la del cuerpo (`.ficha-tab-body`), para
+// que la pestaña activa quede a plomo con el contenido de debajo.
+.ficha-tabs { @include subnav-bar($spacing-lg); }
 
-.ficha-tab {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  padding: 14px $spacing-sm;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: $gray-500;
-  text-decoration: none;
-  border-bottom: 3px solid transparent;
-  margin-bottom: -2px;
-  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
-  cursor: pointer;
-  text-align: center;
-  white-space: nowrap;
-
-  i { font-size: 0.95rem; }
-
-  &:hover {
-    color: $primary;
-    background: lighten($primary, 48%);
-  }
-
-  &.active {
-    color: $primary;
-    border-bottom-color: $primary;
-  }
-
-  @include respond-to('md') {
-    span { display: none; }
-    padding: 14px;
-    gap: 0;
-  }
-}
-
-// Configuracion del caso: mismo alcance, menos peso visual. Se distingue por
-// tono, no por tamaño, para que siga siendo evidente que es navegable.
-.ficha-tab--config {
-  color: $gray-400;
-  font-weight: 500;
-
-  &:not(.active) i { opacity: 0.75; }
-}
+.ficha-tab { @include subnav-item; }
 
 // El lienzo de la pestaña. Antes no aportaba padding y cada pestaña se inventaba
 // el suyo (24px en cuatro, 20px en Contratos, 16px en Terapeutas), asi que el
@@ -420,14 +372,12 @@
   line-height: 1.4;
 
   &.chip-danger {
-    background: $danger-light;
-    color: $danger-dark;
+    @include badge-tono($danger-light, $danger-dark, $danger);
     border: 1px solid rgba($danger, 0.25);
   }
 
   &.chip-info {
-    background: $info-light;
-    color: $info-dark;
+    @include badge-tono($info-light, $info-dark, $info);
     border: 1px solid rgba($info, 0.25);
   }
 }
@@ -652,12 +602,12 @@
   font-weight: 600;
   display: inline-block;
 
-  &.badge-yes      { background: $success-light; color: $success-dark; }
+  &.badge-yes { @include badge-tono($success-light, $success-dark, $success); }
   &.badge-no       { background: $gray-100; color: $gray-500; }
-  &.badge-primary  { background: $info-light; color: $info-dark; }
-  &.badge-success  { background: $success-light; color: $success-dark; }
-  &.badge-tutor    { background: $warning-light; color: $warning-dark; }
-  &.badge-whatsapp { background: $success-light; color: $success-dark; }
+  &.badge-primary { @include badge-tono($info-light, $info-dark, $info); }
+  &.badge-success { @include badge-tono($success-light, $success-dark, $success); }
+  &.badge-tutor { @include badge-tono($warning-light, $warning-dark, $warning); }
+  &.badge-whatsapp { @include badge-tono($success-light, $success-dark, $success); }
 }
 
 .count-badge {
@@ -921,9 +871,10 @@
 
 .rgpd-aviso {
   font-size: 0.8rem;
-  color: $warning;
-  background: lighten($warning, 42%);
-  border: 1px solid lighten($warning, 28%);
+  // Antes: ocre sobre ocre aclarado al 42% = 3.50, insuficiente para 0.8rem.
+  color: $warning-dark;   // 6.84 sobre el relleno
+  background: $warning-light;
+  border: 1px solid rgba($warning, 0.35);
   border-radius: $border-radius-sm;
   padding: $spacing-xs $spacing-sm;
   margin-top: $spacing-sm;
@@ -1209,6 +1160,14 @@
   gap: $spacing-md;
 
   @media (max-width: 640px) { grid-template-columns: 1fr; }
+}
+
+// Los firmantes se apilan: pueden ser uno o los dos tutores legales.
+.rgpd-firmante {
+  display: block;
+  line-height: 1.5;
+
+  & + & { margin-top: 2px; }
 }
 
 .rgpd-historial-motivo {

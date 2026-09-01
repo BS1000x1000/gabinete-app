@@ -1,8 +1,7 @@
 import { Route } from '@angular/router';
 import { ListadoComponent } from './listado.component';
 import { roleGuard } from '../../../shared/guards/role.guard';
-
-const ROLES_CLINICOS = ['ADMIN', 'PEDAGOGO', 'NEURO', 'LOGOPEDA'];
+import { ROLES_CLINICOS } from '../../../shared/constants/roles';
 
 export default [
   {
@@ -30,7 +29,7 @@ export default [
       // },
       {
         path: 'progreso',
-        canActivate: [roleGuard(ROLES_CLINICOS)],
+        canActivate: [roleGuard([...ROLES_CLINICOS])],
         loadComponent: () =>
           import('./tabs/progreso-tab/progreso-tab.component'),
       },
@@ -41,7 +40,7 @@ export default [
       },
       {
         path: 'contratos',
-        canActivate: [roleGuard(ROLES_CLINICOS)],
+        canActivate: [roleGuard([...ROLES_CLINICOS])],
         loadComponent: () =>
           import('./tabs/contratos-tab/contratos-tab.component'),
       },

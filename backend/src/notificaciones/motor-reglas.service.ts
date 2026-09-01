@@ -33,11 +33,15 @@ export class MotorReglasService {
       const clientes = asignaciones.map((a) => a.cliente);
       const now = new Date();
 
-      await Promise.all(
-        clientes.map((cliente) =>
+      await Promise.all([
+        ...clientes.map((cliente) =>
           this._evaluarCliente(trabajadorId, cliente, now),
         ),
-      );
+        // Va aquí y no dentro de `_evaluarCliente` porque no habla de un
+        // cliente: es del autónomo. Metida ahí se dispararía una vez por
+        // cliente asignado.
+        this._reglaFacturasSinEntregar(trabajadorId),
+      ]);
     } catch (err) {
       this.logger.error(`Error en evaluarReglas: ${err.message}`, err.stack);
     }
@@ -63,6 +67,60 @@ export class MotorReglasService {
       this._reglaConsentimientoRgpdPendiente(trabajadorId, cliente, baseUrl),
       this._reglaSinRegistrosRecientes(trabajadorId, cliente, now, baseUrl),
     ]);
+  }
+
+  // ─── Regla 12: facturas de un periodo cerrado sin entregar a la gestoría ──
+  /**
+   * A diferencia del resto, esta regla es del trabajador, no de un cliente.
+   *
+   * Solo avisa si el autónomo tiene una gestoría configurada: si no la tiene, no
+   * hay nada que entregar y el aviso sería ruido. Y solo mira periodos cerrados
+   * — el mes en curso todavía se está facturando.
+   *
+   * `referenciaId` es el periodo, así que `crearSiNoExiste` deduplica por
+   * periodo: un aviso por trimestre, no uno por evaluación. Al entregar,
+   * `FacturasGestoriaService.resolverAvisos` la retira — nada en este motor
+   * quita una notificación cuando su condición deja de cumplirse.
+   */
+  private async _reglaFacturasSinEntregar(trabajadorId: string) {
+    const trabajador = await this.prisma.trabajador.findUnique({
+      where: { id: trabajadorId },
+      select: { emailGestoria: true },
+    });
+    if (!trabajador?.emailGestoria) return;
+
+    const hoy = new Date();
+    const periodoActual = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`;
+
+    const sinEntregar = await this.prisma.factura.findMany({
+      where: {
+        trabajadorId,
+        periodoFacturado: { lt: periodoActual },
+        estado: { not: 'ANULADA' },
+        entregas: { none: { envio: { estado: 'ENVIADO' } } },
+      },
+      select: { periodoFacturado: true },
+    });
+    if (!sinEntregar.length) return;
+
+    const periodos = [...new Set(sinEntregar.map((f) => f.periodoFacturado))].sort();
+    const ultimo = periodos[periodos.length - 1];
+    const n = sinEntregar.length;
+
+    await this.notificacionesSvc.crearSiNoExiste({
+      tipo: 'FACTURAS_SIN_ENTREGAR',
+      prioridad: 'MEDIA',
+      titulo: `${n} factura${n === 1 ? '' : 's'} sin entregar a la gestoría`,
+      mensaje:
+        `Tienes ${n} factura${n === 1 ? '' : 's'} de ${periodos.length} ` +
+        `periodo${periodos.length === 1 ? '' : 's'} ya cerrado${periodos.length === 1 ? '' : 's'} ` +
+        `(${periodos[0]}${periodos.length > 1 ? ` — ${ultimo}` : ''}) que no se han enviado nunca ` +
+        'a la gestoría. Prepara el paquete desde Administración › Facturación.',
+      accionUrl: '/home/administracion/facturacion',
+      reglaOrigen: 'FACTURAS_SIN_ENTREGAR',
+      referenciaId: ultimo,
+      trabajadorId,
+    });
   }
 
   // ─── Regla 1: Informe inicial pendiente ──────────────────────────────────

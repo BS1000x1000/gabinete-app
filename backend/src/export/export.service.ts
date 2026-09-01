@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { buildExcel } from '../common/excel/excel.utils';
 import { PrismaService } from '../prisma/prisma.service';
 import { PdfGeneratorService } from '../common/pdf/pdf-generator.service';
 import { ExportFormato, ExportQueryDto } from './dto/export-query.dto';
 import { escapeHtml } from '../common/utils/html.utils';
-import * as ExcelJS from 'exceljs';
 
 export interface ExportResult {
   buffer: Buffer;
@@ -82,54 +82,6 @@ function buildTableHtml(opts: {
   </p>
 </body>
 </html>`;
-}
-
-// ─── Excel helper ────────────────────────────────────────────
-
-async function buildExcel(opts: {
-  sheetName: string;
-  headers: string[];
-  rows: (string | number)[][];
-}): Promise<Buffer> {
-  const wb = new ExcelJS.Workbook();
-  const ws = wb.addWorksheet(opts.sheetName);
-
-  ws.columns = opts.headers.map((h) => ({
-    header: h,
-    key: h,
-    width: Math.max(h.length + 4, 16),
-  }));
-
-  const headerRow = ws.getRow(1);
-  headerRow.eachCell((cell) => {
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF7C6FD6' } };
-    cell.font = { color: { argb: 'FFFFFFFF' }, bold: true, size: 11 };
-    cell.alignment = { vertical: 'middle', horizontal: 'center' };
-    cell.border = {
-      top: { style: 'thin', color: { argb: 'FF5A4FA8' } },
-      bottom: { style: 'thin', color: { argb: 'FF5A4FA8' } },
-      left: { style: 'thin', color: { argb: 'FF5A4FA8' } },
-      right: { style: 'thin', color: { argb: 'FF5A4FA8' } },
-    };
-  });
-  headerRow.height = 22;
-
-  opts.rows.forEach((row, i) => {
-    const r = ws.addRow(row);
-    const bg = i % 2 === 0 ? 'FFFFFFFF' : 'FFF5F3FC';
-    r.eachCell((cell) => {
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bg } };
-      cell.border = {
-        top: { style: 'hair', color: { argb: 'FFE8E4F8' } },
-        bottom: { style: 'hair', color: { argb: 'FFE8E4F8' } },
-        left: { style: 'hair', color: { argb: 'FFE8E4F8' } },
-        right: { style: 'hair', color: { argb: 'FFE8E4F8' } },
-      };
-    });
-  });
-
-  const buf = await wb.xlsx.writeBuffer();
-  return Buffer.from(buf);
 }
 
 // ─── Service ─────────────────────────────────────────────────

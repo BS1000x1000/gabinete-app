@@ -35,10 +35,17 @@ import {
   RegistroManualConsentimientoDto,
   RevocarConsentimientoDto,
 } from 'src/consentimientos/dto/consentimiento.dto';
-import { DocumentosService, TAMANO_MAX_BYTES } from 'src/documentos/documentos.service';
+import {
+  DocumentosService,
+  TAMANO_MAX_BYTES,
+} from 'src/documentos/documentos.service';
 import type { FicheroSubido } from 'src/documentos/dto/documento.dto';
 import { MulterExceptionFilter } from 'src/common/filters/multer-exception.filter';
-import { CategoriaDocumento, EstadoFirmaDocumento, OrigenDocumento } from '@prisma/client';
+import {
+  CategoriaDocumento,
+  EstadoFirmaDocumento,
+  OrigenDocumento,
+} from '@prisma/client';
 
 @Controller('clientes')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -77,7 +84,11 @@ export class ClientesController {
     this.logger.log(
       `📋 POST /api/clientes - ${createClienteDto.nombre} ${createClienteDto.apellidos}`,
     );
-    return this.clientesService.create(createClienteDto, req.user?.userId, req.user?.rol);
+    return this.clientesService.create(
+      createClienteDto,
+      req.user?.userId,
+      req.user?.rol,
+    );
   }
 
   /**
@@ -97,7 +108,9 @@ export class ClientesController {
   @Get('mis-clientes')
   async getMisClientes(@Req() req: any) {
     const trabajadorId = req.user.userId;
-    this.logger.log(`👤 GET /api/clientes/mis-clientes - Trabajador: ${trabajadorId}`);
+    this.logger.log(
+      `👤 GET /api/clientes/mis-clientes - Trabajador: ${trabajadorId}`,
+    );
     return this.clientesService.findByTrabajador(trabajadorId);
   }
 
@@ -301,7 +314,10 @@ export class ClientesController {
   // ── DATOS PAGADOR (FACTURACIÓN) ──────────────────────────
 
   @Patch(':id/datos-pagador')
-  async updateDatosPagador(@Param('id') id: string, @Body() dto: UpdateDatosPagadorDto) {
+  async updateDatosPagador(
+    @Param('id') id: string,
+    @Body() dto: UpdateDatosPagadorDto,
+  ) {
     this.logger.log(`💶 PATCH /api/clientes/${id}/datos-pagador`);
     return this.clientesService.updateDatosPagador(id, dto);
   }
@@ -322,7 +338,9 @@ export class ClientesController {
    */
   @Post(':id/consentimiento')
   @Roles('ADMIN')
-  @UseInterceptors(FileInterceptor('fichero', { limits: { fileSize: TAMANO_MAX_BYTES } }))
+  @UseInterceptors(
+    FileInterceptor('fichero', { limits: { fileSize: TAMANO_MAX_BYTES } }),
+  )
   @UseFilters(new MulterExceptionFilter(TAMANO_MAX_BYTES))
   @HttpCode(HttpStatus.CREATED)
   async registrarConsentimiento(
@@ -331,7 +349,9 @@ export class ClientesController {
     @Body() dto: RegistroManualConsentimientoDto,
     @Req() req: any,
   ) {
-    this.logger.log(`📝 POST /api/clientes/${clienteId}/consentimiento (manual)`);
+    this.logger.log(
+      `📝 POST /api/clientes/${clienteId}/consentimiento (manual)`,
+    );
 
     if (!fichero) {
       throw new BadRequestException(
@@ -339,15 +359,16 @@ export class ClientesController {
       );
     }
 
-    // Antes de subir nada: si el familiar no es tutor legal, no dejamos el
+    // Antes de subir nada: si algún firmante no es tutor legal, no dejamos el
     // fichero huérfano en el bucket.
-    await this.consentimientos.assertTutorLegal(clienteId, dto.familiarId);
+    await this.consentimientos.assertTutoresLegales(clienteId, dto.firmanteIds);
 
     const documento = await this.documentos.create(
       {
         clienteId,
         categoria: CategoriaDocumento.CONSENTIMIENTO_DATOS,
-        nombre: 'Consentimiento para el tratamiento de datos personales (firmado)',
+        nombre:
+          'Consentimiento para el tratamiento de datos personales (firmado)',
       },
       fichero,
       req.user,
@@ -361,7 +382,7 @@ export class ClientesController {
     return this.consentimientos.registrar(
       clienteId,
       {
-        familiarId: dto.familiarId,
+        firmanteIds: dto.firmanteIds,
         versionTexto: dto.versionTexto,
         documentoId: documento.id,
         fechaFirma: dto.fechaFirma ? new Date(dto.fechaFirma) : null,
@@ -390,8 +411,15 @@ export class ClientesController {
     @Body() dto: RevocarConsentimientoDto,
     @Req() req: any,
   ) {
-    this.logger.warn(`🚫 POST /api/clientes/${clienteId}/consentimiento/revocar`);
-    return this.consentimientos.revocar(clienteId, dto.motivo, req.user, req.ip);
+    this.logger.warn(
+      `🚫 POST /api/clientes/${clienteId}/consentimiento/revocar`,
+    );
+    return this.consentimientos.revocar(
+      clienteId,
+      dto.motivo,
+      req.user,
+      req.ip,
+    );
   }
 
   /**
@@ -419,7 +447,9 @@ export class ClientesController {
   @Roles('ADMIN')
   @HttpCode(HttpStatus.OK)
   async anonimizarCliente(@Param('id') id: string, @Req() req: any) {
-    this.logger.warn(`🔒 DELETE /api/clientes/${id}/anonimizar - solicitado por ${req.user?.userId}`);
+    this.logger.warn(
+      `🔒 DELETE /api/clientes/${id}/anonimizar - solicitado por ${req.user?.userId}`,
+    );
     this.auditService.registrar({
       evento: 'ACCESO_FICHA',
       userId: req.user?.userId,
@@ -429,7 +459,11 @@ export class ClientesController {
       metadata: { accion: 'ANONIMIZAR_CLIENTE' },
     });
     await this.clientesService.anonimizarCliente(id);
-    return { message: 'Cliente anonimizado correctamente', id, status: 'success' };
+    return {
+      message: 'Cliente anonimizado correctamente',
+      id,
+      status: 'success',
+    };
   }
 
   // ========================================
@@ -461,7 +495,10 @@ export class ClientesController {
    * ⚠️ DEBE IR AL FINAL (captura todo lo que no matcheó antes)
    */
   @Get(':id')
-  async findOne(@Param('id') id: string, @Req() req: any): Promise<ClienteWithRelations> {
+  async findOne(
+    @Param('id') id: string,
+    @Req() req: any,
+  ): Promise<ClienteWithRelations> {
     this.logger.log(`📋 GET /api/clientes/${id}`);
     const cliente = await this.clientesService.findOne(id, req.user);
 

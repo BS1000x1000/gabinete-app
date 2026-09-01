@@ -70,8 +70,8 @@ interface FilaExpediente {
 
 /** Color por categoría de documento externo — alineado con la paleta de _variables.scss. */
 const COLOR_CATEGORIA: Record<CategoriaDocumento, string> = {
-  INFORME_MEDICO:  '#e11d48',
-  INFORME_ESCOLAR: '#0891b2',
+  INFORME_MEDICO:  '#96382e',   // $danger    — 6.02 sobre papel (antes #e11d48, 3.91)
+  INFORME_ESCOLAR: '#3a5c74',   // $secondary — 5.89 (antes #0891b2, 3.06)
   ADMINISTRATIVO:  '#556d62',
   OTROS:           '#2d4a3e',
   // Expediente inicial
@@ -219,13 +219,14 @@ export default class InformesTabComponent implements OnInit {
   firmaDocumentoId = signal<string | null>(null);
   firmaFichero = signal<File | null>(null);
   firmaForm = signal({
-    familiarId: '',
     fechaFirma: '',
     autorizaInformesTerceros: false,
     autorizaCoordinacionCentro: false,
     autorizaImagenes: false,
     consentimientoMenor14: false,
   });
+  /** Tutores marcados como firmantes. Con dos, lo normal es que firmen los dos. */
+  firmantes = signal<string[]>([]);
 
   /** Solo un tutor legal puede consentir por un menor (LOPDGDD art. 7). */
   readonly tutoresLegales = computed(() =>
@@ -521,8 +522,10 @@ export default class InformesTabComponent implements OnInit {
   abrirFormFirmaConsentimiento(fila: FilaExpedienteInicial, fichero: File): void {
     this.firmaDocumentoId.set(fila.documentoId);
     this.firmaFichero.set(fichero);
+    // Con un solo tutor legal no hay nada que elegir: se marca solo.
+    const tutores = this.tutoresLegales();
+    this.firmantes.set(tutores.length === 1 ? [tutores[0].id] : []);
     this.firmaForm.set({
-      familiarId: '',
       fechaFirma: '',
       autorizaInformesTerceros: false,
       autorizaCoordinacionCentro: false,
@@ -532,6 +535,26 @@ export default class InformesTabComponent implements OnInit {
     this.errorExpediente.set(null);
     this.mostrarFormFirma.set(true);
   }
+
+  toggleFirmante(familiarId: string): void {
+    this.firmantes.update((ids) =>
+      ids.includes(familiarId)
+        ? ids.filter((id) => id !== familiarId)
+        : [...ids, familiarId],
+    );
+  }
+
+  esFirmante(familiarId: string): boolean {
+    return this.firmantes().includes(familiarId);
+  }
+
+  /**
+   * Hay dos tutores legales y solo se ha marcado uno. Valido (art. 156 CC),
+   * pero conviene verlo antes de dar el consentimiento por registrado.
+   */
+  readonly avisoFirmaParcial = computed(
+    () => this.tutoresLegales().length > 1 && this.firmantes().length === 1,
+  );
 
   cerrarFormFirma(): void {
     this.mostrarFormFirma.set(false);
@@ -550,10 +573,10 @@ export default class InformesTabComponent implements OnInit {
     const documentoId = this.firmaDocumentoId();
     const fichero = this.firmaFichero();
     const f = this.firmaForm();
-    if (!documentoId || !fichero || !f.familiarId) return;
+    if (!documentoId || !fichero || this.firmantes().length === 0) return;
 
     this.subirFirmado(documentoId, fichero, {
-      familiarId: f.familiarId,
+      firmanteIds: this.firmantes(),
       ...(f.fechaFirma ? { fechaFirma: new Date(f.fechaFirma).toISOString() } : {}),
       autorizaInformesTerceros: f.autorizaInformesTerceros,
       autorizaCoordinacionCentro: f.autorizaCoordinacionCentro,

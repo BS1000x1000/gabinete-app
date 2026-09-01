@@ -9,7 +9,7 @@
 
 // ── Cabecera de página ────────────────────────────────────
 .adm-header {
-  padding: 1.5rem 2rem 0;
+  padding: $spacing-lg $spacing-xl 0;
 }
 
 .adm-header-title {
@@ -25,44 +25,10 @@
 }
 
 // ── Sub-navegación ────────────────────────────────────────
-.adm-subnav {
-  display: flex;
-  gap: 0.15rem;
-  padding: 0 2rem;
-  border-bottom: 1px solid $gray-200;
-  overflow-x: auto;
-  flex-shrink: 0;
-  scrollbar-width: thin;
-  scrollbar-color: $primary-light transparent;
-
-  &::-webkit-scrollbar { height: 3px; }
-  &::-webkit-scrollbar-thumb { background: $primary-light; border-radius: 2px; }
-}
-
-.adm-subnav-item {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.65rem 1rem;
-  font-size: 0.82rem;
-  font-weight: 500;
-  color: $gray-500;
-  white-space: nowrap;
-  text-decoration: none;
-  border-bottom: 2px solid transparent;
-  transition: color 0.15s, border-color 0.15s;
-  margin-bottom: -1px;
-
-  i { font-size: 0.85rem; }
-
-  &:hover { color: $primary; text-decoration: none; }
-
-  &.is-active {
-    color: $primary;
-    border-bottom-color: $primary;
-    font-weight: 600;
-  }
-}
+// El patrón vive en `abstracts/_mixins.scss` y lo comparten esta barra y las
+// dos fichas (cliente y trabajador): un solo idioma de pestañas en la app.
+.adm-subnav      { @include subnav-bar(2rem); }
+.adm-subnav-item { @include subnav-item; }
 
 // ── Área de contenido ─────────────────────────────────────
 .adm-content { flex: 1; }
@@ -71,12 +37,28 @@
 
 .adm-page-inner { max-width: 1200px; }
 
+/**
+ * "Mis datos fiscales" monta el mismo componente que la pestaña Facturación de
+ * la ficha del trabajador, para no duplicar el formulario. Allí el padding se lo
+ * da el contenedor de la ficha; aquí el outlet lo deja pegado al borde, porque
+ * `.adm-content` no pone ninguno y el componente no usa `.adm-page`. Se lo damos
+ * al elemento anfitrión, que solo existe en este contexto: así la ficha se queda
+ * exactamente como está.
+ */
+.adm-content > app-trabajador-facturacion-tab {
+  display: block;
+  padding: $spacing-lg $spacing-xl $spacing-xl;
+  max-width: 1200px;
+
+  @media (max-width: 700px) { padding: 1rem 1rem 1.5rem; }
+}
+
 // ── KPI Cards ─────────────────────────────────────────────
 .adm-kpi-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  gap: $spacing-md;
+  margin-bottom: $spacing-lg;
 
   @media (max-width: 900px) { grid-template-columns: repeat(2, 1fr); }
   @media (max-width: 500px) { grid-template-columns: 1fr; }
@@ -112,7 +94,7 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: $gray-400;
-  margin-bottom: 0.4rem;
+  margin-bottom: $spacing-2xs;
 }
 
 .adm-kpi-value {
@@ -135,7 +117,7 @@
 
 .adm-filters-row {
   display: flex;
-  gap: 1rem;
+  gap: $spacing-md;
   align-items: flex-end;
   flex-wrap: wrap;
 }
@@ -143,7 +125,7 @@
 .adm-filter-group {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: $spacing-2xs;
 }
 
 .adm-filter-label {
@@ -200,7 +182,7 @@
   }
 
   td {
-    padding: 0.75rem 1rem;
+    padding: $spacing-smd $spacing-md;
     border-bottom: 1px solid $gray-100;
     vertical-align: middle;
     color: $gray-700;
@@ -233,13 +215,17 @@
   letter-spacing: 0.04em;
   white-space: nowrap;
 
-  &-pendiente  { background: $warning-light;   color: $warning-dark;   }
-  &-pagada     { background: $success-light;   color: $success-dark;   }
+  &-pendiente { @include badge-tono($warning-light, $warning-dark, $warning); }
+  &-pagada { @include badge-tono($success-light, $success-dark, $success); }
   &-anulada    { background: $gray-100;        color: $gray-500;       }
-  &-activo     { background: $success-light;   color: $success-dark;   }
-  &-borrador   { background: $secondary-light; color: $secondary-dark; }
-  &-suspendido { background: $warning-light;   color: $warning-dark;   }
+  &-activo { @include badge-tono($success-light, $success-dark, $success); }
+  &-borrador { @include badge-tono($secondary-light, $secondary-dark, $secondary); }
+  &-suspendido { @include badge-tono($warning-light, $warning-dark, $warning); }
   &-finalizado { background: $gray-100;        color: $gray-500;       }
+
+  // Entregas a la gestoria (`PENDIENTE` reutiliza el de arriba).
+  &-enviado { @include badge-tono($success-light, $success-dark, $success); }
+  &-error { @include badge-tono($danger-light, $danger-dark, $danger); }
 }
 
 // ── Indicadores email ─────────────────────────────────────
@@ -278,8 +264,8 @@
 .adm-confirm-inline {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  margin-top: 0.4rem;
+  gap: $spacing-2xs;
+  margin-top: $spacing-2xs;
   padding: 0.35rem 0.6rem;
   background: $warning-light;
   border-radius: 0.5rem;
@@ -292,8 +278,8 @@
 .adm-btn-primary {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.5rem 1rem;
+  gap: $spacing-2xs;
+  padding: $spacing-sm $spacing-md;
   background: $primary;
   color: $white;
   border: none;
@@ -312,8 +298,8 @@
 .adm-btn-ghost {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.5rem 1rem;
+  gap: $spacing-2xs;
+  padding: $spacing-sm $spacing-md;
   background: transparent;
   color: $gray-600;
   border: 1px solid $gray-200;
@@ -351,7 +337,7 @@
   align-items: center;
   justify-content: center;
   z-index: 1060;
-  padding: 1rem;
+  padding: $spacing-md;
   backdrop-filter: blur(2px);
 }
 
@@ -393,7 +379,7 @@
   color: $gray-400;
   cursor: pointer;
   font-size: 0.8rem;
-  padding: 0.25rem;
+  padding: $spacing-xs;
   border-radius: 4px;
   transition: color 0.15s, background 0.15s;
   &:hover { background: $gray-100; color: $gray-600; }
@@ -403,7 +389,7 @@
 .adm-modal-footer {
   display: flex;
   justify-content: flex-end;
-  gap: 0.5rem;
+  gap: $spacing-sm;
   padding: 0.85rem 1.4rem;
   border-top: 1px solid $gray-100;
 }
@@ -417,7 +403,7 @@
   width: 100%;
   border: 1px solid $gray-200;
   border-radius: 0.5rem;
-  padding: 0.5rem 0.75rem;
+  padding: $spacing-sm $spacing-smd;
   font-size: 0.825rem;
   font-family: inherit;
   color: $gray-700;
@@ -438,14 +424,14 @@
   padding: 0.7rem 1rem;
   border-radius: 0.5rem;
   font-size: 0.825rem;
-  margin-bottom: 1rem;
+  margin-bottom: $spacing-md;
   &-danger { background: $danger-light; color: $danger-dark; }
 }
 
 .adm-loading {
   display: flex;
   align-items: center;
-  padding: 2rem;
+  padding: $spacing-xl;
   color: $gray-400;
   font-size: 0.875rem;
 }
@@ -453,7 +439,7 @@
 // ── Empty state ───────────────────────────────────────────
 .adm-empty {
   text-align: center;
-  padding: 3rem 2rem;
+  padding: $spacing-3xl $spacing-xl;
 }
 
 .adm-empty-icon  { font-size: 2.5rem; margin-bottom: 1rem; color: $gray-300; }
@@ -464,8 +450,8 @@
 .adm-contract-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  gap: $spacing-md;
+  margin-bottom: $spacing-lg;
 }
 
 .adm-contract-card {
@@ -511,7 +497,7 @@
 .adm-contract-card-meta {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: $spacing-xs;
   font-size: 0.77rem;
   color: $gray-500;
 }
@@ -527,7 +513,7 @@
 .adm-contract-slot-row {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: $spacing-2xs;
   font-size: 0.77rem;
   color: $gray-500;
 }
@@ -571,7 +557,7 @@
 .adm-contract-pdf-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: $spacing-2xs;
   background: transparent;
   color: $primary;
   border: 1px solid rgba($primary, 0.3);
@@ -590,7 +576,7 @@
 .adm-historial-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: $spacing-2xs;
   background: none;
   border: 1px solid $gray-200;
   border-radius: 0.5rem;
@@ -608,8 +594,8 @@
 .adm-ingresos-header {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
-  margin-bottom: 1.5rem;
+  gap: $spacing-lg;
+  margin-bottom: $spacing-lg;
   flex-wrap: wrap;
 }
 
@@ -674,7 +660,7 @@
   color: $gray-500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  margin-bottom: 1rem;
+  margin-bottom: $spacing-md;
   display: flex;
   align-items: center;
   i { color: $primary; }
@@ -687,8 +673,8 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 1.5rem;
-  gap: 1rem;
+  margin-bottom: $spacing-lg;
+  gap: $spacing-md;
   flex-wrap: wrap;
 }
 
@@ -709,22 +695,8 @@
 .adm-supervision-actions {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: $spacing-smd;
   flex-wrap: wrap;
-}
-
-.adm-generado-msg {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.775rem;
-  color: $success-dark;
-  background: $success-light;
-  border-radius: 0.5rem;
-  padding: 0.35rem 0.7rem;
-  i { font-size: 0.8rem; }
-
-  &--error { color: $danger-dark; background: $danger-light; }
 }
 
 .adm-supervision-table {
@@ -759,8 +731,7 @@
   justify-content: center;
   width: 22px;
   height: 22px;
-  background: $secondary-light;
-  color: $secondary-dark;
+  @include badge-tono($secondary-light, $secondary-dark, $secondary);
   border-radius: 50%;
   font-size: 0.7rem;
   font-weight: 700;
@@ -783,7 +754,7 @@
   font-size: 0.78rem;
 
   th {
-    padding: 0.35rem 0.75rem;
+    padding: $spacing-2xs $spacing-smd;
     font-size: 0.65rem;
     font-weight: 600;
     text-transform: uppercase;
@@ -807,4 +778,425 @@
   font-size: 0.82rem;
   cursor: default !important;
   &:hover { background: $gray-50 !important; }
+}
+
+// ── Añadidos de la reorganización del bloque administrativo ───────────────
+//
+// Conmutador Listado/Análisis (antes eran dos pestañas sobre el mismo dato),
+// pie de KPI, fila de totales de tabla y enlaces a la ficha del cliente desde
+// "Mis contratos", que hasta ahora era una rejilla de tarjetas sin salida.
+
+.adm-kpi-grid--3 {
+  grid-template-columns: repeat(3, 1fr);
+
+  @media (max-width: 900px) { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 500px) { grid-template-columns: 1fr; }
+}
+
+.adm-kpi-foot {
+  display: block;
+  margin-top: $spacing-2xs;
+  font-size: 0.7rem;
+  color: $gray-400;
+}
+
+// ── Barra superior: año + conmutador de vista ─────────────
+.adm-toolbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: $spacing-md;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+.adm-segmented {
+  display: inline-flex;
+  padding: 0.2rem;
+  gap: 0.15rem;
+  background: $gray-100;
+  border: 1px solid $gray-200;
+  border-radius: 0.6rem;
+}
+
+.adm-segmented-item {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-2xs;
+  border: 0;
+  background: transparent;
+  border-radius: 0.45rem;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: $gray-500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+
+  i { font-size: 0.9rem; }
+
+  &:hover { color: $gray-700; }
+
+  &.is-active {
+    background: $white;
+    color: $primary;
+    box-shadow: $shadow-card;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $primary;
+    outline-offset: 2px;
+  }
+}
+
+// ── Filtros: botón de limpiar ─────────────────────────────
+.adm-filters-clear {
+  margin-left: auto;
+  align-self: flex-end;
+}
+
+// ── Tabla: fila de totales y detalles densos ──────────────
+.adm-table-total {
+  background: $gray-100;
+  font-weight: 600;
+  color: $gray-700;
+
+  td {
+    border-top: 1px solid $gray-200;
+    font-size: 0.8rem;
+  }
+}
+
+.adm-table-total-hint {
+  font-weight: 500;
+  color: $gray-400;
+}
+
+.adm-td-horario {
+  font-size: 0.78rem;
+  color: $gray-600;
+  white-space: nowrap;
+}
+
+.adm-icon-online { color: $secondary; }
+
+.adm-row-notas td {
+  padding-top: 0;
+  font-size: 0.75rem;
+  color: $gray-500;
+  border-top: 0;
+}
+
+.adm-link {
+  color: $gray-800;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+
+  &:hover {
+    color: $primary;
+    border-bottom-color: rgba($primary, 0.4);
+  }
+}
+
+.adm-action-btn--abrir {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: $gray-500;
+  text-decoration: none;
+
+  &:hover { color: $primary; }
+}
+
+// ── Gestión de facturas: periodo, selección múltiple y paquetes ───────────
+//
+// El periodo manda a la vez sobre lo que se ve y sobre lo que se descarga, así
+// que va arriba del todo y con la selección de trimestre resaltada: es la
+// unidad con la que el autónomo declara y con la que entrega a la gestoría.
+
+.adm-toolbar-accion {
+  margin-right: auto;
+  margin-left: $spacing-sm;
+}
+
+.adm-filters-row--periodo {
+  padding-bottom: 0.9rem;
+  margin-bottom: 0.9rem;
+  border-bottom: 1px solid $gray-200;
+}
+
+.adm-periodo {
+  display: flex;
+  align-items: center;
+  gap: $spacing-smd;
+  flex-wrap: wrap;
+}
+
+.adm-periodo-chips {
+  display: inline-flex;
+  gap: $spacing-2xs;
+  flex-wrap: wrap;
+}
+
+.adm-chip {
+  border: 1px solid $gray-200;
+  background: $white;
+  border-radius: 999px;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: $gray-500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+
+  &:hover { color: $primary; border-color: rgba($primary, 0.35); }
+
+  &.is-active {
+    background: $primary-ultra-light;
+    border-color: $primary;
+    color: $primary;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $primary;
+    outline-offset: 2px;
+  }
+}
+
+.adm-periodo-rango {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.adm-periodo-sep {
+  color: $gray-400;
+  font-size: 0.85rem;
+}
+
+// ── Barra de acciones en lote ─────────────────────────────
+.adm-bulkbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-md;
+  flex-wrap: wrap;
+  padding: 0.7rem 1rem;
+  margin-bottom: $spacing-smd;
+  background: $primary-ultra-light;
+  border: 1px solid $primary-light;
+  border-radius: $border-radius-lg;
+}
+
+.adm-bulkbar-info {
+  font-size: 0.82rem;
+  color: $gray-600;
+
+  strong { color: $gray-800; }
+}
+
+.adm-bulkbar-acciones {
+  display: inline-flex;
+  gap: $spacing-sm;
+  align-items: center;
+}
+
+// ── Columna de selección ──────────────────────────────────
+.adm-th-check,
+.adm-td-check {
+  width: 2.25rem;
+  padding-right: 0;
+  text-align: center;
+
+  .form-check-input {
+    margin: 0;
+    cursor: pointer;
+    border-color: $gray-400;
+
+    &:checked { background-color: $primary; border-color: $primary; }
+    &:focus { box-shadow: 0 0 0 3px rgba($primary, 0.15); border-color: $primary; }
+  }
+}
+
+.adm-table tbody tr.is-seleccionada {
+  background: $primary-ultra-light;
+}
+
+// ── Modal ancho (previsualización de la generación) ───────
+.adm-modal--ancho {
+  max-width: 640px;
+  width: 100%;
+}
+
+.adm-modal-desc {
+  font-size: 0.82rem;
+  color: $gray-500;
+  line-height: 1.55;
+  margin-bottom: $spacing-md;
+}
+
+.adm-table-wrap--modal {
+  max-height: 280px;
+  overflow-y: auto;
+  @include custom-scrollbar(6px);
+}
+
+.adm-preview-resumen {
+  font-size: 0.85rem;
+  color: $gray-700;
+  background: $gray-100;
+  border-radius: $border-radius;
+  padding: 0.7rem 0.9rem;
+  margin-bottom: 0.85rem;
+  line-height: 1.55;
+}
+
+.adm-preview-omitidas {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.78rem;
+  color: $gray-500;
+}
+
+.adm-fallos {
+  margin: $spacing-smd 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.8rem;
+  color: $gray-600;
+
+  li { margin-bottom: 0.25rem; }
+}
+
+// ── Alertas: variantes que faltaban ───────────────────────
+.adm-alert-warning {
+  background: rgba($warning, 0.1);
+  border: 1px solid rgba($warning, 0.35);
+  color: darken($warning, 25%);
+}
+
+.adm-alert-success {
+  background: rgba($success, 0.1);
+  border: 1px solid rgba($success, 0.35);
+  color: $success-dark;
+}
+
+.adm-alert-close {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  opacity: 0.6;
+  float: right;
+  cursor: pointer;
+  padding: 0 0 0 $spacing-sm;
+  font-size: 0.75rem;
+
+  &:hover { opacity: 1; }
+}
+
+// ── Entrega a la gestoría ─────────────────────────────────────────────────
+
+.adm-gestoria-titulo {
+  display: flex;
+  align-items: center;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: $gray-800;
+  margin: 0 0 $spacing-2xs;
+
+  i { color: $primary; font-size: 0.9rem; }
+}
+
+.adm-gestoria-sub {
+  font-size: 0.82rem;
+  color: $gray-500;
+  line-height: 1.55;
+  margin: 0 0 $spacing-md;
+
+  strong { color: $gray-700; }
+}
+
+.adm-gestoria-pendientes-cab {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $spacing-md;
+  flex-wrap: wrap;
+}
+
+/// Marca los envíos que lanzó el cron, para distinguirlos de los manuales.
+.adm-icon-auto {
+  color: $gray-400;
+  font-size: 0.8rem;
+}
+
+// ── Modal de envío ────────────────────────────────────────────────────────
+
+.adm-envio-datos {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: $spacing-2xs $spacing-md;
+  margin: 0 0 $spacing-md;
+  font-size: 0.85rem;
+
+  dt {
+    font-weight: 600;
+    color: $gray-500;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding-top: 0.15rem;
+  }
+
+  dd {
+    margin: 0;
+    color: $gray-700;
+  }
+}
+
+.adm-envio-email {
+  color: $gray-500;
+  font-size: 0.8rem;
+}
+
+.adm-envio-falta {
+  color: $warning;
+
+  a { color: $primary; }
+}
+
+.adm-envio-ficheros-cab {
+  font-size: 0.8rem;
+  color: $gray-600;
+  margin: 0 0 $spacing-2xs;
+
+  code {
+    background: $gray-100;
+    border-radius: 0.3rem;
+    padding: 0.1rem 0.35rem;
+    color: $gray-800;
+    font-size: 0.78rem;
+  }
+}
+
+/// La lista completa de nombres: es lo que hace que el envío no sea a ciegas.
+.adm-envio-ficheros {
+  margin: 0;
+  padding: 0.6rem 0.75rem 0.6rem 1.75rem;
+  max-height: 190px;
+  overflow-y: auto;
+  @include custom-scrollbar(6px);
+  background: $gray-100;
+  border-radius: $border-radius;
+  list-style: none;
+
+  li {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.73rem;
+    color: $gray-600;
+    padding: 0.1rem 0;
+    word-break: break-all;
+  }
 }

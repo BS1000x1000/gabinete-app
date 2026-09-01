@@ -45,8 +45,11 @@ export class SidebarComponent {
     if (this.auth.isAdmin() || this.auth.isRecep()) {
       items.push({ label: 'Equipo', icon: 'bi-person-badge', route: '/home/trabajadores' });
     }
-    if (!this.auth.isRecep()) {
+    if (this.auth.canVerAdministracion()) {
       items.push({ label: 'Administración', icon: 'bi-receipt', route: '/home/administracion' });
+    }
+    if (this.auth.isAdmin()) {
+      items.push({ label: 'Configuración', icon: 'bi-sliders', route: '/home/configuracion' });
     }
     return items;
   });

@@ -10,130 +10,267 @@
         <span class="adm-supervision-period">Mes activo: {{ periodoLabel(periodoMes) }}</span>
       </div>
       <div class="adm-supervision-actions">
-        <div *ngIf="generadoMsg()" class="adm-generado-msg"
-          [class.adm-generado-msg--error]="generadoMsg()!.startsWith('Error')">
-          <i class="bi"
-            [class.bi-check-circle-fill]="!generadoMsg()!.startsWith('Error')"
-            [class.bi-exclamation-triangle-fill]="generadoMsg()!.startsWith('Error')">
-          </i>
-          {{ generadoMsg() }}
-        </div>
         <button
           class="adm-btn-primary"
-          [disabled]="generando() || cargando()"
-          (click)="generarMes()"
-          type="button">
-          <span *ngIf="generando()" class="spinner-border spinner-border-sm me-1" style="width:14px;height:14px"></span>
-          <i *ngIf="!generando()" class="bi bi-magic me-1"></i>
-          Generar facturas {{ periodoLabel(periodoMes) }}
+          [disabled]="cargando()"
+          (click)="abrirGenerar()"
+          type="button"
+          title="Las facturas se generan solas el día 1; esto es la recuperación manual">
+          <i class="bi bi-magic me-1"></i>
+          Generar facturas de un mes…
         </button>
       </div>
     </div>
 
-    <div *ngIf="cargando()" class="adm-loading">
-      <span class="spinner-border spinner-border-sm me-2"></span> Cargando datos…
-    </div>
+    @if (cargando()) {
+      <app-estado-carga texto="Cargando datos…" />
+    }
 
-    <div *ngIf="error()" class="adm-alert adm-alert-danger">
-      <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error() }}
-    </div>
+    @if (error()) {
+      <app-estado-error [texto]="error()!" />
+    }
 
-    <ng-container *ngIf="!cargando()">
+    @if (!cargando()) {
 
-      <div *ngIf="!resumen().length" class="adm-empty">
-        <div class="adm-empty-icon"><i class="bi bi-people"></i></div>
-        <p class="adm-empty-title">Sin datos de supervisión</p>
-        <p class="adm-empty-desc">Genera las facturas del mes para ver el resumen por terapeuta.</p>
-      </div>
-
-      <div *ngIf="resumen().length" class="adm-table-wrap">
-        <table class="adm-table adm-supervision-table">
-          <thead>
-            <tr>
-              <th>Terapeuta</th>
-              <th class="text-center">Contratos</th>
-              <th class="text-end">Facturado mes</th>
-              <th class="text-end">Cobrado mes</th>
-              <th class="text-end">Pendiente mes</th>
-              <th class="text-end">Total año</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            <ng-container *ngFor="let t of resumen()">
-              <!-- Main row -->
-              <tr class="adm-sup-row" [class.is-expanded]="expandidoId() === t.id"
-                (click)="toggleExpand(t.id)">
-                <td>
-                  <div class="adm-sup-terapeuta">
-                    <div class="adm-sup-avatar">{{ initiales(t.nombre) }}</div>
-                    <span>{{ t.nombre }}</span>
-                  </div>
-                </td>
-                <td class="text-center">
-                  <span class="adm-contratos-badge">{{ t.contratosActivos }}</span>
-                </td>
-                <td class="text-end">{{ t.facturadoMes | number:'1.2-2' }} €</td>
-                <td class="text-end adm-sup-cobrado">{{ t.cobradoMes | number:'1.2-2' }} €</td>
-                <td class="text-end adm-sup-pendiente" [class.is-positive]="t.pendienteMes > 0">
-                  {{ t.pendienteMes | number:'1.2-2' }} €
-                </td>
-                <td class="text-end adm-sup-anio">{{ t.facturadoAnio | number:'1.2-2' }} €</td>
-                <td class="adm-sup-expand">
-                  <i class="bi"
-                    [class.bi-chevron-down]="expandidoId() !== t.id"
-                    [class.bi-chevron-up]="expandidoId() === t.id">
-                  </i>
-                </td>
+      @if (!resumen().length) {
+        <app-estado-vacio
+          icono="bi-people"
+          titulo="Sin datos de supervisión"
+          descripcion="Genera las facturas del mes para ver el resumen por terapeuta." />
+      } @else {
+        <div class="adm-table-wrap">
+          <table class="adm-table adm-supervision-table">
+            <thead>
+              <tr>
+                <th>Terapeuta</th>
+                <th class="text-center">Contratos</th>
+                <th class="text-end">Facturado mes</th>
+                <th class="text-end">Cobrado mes</th>
+                <th class="text-end">Pendiente mes</th>
+                <th class="text-end">Total año</th>
+                <th></th>
               </tr>
+            </thead>
+            <tbody>
+              @for (t of resumen(); track t.id) {
+                <tr class="adm-sup-row" [class.is-expanded]="expandidoId() === t.id"
+                  (click)="toggleExpand(t.id)">
+                  <td>
+                    <div class="adm-sup-terapeuta">
+                      <div class="adm-sup-avatar">{{ initiales(t.nombre) }}</div>
+                      <span>{{ t.nombre }}</span>
+                    </div>
+                  </td>
+                  <td class="text-center">
+                    <span class="adm-contratos-badge">{{ t.contratosActivos }}</span>
+                  </td>
+                  <td class="text-end">{{ t.facturadoMes | number:'1.2-2' }} €</td>
+                  <td class="text-end adm-sup-cobrado">{{ t.cobradoMes | number:'1.2-2' }} €</td>
+                  <td class="text-end adm-sup-pendiente" [class.is-positive]="t.pendienteMes > 0">
+                    {{ t.pendienteMes | number:'1.2-2' }} €
+                  </td>
+                  <td class="text-end adm-sup-anio">{{ t.facturadoAnio | number:'1.2-2' }} €</td>
+                  <td class="adm-sup-expand">
+                    <i class="bi"
+                      [class.bi-chevron-down]="expandidoId() !== t.id"
+                      [class.bi-chevron-up]="expandidoId() === t.id">
+                    </i>
+                  </td>
+                </tr>
 
-              <!-- Expanded detail -->
-              <tr *ngIf="expandidoId() === t.id" class="adm-sup-detail-row">
-                <td colspan="7">
-                  <div class="adm-sup-detail">
-                    <p *ngIf="!t.facturas.length" class="adm-sup-detail-empty">
-                      Sin facturas en {{ anioActual }}.
-                    </p>
-                    <table *ngIf="t.facturas.length" class="adm-sub-table">
-                      <thead>
-                        <tr>
-                          <th>Nº</th><th>Periodo</th><th>Cliente</th>
-                          <th class="text-end">Total</th><th>Estado</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr *ngFor="let f of t.facturas">
-                          <td>{{ f.numeroFormateado }}</td>
-                          <td>{{ periodoLabel(f.periodoFacturado) }}</td>
-                          <td>{{ f.cliente.nombre }} {{ f.cliente.apellidos }}</td>
-                          <td class="text-end">{{ f.total | number:'1.2-2' }} €</td>
-                          <td>
-                            <span class="adm-badge adm-badge-{{ f.estado.toLowerCase() }}">
-                              {{ estadoLabel(f.estado) }}
-                            </span>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </td>
+                @if (expandidoId() === t.id) {
+                  <tr class="adm-sup-detail-row">
+                    <td colspan="7">
+                      <div class="adm-sup-detail">
+                        @if (!t.facturas.length) {
+                          <p class="adm-sup-detail-empty">Sin facturas en {{ anioActual }}.</p>
+                        } @else {
+                          <table class="adm-sub-table">
+                            <thead>
+                              <tr>
+                                <th>Nº</th><th>Periodo</th><th>Cliente</th>
+                                <th class="text-end">Total</th><th>Estado</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              @for (f of t.facturas; track f.id) {
+                                <tr>
+                                  <td>{{ f.numeroFormateado }}</td>
+                                  <td>{{ periodoLabel(f.periodoFacturado) }}</td>
+                                  <td>{{ f.cliente.nombre }} {{ f.cliente.apellidos }}</td>
+                                  <td class="text-end">{{ f.total | number:'1.2-2' }} €</td>
+                                  <td>
+                                    <span class="adm-badge adm-badge-{{ f.estado.toLowerCase() }}">
+                                      {{ estadoLabel(f.estado) }}
+                                    </span>
+                                  </td>
+                                </tr>
+                              }
+                            </tbody>
+                          </table>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
+              }
+
+              <tr class="adm-sup-totales">
+                <td><strong>Total</strong></td>
+                <td class="text-center">—</td>
+                <td class="text-end"><strong>{{ totales().facturadoMes | number:'1.2-2' }} €</strong></td>
+                <td class="text-end"><strong>{{ totales().cobradoMes | number:'1.2-2' }} €</strong></td>
+                <td class="text-end"><strong>{{ totales().pendienteMes | number:'1.2-2' }} €</strong></td>
+                <td class="text-end"><strong>{{ totales().facturadoAnio | number:'1.2-2' }} €</strong></td>
+                <td></td>
               </tr>
-            </ng-container>
-
-            <!-- Totales row -->
-            <tr class="adm-sup-totales">
-              <td><strong>Total</strong></td>
-              <td class="text-center">—</td>
-              <td class="text-end"><strong>{{ totales().facturadoMes | number:'1.2-2' }} €</strong></td>
-              <td class="text-end"><strong>{{ totales().cobradoMes | number:'1.2-2' }} €</strong></td>
-              <td class="text-end"><strong>{{ totales().pendienteMes | number:'1.2-2' }} €</strong></td>
-              <td class="text-end"><strong>{{ totales().facturadoAnio | number:'1.2-2' }} €</strong></td>
-              <td></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </ng-container>
+            </tbody>
+          </table>
+        </div>
+      }
+    }
 
   </div>
 </div>
+
+<!-- Modal: generar el mes de todo el gabinete -->
+@if (modalGenerar()) {
+  <div class="adm-modal-overlay"
+    (click)="$event.target === $event.currentTarget && cerrarGenerar()">
+    <div class="adm-modal adm-modal--ancho" role="dialog">
+      <div class="adm-modal-header">
+        <h5 class="adm-modal-title">
+          <i class="bi bi-magic me-2"></i>Generar facturas del gabinete
+        </h5>
+        <button class="adm-modal-close" (click)="cerrarGenerar()" type="button">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <div class="adm-modal-body">
+        <p class="adm-modal-desc">
+          Alcance: <strong>todos los terapeutas</strong>. Cada uno puede generar las
+          suyas desde su pestaña de Facturación; esto es la palanca de recuperación
+          cuando el proceso automático del día 1 no llegó a ejecutarse.
+        </p>
+
+        <div class="adm-filters-row mb-3">
+          <div class="adm-filter-group">
+            <label class="adm-filter-label">Mes</label>
+            <select class="adm-select"
+              [ngModel]="genMes()"
+              (ngModelChange)="genMes.set(+$event); previsualizarGeneracion()">
+              @for (m of meses; track m.value) {
+                <option [value]="m.value">{{ m.label }}</option>
+              }
+            </select>
+          </div>
+          <div class="adm-filter-group">
+            <label class="adm-filter-label">Año</label>
+            <select class="adm-select"
+              [ngModel]="genAnio()"
+              (ngModelChange)="genAnio.set(+$event); previsualizarGeneracion()">
+              @for (a of anios; track a) {
+                <option [value]="a">{{ a }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        @if (genError()) {
+          <div class="adm-alert adm-alert-danger mb-3">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ genError() }}
+          </div>
+        }
+
+        @if (genCargando()) {
+          <app-estado-carga texto="Consultando el periodo…" />
+        }
+
+        @if (!genCargando() && genPreview(); as prev) {
+          @if (!prev.aGenerar.length) {
+            <app-estado-vacio
+              icono="bi-check2-circle"
+              titulo="No hay nada que generar"
+              [descripcion]="prev.yaFacturadas
+                ? prev.yaFacturadas + ' contrato(s) de este periodo ya tienen factura.'
+                : 'Ningún contrato estaba vigente en este periodo.'" />
+          } @else {
+            <div class="adm-preview-resumen">
+              Se emitirán <strong>{{ prev.aGenerar.length }}</strong>
+              {{ prev.aGenerar.length === 1 ? 'factura' : 'facturas' }} por un total de
+              <strong>{{ prev.importeTotal | number:'1.2-2' }} €</strong>.
+              @if (prev.yaFacturadas) {
+                <span class="adm-preview-omitidas">
+                  {{ prev.yaFacturadas }} ya {{ prev.yaFacturadas === 1 ? 'tenía' : 'tenían' }}
+                  factura y se {{ prev.yaFacturadas === 1 ? 'omite' : 'omiten' }}.
+                </span>
+              }
+            </div>
+
+            <div class="adm-table-wrap adm-table-wrap--modal">
+              <table class="adm-table">
+                <thead>
+                  <tr>
+                    <th>Cliente</th>
+                    <th>Terapeuta</th>
+                    <th class="text-end">Importe</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (c of prev.aGenerar; track c.contratoId) {
+                    <tr>
+                      <td>{{ c.cliente }}</td>
+                      <td>{{ c.trabajador }}</td>
+                      <td class="text-end adm-td-total">{{ c.importe | number:'1.2-2' }} €</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        }
+
+        @if (genResultado(); as res) {
+          <div class="adm-alert" [class.adm-alert-success]="!res.fallidas.length"
+               [class.adm-alert-warning]="res.fallidas.length">
+            <i class="bi me-2"
+              [class.bi-check-circle-fill]="!res.fallidas.length"
+              [class.bi-exclamation-triangle-fill]="res.fallidas.length"></i>
+            <strong>{{ res.creadas }}</strong>
+            {{ res.creadas === 1 ? 'factura emitida' : 'facturas emitidas' }}
+            @if (res.omitidas) { · {{ res.omitidas }} ya existían }
+            @if (res.fallidas.length) { · {{ res.fallidas.length }} con error }
+          </div>
+
+          @if (res.fallidas.length) {
+            <ul class="adm-fallos">
+              @for (f of res.fallidas; track f.contratoId) {
+                <li><strong>{{ f.cliente }}</strong> — {{ f.motivo }}</li>
+              }
+            </ul>
+          }
+        }
+      </div>
+
+      <div class="adm-modal-footer">
+        <button class="adm-btn-ghost" (click)="cerrarGenerar()" type="button">
+          {{ genResultado() ? 'Cerrar' : 'Cancelar' }}
+        </button>
+        @if (!genResultado()) {
+          <button class="adm-btn-primary"
+            [disabled]="genCargando() || !genPreview()?.aGenerar?.length"
+            (click)="confirmarGeneracion()"
+            type="button">
+            @if (genCargando()) {
+              <span class="spinner-border spinner-border-sm me-1" style="width:14px;height:14px"></span>
+            } @else {
+              <i class="bi bi-magic me-1"></i>
+            }
+            Emitir facturas
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+}

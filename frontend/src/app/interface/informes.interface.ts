@@ -96,10 +96,12 @@ export const TIPO_INFORME_LABELS: Record<TipoInforme, { texto: string; color: st
 };
 
 export const ESTADO_INFORME_LABELS: Record<EstadoInforme, { texto: string; badgeClass: string }> = {
-  BORRADOR:    { texto: 'Borrador',    badgeClass: 'bg-secondary' },
-  REVISION:    { texto: 'En revisión', badgeClass: 'bg-warning text-dark' },
-  FINALIZADO:  { texto: 'Finalizado',  badgeClass: 'bg-success' },
-  ENVIADO:     { texto: 'Enviado',     badgeClass: 'badge-enviado' },
+  // gb-badge (sistema propio), no las clases de Bootstrap: sus colores estan
+  // fuera de la paleta y no se distinguen sobre el papel de la app.
+  BORRADOR:    { texto: 'Borrador',    badgeClass: 'gb-badge gb-badge--neutro' },
+  REVISION:    { texto: 'En revisión', badgeClass: 'gb-badge gb-badge--aviso' },
+  FINALIZADO:  { texto: 'Finalizado',  badgeClass: 'gb-badge gb-badge--exito' },
+  ENVIADO:     { texto: 'Enviado',     badgeClass: 'gb-badge gb-badge--info' },
 };
 
 // Secciones del informe para el formulario.

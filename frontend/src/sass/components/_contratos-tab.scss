@@ -8,7 +8,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: $spacing-smd;
   margin-bottom: 1.25rem;
   flex-wrap: wrap;
 }
@@ -16,7 +16,7 @@
 .ct-header-left {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: $spacing-sm;
 }
 
 .ct-title {
@@ -86,13 +86,13 @@
   color: $primary;
   border: 1px solid rgba($primary, 0.3);
   border-radius: $border-radius-lg;
-  padding: 0.35rem 0.75rem;
+  padding: $spacing-2xs $spacing-smd;
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: $spacing-2xs;
   transition: all 0.15s;
 
   &:hover:not(:disabled) { background: $primary-ultra-light; border-color: $primary; }
@@ -104,7 +104,7 @@
   color: $danger;
   border: 1px solid rgba($danger, 0.25);
   border-radius: $border-radius-lg;
-  padding: 0.35rem 0.75rem;
+  padding: $spacing-2xs $spacing-smd;
   font-size: 0.78rem;
   font-weight: 500;
   cursor: pointer;
@@ -137,7 +137,7 @@
   padding: 0.65rem 0.9rem;
   border-radius: 0.5rem;
   font-size: 0.82rem;
-  margin-bottom: 1rem;
+  margin-bottom: $spacing-md;
 
   &.ct-alert-danger {
     background: rgba($danger, 0.07);
@@ -150,7 +150,7 @@
 .ct-loading {
   color: $gray-500;
   font-size: 0.85rem;
-  padding: 1.5rem 0;
+  padding: $spacing-lg 0;
   display: flex;
   align-items: center;
 }
@@ -158,20 +158,20 @@
 // ── Empty state ──
 .ct-empty {
   text-align: center;
-  padding: 3rem 1rem;
+  padding: $spacing-3xl $spacing-md;
 
   .ct-empty-icon {
     font-size: 2.5rem;
     color: $primary;
     opacity: 0.25;
-    margin-bottom: 1rem;
+    margin-bottom: $spacing-md;
   }
 
   .ct-empty-title {
     font-size: 0.95rem;
     font-weight: 600;
     color: $gray-700;
-    margin: 0 0 0.35rem;
+    margin: 0 0 $spacing-2xs;
   }
 
   .ct-empty-desc {
@@ -185,7 +185,7 @@
 .ct-cards {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: $spacing-md;
 }
 
 .ct-card {
@@ -203,8 +203,8 @@
 .ct-card-badges {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-smd;
   flex-wrap: wrap;
 }
 
@@ -218,7 +218,7 @@
 
   &.ct-badge-activo  { background: rgba($success, 0.12); color: darken($success, 12%); }
   &.ct-badge-borrador { background: rgba($warning, 0.15); color: darken($warning, 18%); }
-  &.ct-badge-suspendido { background: #fef9c3; color: #b45309; }
+  &.ct-badge-suspendido { @include badge-tono($warning-light, $warning-dark, $warning); }
   &.ct-badge-finalizado { background: $gray-100; color: $gray-500; }
 }
 
@@ -238,7 +238,7 @@
 .ct-card-main {
   display: flex;
   align-items: baseline;
-  gap: 1rem;
+  gap: $spacing-md;
   margin-bottom: 0.85rem;
   flex-wrap: wrap;
 }
@@ -266,7 +266,7 @@
     color: $gray-400;
     font-weight: 400;
     font-size: 0.78rem;
-    margin-left: 0.25rem;
+    margin-left: $spacing-xs;
   }
 }
 
@@ -274,14 +274,14 @@
 .ct-card-details {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: $spacing-2xs;
   border-top: 1px solid $gray-100;
-  padding-top: 0.75rem;
+  padding-top: $spacing-smd;
 }
 
 .ct-detail-row {
   display: flex;
-  gap: 0.5rem;
+  gap: $spacing-sm;
   align-items: flex-start;
   font-size: 0.8rem;
 }
@@ -308,7 +308,7 @@
 
 .ct-detail-sep {
   color: $gray-300;
-  margin: 0 0.25rem;
+  margin: 0 $spacing-xs;
 }
 
 .ct-badge-sesiones {
@@ -337,13 +337,13 @@
 
 .ct-confirm-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: $spacing-sm;
   align-items: center;
 }
 
 // ── Card actions ──
 .ct-card-actions {
-  margin-top: 0.75rem;
+  margin-top: $spacing-smd;
   border-top: 1px solid $gray-100;
   padding-top: 0.65rem;
   display: flex;
@@ -352,7 +352,7 @@
 
 // ── Historial ──
 .ct-historial {
-  margin-top: 1.5rem;
+  margin-top: $spacing-lg;
 }
 
 .ct-historial-toggle {
@@ -362,18 +362,18 @@
   font-size: 0.82rem;
   font-weight: 500;
   cursor: pointer;
-  padding: 0.35rem 0.5rem;
+  padding: $spacing-2xs $spacing-sm;
   border-radius: 0.35rem;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: $spacing-2xs;
   transition: background 0.15s;
 
   &:hover { background: $gray-100; color: $gray-700; }
 }
 
 .ct-historial-tabla {
-  margin-top: 0.75rem;
+  margin-top: $spacing-smd;
   overflow-x: auto;
 }
 
@@ -395,7 +395,7 @@
   }
 
   td {
-    padding: 0.5rem 0.75rem;
+    padding: $spacing-sm $spacing-smd;
     color: $gray-700;
     border-bottom: 1px solid $gray-100;
   }
@@ -413,7 +413,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem;
+  padding: $spacing-md;
 }
 
 .ct-modal {
@@ -448,7 +448,7 @@
   color: $gray-400;
   font-size: 1.1rem;
   cursor: pointer;
-  padding: 0.25rem;
+  padding: $spacing-xs;
   border-radius: 0.35rem;
   transition: all 0.15s;
 
@@ -469,20 +469,20 @@
   border-top: 1px solid $gray-200;
   display: flex;
   justify-content: flex-end;
-  gap: 0.5rem;
+  gap: $spacing-sm;
 }
 
 // ── Formulario campos ──
 .ct-field {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: $spacing-2xs;
   flex: 1;
 }
 
 .ct-field-row {
   display: flex;
-  gap: 0.75rem;
+  gap: $spacing-smd;
 }
 
 .ct-label {
@@ -493,7 +493,7 @@
   .ct-label-opt {
     font-weight: 400;
     color: $gray-400;
-    margin-left: 0.25rem;
+    margin-left: $spacing-xs;
   }
 }
 
@@ -502,7 +502,7 @@
 .ct-textarea {
   border: 1px solid $gray-300;
   border-radius: 0.5rem;
-  padding: 0.5rem 0.75rem;
+  padding: $spacing-sm $spacing-smd;
   font-size: 0.84rem;
   color: $gray-800;
   background: $white;
@@ -525,7 +525,7 @@
 .ct-slots-section {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: $spacing-smd;
 }
 
 .ct-slots-header {
@@ -587,7 +587,7 @@
 
 .ct-toggle-group {
   display: flex;
-  gap: 0.4rem;
+  gap: $spacing-2xs;
 }
 
 .ct-toggle-btn {
@@ -614,14 +614,14 @@
 .ct-card-slots {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: $spacing-xs;
   flex: 1;
 }
 
 .ct-slot-row {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: $spacing-2xs;
   font-size: 0.82rem;
   color: $gray-700;
 }
@@ -690,7 +690,7 @@
   &__titulo {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: $spacing-2xs;
     flex-wrap: wrap;
     font-size: $font-size-base;
     font-weight: $font-weight-bold;
@@ -705,7 +705,7 @@
   &__resumen {
     display: flex;
     align-items: center;
-    gap: 0.35rem;
+    gap: $spacing-2xs;
     flex-wrap: wrap;
     margin-top: 0.2rem;
     font-size: $font-size-xs;
@@ -715,7 +715,7 @@
 
   &__acciones {
     display: flex;
-    gap: 0.35rem;
+    gap: $spacing-2xs;
     flex-wrap: wrap;
   }
 }
@@ -741,16 +741,16 @@
   border-radius: $border-radius-full;
   border: 1px solid transparent;
 
-  &--activo     { background: $success-light;   color: $success-dark;   border-color: rgba($success, 0.35); }
+  &--activo { @include badge-tono($success-light, $success-dark, $success); }
   &--borrador   { background: $gray-100;        color: $gray-600;       border-color: $gray-200; }
-  &--suspendido { background: $warning-light;   color: $warning-dark;   border-color: rgba($warning, 0.35); }
-  &--finalizado { background: $secondary-light; color: $secondary-dark; border-color: rgba($secondary, 0.35); }
+  &--suspendido { @include badge-tono($warning-light, $warning-dark, $warning); }
+  &--finalizado { @include badge-tono($secondary-light, $secondary-dark, $secondary); }
 }
 
 .ct-firmado {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: $spacing-xs;
   font-size: 0.68rem;
   font-weight: $font-weight-semibold;
   color: $success-dark;
@@ -762,8 +762,8 @@
 .ct-desfase {
   display: flex;
   align-items: flex-start;
-  gap: 0.4rem;
-  margin-top: 0.4rem;
+  gap: $spacing-2xs;
+  margin-top: $spacing-2xs;
   padding: 0.4rem 0.6rem;
   font-size: $font-size-xs;
   line-height: $line-height-normal;
@@ -780,7 +780,7 @@
 .ct-accion {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: $spacing-2xs;
   padding: 0.3rem 0.65rem;
   font-size: $font-size-xs;
   font-weight: $font-weight-semibold;
@@ -815,7 +815,7 @@
   justify-content: space-between;
   gap: $spacing-sm;
   flex-wrap: wrap;
-  margin-top: 0.5rem;
+  margin-top: $spacing-sm;
   padding: 0.5rem 0.7rem;
   font-size: $font-size-xs;
   color: $danger-dark;
@@ -870,8 +870,8 @@
 .ct-firmado-actual {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-sm;
   padding: 0.5rem 0.7rem;
   font-size: $font-size-xs;
   color: $success-dark;
@@ -885,7 +885,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.25rem;
+  gap: $spacing-xs;
   padding: $spacing-lg;
   text-align: center;
   cursor: pointer;
@@ -923,7 +923,7 @@
 // ============================================================
 
 .ct-preview {
-  margin: 0 1rem 1rem;
+  margin: 0 $spacing-md $spacing-md;
   padding: 0.9rem 1rem;
   background: $primary-ultra-light;
   border: 1px solid $primary-light;
@@ -942,7 +942,7 @@
 
   &__cifras {
     display: flex;
-    gap: 0.5rem;
+    gap: $spacing-sm;
     flex-wrap: wrap;
     margin-bottom: 0.7rem;
   }
@@ -957,7 +957,7 @@
   &__fila {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: $spacing-sm;
     font-size: $font-size-xs;
     color: $gray-600;
     font-variant-numeric: tabular-nums;
@@ -968,7 +968,7 @@
   }
 
   &__resto {
-    margin: 0.3rem 0 0;
+    margin: $spacing-2xs 0 0;
     font-size: $font-size-xs;
     color: $gray-400;
   }
@@ -976,7 +976,7 @@
   &__aviso {
     display: flex;
     align-items: flex-start;
-    gap: 0.5rem;
+    gap: $spacing-sm;
     margin-top: 0.7rem;
     padding: 0.5rem 0.7rem;
     font-size: $font-size-xs;
@@ -1000,7 +1000,7 @@
   &__acciones {
     display: flex;
     justify-content: flex-end;
-    gap: 0.5rem;
+    gap: $spacing-sm;
     margin-top: 0.9rem;
   }
 }
@@ -1008,7 +1008,7 @@
 .ct-cifra {
   display: flex;
   align-items: baseline;
-  gap: 0.3rem;
+  gap: $spacing-2xs;
   padding: 0.25rem 0.6rem;
   background: $white;
   border: 1px solid $gray-200;
@@ -1033,7 +1033,7 @@
 .ct-preview__nota {
   display: flex;
   align-items: flex-start;
-  gap: 0.4rem;
+  gap: $spacing-2xs;
   margin: 0.7rem 0 0;
   padding: 0.5rem 0.7rem;
   font-size: $font-size-xs;

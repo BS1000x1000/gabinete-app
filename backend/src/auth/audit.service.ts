@@ -8,7 +8,16 @@ export type AuditEvento =
   | 'PASSWORD_CHANGE'
   | 'ACCESO_FICHA'
   /// Otorgado o revocado: la accion concreta va en `metadata.accion`.
-  | 'CONSENTIMIENTO_RGPD';
+  | 'CONSENTIMIENTO_RGPD'
+  /// Anulada o marcada como pagada: la accion concreta va en `metadata.accion`.
+  /// Una factura es un documento fiscal: quien la toca queda registrado.
+  | 'FACTURA'
+  /// Generacion de las facturas de un periodo, manual o por cron. Sin esto una
+  /// ejecucion perdida del dia 1 no dejaba ni rastro.
+  | 'FACTURA_GENERACION'
+  /// Entrega de un paquete de facturas a la gestoria. Salen datos personales
+  /// hacia un tercero: queda registrado quien, que y cuando.
+  | 'FACTURA_ENTREGA_GESTORIA';
 
 @Injectable()
 export class AuditService {

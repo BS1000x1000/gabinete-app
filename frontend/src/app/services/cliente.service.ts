@@ -441,7 +441,7 @@ export class ClientesService {
     clienteId: string,
     fichero: File,
     datos: {
-      familiarId: string;
+      firmanteIds: string[];
       versionTexto: string;
       motivoRegistroManual: string;
       fechaFirma?: string;
@@ -454,7 +454,13 @@ export class ClientesService {
     const form = new FormData();
     form.append('fichero', fichero);
     Object.entries(datos).forEach(([clave, valor]) => {
-      if (valor !== undefined && valor !== null) form.append(clave, String(valor));
+      if (valor === undefined || valor === null) return;
+      // Los firmantes viajan como campo repetido: asi llegan como lista.
+      if (Array.isArray(valor)) {
+        valor.forEach((v) => form.append(clave, String(v)));
+        return;
+      }
+      form.append(clave, String(valor));
     });
 
     return this.http

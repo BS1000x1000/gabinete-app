@@ -56,7 +56,7 @@ export const DOCUMENTOS_EXPEDIENTE = [
 ] as const;
 
 export const CATEGORIAS_EXPEDIENTE: CategoriaDocumento[] =
-  DOCUMENTOS_EXPEDIENTE.map(d => d.categoria);
+  DOCUMENTOS_EXPEDIENTE.map((d) => d.categoria);
 
 @Injectable()
 export class ExpedienteService {
@@ -90,7 +90,8 @@ export class ExpedienteService {
       where: { id: contratoId },
       include: CONTRATO_PDF_INCLUDE,
     });
-    if (!contrato) throw new NotFoundException(`Contrato ${contratoId} no encontrado`);
+    if (!contrato)
+      throw new NotFoundException(`Contrato ${contratoId} no encontrado`);
 
     const datos = await this.contratosPdf.construirDatos(contrato as any);
     const faltantes = this.contratosPdf.faltantes(contrato as any);
@@ -103,7 +104,7 @@ export class ExpedienteService {
       },
       select: { categoria: true },
     });
-    const firmadas = new Set(yaFirmados.map(d => d.categoria));
+    const firmadas = new Set(yaFirmados.map((d) => d.categoria));
 
     let generados = 0;
     let omitidos = 0;
@@ -114,7 +115,11 @@ export class ExpedienteService {
         continue;
       }
 
-      await this.borrarGeneradoAnterior(contrato.clienteId, def.categoria, user);
+      await this.borrarGeneradoAnterior(
+        contrato.clienteId,
+        def.categoria,
+        user,
+      );
 
       const html = this.htmlDe(def.categoria, datos);
       const buffer = await this.pdf.generatePdf(html);
@@ -164,13 +169,18 @@ export class ExpedienteService {
       case CategoriaDocumento.CONSENTIMIENTO_DATOS:
         return PlantillaDatos.buildConsentimientoDatosHtml({
           profesional: datos.profesional,
-          menor: { nombreCompleto: datos.menor.nombreCompleto, dni: datos.menor.dni ?? null },
+          menor: {
+            nombreCompleto: datos.menor.nombreCompleto,
+            dni: datos.menor.dni ?? null,
+          },
           tutores: datos.tutores,
           ciudadFirma: datos.ciudadFirma,
         });
 
       default:
-        throw new BadRequestException(`${categoria} no es un documento del expediente`);
+        throw new BadRequestException(
+          `${categoria} no es un documento del expediente`,
+        );
     }
   }
 
@@ -185,14 +195,20 @@ export class ExpedienteService {
         clienteId,
         categoria,
         origen: OrigenDocumento.GENERADO,
-        estadoFirma: { in: [EstadoFirmaDocumento.GENERADO, EstadoFirmaDocumento.ENVIADO] },
+        estadoFirma: {
+          in: [EstadoFirmaDocumento.GENERADO, EstadoFirmaDocumento.ENVIADO],
+        },
       },
       select: { id: true },
     });
     for (const p of previos) {
-      await this.documentos.remove(p.id, user).catch(e =>
-        this.logger.warn(`No se pudo borrar el documento previo ${p.id}: ${e?.message}`),
-      );
+      await this.documentos
+        .remove(p.id, user)
+        .catch((e) =>
+          this.logger.warn(
+            `No se pudo borrar el documento previo ${p.id}: ${e?.message}`,
+          ),
+        );
     }
   }
 
@@ -209,16 +225,19 @@ export class ExpedienteService {
     categoria: CategoriaDocumento,
     user: UsuarioPeticion,
   ): Promise<{ buffer: Buffer; nombreFichero: string }> {
-    const def = DOCUMENTOS_EXPEDIENTE.find(d => d.categoria === categoria);
+    const def = DOCUMENTOS_EXPEDIENTE.find((d) => d.categoria === categoria);
     if (!def) {
-      throw new BadRequestException(`${categoria} no es un documento del expediente`);
+      throw new BadRequestException(
+        `${categoria} no es un documento del expediente`,
+      );
     }
 
     const contrato = await this.prisma.contratoServicio.findUnique({
       where: { id: contratoId },
       include: CONTRATO_PDF_INCLUDE,
     });
-    if (!contrato) throw new NotFoundException(`Contrato ${contratoId} no encontrado`);
+    if (!contrato)
+      throw new NotFoundException(`Contrato ${contratoId} no encontrado`);
 
     await this.assertAccesoCliente(contrato.clienteId, user);
 
@@ -269,14 +288,16 @@ export class ExpedienteService {
       orderBy: { fechaInicio: 'desc' },
     });
 
-    const faltantes = contrato ? this.contratosPdf.faltantes(contrato as any) : [];
+    const faltantes = contrato
+      ? this.contratosPdf.faltantes(contrato as any)
+      : [];
 
     return {
       contratoId: contrato?.id ?? null,
       /** Sin contrato no hay día, hora ni cuota que poner en los documentos. */
       puedeGenerar: contrato !== null,
       faltantes,
-      documentos: DOCUMENTOS_EXPEDIENTE.map(def => {
+      documentos: DOCUMENTOS_EXPEDIENTE.map((def) => {
         const doc: any = porCategoria.get(def.categoria) ?? null;
         return {
           categoria: def.categoria,
@@ -290,7 +311,8 @@ export class ExpedienteService {
           fechaEnvio: doc?.fechaEnvio ?? null,
           actualizadoEn: doc?.updatedAt ?? null,
           /** Solo se puede mandar lo que existe y cuya plantilla está validada. */
-          puedeEnviar: Boolean(doc) && def.validada && doc?.estadoFirma !== 'FIRMADO',
+          puedeEnviar:
+            Boolean(doc) && def.validada && doc?.estadoFirma !== 'FIRMADO',
         };
       }),
     };
@@ -310,35 +332,51 @@ export class ExpedienteService {
    */
   async registrarFirmado(
     documentoGeneradoId: string,
-    fichero: { originalname: string; mimetype: string; size: number; buffer: Buffer },
+    fichero: {
+      originalname: string;
+      mimetype: string;
+      size: number;
+      buffer: Buffer;
+    },
     user: UsuarioPeticion,
     datosFirma: FirmaExpedienteDto = {},
   ) {
     const generado = await this.prisma.documentoCliente.findUnique({
       where: { id: documentoGeneradoId },
-      select: { id: true, clienteId: true, categoria: true, contratoId: true, estadoFirma: true },
+      select: {
+        id: true,
+        clienteId: true,
+        categoria: true,
+        contratoId: true,
+        estadoFirma: true,
+      },
     });
     if (!generado) throw new NotFoundException('Documento no encontrado');
     if (!CATEGORIAS_EXPEDIENTE.includes(generado.categoria)) {
-      throw new BadRequestException('Ese documento no forma parte del expediente inicial');
+      throw new BadRequestException(
+        'Ese documento no forma parte del expediente inicial',
+      );
     }
     if (generado.estadoFirma === EstadoFirmaDocumento.FIRMADO) {
       throw new BadRequestException('Ese documento ya consta como firmado');
     }
 
-    const def = DOCUMENTOS_EXPEDIENTE.find(d => d.categoria === generado.categoria)!;
+    const def = DOCUMENTOS_EXPEDIENTE.find(
+      (d) => d.categoria === generado.categoria,
+    )!;
 
-    // Se comprueba antes de subir nada: si el tutor falta o no lo es, no
-    // queremos dejar un PDF huerfano en el bucket y un consentimiento a medias.
+    // Se comprueba antes de subir nada: si falta quien firma o no es tutor
+    // legal, no queremos dejar un PDF huerfano en el bucket y un
+    // consentimiento a medias.
     if (generado.categoria === CategoriaDocumento.CONSENTIMIENTO_DATOS) {
-      if (!datosFirma.familiarId) {
+      if (!datosFirma.firmanteIds?.length) {
         throw new BadRequestException(
-          'Indica el tutor legal que ha firmado el consentimiento de datos',
+          'Indica que tutor o tutores legales han firmado el consentimiento de datos',
         );
       }
-      await this.consentimientos.assertTutorLegal(
+      await this.consentimientos.assertTutoresLegales(
         generado.clienteId,
-        datosFirma.familiarId,
+        datosFirma.firmanteIds,
       );
     }
 
@@ -370,12 +408,16 @@ export class ExpedienteService {
       await this.consentimientos.registrar(
         generado.clienteId,
         {
-          familiarId: datosFirma.familiarId!,
+          firmanteIds: datosFirma.firmanteIds!,
           versionTexto: def.version,
           documentoId: firmado.id,
-          fechaFirma: datosFirma.fechaFirma ? new Date(datosFirma.fechaFirma) : null,
-          autorizaInformesTerceros: datosFirma.autorizaInformesTerceros ?? false,
-          autorizaCoordinacionCentro: datosFirma.autorizaCoordinacionCentro ?? false,
+          fechaFirma: datosFirma.fechaFirma
+            ? new Date(datosFirma.fechaFirma)
+            : null,
+          autorizaInformesTerceros:
+            datosFirma.autorizaInformesTerceros ?? false,
+          autorizaCoordinacionCentro:
+            datosFirma.autorizaCoordinacionCentro ?? false,
           autorizaImagenes: datosFirma.autorizaImagenes ?? false,
           consentimientoMenor14: datosFirma.consentimientoMenor14 ?? false,
         },
@@ -383,7 +425,9 @@ export class ExpedienteService {
       );
     }
 
-    this.logger.log(`Documento ${generado.categoria} firmado para cliente ${generado.clienteId}`);
+    this.logger.log(
+      `Documento ${generado.categoria} firmado para cliente ${generado.clienteId}`,
+    );
     return firmado;
   }
 
@@ -395,8 +439,13 @@ export class ExpedienteService {
     });
     if (!doc) throw new NotFoundException('Documento no encontrado');
 
-    const def = DOCUMENTOS_EXPEDIENTE.find(d => d.categoria === doc.categoria);
-    if (!def) throw new BadRequestException('Ese documento no forma parte del expediente inicial');
+    const def = DOCUMENTOS_EXPEDIENTE.find(
+      (d) => d.categoria === doc.categoria,
+    );
+    if (!def)
+      throw new BadRequestException(
+        'Ese documento no forma parte del expediente inicial',
+      );
 
     // Puerta dura: una plantilla sin validar no sale de aquí ni por error.
     if (!def.validada) {
@@ -410,7 +459,10 @@ export class ExpedienteService {
 
     return this.prisma.documentoCliente.update({
       where: { id: documentoId },
-      data: { estadoFirma: EstadoFirmaDocumento.ENVIADO, fechaEnvio: new Date() },
+      data: {
+        estadoFirma: EstadoFirmaDocumento.ENVIADO,
+        fechaEnvio: new Date(),
+      },
       select: { id: true, estadoFirma: true, fechaEnvio: true },
     });
   }

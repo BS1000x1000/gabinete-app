@@ -1,0 +1,868 @@
+<div class="adm-page">
+  <div class="adm-page-inner">
+
+    <!-- KPIs — siempre del año seleccionado, no del subconjunto filtrado -->
+    <div class="adm-kpi-grid">
+      <div class="adm-kpi-card">
+        <span class="adm-kpi-label">Facturado este mes</span>
+        <span class="adm-kpi-value">{{ kpiFacturadoMes() | number:'1.2-2' }} €</span>
+      </div>
+      <div class="adm-kpi-card adm-kpi-card--success">
+        <span class="adm-kpi-label">Cobrado este mes</span>
+        <span class="adm-kpi-value">{{ kpiCobradoMes() | number:'1.2-2' }} €</span>
+      </div>
+      <div class="adm-kpi-card adm-kpi-card--warning">
+        <span class="adm-kpi-label">Pendiente de cobro</span>
+        <span class="adm-kpi-value">{{ kpiPendienteCobro() | number:'1.2-2' }} €</span>
+      </div>
+      <div class="adm-kpi-card adm-kpi-card--info">
+        <span class="adm-kpi-label">Facturado en {{ filtroAnio() }}</span>
+        <span class="adm-kpi-value">{{ kpiFacturadoAnio() | number:'1.2-2' }} €</span>
+        <span class="adm-kpi-foot">{{ tasaCobro() }}% cobrado</span>
+      </div>
+    </div>
+
+    <!-- Barra: año + conmutador de vista -->
+    <div class="adm-toolbar">
+      <div class="adm-filter-group">
+        <label class="adm-filter-label">Año</label>
+        <select class="adm-select"
+          [ngModel]="filtroAnio()"
+          (ngModelChange)="filtroAnio.set(+$event); onAnioChange()">
+          @for (a of anios; track a) {
+            <option [value]="a">{{ a }}</option>
+          }
+        </select>
+      </div>
+
+      <button class="adm-btn-primary adm-toolbar-accion" type="button" (click)="abrirGenerar()">
+        <i class="bi bi-magic me-1"></i>Generar mes…
+      </button>
+
+      <div class="adm-segmented" role="tablist" aria-label="Vista de facturación">
+        <button class="adm-segmented-item" type="button" role="tab"
+          [class.is-active]="vista() === 'listado'"
+          [attr.aria-selected]="vista() === 'listado'"
+          (click)="vista.set('listado')">
+          <i class="bi bi-list-ul"></i><span>Listado</span>
+        </button>
+        <button class="adm-segmented-item" type="button" role="tab"
+          [class.is-active]="vista() === 'analisis'"
+          [attr.aria-selected]="vista() === 'analisis'"
+          (click)="vista.set('analisis')">
+          <i class="bi bi-graph-up-arrow"></i><span>Análisis</span>
+        </button>
+        <button class="adm-segmented-item" type="button" role="tab"
+          [class.is-active]="vista() === 'gestoria'"
+          [attr.aria-selected]="vista() === 'gestoria'"
+          (click)="verGestoria()">
+          <i class="bi bi-briefcase"></i><span>Gestoría</span>
+        </button>
+      </div>
+    </div>
+
+    @if (cargando()) {
+      <app-estado-carga texto="Cargando facturas…" />
+    }
+
+    @if (error()) {
+      <app-estado-error [texto]="error()!" />
+    }
+
+    @if (!cargando()) {
+
+      @if (!facturas().length) {
+        <app-estado-vacio
+          icono="bi-receipt"
+          [titulo]="'Sin facturas en ' + filtroAnio()"
+          descripcion="Las facturas se generan automáticamente el día 1 de cada mes." />
+      } @else if (vista() === 'listado') {
+
+        <!-- ── Listado ────────────────────────────────────────────────── -->
+        <div class="adm-filters">
+          <!-- Periodo: el trimestre es la unidad con la que se declara y con la
+               que se entrega a la gestoría; mes y año son atajos del mismo rango. -->
+          <div class="adm-filters-row adm-filters-row--periodo">
+            <div class="adm-filter-group">
+              <label class="adm-filter-label">Periodo de {{ filtroAnio() }}</label>
+              <div class="adm-periodo">
+                <div class="adm-periodo-chips" role="group" aria-label="Periodo">
+                  @for (t of trimestres; track t) {
+                    <button class="adm-chip" type="button"
+                      [class.is-active]="rangoTipo() === 'trimestre' && trimestreSel() === t"
+                      (click)="trimestreSel.set(t); setRango('trimestre')">
+                      {{ t }}T
+                    </button>
+                  }
+                  <button class="adm-chip" type="button"
+                    [class.is-active]="rangoTipo() === 'anio'"
+                    (click)="setRango('anio')">
+                    Año
+                  </button>
+                  <button class="adm-chip" type="button"
+                    [class.is-active]="rangoTipo() === 'mes'"
+                    (click)="setRango('mes')">
+                    Mes
+                  </button>
+                  <button class="adm-chip" type="button"
+                    [class.is-active]="rangoTipo() === 'personalizado'"
+                    (click)="setRango('personalizado')">
+                    Rango
+                  </button>
+                </div>
+
+                @if (rangoTipo() === 'mes') {
+                  <select class="adm-select"
+                    [ngModel]="mesSel()"
+                    (ngModelChange)="mesSel.set(+$event); limpiarSeleccion()">
+                    @for (m of meses; track m.value) {
+                      <option [value]="m.value">{{ m.label }}</option>
+                    }
+                  </select>
+                }
+
+                @if (rangoTipo() === 'personalizado') {
+                  <div class="adm-periodo-rango">
+                    <select class="adm-select"
+                      [ngModel]="mesDesde()"
+                      (ngModelChange)="mesDesde.set(+$event); limpiarSeleccion()">
+                      @for (m of meses; track m.value) {
+                        <option [value]="m.value">{{ m.label }}</option>
+                      }
+                    </select>
+                    <span class="adm-periodo-sep">→</span>
+                    <select class="adm-select"
+                      [ngModel]="mesHasta()"
+                      (ngModelChange)="mesHasta.set(+$event); limpiarSeleccion()">
+                      @for (m of meses; track m.value) {
+                        <option [value]="m.value">{{ m.label }}</option>
+                      }
+                    </select>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+
+          <div class="adm-filters-row">
+            <div class="adm-filter-group">
+              <label class="adm-filter-label">Estado</label>
+              <select class="adm-select"
+                [ngModel]="filtroEstado()"
+                (ngModelChange)="filtroEstado.set($event)">
+                <option value="">Todos</option>
+                <option value="PENDIENTE">Pendiente</option>
+                <option value="PAGADA">Pagada</option>
+                <option value="ANULADA">Anulada</option>
+              </select>
+            </div>
+
+            @if (clientesUnicos().length > 1) {
+              <div class="adm-filter-group">
+                <label class="adm-filter-label">Cliente</label>
+                <select class="adm-select"
+                  [ngModel]="filtroClienteId()"
+                  (ngModelChange)="filtroClienteId.set($event)">
+                  <option value="">Todos</option>
+                  @for (c of clientesUnicos(); track c.id) {
+                    <option [value]="c.id">{{ c.nombre }}</option>
+                  }
+                </select>
+              </div>
+            }
+
+            @if (hayFiltros()) {
+              <button class="adm-btn-ghost-sm adm-filters-clear" type="button" (click)="limpiarFiltros()">
+                <i class="bi bi-x-lg me-1"></i>Quitar filtros
+              </button>
+            }
+          </div>
+        </div>
+
+        @if (avisoPack(); as aviso) {
+          <div class="adm-alert adm-alert-warning">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ aviso }}
+            <button class="adm-alert-close" type="button" (click)="avisoPack.set(null)">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+        }
+
+        @if (!facturasFiltradas().length) {
+          <app-estado-vacio
+            icono="bi-funnel"
+            titulo="Ninguna factura en {{ rangoLabel() }}"
+            descripcion="Prueba con otro periodo o quita los filtros activos." />
+        } @else {
+          <!-- Lo marcado si hay selección; si no, todo el periodo. Un solo
+               camino para «descargo esto» en vez de dos botones distintos. -->
+          <div class="adm-bulkbar">
+            <span class="adm-bulkbar-info">
+              @if (seleccionadas().size) {
+                <strong>{{ seleccionadas().size }}</strong>
+                {{ seleccionadas().size === 1 ? 'factura seleccionada' : 'facturas seleccionadas' }}
+                · {{ totalSeleccionado() | number:'1.2-2' }} €
+                <button class="adm-btn-ghost-sm ms-2" type="button" (click)="limpiarSeleccion()">
+                  Quitar selección
+                </button>
+              } @else {
+                Se descargará <strong>{{ rangoLabel() }}</strong> completo
+                ({{ facturasFiltradas().length }}
+                {{ facturasFiltradas().length === 1 ? 'factura' : 'facturas' }})
+              }
+            </span>
+
+            <div class="adm-bulkbar-acciones">
+              <button class="adm-btn-ghost" type="button"
+                [disabled]="descargandoPack() !== null"
+                (click)="descargarPack('excel')"
+                title="Solo el libro de facturas emitidas, en Excel">
+                @if (descargandoPack() === 'excel') {
+                  <span class="spinner-border spinner-border-sm me-1" style="width:13px;height:13px"></span>
+                } @else {
+                  <i class="bi bi-file-earmark-spreadsheet me-1"></i>
+                }
+                Excel
+              </button>
+              <button class="adm-btn-ghost" type="button"
+                (click)="abrirEnviar()"
+                title="Enviar este paquete a la gestoría por email">
+                <i class="bi bi-send me-1"></i>Enviar al gestor
+              </button>
+              <button class="adm-btn-primary" type="button"
+                [disabled]="descargandoPack() !== null"
+                (click)="descargarPack('zip')"
+                title="ZIP con el libro en Excel y los PDF de cada factura">
+                @if (descargandoPack() === 'zip') {
+                  <span class="spinner-border spinner-border-sm me-1" style="width:13px;height:13px"></span>
+                } @else {
+                  <i class="bi bi-file-earmark-zip me-1"></i>
+                }
+                Descargar paquete
+              </button>
+            </div>
+          </div>
+
+          <div class="adm-table-wrap">
+            <table class="adm-table">
+              <thead>
+                <tr>
+                  <th class="adm-th-check">
+                    <input type="checkbox" class="form-check-input"
+                      [checked]="todasSeleccionadas()"
+                      [indeterminate]="seleccionParcial()"
+                      (change)="toggleTodas()"
+                      [attr.aria-label]="'Seleccionar todas las facturas de ' + rangoLabel()" />
+                  </th>
+                  <th>Nº</th>
+                  <th>Cliente</th>
+                  <th>Periodo</th>
+                  <th>Concepto</th>
+                  <th class="text-end">Total</th>
+                  <th>Estado</th>
+                  <th class="text-center">Email</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (f of facturasFiltradas(); track f.id) {
+                  <tr [class.adm-row-anulada]="f.estado === 'ANULADA'"
+                      [class.is-seleccionada]="estaSeleccionada(f.id)">
+                    <td class="adm-td-check">
+                      <input type="checkbox" class="form-check-input"
+                        [checked]="estaSeleccionada(f.id)"
+                        (change)="toggleSeleccion(f.id)"
+                        [attr.aria-label]="'Seleccionar la factura ' + f.numeroFormateado" />
+                    </td>
+                    <td class="adm-td-numero">{{ f.numeroFormateado }}</td>
+                    <td>{{ f.cliente.nombre }} {{ f.cliente.apellidos }}</td>
+                    <td class="adm-td-periodo">{{ periodoLabel(f.periodoFacturado) }}</td>
+                    <td class="adm-td-concepto" [title]="f.concepto">{{ f.concepto }}</td>
+                    <td class="text-end adm-td-total">{{ f.total | number:'1.2-2' }} €</td>
+                    <td>
+                      <span class="adm-badge adm-badge-{{ f.estado.toLowerCase() }}">
+                        {{ estadoLabel(f.estado) }}
+                      </span>
+                    </td>
+                    <td class="text-center">
+                      <i class="bi"
+                        [class.bi-envelope-check-fill]="f.emailEnviado"
+                        [class.bi-envelope]="!f.emailEnviado"
+                        [class.adm-email-sent]="f.emailEnviado"
+                        [class.adm-email-pending]="!f.emailEnviado"
+                        [title]="f.emailEnviado ? 'Email enviado ' + (f.fechaEnvioEmail | date:'dd/MM') : 'Email pendiente'">
+                      </i>
+                    </td>
+                    <td>
+                      <div class="adm-actions-cell">
+                        <button
+                          class="adm-action-btn adm-action-btn--pdf"
+                          [disabled]="descargandoId() === f.id"
+                          (click)="descargarPdf(f.id)"
+                          title="Descargar PDF"
+                          type="button">
+                          @if (descargandoId() === f.id) {
+                            <span class="spinner-border spinner-border-sm" style="width:12px;height:12px"></span>
+                          } @else {
+                            <i class="bi bi-download"></i>
+                          }
+                        </button>
+
+                        @if (f.estado === 'PENDIENTE') {
+                          <button
+                            class="adm-action-btn adm-action-btn--pagada"
+                            (click)="abrirModalPagada(f.id)"
+                            title="Marcar como pagada"
+                            type="button">
+                            <i class="bi bi-check-circle"></i>
+                          </button>
+                        }
+
+                        @if (f.estado !== 'ANULADA') {
+                          <button
+                            class="adm-action-btn adm-action-btn--anular"
+                            [disabled]="confirmAnularId() === f.id"
+                            (click)="solicitarAnular(f.id)"
+                            title="Anular factura"
+                            type="button">
+                            <i class="bi bi-x-circle"></i>
+                          </button>
+
+                          <button
+                            class="adm-action-btn adm-action-btn--email"
+                            [disabled]="reenviandoId() === f.id"
+                            (click)="reenviarEmail(f.id)"
+                            title="Reenviar email"
+                            type="button">
+                            @if (reenviandoId() === f.id) {
+                              <span class="spinner-border spinner-border-sm" style="width:12px;height:12px"></span>
+                            } @else {
+                              <i class="bi bi-envelope-arrow-up"></i>
+                            }
+                          </button>
+                        }
+                      </div>
+
+                      @if (confirmAnularId() === f.id) {
+                        <div class="adm-confirm-inline">
+                          <span class="adm-confirm-text">¿Anular esta factura?</span>
+                          <button class="adm-btn-ghost-sm" (click)="cancelarAnular()" type="button">No</button>
+                          <button class="adm-btn-danger-sm" [disabled]="anulando()" (click)="confirmarAnular(f.id)" type="button">
+                            @if (anulando()) {
+                              <span class="spinner-border spinner-border-sm" style="width:10px;height:10px"></span>
+                            }
+                            Sí
+                          </button>
+                        </div>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+              <tfoot>
+                <tr class="adm-table-total">
+                  <td colspan="5">
+                    {{ facturasFiltradas().length }}
+                    {{ facturasFiltradas().length === 1 ? 'factura' : 'facturas' }}
+                    @if (hayFiltros()) { <span class="adm-table-total-hint">(filtradas)</span> }
+                  </td>
+                  <td class="text-end adm-td-total">{{ totalFiltrado() | number:'1.2-2' }} €</td>
+                  <td colspan="3"></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        }
+
+      } @else if (vista() === 'gestoria') {
+
+        <!-- ── Gestoría ───────────────────────────────────────────────── -->
+        @if (cargandoGestoria()) {
+          <app-estado-carga texto="Cargando entregas…" />
+        } @else {
+
+          <!-- Lo que falta por entregar: la pregunta que antes no tenía respuesta -->
+          @if (pendientes().length) {
+            <div class="adm-gestoria-pendientes">
+              <div class="adm-gestoria-pendientes-cab">
+                <div>
+                  <h6 class="adm-gestoria-titulo">
+                    <i class="bi bi-inbox me-2"></i>Pendiente de entregar
+                  </h6>
+                  <p class="adm-gestoria-sub">
+                    {{ facturasPendientes() }}
+                    {{ facturasPendientes() === 1 ? 'factura' : 'facturas' }} de periodos ya
+                    cerrados, por un total de
+                    <strong>{{ totalPendiente() | number:'1.2-2' }} €</strong>,
+                    que no han salido nunca hacia la gestoría.
+                  </p>
+                </div>
+              </div>
+
+              <div class="adm-table-wrap">
+                <table class="adm-table">
+                  <thead>
+                    <tr>
+                      <th>Periodo</th>
+                      <th class="text-center">Facturas</th>
+                      <th class="text-end">Importe</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (p of pendientes(); track p.periodo) {
+                      <tr>
+                        <td class="adm-td-periodo">{{ periodoLabel(p.periodo) }}</td>
+                        <td class="text-center">{{ p.numFacturas }}</td>
+                        <td class="text-end adm-td-total">{{ p.total | number:'1.2-2' }} €</td>
+                        <td class="text-end">
+                          <button class="adm-btn-ghost-sm" type="button" (click)="abrirEnviar(p)">
+                            <i class="bi bi-send me-1"></i>Preparar envío
+                          </button>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          } @else {
+            <app-estado-vacio
+              icono="bi-check2-circle"
+              titulo="Todo entregado"
+              descripcion="No queda ninguna factura de un periodo cerrado sin enviar a la gestoría." />
+          }
+
+          <!-- Historial: qué se mandó, cuándo y si llegó -->
+          <h6 class="adm-gestoria-titulo mt-4">
+            <i class="bi bi-clock-history me-2"></i>Entregas anteriores
+          </h6>
+
+          @if (!historial().length) {
+            <p class="adm-gestoria-sub">Todavía no se ha enviado ningún paquete.</p>
+          } @else {
+            <div class="adm-table-wrap">
+              <table class="adm-table">
+                <thead>
+                  <tr>
+                    <th>Periodo</th>
+                    <th>Destinatario</th>
+                    <th class="text-center">Facturas</th>
+                    <th class="text-end">Importe</th>
+                    <th>Fecha</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (e of historial(); track e.id) {
+                    <tr>
+                      <td class="adm-td-periodo">
+                        {{ periodoLabel(e.periodoDesde) }}
+                        @if (e.periodoHasta !== e.periodoDesde) {
+                          → {{ periodoLabel(e.periodoHasta) }}
+                        }
+                      </td>
+                      <td>{{ e.emailDestino }}</td>
+                      <td class="text-center">{{ e.numFacturas }}</td>
+                      <td class="text-end adm-td-total">{{ e.totalImporte | number:'1.2-2' }} €</td>
+                      <td class="adm-td-periodo">
+                        {{ (e.fechaEnvio ?? e.createdAt) | date:'dd/MM/yy HH:mm' }}
+                        @if (e.automatico) {
+                          <i class="bi bi-robot ms-1 adm-icon-auto" title="Envío automático"></i>
+                        }
+                      </td>
+                      <td>
+                        <span class="adm-badge adm-badge-{{ e.estado.toLowerCase() }}"
+                          [title]="e.error ?? ''">
+                          {{ estadoEnvioLabel(e.estado) }}
+                        </span>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        }
+
+      } @else {
+
+        <!-- ── Análisis ───────────────────────────────────────────────── -->
+        <div class="adm-charts-grid">
+          <div class="adm-chart-card adm-chart-card--wide">
+            <h6 class="adm-chart-title">
+              <i class="bi bi-graph-up me-2"></i>Evolución mensual {{ filtroAnio() }}
+            </h6>
+            <div class="adm-chart-container">
+              <canvas baseChart type="line" [data]="lineData()" [options]="lineOpts"></canvas>
+            </div>
+          </div>
+
+          <div class="adm-chart-card">
+            <h6 class="adm-chart-title">
+              <i class="bi bi-pie-chart me-2"></i>Por cliente
+            </h6>
+            <div class="adm-chart-container">
+              <canvas baseChart type="doughnut"
+                [data]="donutData()"
+                [options]="donutOpts"
+                [plugins]="donutPlugins">
+              </canvas>
+            </div>
+          </div>
+
+          <div class="adm-chart-card">
+            <h6 class="adm-chart-title">
+              <i class="bi bi-bar-chart me-2"></i>Facturado vs cobrado (últimos 6 meses)
+            </h6>
+            <div class="adm-chart-container">
+              <canvas baseChart type="bar" [data]="barData()" [options]="barOpts"></canvas>
+            </div>
+          </div>
+        </div>
+      }
+    }
+
+  </div>
+</div>
+
+<!-- Modal: Marcar como pagada -->
+@if (modalPagadaId()) {
+  <div class="adm-modal-overlay"
+    (click)="$event.target === $event.currentTarget && cerrarModalPagada()">
+    <div class="adm-modal" role="dialog">
+      <div class="adm-modal-header">
+        <h5 class="adm-modal-title">
+          <i class="bi bi-check-circle-fill me-2"></i>Marcar como pagada
+        </h5>
+        <button class="adm-modal-close" (click)="cerrarModalPagada()" type="button">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <div class="adm-modal-body">
+        @if (errorPagada()) {
+          <div class="adm-alert adm-alert-danger mb-3">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ errorPagada() }}
+          </div>
+        }
+        <div class="adm-field">
+          <label class="adm-label">Fecha de pago *</label>
+          <input type="date" class="adm-input"
+            [ngModel]="fechaPago()"
+            (ngModelChange)="fechaPago.set($event)" />
+        </div>
+        <div class="adm-field">
+          <label class="adm-label">Método de pago <span class="adm-label-opt">(opcional)</span></label>
+          <select class="adm-input"
+            [ngModel]="metodoPago()"
+            (ngModelChange)="metodoPago.set($event)">
+            <option value="">Sin especificar</option>
+            <option value="Bizum">Bizum</option>
+            <option value="Transferencia">Transferencia bancaria</option>
+            <option value="Efectivo">Efectivo</option>
+            <option value="Tarjeta">Tarjeta</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="adm-modal-footer">
+        <button class="adm-btn-ghost" (click)="cerrarModalPagada()" type="button">Cancelar</button>
+        <button class="adm-btn-primary"
+          [disabled]="guardandoPagada() || !fechaPago()"
+          (click)="confirmarPagada()"
+          type="button">
+          @if (guardandoPagada()) {
+            <span class="spinner-border spinner-border-sm me-1" style="width:14px;height:14px"></span>
+          } @else {
+            <i class="bi bi-check-circle me-1"></i>
+          }
+          Confirmar pago
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Modal: generar las facturas de un mes -->
+@if (modalGenerar()) {
+  <div class="adm-modal-overlay"
+    (click)="$event.target === $event.currentTarget && cerrarGenerar()">
+    <div class="adm-modal adm-modal--ancho" role="dialog">
+      <div class="adm-modal-header">
+        <h5 class="adm-modal-title">
+          <i class="bi bi-magic me-2"></i>Generar facturas de un mes
+        </h5>
+        <button class="adm-modal-close" (click)="cerrarGenerar()" type="button">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <div class="adm-modal-body">
+        <p class="adm-modal-desc">
+          Las facturas del mes se generan solas el día 1. Esto sirve para recuperar
+          un mes que no salió, o para adelantar el cierre del mes en curso.
+        </p>
+
+        <div class="adm-filters-row mb-3">
+          <div class="adm-filter-group">
+            <label class="adm-filter-label">Mes</label>
+            <select class="adm-select"
+              [ngModel]="genMes()"
+              (ngModelChange)="genMes.set(+$event); previsualizarGeneracion()">
+              @for (m of meses; track m.value) {
+                <option [value]="m.value">{{ m.label }}</option>
+              }
+            </select>
+          </div>
+          <div class="adm-filter-group">
+            <label class="adm-filter-label">Año</label>
+            <select class="adm-select"
+              [ngModel]="genAnio()"
+              (ngModelChange)="genAnio.set(+$event); previsualizarGeneracion()">
+              @for (a of anios; track a) {
+                <option [value]="a">{{ a }}</option>
+              }
+            </select>
+          </div>
+
+          @if (puedeGenerarGlobal()) {
+            <div class="adm-filter-group">
+              <label class="adm-filter-label">Alcance</label>
+              <select class="adm-select"
+                [ngModel]="genSoloMias()"
+                (ngModelChange)="genSoloMias.set($event === 'true' || $event === true); previsualizarGeneracion()">
+                <option [ngValue]="true">Solo mis contratos</option>
+                <option [ngValue]="false">Todo el gabinete</option>
+              </select>
+            </div>
+          }
+        </div>
+
+        @if (genError()) {
+          <div class="adm-alert adm-alert-danger mb-3">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ genError() }}
+          </div>
+        }
+
+        @if (genCargando()) {
+          <app-estado-carga texto="Consultando el periodo…" />
+        }
+
+        <!-- Previsualización: qué se emitiría, antes de emitir nada -->
+        @if (!genCargando() && genPreview(); as prev) {
+          @if (!prev.aGenerar.length) {
+            <app-estado-vacio
+              icono="bi-check2-circle"
+              titulo="No hay nada que generar"
+              [descripcion]="prev.yaFacturadas
+                ? prev.yaFacturadas + ' contrato(s) de este periodo ya tienen factura.'
+                : 'Ningún contrato estaba vigente en este periodo.'" />
+          } @else {
+            <div class="adm-preview-resumen">
+              Se emitirán <strong>{{ prev.aGenerar.length }}</strong>
+              {{ prev.aGenerar.length === 1 ? 'factura' : 'facturas' }} por un total de
+              <strong>{{ prev.importeTotal | number:'1.2-2' }} €</strong>.
+              @if (prev.yaFacturadas) {
+                <span class="adm-preview-omitidas">
+                  {{ prev.yaFacturadas }} ya {{ prev.yaFacturadas === 1 ? 'tenía' : 'tenían' }}
+                  factura y se {{ prev.yaFacturadas === 1 ? 'omite' : 'omiten' }}.
+                </span>
+              }
+            </div>
+
+            <div class="adm-table-wrap adm-table-wrap--modal">
+              <table class="adm-table">
+                <thead>
+                  <tr>
+                    <th>Cliente</th>
+                    <th>Terapeuta</th>
+                    <th class="text-end">Importe</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (c of prev.aGenerar; track c.contratoId) {
+                    <tr>
+                      <td>{{ c.cliente }}</td>
+                      <td>{{ c.trabajador }}</td>
+                      <td class="text-end adm-td-total">{{ c.importe | number:'1.2-2' }} €</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        }
+
+        <!-- Resultado: qué salió y qué no -->
+        @if (genResultado(); as res) {
+          <div class="adm-alert" [class.adm-alert-success]="!res.fallidas.length"
+               [class.adm-alert-warning]="res.fallidas.length">
+            <i class="bi me-2"
+              [class.bi-check-circle-fill]="!res.fallidas.length"
+              [class.bi-exclamation-triangle-fill]="res.fallidas.length"></i>
+            <strong>{{ res.creadas }}</strong>
+            {{ res.creadas === 1 ? 'factura emitida' : 'facturas emitidas' }}
+            @if (res.omitidas) { · {{ res.omitidas }} ya existían }
+            @if (res.fallidas.length) { · {{ res.fallidas.length }} con error }
+          </div>
+
+          @if (res.fallidas.length) {
+            <ul class="adm-fallos">
+              @for (f of res.fallidas; track f.contratoId) {
+                <li><strong>{{ f.cliente }}</strong> — {{ f.motivo }}</li>
+              }
+            </ul>
+          }
+        }
+      </div>
+
+      <div class="adm-modal-footer">
+        <button class="adm-btn-ghost" (click)="cerrarGenerar()" type="button">
+          {{ genResultado() ? 'Cerrar' : 'Cancelar' }}
+        </button>
+        @if (!genResultado()) {
+          <button class="adm-btn-primary"
+            [disabled]="genCargando() || !genPreview()?.aGenerar?.length"
+            (click)="confirmarGeneracion()"
+            type="button">
+            @if (genCargando()) {
+              <span class="spinner-border spinner-border-sm me-1" style="width:14px;height:14px"></span>
+            } @else {
+              <i class="bi bi-magic me-1"></i>
+            }
+            Emitir facturas
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Modal: previsualizar y enviar el paquete a la gestoría -->
+@if (modalEnviar()) {
+  <div class="adm-modal-overlay"
+    (click)="$event.target === $event.currentTarget && cerrarEnviar()">
+    <div class="adm-modal adm-modal--ancho" role="dialog">
+      <div class="adm-modal-header">
+        <h5 class="adm-modal-title">
+          <i class="bi bi-send me-2"></i>Enviar a la gestoría
+        </h5>
+        <button class="adm-modal-close" (click)="cerrarEnviar()" type="button">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <div class="adm-modal-body">
+        @if (envioError()) {
+          <div class="adm-alert adm-alert-danger mb-3">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ envioError() }}
+          </div>
+        }
+
+        @if (enviando() && !envioPreview() && !envioHecho()) {
+          <app-estado-carga texto="Preparando el paquete…" />
+        }
+
+        <!-- Previsualización: a quién, qué periodo y qué ficheros exactamente -->
+        @if (envioPreview(); as prev) {
+          <dl class="adm-envio-datos">
+            <dt>Destinatario</dt>
+            <dd>
+              @if (prev.destinatario.email) {
+                {{ prev.destinatario.nombre || 'Gestoría' }}
+                <span class="adm-envio-email">&lt;{{ prev.destinatario.email }}&gt;</span>
+              } @else {
+                <span class="adm-envio-falta">
+                  Sin configurar — añádelo en
+                  <a routerLink="/home/administracion/datos-fiscales">Mis datos fiscales</a>
+                </span>
+              }
+            </dd>
+
+            <dt>Periodo</dt>
+            <dd>
+              {{ periodoLabel(prev.periodoDesde) }}
+              @if (prev.periodoHasta !== prev.periodoDesde) {
+                → {{ periodoLabel(prev.periodoHasta) }}
+              }
+            </dd>
+
+            <dt>Contenido</dt>
+            <dd>
+              {{ prev.numFacturas }}
+              {{ prev.numFacturas === 1 ? 'factura' : 'facturas' }} ·
+              <strong>{{ prev.totalImporte | number:'1.2-2' }} €</strong>
+            </dd>
+          </dl>
+
+          @if (prev.yaEntregadas) {
+            <div class="adm-alert adm-alert-warning">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>
+              {{ prev.yaEntregadas }} de estas facturas ya
+              {{ prev.yaEntregadas === 1 ? 'se entregó' : 'se entregaron' }} en un envío
+              anterior. Se volverán a enviar.
+            </div>
+          }
+
+          @if (!prev.emailConfigurado) {
+            <div class="adm-alert adm-alert-warning">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>
+              El servicio de email todavía no está configurado en este entorno. Puedes
+              descargar el paquete y mandarlo tú mientras tanto.
+            </div>
+          }
+
+          <p class="adm-envio-ficheros-cab">
+            <i class="bi bi-file-earmark-zip me-1"></i>
+            <code>{{ prev.filename }}</code> — {{ prev.ficheros.length }} ficheros
+          </p>
+          <ul class="adm-envio-ficheros">
+            @for (f of prev.ficheros; track f) {
+              <li>{{ f }}</li>
+            }
+          </ul>
+        }
+
+        <!-- Resultado -->
+        @if (envioHecho(); as envio) {
+          <div class="adm-alert"
+            [class.adm-alert-success]="envio.estado === 'ENVIADO'"
+            [class.adm-alert-warning]="envio.estado !== 'ENVIADO'">
+            <i class="bi me-2"
+              [class.bi-check-circle-fill]="envio.estado === 'ENVIADO'"
+              [class.bi-exclamation-triangle-fill]="envio.estado !== 'ENVIADO'"></i>
+            @if (envio.estado === 'ENVIADO') {
+              Paquete enviado a <strong>{{ envio.emailDestino }}</strong> con
+              {{ envio.numFacturas }}
+              {{ envio.numFacturas === 1 ? 'factura' : 'facturas' }}.
+            } @else {
+              El envío quedó registrado pero no llegó a salir. Queda en el historial
+              como pendiente para poder reintentarlo.
+            }
+          </div>
+        }
+      </div>
+
+      <div class="adm-modal-footer">
+        <button class="adm-btn-ghost" (click)="cerrarEnviar()" type="button">
+          {{ envioHecho() ? 'Cerrar' : 'Cancelar' }}
+        </button>
+        @if (!envioHecho()) {
+          <button class="adm-btn-primary"
+            [disabled]="enviando() || !envioPreview()?.listoParaEnviar"
+            (click)="confirmarEnvio()"
+            type="button">
+            @if (enviando()) {
+              <span class="spinner-border spinner-border-sm me-1" style="width:14px;height:14px"></span>
+            } @else {
+              <i class="bi bi-send me-1"></i>
+            }
+            Enviar paquete
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+}

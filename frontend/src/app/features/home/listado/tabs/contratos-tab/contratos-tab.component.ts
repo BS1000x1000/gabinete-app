@@ -12,8 +12,8 @@ import { finalize } from 'rxjs';
 import { ContratosService } from '../../../../../services/contratos.service';
 import { TrabajadorService } from '../../../../../services/trabajadores.service';
 import { AuthService } from '../../../../../services/auth.service';
-import { ContratoServicio, CreateContratoPayload, SlotPayload, ModalidadSlot, PreviewReplanificacion, DIAS, TIPO_COLOR, ESTADO_CONTRATO_LABEL } from '../../../../../interface/contrato.interface';
-import { TipoSesion, TIPO_SESION_LABELS } from '../../../../../interface/sesion.interface';
+import { ContratoServicio, CreateContratoPayload, SlotPayload, ModalidadSlot, PreviewReplanificacion, diaLabel, tipoLabel, tipoColor, tipoBg, estadoContratoLabel } from '../../../../../interface/contrato.interface';
+import { TipoSesion } from '../../../../../interface/sesion.interface';
 
 interface SlotForm {
   diaSemana:       number | '';
@@ -692,7 +692,7 @@ export class ContratosTabComponent implements OnInit {
     const dias = c.slots
       .slice()
       .sort((a, b) => a.diaSemana - b.diaSemana)
-      .map(s => DIAS[s.diaSemana]?.slice(0, 3) ?? '');
+      .map(s => diaLabel(s.diaSemana).slice(0, 3));
 
     const horas = [...new Set(c.slots.map(s => s.horaInicio))];
     const listaDias =
@@ -952,11 +952,11 @@ export class ContratosTabComponent implements OnInit {
     return c.trabajadorId === this.auth.currentTrabajadorId() && c.estado === 'ACTIVO';
   }
 
-  diaLabel(n: number): string    { return DIAS[n] ?? ''; }
-  tipoLabel(t: string): string   { return TIPO_SESION_LABELS[t as TipoSesion] ?? t; }
-  tipoColor(t: string): string   { return TIPO_COLOR[t] ?? '#6b7280'; }
-  tipoBg(t: string): string      { return (TIPO_COLOR[t] ?? '#6b7280') + '18'; }
-  estadoLabel(e: string): string { return ESTADO_CONTRATO_LABEL[e as keyof typeof ESTADO_CONTRATO_LABEL] ?? e; }
+  readonly diaLabel    = diaLabel;
+  readonly tipoLabel   = tipoLabel;
+  readonly tipoColor   = tipoColor;
+  readonly tipoBg      = tipoBg;
+  readonly estadoLabel = estadoContratoLabel;
 }
 
 export default ContratosTabComponent;

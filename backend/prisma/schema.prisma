@@ -56,6 +56,12 @@ model Trabajador {
   retencionIrpf      Decimal? @map("retencion_irpf") @db.Decimal(4, 2)
   emailFacturacion   String?  @map("email_facturacion")
 
+  /// Gestoria de este autonomo. Va por trabajador y no por gabinete: cada uno
+  /// tiene su circuito fiscal y puede tener su propio asesor.
+  nombreGestoria       String?            @map("nombre_gestoria")
+  emailGestoria        String?            @map("email_gestoria")
+  periodicidadGestoria PeriodicidadEnvio  @default(NINGUNA) @map("periodicidad_gestoria")
+
   // Datos profesionales que aparecen en el contrato y los consentimientos.
   // Van por trabajador porque cada terapeuta es autonoma independiente: su
   // colegio, su numero de colegiada y su poliza son suyos, no del gabinete.
@@ -83,6 +89,7 @@ model Trabajador {
   contadorFacturas    ContadorFactura[]
   documentosSubidos   DocumentoCliente[]   @relation("DocumentosSubidos")
   horarioLaboral      HorarioLaboral[]
+  enviosGestoria      EnvioGestoria[]
 
   @@map("trabajadores")
 }
@@ -272,10 +279,11 @@ model Familiar {
   /// para esto: nace en true para todos y significa "a quien se llama primero".
   esTutorLegal        Boolean @default(false) @map("es_tutor_legal")
 
-  clienteId           String               @map("id_cliente")
-  cliente             Cliente              @relation(fields: [clienteId], references: [id])
-  bonos               Bono[]
-  consentimientosRgpd ConsentimientoRgpd[]
+  clienteId            String                   @map("id_cliente")
+  cliente              Cliente                  @relation(fields: [clienteId], references: [id])
+  bonos                Bono[]
+  /// Consentimientos que ha firmado, como tutor legal del menor.
+  firmasConsentimiento ConsentimientoFirmante[]
 
   createdAt DateTime @default(now()) @map("fecha_creacion")
   updatedAt DateTime @updatedAt @map("ultima_actualizacion")
@@ -714,6 +722,7 @@ enum TipoNotificacion {
   SESION_SIN_BONO
   CONSENTIMIENTO_RGPD_PENDIENTE
   SIN_REGISTROS_RECIENTES
+  FACTURAS_SIN_ENTREGAR
 }
 
 enum PrioridadNotif {
@@ -794,16 +803,32 @@ model ConsentimientoRgpd {
   documentoId String?           @unique @map("id_documento")
   documento   DocumentoCliente? @relation(fields: [documentoId], references: [id], onDelete: SetNull)
 
+  /// Quien firma. Son varios a proposito: con dos titulares de la patria
+  /// potestad lo normal es que firmen ambos, y el documento tiene dos bloques
+  /// de representante legal.
+  firmantes ConsentimientoFirmante[]
+
   clienteId    String     @map("id_cliente")
   cliente      Cliente    @relation(fields: [clienteId], references: [id])
-  familiarId   String     @map("id_familiar") // tutor legal que consiente
-  familiar     Familiar   @relation(fields: [familiarId], references: [id])
   trabajadorId String     @map("id_trabajador") // quien lo registra en la app
   trabajador   Trabajador @relation(fields: [trabajadorId], references: [id])
 
   @@index([clienteId])
   @@index([clienteId, fechaRegistro])
   @@map("consentimientos_rgpd")
+}
+
+/// Cada tutor legal que suscribe un consentimiento. Uno cuando solo hay un
+/// titular de la patria potestad; los dos cuando los hay.
+model ConsentimientoFirmante {
+  consentimientoId String             @map("id_consentimiento")
+  consentimiento   ConsentimientoRgpd @relation(fields: [consentimientoId], references: [id], onDelete: Cascade)
+  familiarId       String             @map("id_familiar")
+  familiar         Familiar           @relation(fields: [familiarId], references: [id])
+
+  @@id([consentimientoId, familiarId])
+  @@index([familiarId])
+  @@map("consentimiento_firmantes")
 }
 
 // ============================================================
@@ -1064,12 +1089,15 @@ model Factura {
   trabajador Trabajador        @relation("FacturasEmitidas", fields: [trabajadorId], references: [id])
   cliente    Cliente           @relation("FacturasRecibidas", fields: [clienteId], references: [id])
   contrato   ContratoServicio? @relation(fields: [contratoId], references: [id])
+  entregas   EnvioGestoriaFactura[]
 
   @@unique([trabajadorId, anio, numero])
   @@unique([contratoId, periodoFacturado])
   @@index([trabajadorId, anio])
   @@index([clienteId])
   @@index([estado])
+  /// Los packs para la gestoria y la generacion por periodo filtran por aqui.
+  @@index([periodoFacturado])
   @@map("facturas")
 }
 
@@ -1082,6 +1110,73 @@ model ContadorFactura {
 
   @@id([trabajadorId, anio])
   @@map("contador_facturas")
+}
+
+// ============================================================
+// ENTREGA A LA GESTORIA
+// ============================================================
+
+enum PeriodicidadEnvio {
+  NINGUNA
+  MENSUAL
+  TRIMESTRAL
+}
+
+enum EstadoEnvioGestoria {
+  /// Preparado pero sin salir: el email no estaba configurado o fallo el envio.
+  PENDIENTE
+  ENVIADO
+  ERROR
+}
+
+/// Una entrega de facturas a la gestoria de un autonomo.
+///
+/// Existe para responder a dos preguntas que antes no tenian respuesta: "?ya
+/// mande el 3T?" y "?que facturas quedan por entregar?". Sin esto la unica
+/// forma de saberlo era mirar la bandeja de enviados.
+model EnvioGestoria {
+  id           String @id @default(uuid())
+  trabajadorId String @map("id_trabajador")
+
+  /// Periodos facturados que cubre, inclusive: "2026-07".."2026-09".
+  periodoDesde String @map("periodo_desde")
+  periodoHasta String @map("periodo_hasta")
+
+  emailDestino String  @map("email_destino")
+  numFacturas  Int     @map("num_facturas")
+  totalImporte Decimal @map("total_importe") @db.Decimal(10, 2)
+
+  /// Clave del ZIP archivado en Object Storage, para poder re-descargar lo que
+  /// se mando exactamente, no una reconstruccion parecida.
+  storageKey String? @map("storage_key")
+
+  estado     EstadoEnvioGestoria @default(PENDIENTE)
+  error      String?             @db.Text
+  /// `true` cuando lo lanzo el cron, `false` cuando lo mando una persona.
+  automatico Boolean             @default(false)
+  fechaEnvio DateTime?           @map("fecha_envio")
+  createdAt  DateTime            @default(now()) @map("fecha_creacion")
+
+  trabajador Trabajador             @relation(fields: [trabajadorId], references: [id])
+  facturas   EnvioGestoriaFactura[]
+
+  @@index([trabajadorId])
+  @@index([estado])
+  @@map("envios_gestoria")
+}
+
+/// Que facturas concretas iban en cada entrega. Tabla puente en vez de una lista
+/// de ids para poder preguntar por el otro lado: "?esta factura ya se entrego?".
+model EnvioGestoriaFactura {
+  envioId   String @map("id_envio")
+  facturaId String @map("id_factura")
+
+  envio   EnvioGestoria @relation(fields: [envioId], references: [id], onDelete: Cascade)
+  factura Factura       @relation(fields: [facturaId], references: [id], onDelete: Cascade)
+
+  @@id([envioId, facturaId])
+  @@index([facturaId])
+  @@map("envios_gestoria_facturas")
 }
 
 // ============================================================

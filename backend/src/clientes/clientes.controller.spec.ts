@@ -62,7 +62,7 @@ describe('ClientesController', () => {
             registrar: jest.fn(),
             revocar: jest.fn(),
             historico: jest.fn(),
-            assertTutorLegal: jest.fn(),
+            assertTutoresLegales: jest.fn(),
           },
         },
         { provide: DocumentosService, useValue: { create: jest.fn() } },

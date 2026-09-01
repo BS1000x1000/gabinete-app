@@ -8,7 +8,7 @@ import { NotificacionesService } from '../notificaciones/notificaciones.service'
 const USER = { userId: 'trab-1', rol: 'ADMIN' };
 
 const REGISTRO = {
-  familiarId: 'fam-1',
+  firmanteIds: ['fam-1', 'fam-2'],
   versionTexto: 'consentimiento-datos-v1-2026-09',
   documentoId: 'doc-1',
   autorizaInformesTerceros: true,
@@ -33,12 +33,21 @@ describe('ConsentimientosService', () => {
         update: jest.fn().mockResolvedValue({}),
       },
       familiar: {
-        findFirst: jest.fn().mockResolvedValue({
-          id: 'fam-1',
-          esTutorLegal: true,
-          nombre: 'Madre',
-          apellidos: 'Uno',
-        }),
+        findMany: jest.fn().mockResolvedValue([
+          {
+            id: 'fam-1',
+            esTutorLegal: true,
+            nombre: 'Madre',
+            apellidos: 'Uno',
+          },
+          {
+            id: 'fam-2',
+            esTutorLegal: true,
+            nombre: 'Padre',
+            apellidos: 'Dos',
+          },
+        ]),
+        count: jest.fn().mockResolvedValue(2),
       },
       documentoCliente: {
         findFirst: jest.fn().mockResolvedValue({ id: 'doc-1' }),
@@ -75,8 +84,10 @@ describe('ConsentimientosService', () => {
         expect.objectContaining({
           data: expect.objectContaining({
             clienteId: 'cliente-1',
-            familiarId: 'fam-1',
             trabajadorId: 'trab-1',
+            firmantes: {
+              create: [{ familiarId: 'fam-1' }, { familiarId: 'fam-2' }],
+            },
             aceptado: true,
             documentoId: 'doc-1',
             versionTexto: 'consentimiento-datos-v1-2026-09',
@@ -114,18 +125,70 @@ describe('ConsentimientosService', () => {
       );
     });
 
-    it('rechaza a un familiar que no es tutor legal', async () => {
-      prisma.familiar.findFirst.mockResolvedValue({
-        id: 'fam-2',
-        esTutorLegal: false,
-        nombre: 'Abuela',
-        apellidos: 'Dos',
-      });
+    it('acepta que firme uno solo cuando solo hay un tutor legal', async () => {
+      prisma.familiar.findMany.mockResolvedValue([
+        { id: 'fam-1', esTutorLegal: true, nombre: 'Madre', apellidos: 'Uno' },
+      ]);
+
+      await service.registrar(
+        'cliente-1',
+        { ...REGISTRO, firmanteIds: ['fam-1'] },
+        USER,
+      );
+
+      expect(prisma.consentimientoRgpd.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            firmantes: { create: [{ familiarId: 'fam-1' }] },
+          }),
+        }),
+      );
+    });
+
+    it('no duplica si el mismo firmante llega dos veces', async () => {
+      prisma.familiar.findMany.mockResolvedValue([
+        { id: 'fam-1', esTutorLegal: true, nombre: 'Madre', apellidos: 'Uno' },
+      ]);
+
+      // Sin deduplicar, la clave primaria compuesta reventaria.
+      await service.registrar(
+        'cliente-1',
+        { ...REGISTRO, firmanteIds: ['fam-1', 'fam-1'] },
+        USER,
+      );
+
+      expect(prisma.consentimientoRgpd.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            firmantes: { create: [{ familiarId: 'fam-1' }] },
+          }),
+        }),
+      );
+    });
+
+    it('rechaza si no se indica ningun firmante', async () => {
+      await expect(
+        service.registrar('cliente-1', { ...REGISTRO, firmanteIds: [] }, USER),
+      ).rejects.toBeInstanceOf(BadRequestException);
+
+      expect(prisma.consentimientoRgpd.create).not.toHaveBeenCalled();
+    });
+
+    it('rechaza si alguno de los firmantes no es tutor legal', async () => {
+      prisma.familiar.findMany.mockResolvedValue([
+        { id: 'fam-1', esTutorLegal: true, nombre: 'Madre', apellidos: 'Uno' },
+        {
+          id: 'fam-3',
+          esTutorLegal: false,
+          nombre: 'Abuela',
+          apellidos: 'Tres',
+        },
+      ]);
 
       await expect(
         service.registrar(
           'cliente-1',
-          { ...REGISTRO, familiarId: 'fam-2' },
+          { ...REGISTRO, firmanteIds: ['fam-1', 'fam-3'] },
           USER,
         ),
       ).rejects.toBeInstanceOf(BadRequestException);
@@ -134,7 +197,11 @@ describe('ConsentimientosService', () => {
     });
 
     it('rechaza a un familiar de otro cliente', async () => {
-      prisma.familiar.findFirst.mockResolvedValue(null);
+      // La consulta filtra por clienteId: el que no es suyo no sale, y
+      // entonces faltan firmantes respecto a los pedidos.
+      prisma.familiar.findMany.mockResolvedValue([
+        { id: 'fam-1', esTutorLegal: true, nombre: 'Madre', apellidos: 'Uno' },
+      ]);
 
       await expect(
         service.registrar('cliente-1', REGISTRO, USER),
@@ -163,8 +230,8 @@ describe('ConsentimientosService', () => {
       prisma.consentimientoRgpd.findFirst.mockResolvedValue({
         id: 'cons-1',
         aceptado: true,
-        familiarId: 'fam-1',
         versionTexto: 'v-firmada',
+        firmantes: [{ familiarId: 'fam-1' }, { familiarId: 'fam-2' }],
       });
 
       await service.revocar('cliente-1', 'la familia lo solicita', USER);
@@ -173,7 +240,10 @@ describe('ConsentimientosService', () => {
         expect.objectContaining({
           data: expect.objectContaining({
             aceptado: false,
-            familiarId: 'fam-1',
+            // Se retira a los dos que lo otorgaron, no a uno elegido fuera.
+            firmantes: {
+              create: [{ familiarId: 'fam-1' }, { familiarId: 'fam-2' }],
+            },
             versionTexto: 'v-firmada',
             motivoRegistroManual: 'la familia lo solicita',
           }),
@@ -190,8 +260,8 @@ describe('ConsentimientosService', () => {
       prisma.consentimientoRgpd.findFirst.mockResolvedValue({
         id: 'cons-1',
         aceptado: true,
-        familiarId: 'fam-1',
         versionTexto: 'v-firmada',
+        firmantes: [{ familiarId: 'fam-1' }],
       });
 
       await service.revocar('cliente-1', 'motivo suficiente', USER);
@@ -217,8 +287,8 @@ describe('ConsentimientosService', () => {
       prisma.consentimientoRgpd.findFirst.mockResolvedValue({
         id: 'cons-2',
         aceptado: false,
-        familiarId: 'fam-1',
         versionTexto: 'v-firmada',
+        firmantes: [{ familiarId: 'fam-1' }],
       });
 
       await expect(

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   Logger,
@@ -12,43 +13,62 @@ import { MarcarPagadaDto } from './dto/marcar-pagada.dto';
 import { CrearFacturaPuntualDto } from './dto/crear-factura-puntual.dto';
 import { toNum } from './facturas.utils';
 import { EmailService } from '../common/email/email.service';
+import { AuditService } from '../auth/audit.service';
+import { facturaInclude, FacturaCompleta } from './facturas.include';
 
 const EXENCION_IVA = 'Exenta de IVA conforme al Art. 20.1.3 LIVA';
 
-const facturaInclude = {
-  trabajador: {
-    select: {
-      id: true,
-      nombre: true,
-      apellidos: true,
-      nombreFiscal: true,
-      nifFiscal: true,
-      direccionFiscal: true,
-      codigoPostalFiscal: true,
-      ciudadFiscal: true,
-      provinciaFiscal: true,
-      iban: true,
-      emailFacturacion: true,
-      email: true,
-    },
-  },
-  cliente: {
-    select: {
-      id: true,
-      nombre: true,
-      apellidos: true,
-      nifTutorPagador: true,
-      nombreTutorPagador: true,
-      direccionFiscalTutor: true,
-      codigoPostalTutor: true,
-      ciudadTutor: true,
-      emailFacturacion: true,
-    },
-  },
-  contrato: { select: { id: true, tipoSesion: true } },
-} satisfies Prisma.FacturaInclude;
+/**
+ * Cuantos PDF se generan a la vez. Cada uno levanta su propio Chromium, asi que
+ * el numero sale de la memoria del contenedor (0,5 vCPU / 2 GB), no de la prisa.
+ */
+const CONCURRENCIA_PDF = 3;
 
-type FacturaCompleta = Prisma.FacturaGetPayload<{ include: typeof facturaInclude }>;
+export interface ContratoAFacturar {
+  contratoId: string;
+  cliente: string;
+  trabajador: string;
+  tipoSesion: string;
+  importe: number;
+}
+
+export interface PreviewGeneracion {
+  periodo: string;
+  aGenerar: ContratoAFacturar[];
+  /** Contratos del periodo que ya tienen factura: no se tocan. */
+  yaFacturadas: number;
+  importeTotal: number;
+}
+
+export interface FalloGeneracion {
+  contratoId: string;
+  cliente: string;
+  motivo: string;
+}
+
+export interface ResultadoGeneracion {
+  periodo: string;
+  creadas: number;
+  omitidas: number;
+  fallidas: FalloGeneracion[];
+}
+
+/**
+ * Retencion de IRPF aplicada a las facturas que emite la app.
+ *
+ * Siempre 0: el receptor es el tutor pagador, un particular, y un particular no
+ * practica retencion — solo retienen empresarios, profesionales y entidades. Lo
+ * dice el propio diseno del hito R ("la retencion no aplica a familias
+ * particulares; el campo se deja por flexibilidad"), pero el codigo venia
+ * restando `Trabajador.retencionIrpf` sin mirar a quien facturaba, asi que una
+ * ficha con retencion configurada emitia facturas por debajo de lo que se cobra.
+ *
+ * Las columnas `retencionPorcentaje` / `retencionImporte` de `Factura` y el campo
+ * `Trabajador.retencionIrpf` se conservan para el dia que haya un receptor
+ * empresa; ese dia esto pasa a depender del tipo de receptor, no a desaparecer.
+ */
+const RETENCION_IRPF_PARTICULARES = 0;
+
 
 @Injectable()
 export class FacturasService {
@@ -59,6 +79,7 @@ export class FacturasService {
     private readonly r2: StorageService,
     private readonly pdfService: FacturasPdfService,
     private readonly emailService: EmailService,
+    private readonly audit: AuditService,
   ) {}
 
   async asignarNumeroCorrelativo(
@@ -77,15 +98,26 @@ export class FacturasService {
     };
   }
 
-  async generarFacturasMes(anio: number, mes: number): Promise<number> {
-    const primerDia = new Date(anio, mes - 1, 1);
-    const ultimoDia = new Date(anio, mes, 0, 23, 59, 59);
-
-    const contratosActivos = await this.prisma.contratoServicio.findMany({
+  /**
+   * Contratos que deben facturarse en un periodo.
+   *
+   * `FINALIZADO` entra a propósito: el estado se evalúa hoy, no en el mes pedido,
+   * así que filtrar solo por `ACTIVO` hacía imposible recuperar un mes pasado de
+   * un cliente que ya causó baja — la factura de marzo de quien se fue en junio
+   * no se podía emitir nunca. La ventana de fechas es la que decide de verdad si
+   * el contrato estaba vivo en ese periodo. `SUSPENDIDO` y `BORRADOR` no facturan.
+   */
+  private async contratosDelPeriodo(
+    primerDia: Date,
+    ultimoDia: Date,
+    trabajadorId?: string,
+  ) {
+    return this.prisma.contratoServicio.findMany({
       where: {
-        estado: EstadoContrato.ACTIVO,
+        estado: { in: [EstadoContrato.ACTIVO, EstadoContrato.FINALIZADO] },
         fechaInicio: { lte: ultimoDia },
         OR: [{ fechaFin: null }, { fechaFin: { gte: primerDia } }],
+        ...(trabajadorId && { trabajadorId }),
       },
       include: {
         trabajador: {
@@ -102,40 +134,210 @@ export class FacturasService {
           select: { id: true, nombre: true, apellidos: true },
         },
       },
+      orderBy: { createdAt: 'asc' },
     });
+  }
 
+  /** Rechaza periodos que aún no han empezado. */
+  private assertPeriodoNoFuturo(anio: number, mes: number): void {
+    const hoy = new Date();
+    const periodoPedido = anio * 12 + mes;
+    const periodoActual = hoy.getFullYear() * 12 + (hoy.getMonth() + 1);
+    if (periodoPedido > periodoActual) {
+      throw new BadRequestException(
+        'No se pueden generar facturas de un periodo futuro: consumiría números ' +
+          'de una serie correlativa que todavía no ha empezado.',
+      );
+    }
+  }
+
+  /**
+   * Qué pasaría si se generase ese periodo, sin escribir nada. Es lo que ve el
+   * usuario antes de confirmar: hasta ahora el botón era ciego.
+   */
+  async previsualizarGeneracionMes(
+    anio: number,
+    mes: number,
+    opts?: { trabajadorId?: string },
+  ): Promise<PreviewGeneracion> {
+    this.assertPeriodoNoFuturo(anio, mes);
+
+    const primerDia = new Date(anio, mes - 1, 1);
+    const ultimoDia = new Date(anio, mes, 0, 23, 59, 59);
+    const periodoFacturado = this.formatPeriodo(anio, mes);
+
+    const contratos = await this.contratosDelPeriodo(primerDia, ultimoDia, opts?.trabajadorId);
+    const yaFacturados = await this.contratosYaFacturados(periodoFacturado, contratos);
+
+    const aGenerar = contratos
+      .filter((c) => !yaFacturados.has(c.id))
+      .map((c) => ({
+        contratoId: c.id,
+        cliente: `${c.cliente.nombre} ${c.cliente.apellidos}`,
+        trabajador: `${c.trabajador.nombre} ${c.trabajador.apellidos}`,
+        tipoSesion: c.tipoSesion as string,
+        importe: toNum(c.cuotaMensual),
+      }));
+
+    return {
+      periodo: periodoFacturado,
+      aGenerar,
+      yaFacturadas: contratos.length - aGenerar.length,
+      importeTotal: aGenerar.reduce((s, c) => s + c.importe, 0),
+    };
+  }
+
+  private async contratosYaFacturados(
+    periodoFacturado: string,
+    contratos: { id: string }[],
+  ): Promise<Set<string>> {
+    if (!contratos.length) return new Set();
+    const existentes = await this.prisma.factura.findMany({
+      where: {
+        periodoFacturado,
+        contratoId: { in: contratos.map((c) => c.id) },
+      },
+      select: { contratoId: true },
+    });
+    return new Set(existentes.map((f) => f.contratoId).filter((id): id is string => id !== null));
+  }
+
+  /**
+   * Genera las facturas de un periodo. Idempotente: la unicidad
+   * `(contratoId, periodoFacturado)` de la BD es la garantía real, la consulta
+   * previa solo evita el trabajo.
+   *
+   * @param opts.trabajadorId  Limita la generación a un autónomo. Cada terapeuta
+   *   genera las suyas; sin este campo se genera para todo el gabinete (cron y
+   *   palanca manual del ADMIN).
+   */
+  async generarFacturasMes(
+    anio: number,
+    mes: number,
+    opts?: { trabajadorId?: string; user?: { userId: string } },
+  ): Promise<ResultadoGeneracion> {
+    this.assertPeriodoNoFuturo(anio, mes);
+
+    const primerDia = new Date(anio, mes - 1, 1);
+    const ultimoDia = new Date(anio, mes, 0, 23, 59, 59);
     const periodoFacturado = this.formatPeriodo(anio, mes);
     const mesNombre = new Date(anio, mes - 1, 1).toLocaleDateString('es-ES', {
       month: 'long',
       year: 'numeric',
     });
 
-    // Pre-load all existing facturas for this period in one query to avoid N+1
-    const facturasExistentes = await this.prisma.factura.findMany({
-      where: {
-        periodoFacturado,
-        contratoId: { in: contratosActivos.map((c) => c.id) },
-      },
-      select: { contratoId: true },
-    });
-    const yaFacturados = new Set(facturasExistentes.map((f) => f.contratoId));
+    const contratos = await this.contratosDelPeriodo(primerDia, ultimoDia, opts?.trabajadorId);
+    const yaFacturados = await this.contratosYaFacturados(periodoFacturado, contratos);
 
-    let creadas = 0;
-    for (const contrato of contratosActivos) {
-      if (yaFacturados.has(contrato.id)) continue;
+    const pendientes = contratos.filter((c) => !yaFacturados.has(c.id));
+    const fallidas: FalloGeneracion[] = [];
+    const nuevas: FacturaCompleta[] = [];
 
+    for (const contrato of pendientes) {
       try {
-        await this.crearFacturaDesdeContrato(contrato, anio, mesNombre, periodoFacturado);
-        creadas++;
-      } catch (err) {
+        nuevas.push(
+          await this.crearFacturaDesdeContrato(contrato, mesNombre, periodoFacturado),
+        );
+      } catch (err: any) {
+        // El fallo se recoge en vez de perderse en el log: quien lanza la
+        // generación tiene que ver qué no salió, no solo cuántas salieron.
+        fallidas.push({
+          contratoId: contrato.id,
+          cliente: `${contrato.cliente.nombre} ${contrato.cliente.apellidos}`,
+          motivo: err?.message ?? String(err),
+        });
         this.logger.error(
           `Error generando factura contrato ${contrato.id} para ${periodoFacturado}: ${err}`,
         );
       }
     }
 
-    this.logger.log(`Mes ${periodoFacturado}: ${creadas} facturas creadas`);
-    return creadas;
+    // El PDF se archiva DESPUÉS de crear todas las filas y con la concurrencia
+    // acotada: antes iba disparado dentro del bucle, así que un mes de 40
+    // contratos abría 40 Chromium a la vez.
+    await this.archivarPdfsEnLote(nuevas);
+
+    const resultado: ResultadoGeneracion = {
+      periodo: periodoFacturado,
+      creadas: nuevas.length,
+      omitidas: contratos.length - pendientes.length,
+      fallidas,
+    };
+
+    this.logger.log(
+      `Mes ${periodoFacturado}: ${resultado.creadas} creadas, ` +
+        `${resultado.omitidas} omitidas, ${fallidas.length} fallidas`,
+    );
+
+    await this.audit.registrar({
+      evento: 'FACTURA_GENERACION',
+      userId: opts?.user?.userId,
+      recurso: periodoFacturado,
+      metadata: {
+        creadas: resultado.creadas,
+        omitidas: resultado.omitidas,
+        fallidas: fallidas.length,
+        alcance: opts?.trabajadorId ?? 'gabinete',
+        origen: opts?.user ? 'manual' : 'cron',
+      },
+    });
+
+    return resultado;
+  }
+
+  /**
+   * Archiva N PDFs con un tope de trabajos en vuelo. Cada `generarPdf` levanta
+   * un Chromium propio, así que sin tope un mes grande se lleva por delante la
+   * memoria del contenedor.
+   */
+  private async archivarPdfsEnLote(facturas: FacturaCompleta[]): Promise<void> {
+    if (!facturas.length || !this.r2.isConfigured) return;
+
+    const cola = [...facturas];
+    const trabajadores = Array.from(
+      { length: Math.min(CONCURRENCIA_PDF, cola.length) },
+      async () => {
+        for (let factura = cola.shift(); factura; factura = cola.shift()) {
+          try {
+            await this.archivarPdfEnR2(factura);
+          } catch (err) {
+            // No corta la generación: la factura existe y el cron de
+            // reconciliación reintentará el PDF.
+            this.logger.error(`Error archivando PDF factura ${factura.id}: ${err}`);
+          }
+        }
+      },
+    );
+    await Promise.all(trabajadores);
+  }
+
+  /**
+   * Reintenta el archivado de las facturas que se quedaron sin PDF.
+   *
+   * Sin esto, un fallo puntual de Puppeteer dejaba `urlPdfR2 = null` para
+   * siempre, y como `enviarEmailsPendientes` filtra por `urlPdfR2: { not: null }`
+   * esa factura no se enviaba nunca y nadie se enteraba.
+   */
+  async reconciliarPdfsPendientes(limite = 50): Promise<number> {
+    if (!this.r2.isConfigured) return 0;
+
+    const pendientes = await this.prisma.factura.findMany({
+      where: { urlPdfR2: null, estado: { not: EstadoFactura.ANULADA } },
+      include: facturaInclude,
+      orderBy: { createdAt: 'asc' },
+      take: limite,
+    });
+    if (!pendientes.length) return 0;
+
+    await this.archivarPdfsEnLote(pendientes);
+
+    const recuperadas = await this.prisma.factura.count({
+      where: { id: { in: pendientes.map((f) => f.id) }, urlPdfR2: { not: null } },
+    });
+    this.logger.log(
+      `Reconciliación PDFs: ${recuperadas}/${pendientes.length} archivadas`,
+    );
+    return recuperadas;
   }
 
   private async crearFacturaDesdeContrato(
@@ -147,31 +349,37 @@ export class FacturasService {
       tipoSesion: string;
       trabajador: { retencionIrpf: { toNumber: () => number } | null | number };
     },
-    anio: number,
     mesNombre: string,
     periodoFacturado: string,
-  ): Promise<void> {
+  ): Promise<FacturaCompleta> {
     const importe = toNum(contrato.cuotaMensual);
-    const retencionPct = toNum(contrato.trabajador.retencionIrpf);
+    const retencionPct = RETENCION_IRPF_PARTICULARES;
     const retencionImporte = (importe * retencionPct) / 100;
     const total = importe - retencionImporte;
     const concepto = `Cuota mensual de ${contrato.tipoSesion.toLowerCase()} — ${mesNombre}`;
+
+    // La serie correlativa es la del año en que se EXPIDE, no la del periodo que
+    // se factura. Numerar por el año del periodo hacía que recuperar 2025-03
+    // durante 2026 cogiera el siguiente hueco libre de la serie 2025 y lo
+    // estampara con fecha de hoy: un 47/2025 expedido después del 52/2025.
+    const fechaEmision = new Date();
+    const anioSerie = fechaEmision.getFullYear();
 
     const factura = await this.prisma.$transaction(async (tx) => {
       const { numero, numeroFormateado } = await this.asignarNumeroCorrelativo(
         tx,
         contrato.trabajadorId,
-        anio,
+        anioSerie,
       );
       return tx.factura.create({
         data: {
           numero,
           numeroFormateado,
-          anio,
+          anio: anioSerie,
           trabajadorId: contrato.trabajadorId,
           clienteId: contrato.clienteId,
           contratoId: contrato.id,
-          fechaEmision: new Date(),
+          fechaEmision,
           periodoFacturado,
           concepto,
           importe,
@@ -187,9 +395,7 @@ export class FacturasService {
       });
     });
 
-    this.archivarPdfEnR2(factura).catch((err) =>
-      this.logger.error(`Error generando PDF factura ${factura.id}: ${err}`),
-    );
+    return factura;
   }
 
   private async archivarPdfEnR2(factura: FacturaCompleta): Promise<void> {
@@ -223,11 +429,21 @@ export class FacturasService {
 
   async findAll(
     user: { userId: string; rol: string },
-    filters?: { anio?: number; mes?: number; clienteId?: string; estado?: EstadoFactura },
+    filters?: {
+      anio?: number;
+      mes?: number;
+      clienteId?: string;
+      estado?: EstadoFactura;
+      /// Las pantallas "Mis..." lo mandan siempre: el ADMIN tambien es un
+      /// autonomo con su propio circuito fiscal, y sus numeros no deben
+      /// mezclarse con los de los demas. La vista global es Supervision, que
+      /// es la unica que llama sin este flag.
+      soloMias?: boolean;
+    },
   ) {
     const where: Prisma.FacturaWhereInput = {};
 
-    if (user.rol !== 'ADMIN') {
+    if (user.rol !== 'ADMIN' || filters?.soloMias) {
       where.trabajadorId = user.userId;
     }
 
@@ -281,7 +497,7 @@ export class FacturasService {
       throw new ForbiddenException('No se puede marcar como pagada una factura anulada');
     }
 
-    return this.prisma.factura.update({
+    const actualizada = await this.prisma.factura.update({
       where: { id: facturaId },
       data: {
         estado: EstadoFactura.PAGADA,
@@ -290,6 +506,20 @@ export class FacturasService {
       },
       include: facturaInclude,
     });
+
+    await this.audit.registrar({
+      evento: 'FACTURA',
+      userId: user.userId,
+      recurso: facturaId,
+      metadata: {
+        accion: 'MARCADA_PAGADA',
+        numeroFormateado: actualizada.numeroFormateado,
+        fechaPago: dto.fechaPago,
+        metodoPago: dto.metodoPago ?? null,
+      },
+    });
+
+    return actualizada;
   }
 
   async anular(facturaId: string, user: { userId: string; rol: string }) {
@@ -299,11 +529,25 @@ export class FacturasService {
       throw new ForbiddenException('La factura ya está anulada');
     }
 
-    return this.prisma.factura.update({
+    const anulada = await this.prisma.factura.update({
       where: { id: facturaId },
       data: { estado: EstadoFactura.ANULADA },
       include: facturaInclude,
     });
+
+    await this.audit.registrar({
+      evento: 'FACTURA',
+      userId: user.userId,
+      recurso: facturaId,
+      metadata: {
+        accion: 'ANULADA',
+        numeroFormateado: anulada.numeroFormateado,
+        total: anulada.total.toString(),
+        emailEnviado: anulada.emailEnviado,
+      },
+    });
+
+    return anulada;
   }
 
   async crearFacturaPuntual(
@@ -321,7 +565,7 @@ export class FacturasService {
     }
 
     const anio = new Date(dto.fechaEmision).getFullYear();
-    const retencionPct = toNum(trabajador.retencionIrpf);
+    const retencionPct = RETENCION_IRPF_PARTICULARES;
     const retencionImporte = (dto.importe * retencionPct) / 100;
     const total = dto.importe - retencionImporte;
 

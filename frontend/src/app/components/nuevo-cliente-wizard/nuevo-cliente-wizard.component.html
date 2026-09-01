@@ -865,16 +865,16 @@
             </h5>
             <div *ngFor="let contacto of getResumenFamilia()" class="mb-2">
               <strong>{{ contacto.nombreCompleto }}</strong>
-              <span class="badge bg-secondary ms-2">{{
+              <span class="gb-badge gb-badge--neutro ms-2">{{
                 contacto.parentesco
               }}</span>
-              <span *ngIf="contacto.esPrincipal" class="badge bg-primary ms-1"
+              <span *ngIf="contacto.esPrincipal" class="gb-badge gb-badge--acento ms-1"
                 >Principal</span
               >
-              <span *ngIf="contacto.esPago" class="badge bg-success ms-1"
+              <span *ngIf="contacto.esPago" class="gb-badge gb-badge--exito ms-1"
                 >Pagador</span
               >
-              <span *ngIf="contacto.esTutorLegal" class="badge bg-warning text-dark ms-1"
+              <span *ngIf="contacto.esTutorLegal" class="gb-badge gb-badge--aviso ms-1"
                 >Tutor legal</span
               >
               <br />

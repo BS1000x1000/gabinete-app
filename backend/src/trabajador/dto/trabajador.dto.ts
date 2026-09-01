@@ -11,9 +11,11 @@ import {
   MaxLength,
   Matches,
   IsUUID,
+  IsEnum,
   ValidateIf,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { PeriodicidadEnvio } from '@prisma/client';
 
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/;
 const PASSWORD_MSG = 'La contrasena debe tener minimo 8 caracteres, una mayuscula, una minuscula y un numero';
@@ -186,6 +188,25 @@ export class UpdateTrabajadorDto {
 }
 
 export class DatosFiscalesDto {
+  /**
+   * Gestoria a la que se entregan las facturas. Va por trabajador: cada autonomo
+   * puede tener la suya.
+   */
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  nombreGestoria?: string;
+
+  @IsOptional()
+  @IsEmail()
+  @MaxLength(200)
+  emailGestoria?: string;
+
+  /** Cada cuanto sale la entrega automatica. `NINGUNA` la desactiva. */
+  @IsOptional()
+  @IsEnum(PeriodicidadEnvio)
+  periodicidadGestoria?: PeriodicidadEnvio;
+
   @IsOptional()
   @IsString()
   @MaxLength(20)

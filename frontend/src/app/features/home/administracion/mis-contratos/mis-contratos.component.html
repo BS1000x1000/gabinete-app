@@ -1,111 +1,246 @@
 <div class="adm-page">
   <div class="adm-page-inner">
 
-    <div *ngIf="cargando()" class="adm-loading">
-      <span class="spinner-border spinner-border-sm me-2"></span> Cargando contratos…
-    </div>
-
-    <div *ngIf="error()" class="adm-alert adm-alert-danger">
-      <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error() }}
-    </div>
-
-    <ng-container *ngIf="!cargando()">
-
-      <div *ngIf="!activos().length && !historico().length" class="adm-empty">
-        <div class="adm-empty-icon"><i class="bi bi-file-earmark-ruled"></i></div>
-        <p class="adm-empty-title">Sin contratos de servicio</p>
-        <p class="adm-empty-desc">Los contratos activos aparecerán aquí una vez creados desde la ficha del cliente.</p>
+    <!-- Lo comprometido al mes: el número que se busca al abrir la pestaña -->
+    <div class="adm-kpi-grid adm-kpi-grid--3">
+      <div class="adm-kpi-card">
+        <span class="adm-kpi-label">Cuota mensual comprometida</span>
+        <span class="adm-kpi-value">{{ cuotaMensualComprometida() | number:'1.2-2' }} €</span>
+        <span class="adm-kpi-foot">contratos activos</span>
       </div>
+      <div class="adm-kpi-card adm-kpi-card--info">
+        <span class="adm-kpi-label">Contratos vigentes</span>
+        <span class="adm-kpi-value">{{ activos().length }}</span>
+        <span class="adm-kpi-foot">{{ clientesUnicos().length }} clientes</span>
+      </div>
+      <div class="adm-kpi-card adm-kpi-card--success">
+        <span class="adm-kpi-label">Sesiones programadas</span>
+        <span class="adm-kpi-value">{{ sesionesProgramadas() }}</span>
+        <span class="adm-kpi-foot">en la ventana generada</span>
+      </div>
+    </div>
 
-      <!-- Activos -->
-      <div *ngIf="activos().length" class="adm-contract-grid">
-        <div *ngFor="let c of activos()" class="adm-contract-card">
-          <div class="adm-contract-card-top">
-            <span class="adm-contract-tipo-pill"
-              [style.background]="tipoBg(c.tipoSesion)"
-              [style.color]="tipoColor(c.tipoSesion)">
-              {{ tipoLabel(c.tipoSesion) }}
-            </span>
-            <span class="adm-badge adm-badge-{{ c.estado.toLowerCase() }}">{{ estadoLabel(c.estado) }}</span>
-          </div>
+    @if (cargando()) {
+      <app-estado-carga texto="Cargando contratos…" />
+    }
 
-          <div class="adm-contract-card-client">
-            <i class="bi bi-person-circle me-1"></i>
-            <strong>{{ c.cliente.nombre }} {{ c.cliente.apellidos }}</strong>
-          </div>
+    @if (error()) {
+      <app-estado-error [texto]="error()!" />
+    }
 
-          <div class="adm-contract-card-price">
-            {{ c.cuotaMensual | number:'1.2-2' }}&nbsp;€
-            <span class="adm-contract-card-per">/mes</span>
-          </div>
+    @if (!cargando()) {
 
-          <div class="adm-contract-card-meta">
-            <div class="adm-contract-slots">
-              <div *ngFor="let s of c.slots" class="adm-contract-slot-row">
-                <i class="bi me-1"
-                  [class.bi-camera-video]="s.modalidad === 'ONLINE'"
-                  [class.bi-person]="s.modalidad === 'PRESENCIAL'"></i>
-                <span>{{ diaLabel(s.diaSemana) }} {{ s.horaInicio }}–{{ s.horaFin }}</span>
-                <span class="adm-contract-slot-dur">({{ s.duracionMinutos }} min)</span>
-                <span class="adm-contract-slot-mod" [class.is-online]="s.modalidad === 'ONLINE'">
-                  {{ s.modalidad === 'ONLINE' ? 'Online' : 'Presencial' }}
-                </span>
+      @if (!contratos().length) {
+        <app-estado-vacio
+          icono="bi-file-earmark-ruled"
+          titulo="Sin contratos de servicio"
+          descripcion="Los contratos se crean desde la pestaña Contratos de la ficha del cliente." />
+      } @else {
+
+        @if (activos().length) {
+          <div class="adm-filters">
+            <div class="adm-filters-row">
+              <div class="adm-filter-group">
+                <label class="adm-filter-label">Estado</label>
+                <select class="adm-select"
+                  [ngModel]="filtroEstado()"
+                  (ngModelChange)="filtroEstado.set($event)">
+                  <option value="">Todos</option>
+                  <option value="ACTIVO">Activo</option>
+                  <option value="BORRADOR">Borrador</option>
+                </select>
               </div>
+
+              @if (clientesUnicos().length > 1) {
+                <div class="adm-filter-group">
+                  <label class="adm-filter-label">Cliente</label>
+                  <select class="adm-select"
+                    [ngModel]="filtroClienteId()"
+                    (ngModelChange)="filtroClienteId.set($event)">
+                    <option value="">Todos</option>
+                    @for (c of clientesUnicos(); track c.id) {
+                      <option [value]="c.id">{{ c.nombre }}</option>
+                    }
+                  </select>
+                </div>
+              }
+
+              @if (tiposUnicos().length > 1) {
+                <div class="adm-filter-group">
+                  <label class="adm-filter-label">Tipo</label>
+                  <select class="adm-select"
+                    [ngModel]="filtroTipo()"
+                    (ngModelChange)="filtroTipo.set($event)">
+                    <option value="">Todos</option>
+                    @for (t of tiposUnicos(); track t) {
+                      <option [value]="t">{{ tipoLabel(t) }}</option>
+                    }
+                  </select>
+                </div>
+              }
+
+              @if (hayFiltros()) {
+                <button class="adm-btn-ghost-sm adm-filters-clear" type="button" (click)="limpiarFiltros()">
+                  <i class="bi bi-x-lg me-1"></i>Quitar filtros
+                </button>
+              }
             </div>
-            <span>
-              <i class="bi bi-calendar me-1"></i>
-              {{ c.fechaInicio | date:'dd/MM/yyyy' }} →
-              {{ c.fechaFin ? (c.fechaFin | date:'dd/MM/yyyy') : 'Indefinido' }}
-            </span>
-            <span class="adm-contract-card-sessions">
-              <i class="bi bi-calendar2-week me-1"></i>{{ c._count.sesiones }} sesiones programadas
-            </span>
           </div>
 
-          <div *ngIf="c.notas" class="adm-contract-card-notas">
-            <i class="bi bi-chat-left-text me-1"></i>{{ c.notas }}
-          </div>
+          @if (!activosFiltrados().length) {
+            <app-estado-vacio
+              icono="bi-funnel"
+              titulo="Ningún contrato coincide con el filtro"
+              descripcion="Prueba a quitar alguno de los filtros activos." />
+          } @else {
+            <div class="adm-table-wrap">
+              <table class="adm-table">
+                <thead>
+                  <tr>
+                    <th>Cliente</th>
+                    <th>Tipo</th>
+                    <th>Horario semanal</th>
+                    <th>Vigencia</th>
+                    <th class="text-center">Sesiones</th>
+                    <th class="text-end">Cuota</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (c of activosFiltrados(); track c.id) {
+                    <tr>
+                      <td>
+                        <a class="adm-link" [routerLink]="['/home/listado', c.clienteId, 'contratos']"
+                           title="Abrir el contrato en la ficha del cliente">
+                          {{ c.cliente.nombre }} {{ c.cliente.apellidos }}
+                        </a>
+                      </td>
+                      <td>
+                        <span class="adm-contract-tipo-pill"
+                          [style.background]="tipoBg(c.tipoSesion)"
+                          [style.color]="tipoColor(c.tipoSesion)">
+                          {{ tipoLabel(c.tipoSesion) }}
+                        </span>
+                      </td>
+                      <td class="adm-td-horario">
+                        {{ horarioResumen(c) || '—' }}
+                        @if (hayOnline(c)) {
+                          <i class="bi bi-camera-video ms-1 adm-icon-online" title="Incluye sesiones online"></i>
+                        }
+                      </td>
+                      <td class="adm-td-periodo">
+                        {{ c.fechaInicio | date:'dd/MM/yy' }} →
+                        {{ c.fechaFin ? (c.fechaFin | date:'dd/MM/yy') : 'Indefinido' }}
+                      </td>
+                      <td class="text-center">{{ c._count.sesiones }}</td>
+                      <td class="text-end adm-td-total">{{ c.cuotaMensual | number:'1.2-2' }} €</td>
+                      <td>
+                        <span class="adm-badge adm-badge-{{ c.estado.toLowerCase() }}">
+                          {{ estadoLabel(c.estado) }}
+                        </span>
+                      </td>
+                      <td>
+                        <div class="adm-actions-cell">
+                          <button
+                            class="adm-action-btn adm-action-btn--pdf"
+                            [disabled]="descargandoId() === c.id"
+                            (click)="descargarPdf(c.id)"
+                            title="Descargar contrato en PDF"
+                            type="button">
+                            @if (descargandoId() === c.id) {
+                              <span class="spinner-border spinner-border-sm" style="width:12px;height:12px"></span>
+                            } @else {
+                              <i class="bi bi-file-earmark-pdf"></i>
+                            }
+                          </button>
 
-          <div class="adm-contract-card-actions">
-            <button class="adm-contract-pdf-btn" (click)="descargarPdf(c.id)" [disabled]="descargandoId() === c.id" type="button">
-              <span *ngIf="descargandoId() === c.id" class="spinner-border spinner-border-sm" style="width:11px;height:11px"></span>
-              <i *ngIf="descargandoId() !== c.id" class="bi bi-file-earmark-pdf me-1"></i>
-              Contrato PDF
+                          <a class="adm-action-btn adm-action-btn--abrir"
+                             [routerLink]="['/home/listado', c.clienteId, 'contratos']"
+                             title="Gestionar el contrato en la ficha del cliente">
+                            <i class="bi bi-box-arrow-up-right"></i>
+                          </a>
+                        </div>
+                      </td>
+                    </tr>
+                    @if (c.notas) {
+                      <tr class="adm-row-notas">
+                        <td colspan="8">
+                          <i class="bi bi-chat-left-text me-1"></i>{{ c.notas }}
+                        </td>
+                      </tr>
+                    }
+                  }
+                </tbody>
+                <tfoot>
+                  <tr class="adm-table-total">
+                    <td colspan="5">
+                      {{ activosFiltrados().length }}
+                      {{ activosFiltrados().length === 1 ? 'contrato' : 'contratos' }}
+                      @if (hayFiltros()) { <span class="adm-table-total-hint">(filtrados)</span> }
+                    </td>
+                    <td class="text-end adm-td-total">{{ totalFiltrado() | number:'1.2-2' }} €</td>
+                    <td colspan="2"></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          }
+        }
+
+        @if (historico().length) {
+          <div class="adm-historial">
+            <button class="adm-historial-toggle" (click)="mostrarHistorial.set(!mostrarHistorial())" type="button">
+              <i class="bi" [class.bi-chevron-down]="!mostrarHistorial()" [class.bi-chevron-up]="mostrarHistorial()"></i>
+              Historial ({{ historico().length }})
             </button>
+
+            @if (mostrarHistorial()) {
+              <div class="adm-table-wrap mt-3">
+                <table class="adm-table">
+                  <thead>
+                    <tr>
+                      <th>Cliente</th>
+                      <th>Tipo</th>
+                      <th>Inicio</th>
+                      <th>Fin</th>
+                      <th class="text-end">Cuota</th>
+                      <th>Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (c of historico(); track c.id) {
+                      <tr>
+                        <td>
+                          <a class="adm-link" [routerLink]="['/home/listado', c.clienteId, 'contratos']">
+                            {{ c.cliente.nombre }} {{ c.cliente.apellidos }}
+                          </a>
+                        </td>
+                        <td>
+                          <span class="adm-contract-tipo-pill"
+                            [style.background]="tipoBg(c.tipoSesion)"
+                            [style.color]="tipoColor(c.tipoSesion)">
+                            {{ tipoLabel(c.tipoSesion) }}
+                          </span>
+                        </td>
+                        <td class="adm-td-periodo">{{ c.fechaInicio | date:'dd/MM/yyyy' }}</td>
+                        <td class="adm-td-periodo">{{ c.fechaFin ? (c.fechaFin | date:'dd/MM/yyyy') : '—' }}</td>
+                        <td class="text-end adm-td-total">{{ c.cuotaMensual | number:'1.2-2' }} €</td>
+                        <td>
+                          <span class="adm-badge adm-badge-{{ c.estado.toLowerCase() }}">
+                            {{ estadoLabel(c.estado) }}
+                          </span>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
           </div>
-        </div>
-      </div>
+        }
+      }
+    }
 
-      <!-- Historial -->
-      <div *ngIf="historico().length" class="adm-historial">
-        <button class="adm-historial-toggle" (click)="mostrarHistorial.set(!mostrarHistorial())" type="button">
-          <i class="bi" [class.bi-chevron-down]="!mostrarHistorial()" [class.bi-chevron-up]="mostrarHistorial()"></i>
-          Historial ({{ historico().length }})
-        </button>
-
-        <div *ngIf="mostrarHistorial()" class="adm-table-wrap mt-3">
-          <table class="adm-table">
-            <thead>
-              <tr>
-                <th>Tipo</th><th>Cliente</th><th>Cuota</th><th>Inicio</th><th>Fin</th><th>Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let c of historico()">
-                <td><span [style.color]="tipoColor(c.tipoSesion)">{{ tipoLabel(c.tipoSesion) }}</span></td>
-                <td>{{ c.cliente.nombre }} {{ c.cliente.apellidos }}</td>
-                <td>{{ c.cuotaMensual | number:'1.2-2' }} €/mes</td>
-                <td>{{ c.fechaInicio | date:'dd/MM/yyyy' }}</td>
-                <td>{{ c.fechaFin ? (c.fechaFin | date:'dd/MM/yyyy') : '—' }}</td>
-                <td>
-                  <span class="adm-badge adm-badge-{{ c.estado.toLowerCase() }}">{{ estadoLabel(c.estado) }}</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-    </ng-container>
   </div>
 </div>

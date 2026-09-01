@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { map, tap } from 'rxjs/operators';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment.development';
@@ -31,9 +31,14 @@ export class ContratosService {
       );
   }
 
-  getContratos() {
+  /**
+   * `soloMias` lo manda "Mis contratos": el ADMIN tambien es un autonomo y sus
+   * contratos son los suyos. La vista global del gabinete es Supervision.
+   */
+  getContratos(soloMias = false) {
+    const params = soloMias ? new HttpParams().set('soloMias', 'true') : undefined;
     return this.http
-      .get<WrappedResponse<ContratoServicio[]>>(this.apiUrl)
+      .get<WrappedResponse<ContratoServicio[]>>(this.apiUrl, { params })
       .pipe(map(res => (res.data ?? res) as ContratoServicio[]));
   }
 

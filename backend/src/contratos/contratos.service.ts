@@ -237,8 +237,17 @@ export class ContratosService {
     return count;
   }
 
-  async findAll(user: { userId: string; rol: string }) {
-    const where = user.rol === 'ADMIN' ? {} : { trabajadorId: user.userId };
+  /**
+   * `soloMias` lo mandan las pantallas "Mis contratos": el ADMIN tambien es un
+   * autonomo con su propio circuito fiscal y no debe ver los contratos de los
+   * demas mezclados con los suyos. La vista global es Supervision.
+   */
+  async findAll(
+    user: { userId: string; rol: string },
+    opts?: { soloMias?: boolean },
+  ) {
+    const where =
+      user.rol === 'ADMIN' && !opts?.soloMias ? {} : { trabajadorId: user.userId };
     return this.prisma.contratoServicio.findMany({
       where,
       include: CONTRATO_INCLUDE,
@@ -248,7 +257,7 @@ export class ContratosService {
 
   async findByCliente(clienteId: string, user: { userId: string; rol: string }) {
     const where: any = { clienteId };
-    if (user.rol !== 'ADMIN' && user.rol !== 'RECEP') {
+    if (user.rol !== 'ADMIN') {
       where.trabajadorId = user.userId;
     }
     return this.prisma.contratoServicio.findMany({

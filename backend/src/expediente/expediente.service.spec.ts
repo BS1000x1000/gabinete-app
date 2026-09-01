@@ -76,7 +76,7 @@ describe('ExpedienteService', () => {
     };
     consentimientos = {
       registrar: jest.fn().mockResolvedValue({ id: 'cons-1' }),
-      assertTutorLegal: jest.fn().mockResolvedValue(undefined),
+      assertTutoresLegales: jest.fn().mockResolvedValue(['fam-1']),
     };
 
     const mod = await Test.createTestingModule({
@@ -236,7 +236,7 @@ describe('ExpedienteService', () => {
     });
 
     const datosFirma = {
-      familiarId: 'fam-1',
+      firmanteIds: ['fam-1', 'fam-2'],
       autorizaInformesTerceros: true,
       autorizaCoordinacionCentro: false,
       autorizaImagenes: true,
@@ -264,7 +264,7 @@ describe('ExpedienteService', () => {
       expect(consentimientos.registrar).toHaveBeenCalledWith(
         'cliente-1',
         expect.objectContaining({
-          familiarId: 'fam-1',
+          firmanteIds: ['fam-1', 'fam-2'],
           // La version es la de la plantilla que la familia leyo, no una constante suelta.
           versionTexto: definicion.version,
           // El PDF firmado es lo que acredita el consentimiento.
@@ -289,9 +289,9 @@ describe('ExpedienteService', () => {
       expect(consentimientos.registrar).not.toHaveBeenCalled();
     });
 
-    it('si el familiar no es tutor legal, tampoco sube nada', async () => {
+    it('si alguno de los firmantes no es tutor legal, tampoco sube nada', async () => {
       mockConsentimientoDatos();
-      consentimientos.assertTutorLegal.mockRejectedValueOnce(
+      consentimientos.assertTutoresLegales.mockRejectedValueOnce(
         new BadRequestException('no es tutor legal'),
       );
 

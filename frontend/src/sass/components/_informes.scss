@@ -62,7 +62,7 @@
   &.estado-enviado.active   {
     background: $success-light;
     border-color: $success-dark;
-    color: #047857;
+    color: $success-dark;
   }
 }
 
@@ -139,8 +139,8 @@
   &.enviado::before { background: $success-dark; }
 
   &.borrador {
-    background: #fffbeb;
-    border-color: #fde68a;
+    background: $warning-light;
+    border-color: rgba($warning, 0.35);
 
     &:hover {
       border-color: $warning;
@@ -158,8 +158,8 @@
   }
 
   &.enviado {
-    background: #f0fdf4;
-    border-color: #bbf7d0;
+    background: $success-light;
+    border-color: rgba($success, 0.35);
 
     &:hover {
       border-color: #86efac;
@@ -254,28 +254,28 @@
 .informe-sesiones-btn {
   background-color: $success-light;
   color: $success-dark;
-  border: 1px solid #a7f3d0;
+  border: 1px solid rgba($success, 0.35);
   font-weight: 600;
   font-size: 0.8rem;
 
   &:hover {
-    background-color: #a7f3d0;
+    background-color: $success-light;
     border-color: $success-dark;
-    color: #047857;
+    color: $success-dark;
   }
 }
 
 .informe-objetivos-btn {
-  background-color: #ede9fe;
-  color: #7c3aed;
+  background-color: $malva-light;
+  color: $malva-dark;
   border: 1px solid #ddd6fe;
   font-weight: 600;
   font-size: 0.8rem;
 
   &:hover {
     background-color: #ddd6fe;
-    border-color: #7c3aed;
-    color: #6d28d9;
+    border-color: $malva;
+    color: $malva-dark;
   }
 }
 
@@ -287,7 +287,7 @@
   font-size: 0.8rem;
 
   &:hover:not(:disabled) {
-    background-color: #047857;
+    background-color: $success-dark;
     color: $white;
   }
 
@@ -300,7 +300,7 @@
 .informe-enviado-badge {
   background-color: $success-light;
   color: $success-dark;
-  border: 1px solid #a7f3d0;
+  border: 1px solid rgba($success, 0.35);
   border-radius: 0.4rem;
   padding: 0.4rem 0.6rem;
   font-size: 0.78rem;
@@ -309,13 +309,13 @@
 }
 
 .informe-enviado-card {
-  background-color: #f0fdf4 !important;
-  border-color: #a7f3d0 !important;
+  background-color: $success-light !important;
+  border-color: rgba($success, 0.35) !important;
 }
 
 .informe-borrador-form {
-  background-color: #f0fdf4;
-  border: 1px solid #a7f3d0;
+  background-color: $success-light;
+  border: 1px solid rgba($success, 0.35);
   border-radius: 0.5rem;
   padding: 1rem;
 }

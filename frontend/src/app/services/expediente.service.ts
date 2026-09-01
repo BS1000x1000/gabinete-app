@@ -41,7 +41,8 @@ export interface EstadoExpediente {
 
 /** Lo que hay que saber del consentimiento de datos al recibirlo firmado. */
 export interface DatosFirmaConsentimiento {
-  familiarId: string;
+  /** Tutores legales que han firmado: uno, o los dos si los hay. */
+  firmanteIds: string[];
   fechaFirma?: string;
   autorizaInformesTerceros: boolean;
   autorizaCoordinacionCentro: boolean;
@@ -139,9 +140,13 @@ export class ExpedienteService {
     form.append('fichero', fichero);
     if (datosFirma) {
       Object.entries(datosFirma).forEach(([clave, valor]) => {
-        if (valor !== undefined && valor !== null && valor !== '') {
-          form.append(clave, String(valor));
+        if (valor === undefined || valor === null || valor === '') return;
+        // Campo repetido para que el backend lo reciba como lista.
+        if (Array.isArray(valor)) {
+          valor.forEach((v) => form.append(clave, String(v)));
+          return;
         }
+        form.append(clave, String(valor));
       });
     }
     return this.http

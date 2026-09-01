@@ -122,8 +122,8 @@
     letter-spacing: 0.03em;
 
     &.is-generado { background: $gray-100;      color: $gray-600; }
-    &.is-enviado  { background: $secondary-light; color: $secondary-dark; }
-    &.is-firmado  { background: $success-light;  color: $success-dark; }
+    &.is-enviado { @include badge-tono($secondary-light, $secondary-dark, $secondary); }
+    &.is-firmado { @include badge-tono($success-light, $success-dark, $success); }
   }
 
   &__acciones {
@@ -350,6 +350,20 @@
     font-size: $font-size-xs;
     line-height: 1.45;
     color: $danger-dark;
+  }
+
+  /** Explica que se espera del campo; no es un error. */
+  &__pista {
+    margin: 0 0 6px;
+    font-size: $font-size-xs;
+    line-height: 1.45;
+    color: $gray-500;
+
+    /** Cuando firma uno solo de los dos tutores: no bloquea, pero se ve. */
+    &--ojo {
+      margin: 6px 0 0;
+      color: $warning-dark;
+    }
   }
 
   &__acciones {

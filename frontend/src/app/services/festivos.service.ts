@@ -46,9 +46,11 @@ export class FestivosService {
     );
   }
 
-  tieneNacionales(anio: number) {
-    return this.http.get<boolean>(`${this.api}/tiene-nacionales/${anio}`);
-  }
+  // `GET /festivos/tiene-nacionales/:anio` existe en el backend pero no se usa:
+  // el componente lo deduce del listado que ya tiene cargado y se ahorra la
+  // petición. El método que había aquí tipaba la respuesta como `boolean` sin
+  // desenvolver el `{ data }` del interceptor, así que habría devuelto siempre
+  // `true` de haberse llegado a usar.
 
   getFestivosParaAgenda(anio: number) {
     return this.http.get<Festivo[]>(`${this.api}?anio=${anio}`).pipe(

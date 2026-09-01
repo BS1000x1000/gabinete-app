@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { map, Observable, tap } from 'rxjs';
 import { environment } from '../../environments/environment.development';
 import { NotificacionesService } from './notificaciones.service';
+import { ROLES_ADMINISTRACION, ROLES_GESTION } from '../shared/constants/roles';
 
 interface LoginResponse {
   token_type: string;
@@ -65,7 +66,17 @@ export class AuthService {
     ['PEDAGOGO', 'NEURO', 'LOGOPEDA'].includes(this.userRoleCodigo())
   );
   public canVerTodo = computed(() =>
-    ['ADMIN', 'RECEP'].includes(this.userRoleCodigo())
+    (ROLES_GESTION as readonly string[]).includes(this.userRoleCodigo())
+  );
+
+  /**
+   * Bloque administrativo (contratos, facturas, ingresos): es de cada autónomo,
+   * la facturación no es asunto de recepción. Lista blanca, igual que el guard
+   * de la ruta: el sidebar decidía por lista negra y las dos reglas habrían
+   * divergido en cuanto apareciera un rol nuevo.
+   */
+  public canVerAdministracion = computed(() =>
+    (ROLES_ADMINISTRACION as readonly string[]).includes(this.userRoleCodigo())
   );
 
   /*

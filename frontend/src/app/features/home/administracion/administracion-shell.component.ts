@@ -49,13 +49,12 @@ export default class AdministracionShellComponent {
 
   readonly tabs = computed<SubNavItem[]>(() => {
     const items: SubNavItem[] = [
-      { label: 'Mis contratos', icon: 'bi-file-earmark-ruled', route: 'mis-contratos' },
-      { label: 'Mis facturas',  icon: 'bi-receipt',            route: 'mis-facturas'  },
-      { label: 'Mis ingresos',  icon: 'bi-graph-up-arrow',     route: 'mis-ingresos'  },
+      { label: 'Mis contratos',      icon: 'bi-file-earmark-ruled', route: 'mis-contratos'  },
+      { label: 'Facturación',        icon: 'bi-receipt',            route: 'facturacion'    },
+      { label: 'Mis datos fiscales', icon: 'bi-person-vcard',       route: 'datos-fiscales' },
     ];
     if (this.auth.isAdmin()) {
-      items.push({ label: 'Supervisión', icon: 'bi-binoculars',      route: 'supervision' });
-      items.push({ label: 'Festivos',    icon: 'bi-calendar2-check', route: 'festivos'    });
+      items.push({ label: 'Supervisión', icon: 'bi-binoculars', route: 'supervision' });
     }
     return items;
   });

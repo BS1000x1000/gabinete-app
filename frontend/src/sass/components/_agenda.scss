@@ -570,8 +570,12 @@ $ag-px-hora-min: 44px;   // suelo de legibilidad de una hora
     .ag-card__acciones { opacity: 1; }
   }
 
-  // Sesión programada cuya hora ya pasó
-  &--pasada { opacity: 0.6; }
+  // Sesión programada cuya hora ya pasó. Se marca con la superficie, no con
+  // opacity: al 0.6 el texto de la tarjeta caia a 3.74.
+  &--pasada {
+    background: $gray-100;
+    border-color: $border-color;
+  }
 
   &--evento {
     cursor: pointer;
@@ -704,11 +708,11 @@ $ag-px-hora-min: 44px;   // suelo de legibilidad de una hora
   flex-shrink: 0;
   letter-spacing: 0.1px;
 
-  &--programada       { background: $primary-light;   color: $primary-dark; }
-  &--completada       { background: $success-light;   color: $success-dark; }
-  &--cancelada-aviso  { background: $warning-light;   color: $warning-dark; }
-  &--cancelada-sin    { background: $danger-light;    color: $danger-dark; }
-  &--vacaciones       { background: $secondary-light; color: $secondary-dark; }
+  &--programada { @include badge-tono($primary-light, $primary-dark, $primary); }
+  &--completada { @include badge-tono($success-light, $success-dark, $success); }
+  &--cancelada-aviso { @include badge-tono($warning-light, $warning-dark, $warning); }
+  &--cancelada-sin { @include badge-tono($danger-light, $danger-dark, $danger); }
+  &--vacaciones { @include badge-tono($secondary-light, $secondary-dark, $secondary); }
   &--default          { background: $gray-100;        color: $gray-600; }
 }
 

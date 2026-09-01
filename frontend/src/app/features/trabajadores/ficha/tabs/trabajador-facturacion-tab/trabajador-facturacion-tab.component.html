@@ -75,7 +75,11 @@
       <input type="number" class="form-control ajustes-input" min="0" max="100" step="0.01" placeholder="0"
         [ngModel]="form().retencionIrpf"
         (ngModelChange)="patch('retencionIrpf', +$event)" />
-      <span class="ajustes-hint text-muted">Para particulares (familias) suele ser 0%</span>
+      <span class="ajustes-hint text-muted">
+        Las facturas a familias se emiten <strong>sin retención</strong>: un particular no
+        practica retención de IRPF. Este dato queda registrado para un futuro receptor
+        empresa, pero hoy no afecta al importe que se factura.
+      </span>
     </div>
 
     <div class="ajustes-field ajustes-field-full">
@@ -86,6 +90,53 @@
       <span class="ajustes-hint text-muted">Vacío = se usa el email principal de la cuenta</span>
     </div>
 
+  </div>
+
+  <!-- Gestoría: quién recibe las facturas y cada cuánto -->
+  <div class="trab-section-hdr mt-4 mb-3">
+    <span class="trab-section-title">
+      <i class="bi bi-briefcase me-2"></i>Gestoría
+    </span>
+  </div>
+
+  <p class="trab-tab-desc">
+    A quién se entregan las facturas emitidas. El paquete lleva el libro de facturas
+    en Excel y los PDF; se puede mandar a mano desde Administración › Facturación o
+    dejar que salga solo cada periodo.
+  </p>
+
+  <div class="ajustes-fiscal-grid">
+    <div class="ajustes-field">
+      <label class="ajustes-label">Nombre de la gestoría</label>
+      <input type="text" class="form-control ajustes-input" placeholder="Asesoría Pérez"
+        [ngModel]="form().nombreGestoria"
+        (ngModelChange)="patch('nombreGestoria', $event)" />
+    </div>
+
+    <div class="ajustes-field">
+      <label class="ajustes-label">Email de la gestoría</label>
+      <input type="email" class="form-control ajustes-input" placeholder="gestor@asesoria.com"
+        [ngModel]="form().emailGestoria"
+        (ngModelChange)="patch('emailGestoria', $event)" />
+      <span class="ajustes-hint text-muted">
+        Sin este dato no se puede enviar el paquete, solo descargarlo.
+      </span>
+    </div>
+
+    <div class="ajustes-field ajustes-field-full">
+      <label class="ajustes-label">Envío automático</label>
+      <select class="form-select ajustes-input"
+        [ngModel]="form().periodicidadGestoria"
+        (ngModelChange)="patch('periodicidadGestoria', $event)">
+        @for (p of periodicidades; track p.valor) {
+          <option [value]="p.valor">{{ p.label }}</option>
+        }
+      </select>
+      <span class="ajustes-hint text-muted">
+        El envío sale el día 5, cuando el periodo ya está cerrado y las facturas
+        generadas. Solo se manda lo que no haya salido antes.
+      </span>
+    </div>
   </div>
 
   <div class="mt-3">

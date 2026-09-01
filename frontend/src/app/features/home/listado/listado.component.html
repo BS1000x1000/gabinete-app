@@ -69,29 +69,18 @@
     <div class="ficha-panel bg-white rounded-3 shadow-sm">
 
       <!-- Tab nav -->
-      <nav class="ficha-tabs">
-        <!-- Uso diario -->
-        <a
-          *ngFor="let tab of workTabs()"
-          class="ficha-tab"
-          [routerLink]="['./', tab.target]"
-          routerLinkActive="active"
-        >
-          <i class="bi" [ngClass]="tab.icon"></i>
-          <span>{{ tab.label }}</span>
-        </a>
-
-        <!-- Configuración del caso: mismo alcance, menos peso visual -->
-        <span class="ficha-tabs__sep" aria-hidden="true"></span>
-        <a
-          *ngFor="let tab of configTabs()"
-          class="ficha-tab ficha-tab--config"
-          [routerLink]="['./', tab.target]"
-          routerLinkActive="active"
-        >
-          <i class="bi" [ngClass]="tab.icon"></i>
-          <span>{{ tab.label }}</span>
-        </a>
+      <nav class="ficha-tabs" aria-label="Secciones de la ficha">
+        @for (tab of tabs(); track tab.target) {
+          <a
+            class="ficha-tab"
+            [routerLink]="['./', tab.target]"
+            routerLinkActive="is-active"
+            [title]="tab.label"
+          >
+            <i class="bi" [ngClass]="tab.icon"></i>
+            <span>{{ tab.label }}</span>
+          </a>
+        }
       </nav>
 
       <!-- Contenido -->

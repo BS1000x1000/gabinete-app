@@ -538,7 +538,7 @@ export function buildInformeHtml(datos: InformeTemplateData): string {
     <div class="masthead-logo"><img src="${LOGO_BASE64}" alt=""></div>
     <!-- Title -->
     <div class="masthead-body">
-      <div class="masthead-name">Conectadas Juntas</div>
+      <div class="masthead-name">Informe Belén Palacios</div>
       <div class="masthead-sub">Evaluación · Intervención · Seguimiento</div>
     </div>
     <!-- Report type badge -->
@@ -587,7 +587,7 @@ export function buildInformeHtml(datos: InformeTemplateData): string {
 
   <!-- ══ PIE ═══════════════════════════════════════════════════ -->
   <div class="doc-footer">
-    <div class="doc-footer-info">Documento generado el ${escapeHtml(datos.fecha_elaboracion)} · Conectadas Juntas</div>
+    <div class="doc-footer-info">Documento generado el ${escapeHtml(datos.fecha_elaboracion)} · Belén Palacios</div>
     <div class="doc-confidential">Confidencial</div>
   </div>
 

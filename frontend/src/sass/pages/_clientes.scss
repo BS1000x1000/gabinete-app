@@ -63,8 +63,8 @@
   }
 
   &.stat-activos {
-    background: rgba(#22c55e, 0.1);
-    color: #16a34a;
+    background: $success-light;
+    color: $success-dark;
   }
 
   &.stat-pausados {
@@ -363,8 +363,8 @@
   i { font-size: 0.75rem; }
 
   &.activo {
-    background: rgba(#22c55e, 0.1);
-    color: #16a34a;
+    background: $success-light;
+    color: $success-dark;
   }
 
   &.pausado {
@@ -643,7 +643,7 @@
   }
 
   &.activo {
-    background: #22c55e;
+    background: $success;
     .toggle-pill { transform: translateX(20px); }
   }
 }

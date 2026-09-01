@@ -376,6 +376,70 @@
   &:focus-visible { outline: 2px solid $primary; outline-offset: 1px; }
 }
 
+/**
+ * Filtro desplegable: un eje de filtrado con muchas opciones excluyentes.
+ * Se prefiere a `.gb-chip` cuando las opciones son abiertas o numerosas — una
+ * fila de chips crece con el catalogo y acaba dominando la pantalla.
+ * Sustituye al dialecto `.rd-filter-select` de registro-tab.
+ */
+.gb-filtro {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  cursor: pointer;
+
+  &__label {
+    font-size: 0.68rem;
+    font-weight: $font-weight-semibold;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    // $gray-400 es el gris de DESHABILITADO (2.94): no vale para texto.
+    color: $gray-500;   // 4.66
+    user-select: none;
+  }
+}
+
+.gb-select {
+  appearance: none;
+  background: $bg-card url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236b7280'/%3E%3C/svg%3E") no-repeat right 0.6rem center;
+  border: 1px solid $border-color;
+  border-radius: $border-radius-sm;
+  padding: 0.28rem 1.75rem 0.28rem 0.6rem;
+  font-family: inherit;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $gray-700;
+  cursor: pointer;
+  transition: $transition-color;
+  min-width: 150px;
+
+  &:hover { border-color: $primary-light; }
+
+  // Filtro puesto: lo senala el propio control. Nada que acumular fuera.
+  // Texto en $primary-dark, no $primary: es texto pequeno sobre fondo claro.
+  &.is-active {
+    background-color: $primary-ultra-light;
+    border-color: $primary;
+    color: $primary-dark;
+    font-weight: $font-weight-semibold;
+  }
+
+  &:focus-visible {
+    outline: none;
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba($primary, 0.08);
+  }
+}
+
+/** Recuento discreto al final de la barra de filtros. */
+.gb-filtros__resultado {
+  font-size: $font-size-xs;
+  color: $gray-500;
+  font-variant-numeric: tabular-nums;
+  margin-left: auto;
+}
+
 /** Control segmentado: opciones excluyentes de un mismo eje. */
 .gb-segmented {
   display: inline-flex;
@@ -407,6 +471,14 @@
     }
 
     &:focus-visible { outline: 2px solid $primary; outline-offset: -2px; }
+  }
+
+  /** Recuento por opcion. Sin relleno: dentro del control, `.gb-count` pesaria demasiado. */
+  &__count {
+    font-size: 0.68rem;
+    font-weight: $font-weight-bold;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.65;
   }
 }
 

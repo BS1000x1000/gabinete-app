@@ -411,9 +411,14 @@
           <ng-container *ngIf="ultimoConsentimiento() as c">
             <div class="rgpd-detalle">
               <div class="dato-row">
-                <span class="dato-label">Tutor legal</span>
-                <span class="dato-valor">{{ c.familiar.nombre }} {{ c.familiar.apellidos }}
-                  <span class="text-muted ms-1 small">({{ c.familiar.parentesco }})</span>
+                <span class="dato-label">
+                  {{ c.firmantes.length > 1 ? 'Tutores legales' : 'Tutor legal' }}
+                </span>
+                <span class="dato-valor">
+                  <span class="rgpd-firmante" *ngFor="let f of c.firmantes">
+                    {{ f.familiar.nombre }} {{ f.familiar.apellidos }}
+                    <span class="text-muted small">({{ f.familiar.parentesco }})</span>
+                  </span>
                 </span>
               </div>
               <div class="dato-row" *ngIf="c.fechaFirma">
@@ -444,6 +449,15 @@
                   </button>
                 </span>
               </div>
+            </div>
+
+            <!-- Con dos titulares de la patria potestad lo normal es que firmen
+                 ambos. Que firme uno es válido (art. 156 CC), pero hay que verlo. -->
+            <div *ngIf="firmadoPorUnSoloTutor()" class="rgpd-aviso">
+              <i class="bi bi-info-circle-fill me-1"></i>
+              Este cliente tiene <strong>{{ tutoresLegales().length }} tutores legales</strong> y el
+              consentimiento consta firmado por uno solo. Es válido salvo que una resolución
+              judicial exija la firma de ambos, pero conviene recabar la del otro.
             </div>
 
             <!-- La plantilla de protección de datos sigue sin validar: si lo que
@@ -585,19 +599,26 @@
           </div>
 
           <div class="rgpd-form-field">
-            <label class="rgpd-form-label" for="manual-tutor">Tutor legal que firmó *</label>
-            <select id="manual-tutor" class="rgpd-select"
-                    [ngModel]="manualForm().familiarId"
-                    (ngModelChange)="patchManual('familiarId', $event)">
-              <option value="">Seleccionar tutor legal…</option>
-              <option *ngFor="let f of tutoresLegales()" [value]="f.id">
-                {{ f.nombre }} {{ f.apellidos }} — {{ f.parentesco }}
-              </option>
-            </select>
+            <label class="rgpd-form-label">Quién ha firmado el documento *</label>
+            <p class="rgpd-form-hint">
+              Marca a todos los que lo hayan firmado. Con dos tutores legales lo habitual es
+              que firmen ambos.
+            </p>
+            <label class="rgpd-form-check" *ngFor="let f of tutoresLegales()">
+              <input type="checkbox"
+                     [checked]="esFirmanteManual(f.id)"
+                     (change)="toggleFirmanteManual(f.id)" />
+              <span>{{ f.nombre }} {{ f.apellidos }} — {{ f.parentesco }}</span>
+            </label>
             <p *ngIf="!tutoresLegales().length" class="rgpd-form-hint text-danger">
               <i class="bi bi-exclamation-circle me-1"></i>
               Ningún familiar consta como tutor legal. Márcalo primero en la sección Familia:
               solo un tutor legal puede consentir por un menor.
+            </p>
+            <p *ngIf="avisoFirmaParcialManual()" class="rgpd-form-hint text-warning-emphasis">
+              <i class="bi bi-info-circle me-1"></i>
+              Hay {{ tutoresLegales().length }} tutores legales y solo has marcado uno. Se puede
+              registrar así, pero quedará constancia de que firmó uno solo.
             </p>
           </div>
 
@@ -677,7 +698,11 @@
             <div class="rgpd-historial-datos">
               <span class="rgpd-historial-estado">{{ h.aceptado ? 'Otorgado' : 'Revocado' }}</span>
               <span class="rgpd-historial-fecha">{{ h.fechaRegistro | date: 'dd/MM/yyyy HH:mm' }}</span>
-              <span class="rgpd-historial-familiar">{{ h.familiar.nombre }} {{ h.familiar.apellidos }} ({{ h.familiar.parentesco }})</span>
+              <span class="rgpd-historial-familiar">
+                <span class="rgpd-firmante" *ngFor="let f of h.firmantes">
+                  {{ f.familiar.nombre }} {{ f.familiar.apellidos }} ({{ f.familiar.parentesco }})
+                </span>
+              </span>
               <span class="rgpd-historial-trabajador">
                 {{ h.aceptado ? 'Registrado por' : 'Revocado por' }}:
                 {{ h.trabajador.nombre }} {{ h.trabajador.apellidos }} · {{ h.versionTexto }}

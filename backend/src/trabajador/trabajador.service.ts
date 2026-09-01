@@ -621,6 +621,11 @@ export class TrabajadorService {
         ...(dto.iban !== undefined && { iban: dto.iban }),
         ...(dto.retencionIrpf !== undefined && { retencionIrpf: dto.retencionIrpf }),
         ...(dto.emailFacturacion !== undefined && { emailFacturacion: dto.emailFacturacion }),
+        ...(dto.nombreGestoria !== undefined && { nombreGestoria: dto.nombreGestoria }),
+        ...(dto.emailGestoria !== undefined && { emailGestoria: dto.emailGestoria }),
+        ...(dto.periodicidadGestoria !== undefined && {
+          periodicidadGestoria: dto.periodicidadGestoria,
+        }),
       },
       include: trabajadorInclude,
     }) as unknown as TrabajadorSafe;

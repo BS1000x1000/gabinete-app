@@ -107,18 +107,23 @@ describe('ListadoComponent', () => {
     });
   });
 
-  // ── Tabs de trabajo ──────────────────────────────────────────────────────
-  describe('workTabs', () => {
-    it('contiene exactamente 6 tabs', () => {
-      expect(component.workTabs).toHaveSize(6);
+  // ── Pestañas de la ficha ─────────────────────────────────────────────────
+  describe('tabs', () => {
+    it('empieza por Perfil y termina en Terapeutas', () => {
+      const targets = component.tabs().map(t => t.target);
+      expect(targets[0]).toBe('perfil');
+      expect(targets.at(-1)).toBe('terapeutas');
     });
 
-    it('la primera tab es Perfil', () => {
-      expect(component.workTabs()[0].target).toBe('perfil');
+    it('lo del día a día va antes que la configuración del caso', () => {
+      const targets = component.tabs().map(t => t.target);
+      expect(targets.indexOf('sesiones')).toBeLessThan(targets.indexOf('contratos'));
+      expect(targets.indexOf('documentacion')).toBeLessThan(targets.indexOf('terapeutas'));
     });
 
-    it('la última tab es Documentos/informes', () => {
-      expect(component.workTabs()[component.workTabs().length - 1].target).toBe('informes');
+    it('una sola lista: no quedan grupos separados', () => {
+      expect((component as any).workTabs).toBeUndefined();
+      expect((component as any).configTabs).toBeUndefined();
     });
   });
 

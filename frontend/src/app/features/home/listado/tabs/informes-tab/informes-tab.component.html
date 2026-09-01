@@ -238,19 +238,26 @@
           </div>
 
           <div class="exp-firma__campo">
-            <label class="exp-firma__label" for="firma-tutor">Tutor legal que ha firmado *</label>
-            <select id="firma-tutor" class="exp-firma__select"
-                    [ngModel]="firmaForm().familiarId"
-                    (ngModelChange)="patchFirma('familiarId', $event)">
-              <option value="">Seleccionar tutor legal…</option>
-              <option *ngFor="let t of tutoresLegales()" [value]="t.id">
-                {{ t.nombre }} {{ t.apellidos }} — {{ t.parentesco }}
-              </option>
-            </select>
+            <label class="exp-firma__label">Quién ha firmado el documento *</label>
+            <p class="exp-firma__pista">
+              Marca a todos los que aparezcan firmando. Con dos tutores legales lo habitual es
+              que firmen ambos.
+            </p>
+            <label class="exp-firma__check" *ngFor="let t of tutoresLegales()">
+              <input type="checkbox"
+                     [checked]="esFirmante(t.id)"
+                     (change)="toggleFirmante(t.id)" />
+              <span>{{ t.nombre }} {{ t.apellidos }} — {{ t.parentesco }}</span>
+            </label>
             <p *ngIf="!tutoresLegales().length" class="exp-firma__aviso">
               <i class="bi bi-exclamation-circle me-1"></i>
               Ningún familiar consta como tutor legal. Márcalo en la pestaña Perfil, sección
               Familia: solo un tutor legal puede consentir por un menor.
+            </p>
+            <p *ngIf="avisoFirmaParcial()" class="exp-firma__pista exp-firma__pista--ojo">
+              <i class="bi bi-info-circle me-1"></i>
+              Hay {{ tutoresLegales().length }} tutores legales y solo has marcado uno. Se puede
+              registrar así, pero quedará constancia de que firmó uno solo.
             </p>
           </div>
 
@@ -288,7 +295,7 @@
           <div class="exp-firma__acciones">
             <button class="gb-btn" type="button" (click)="cerrarFormFirma()">Cancelar</button>
             <button class="gb-btn gb-btn--primary" type="button"
-                    [disabled]="!firmaForm().familiarId || subiendoFirmadoDe() !== null"
+                    [disabled]="firmantes().length === 0 || subiendoFirmadoDe() !== null"
                     (click)="confirmarFirmaConsentimiento()">
               <span *ngIf="subiendoFirmadoDe()" class="spinner-border spinner-border-sm me-1"></span>
               <i *ngIf="!subiendoFirmadoDe()" class="bi bi-check-circle me-1"></i>
@@ -298,33 +305,54 @@
         </div>
       </div>
 
-      <!-- ═══ Filtros: origen + categoría contextual ═══ -->
-      <div *ngIf="filas().todas.length > 0" class="doc-filtros">
-        <div class="doc-segmented" role="group" aria-label="Filtrar por origen">
-          <button [class.is-active]="filtroOrigen() === 'todos'" (click)="setOrigen('todos')">
-            Todo <span class="doc-count">{{ filas().todas.length }}</span>
+      <!-- ═══ Filtros ═══
+           Origen: tres opciones fijas y siempre las mismas → segmentado.
+           Categoria: catalogo abierto que crecia en una fila de chips
+           interminable → desplegable, que ocupa igual con dos que con diez. -->
+      <div *ngIf="filas().todas.length > 0" class="gb-filtros">
+        <div class="gb-segmented" role="group" aria-label="Filtrar por tipo">
+          <button
+            type="button"
+            [class.is-active]="filtroOrigen() === 'todos'"
+            (click)="setOrigen('todos')"
+          >
+            Todo <span class="gb-segmented__count">{{ filas().todas.length }}</span>
           </button>
-          <button [class.is-active]="filtroOrigen() === 'informe'" (click)="setOrigen('informe')">
-            Informes <span class="doc-count">{{ totalInformes() }}</span>
+          <button
+            type="button"
+            [class.is-active]="filtroOrigen() === 'informe'"
+            (click)="setOrigen('informe')"
+          >
+            Informes <span class="gb-segmented__count">{{ totalInformes() }}</span>
           </button>
-          <button [class.is-active]="filtroOrigen() === 'documento'" (click)="setOrigen('documento')">
-            Documentos <span class="doc-count">{{ totalDocumentos() }}</span>
+          <button
+            type="button"
+            [class.is-active]="filtroOrigen() === 'documento'"
+            (click)="setOrigen('documento')"
+          >
+            Documentos <span class="gb-segmented__count">{{ totalDocumentos() }}</span>
           </button>
         </div>
 
-        <div class="doc-chips">
-          <button
-            class="doc-chip"
-            [class.is-active]="filtroCategoria() === 'todos'"
-            (click)="setCategoria('todos')"
-          >Todas las categorías</button>
-          <button
-            *ngFor="let cat of categoriasDisponibles()"
-            class="doc-chip"
-            [class.is-active]="filtroCategoria() === cat.key"
-            (click)="setCategoria(cat.key)"
-          >{{ cat.label }} <span class="doc-count">{{ cat.total }}</span></button>
-        </div>
+        <label class="gb-filtro">
+          <span class="gb-filtro__label">Categoría</span>
+          <select
+            class="gb-select"
+            [class.is-active]="filtroCategoria() !== 'todos'"
+            [ngModel]="filtroCategoria()"
+            (ngModelChange)="setCategoria($event)"
+            aria-label="Filtrar por categoría"
+          >
+            <option value="todos">Todas</option>
+            <option *ngFor="let cat of categoriasDisponibles()" [value]="cat.key">
+              {{ cat.label }} ({{ cat.total }})
+            </option>
+          </select>
+        </label>
+
+        <span class="gb-filtros__resultado" *ngIf="hayFiltrosActivos()">
+          {{ filasFiltradas().length }} de {{ filas().todas.length }}
+        </span>
 
         <button *ngIf="hayFiltrosActivos()" class="doc-limpiar" (click)="limpiarFiltros()">
           <i class="bi bi-x-circle"></i> Limpiar
@@ -484,7 +512,7 @@
       <!-- Formulario: generar informe de progreso de objetivos -->
       <div *ngIf="mostrarFormObjetivos()" class="informe-borrador-form mb-4">
         <div class="d-flex align-items-center gap-2 mb-3">
-          <i class="bi bi-graph-up-arrow" style="color: #7c3aed"></i>
+          <i class="bi bi-graph-up-arrow" style="color: #443859"></i>
           <h6 class="fw-semibold mb-0">Generar informe de progreso por objetivos</h6>
         </div>
         <p class="text-muted small mb-3">
@@ -514,7 +542,7 @@
         <div class="d-flex gap-2">
           <button
             class="gb-btn gb-btn--sm"
-            style="background: #7c3aed; color: white;"
+            style="background: #6b5a8a; color: #ffffff;"
             (click)="generarBorradorObjetivos()"
             [disabled]="!formObjetivos().desde || !formObjetivos().hasta || guardando()"
           >

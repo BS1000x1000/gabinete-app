@@ -148,93 +148,13 @@
 
 // ── Filtros ──────────────────────────────────────────────────
 
-.doc-filtros {
-  display: flex;
-  align-items: center;
-  gap: $spacing-sm $spacing-md;
-  flex-wrap: wrap;
-  padding-bottom: $spacing-sm;
-  margin-bottom: $spacing-sm;
-  border-bottom: 1px solid $gray-100;
-}
-
-.doc-segmented {
-  display: inline-flex;
-  padding: 2px;
-  background: $gray-100;
-  border-radius: $border-radius-sm;
-
-  button {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.3rem 0.7rem;
-    font-size: $font-size-xs;
-    font-weight: $font-weight-semibold;
-    color: $gray-500;
-    background: transparent;
-    border: none;
-    border-radius: calc(#{$border-radius-sm} - 2px);
-    cursor: pointer;
-    transition: $transition-color;
-
-    &:hover { color: $gray-800; }
-
-    &.is-active {
-      background: $white;
-      color: $primary-dark;
-      box-shadow: $shadow-sm;
-    }
-
-    &:focus-visible { outline: 2px solid $primary; outline-offset: -2px; }
-  }
-}
-
-.doc-count {
-  font-size: 0.68rem;
-  font-weight: $font-weight-bold;
-  font-variant-numeric: tabular-nums;
-  opacity: 0.65;
-}
-
-.doc-chips {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  flex-wrap: wrap;
-}
-
-.doc-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  padding: 0.25rem 0.6rem;
-  font-size: $font-size-xs;
-  font-weight: $font-weight-medium;
-  color: $gray-600;
-  background: transparent;
-  border: 1px solid $gray-200;
-  border-radius: $border-radius-full;
-  cursor: pointer;
-  transition: $transition-color;
-
-  &:hover { border-color: $primary-light; color: $primary-dark; }
-
-  &.is-active {
-    background: $primary-ultra-light;
-    border-color: $primary;
-    color: $primary-dark;
-    font-weight: $font-weight-semibold;
-  }
-
-  &:focus-visible { outline: 2px solid $primary; outline-offset: 1px; }
-}
 
 .doc-limpiar {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
   padding: 0;
+  flex-shrink: 0;
   font-size: $font-size-xs;
   font-weight: $font-weight-semibold;
   color: $gray-500;
@@ -389,9 +309,9 @@
   border: 1px solid transparent;
 
   &--borrador   { background: $gray-100;    color: $gray-600;    border-color: $gray-200; }
-  &--revision   { background: $warning-light; color: $warning-dark; border-color: rgba($warning, 0.35); }
-  &--finalizado { background: $success-light; color: $success-dark; border-color: rgba($success, 0.35); }
-  &--enviado    { background: $secondary-light; color: $secondary-dark; border-color: rgba($secondary, 0.35); }
+  &--revision { @include badge-tono($warning-light, $warning-dark, $warning); }
+  &--finalizado { @include badge-tono($success-light, $success-dark, $success); }
+  &--enviado { @include badge-tono($secondary-light, $secondary-dark, $secondary); }
   &--externo    { background: transparent;  color: $gray-400;    border-color: $gray-200; }
 }
 
@@ -683,4 +603,10 @@
 
   .doc-search input { width: 100%; }
   .doc-toolbar__actions { width: 100%; }
+
+  .gb-segmented { width: 100%; }
+  .gb-segmented button { flex: 1; justify-content: center; }
+  .gb-filtro { width: 100%; justify-content: space-between; }
+  .gb-select { flex: 1; min-width: 0; }
+  .gb-filtros__resultado { margin-left: 0; }
 }

@@ -15,6 +15,7 @@ import {
   UseFilters,
   UseInterceptors,
   UploadedFile,
+  Query,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -64,18 +65,23 @@ export class ContratosController {
   }
 
   @Get()
-  findAll(@Req() req: any) {
+  @Roles(...ROLES_CLINICOS)
+  findAll(@Req() req: any, @Query('soloMias') soloMias?: string) {
     this.logger.log(`GET /contratos - user ${req.user.userId}`);
-    return this.contratosService.findAll(req.user);
+    return this.contratosService.findAll(req.user, {
+      soloMias: soloMias === 'true',
+    });
   }
 
   @Get('cliente/:clienteId')
+  @Roles(...ROLES_CLINICOS)
   findByCliente(@Param('clienteId') clienteId: string, @Req() req: any) {
     this.logger.log(`GET /contratos/cliente/${clienteId}`);
     return this.contratosService.findByCliente(clienteId, req.user);
   }
 
   @Get(':id')
+  @Roles(...ROLES_CLINICOS)
   findOne(@Param('id') id: string, @Req() req: any) {
     this.logger.log(`GET /contratos/${id}`);
     return this.contratosService.findOne(id, req.user);
@@ -154,6 +160,7 @@ export class ContratosController {
    * se genera al vuelo con Puppeteer como se ha hecho siempre.
    */
   @Get(':id/pdf')
+  @Roles(...ROLES_CLINICOS)
   async getPdf(
     @Param('id', ParseUUIDPipe) id: string,
     @Req() req: any,

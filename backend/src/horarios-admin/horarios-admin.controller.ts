@@ -11,11 +11,15 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../roles/roles.guard';
+import { Roles } from '../roles/roles.decorator';
+import { ROLES_CLINICOS } from '../roles/roles.constants';
 import { CreateHorarioAdminDto } from './dto/create-horario-admin.dto';
 import { UpdateHorarioAdminDto } from './dto/update-horario-admin.dto';
 import { HorariosAdminService } from './horarios-admin.service';
 
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(...ROLES_CLINICOS)
 @Controller('horarios-admin')
 export class HorariosAdminController {
   constructor(private readonly service: HorariosAdminService) {}

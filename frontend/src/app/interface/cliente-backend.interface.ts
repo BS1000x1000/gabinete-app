@@ -91,12 +91,18 @@ export interface ConsentimientoRgpdBackend {
   documentoId?: string | null;
   documento?: { id: string; nombre: string; mimeType: string } | null;
 
-  familiar: {
-    id: string;
-    nombre: string;
-    apellidos: string;
-    parentesco: string;
-  };
+  /**
+   * Quien firmo. Son varios porque con dos titulares de la patria potestad lo
+   * normal es que firmen ambos.
+   */
+  firmantes: Array<{
+    familiar: {
+      id: string;
+      nombre: string;
+      apellidos: string;
+      parentesco: string;
+    };
+  }>;
   trabajador: {
     id: string;
     nombre: string;

@@ -1,4 +1,6 @@
 import {
+  ArrayNotEmpty,
+  IsArray,
   IsBoolean,
   IsDateString,
   IsNotEmpty,
@@ -11,17 +13,28 @@ import {
 import { Transform } from 'class-transformer';
 
 /**
+ * En multipart, un campo repetido llega como array y uno solo como string.
+ * Aqui siempre es una lista: pueden firmar los dos tutores.
+ */
+const aLista = () =>
+  Transform(({ value }: { value: unknown }): string[] => {
+    if (Array.isArray(value)) {
+      return value.filter(
+        (v): v is string => typeof v === 'string' && v !== '',
+      );
+    }
+    if (typeof value === 'string' && value !== '') return [value];
+    return [];
+  });
+
+/**
  * Lo que llega por multipart viaja como texto: "true" y "false" no son
  * booleanos hasta que alguien los convierte.
  */
 const aBooleano = () =>
-  Transform(({ value }) => {
+  Transform(({ value }: { value: unknown }): boolean => {
     if (typeof value === 'boolean') return value;
-    if (value === 'true' || value === '1' || value === 'on') return true;
-    if (value === 'false' || value === '0' || value === '' || value == null) {
-      return false;
-    }
-    return value;
+    return value === 'true' || value === '1' || value === 'on';
   });
 
 /**
@@ -32,10 +45,17 @@ const aBooleano = () =>
  * `ExpedienteService.registrarFirmado`, que ya sabe de que categoria se trata.
  */
 export class FirmaExpedienteDto {
-  /** Tutor legal que firma. Debe ser un familiar del cliente con `esTutorLegal`. */
+  /**
+   * Tutores legales que firman. Con dos titulares de la patria potestad lo
+   * normal es que firmen los dos; con uno solo, basta el suyo. Todos tienen que
+   * ser familiares del cliente con `esTutorLegal`.
+   */
   @IsOptional()
-  @IsUUID()
-  familiarId?: string;
+  @aLista()
+  @IsArray()
+  @ArrayNotEmpty({ message: 'Indica quien ha firmado el consentimiento' })
+  @IsUUID('4', { each: true })
+  firmanteIds?: string[];
 
   /** La fecha que la familia escribe en el papel, no la de subida. */
   @IsOptional()
@@ -75,9 +95,11 @@ export class FirmaExpedienteDto {
  * flujo vino a sustituir: sin evidencia no se registra nada.
  */
 export class RegistroManualConsentimientoDto extends FirmaExpedienteDto {
-  @IsUUID()
-  @IsNotEmpty({ message: 'Indica el tutor legal que firma el consentimiento' })
-  declare familiarId: string;
+  @aLista()
+  @IsArray()
+  @ArrayNotEmpty({ message: 'Indica que tutor o tutores legales han firmado' })
+  @IsUUID('4', { each: true })
+  declare firmanteIds: string[];
 
   @IsString()
   @MinLength(10, {

@@ -5,6 +5,11 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { finalize } from 'rxjs';
 import { TrabajadorService } from '../../../../../services/trabajadores.service';
+import {
+  PeriodicidadEnvio,
+  PERIODICIDAD_LABEL,
+} from '../../../../../interface/factura.interface';
+import { AuthService } from '../../../../../services/auth.service';
 
 type FiscalForm = {
   nifFiscal: string;
@@ -16,6 +21,9 @@ type FiscalForm = {
   iban: string;
   retencionIrpf: number;
   emailFacturacion: string;
+  nombreGestoria: string;
+  emailGestoria: string;
+  periodicidadGestoria: PeriodicidadEnvio;
 };
 
 @Component({
@@ -27,14 +35,30 @@ type FiscalForm = {
 export class TrabajadorFacturacionTabComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly trabajadorSvc = inject(TrabajadorService);
+  private readonly auth = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
 
-  private readonly trabajadorId: string = this.route.parent?.snapshot.paramMap.get('id') ?? '';
+  /**
+   * De quien son los datos fiscales. Se resuelve por este orden:
+   *   1. `:id` de la ficha de trabajador (`/home/trabajadores/:id/facturacion`)
+   *   2. el usuario en sesion (`/home/administracion/datos-fiscales`)
+   *
+   * Con eso el mismo componente sirve las dos rutas. Antes el NIF, el IBAN y el
+   * IRPF solo se podian tocar desde la ficha, dentro de "Equipo", asi que un
+   * autonomo entraba en Administracion a facturar y no encontraba justo los
+   * datos que determinan su factura.
+   */
+  private readonly trabajadorId: string =
+    this.route.parent?.snapshot.paramMap.get('id')
+    ?? this.route.snapshot.paramMap.get('id')
+    ?? this.auth.currentTrabajadorId()
+    ?? '';
 
   readonly form = signal<FiscalForm>({
     nifFiscal: '', nombreFiscal: '', direccionFiscal: '',
     codigoPostalFiscal: '', ciudadFiscal: '', provinciaFiscal: '',
     iban: '', retencionIrpf: 0, emailFacturacion: '',
+    nombreGestoria: '', emailGestoria: '', periodicidadGestoria: 'NINGUNA',
   });
 
   readonly guardando = signal(false);
@@ -68,8 +92,18 @@ export class TrabajadorFacturacionTabComponent implements OnInit, OnDestroy {
       iban:               t?.iban               ?? '',
       retencionIrpf:      t?.retencionIrpf      ?? 0,
       emailFacturacion:   t?.emailFacturacion   ?? '',
+      nombreGestoria:     t?.nombreGestoria     ?? '',
+      emailGestoria:      t?.emailGestoria      ?? '',
+      periodicidadGestoria: t?.periodicidadGestoria ?? 'NINGUNA',
     });
   }
+
+  /** Opciones del selector de periodicidad, en el orden en que se leen. */
+  readonly periodicidades: { valor: PeriodicidadEnvio; label: string }[] = [
+    { valor: 'NINGUNA',    label: PERIODICIDAD_LABEL.NINGUNA },
+    { valor: 'MENSUAL',    label: PERIODICIDAD_LABEL.MENSUAL },
+    { valor: 'TRIMESTRAL', label: PERIODICIDAD_LABEL.TRIMESTRAL },
+  ];
 
   patch<K extends keyof FiscalForm>(k: K, v: any): void {
     this.form.update(f => ({ ...f, [k]: v }));

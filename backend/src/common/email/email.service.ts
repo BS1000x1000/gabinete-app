@@ -4,6 +4,13 @@ import { escapeHtml } from '../utils/html.utils';
 
 const DEFAULT_FROM = 'facturacion@gabinete.es';
 
+/**
+ * Tope de adjuntos por mensaje. Resend corta en 40 MB y el contenido viaja en
+ * base64, asi que el binario util son ~28 MB; se deja margen. Antes no habia
+ * ninguna comprobacion y un envio pasado de tamaño se perdia en silencio.
+ */
+const MAX_ADJUNTOS_BYTES = 25 * 1024 * 1024;
+
 export interface Adjunto {
   filename: string;
   content: Buffer;
@@ -19,6 +26,22 @@ export interface FacturaEmailPayload {
   total: string;
   pdfBuffer: Buffer;
   pdfFilename: string;
+}
+
+export interface PackGestoriaEmailPayload {
+  to: string;
+  replyTo: string;
+  nombreTrabajador: string;
+  nifTrabajador: string | null;
+  /** "3T 2026" o "2026-07 — 2026-11". */
+  periodo: string;
+  numFacturas: number;
+  totalImporte: number;
+  /** Nombres de los ficheros que van dentro del paquete, para listarlos. */
+  ficheros: string[];
+  /** Cuando el zip no cabe como adjunto, va el enlace y solo se adjunta el libro. */
+  enlaceDescarga?: string | null;
+  adjuntos: Adjunto[];
 }
 
 export interface ExpedienteEmailPayload {
@@ -84,6 +107,66 @@ export class EmailService {
       html: this.buildExpedienteHtml(payload),
       adjuntos: payload.adjuntos,
       etiquetaLog: `expediente de ${payload.nombreMenor}`,
+    });
+  }
+
+  /**
+   * El paquete de facturas de un periodo para la gestoria.
+   *
+   * `enlaceDescarga` llega cuando el zip no cabia como adjunto: en ese caso solo
+   * se adjunta el libro en Excel y los PDF viajan por enlace temporal.
+   */
+  async sendPackGestoriaEmail(payload: PackGestoriaEmailPayload): Promise<boolean> {
+    const total = payload.adjuntos.reduce((s, a) => s + a.content.length, 0);
+    if (total > MAX_ADJUNTOS_BYTES) {
+      // Sin esto el proveedor rechaza el mensaje y `enviar` devuelve `false` sin
+      // decir por que: el fallo se veria como "email no enviado" a secas.
+      this.logger.error(
+        `Adjuntos de ${(total / 1024 / 1024).toFixed(1)} MB para ${payload.to}: ` +
+          'por encima del limite del proveedor. No se envia.',
+      );
+      return false;
+    }
+
+    const lista = payload.ficheros
+      .map((f) => `<li style="font-family:monospace;font-size:12px;">${escapeHtml(f)}</li>`)
+      .join('');
+
+    const bloqueEnlace = payload.enlaceDescarga
+      ? `<p>El paquete completo con los PDF pesa demasiado para ir adjunto.
+           Puedes descargarlo aqui durante los proximos 7 dias:<br>
+           <a href="${escapeHtml(payload.enlaceDescarga)}">Descargar paquete de facturas</a></p>`
+      : '';
+
+    const html = `
+      <p>Hola,</p>
+      <p>Te envio las facturas emitidas del periodo <strong>${escapeHtml(payload.periodo)}</strong>.</p>
+      <ul>
+        <li><strong>Emisor:</strong> ${escapeHtml(payload.nombreTrabajador)}${
+          payload.nifTrabajador ? ` (NIF ${escapeHtml(payload.nifTrabajador)})` : ''
+        }</li>
+        <li><strong>Facturas:</strong> ${payload.numFacturas}</li>
+        <li><strong>Total facturado:</strong> ${payload.totalImporte
+          .toFixed(2)
+          .replace('.', ',')} &euro;</li>
+      </ul>
+      ${bloqueEnlace}
+      <p>Contenido del paquete:</p>
+      <ul>${lista}</ul>
+      <p style="font-size:12px;color:#666;">
+        El libro en Excel recoge tambien las facturas anuladas, para que la numeracion
+        correlativa no presente huecos sin explicacion.
+      </p>
+      <p>Un saludo,<br>${escapeHtml(payload.nombreTrabajador)}</p>
+    `;
+
+    return this.enviar({
+      to: payload.to,
+      replyTo: payload.replyTo,
+      subject: `Facturas emitidas ${payload.periodo} — ${payload.nombreTrabajador}`,
+      html,
+      adjuntos: payload.adjuntos,
+      etiquetaLog: `pack gestoria ${payload.periodo}`,
     });
   }
 

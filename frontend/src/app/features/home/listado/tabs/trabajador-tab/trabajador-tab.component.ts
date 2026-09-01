@@ -292,12 +292,14 @@ export class TrabajadorTabComponent implements OnInit {
 
   getBadgeClass(tipo: string): string {
     const m: Record<string, string> = {
-      PEDAGOGIA:          'bg-primary',
-      NEUROPSICOLOGIA:    'bg-info',
-      LOGOPEDIA:          'bg-success',
-      TERAPIA_OCUPACIONAL:'bg-danger',
-      EVALUACION:         'bg-warning text-dark',
-      REUNION_COLEGIO:    'bg-secondary',
+      // gb-badge en vez de Bootstrap: `bg-info` (#0dcaf0) con texto blanco daba
+      // 1.96, muy por debajo del minimo, y ninguno pertenecia a la paleta.
+      PEDAGOGIA:          'gb-badge gb-badge--acento',
+      NEUROPSICOLOGIA:    'gb-badge gb-badge--info',
+      LOGOPEDIA:          'gb-badge gb-badge--exito',
+      TERAPIA_OCUPACIONAL:'gb-badge gb-badge--peligro',
+      EVALUACION:         'gb-badge gb-badge--aviso',
+      REUNION_COLEGIO:    'gb-badge gb-badge--neutro',
     };
     return m[tipo] || 'bg-secondary';
   }

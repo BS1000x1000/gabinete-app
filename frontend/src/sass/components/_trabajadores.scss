@@ -211,8 +211,8 @@
   flex-shrink: 0;
 
   &.trab-status-dot--activo {
-    background: #22c55e;
-    box-shadow: 0 0 0 3px rgba(#22c55e, 0.2);
+    background: $success;
+    box-shadow: 0 0 0 3px rgba($success, 0.2);
   }
 }
 
@@ -256,7 +256,7 @@
 
   &.rol-pedagogia {
     background: rgba($warning, 0.1);
-    color: #b45309;
+    color: $accent-dark;
   }
 
   &.rol-recepcion {
@@ -560,9 +560,9 @@
   }
 
   &.accion-reactivar:hover {
-    border-color: #16a34a;
-    color: #16a34a;
-    background: rgba(#22c55e, 0.08);
+    border-color: $success;
+    color: $success-dark;
+    background: $success-light;
   }
 }
 
@@ -782,7 +782,7 @@
   &:hover { opacity: 0.9; }
 
   &--ok {
-    background: linear-gradient(135deg, #16a34a, #22c55e);
+    background: linear-gradient(135deg, $success-dark, $success);
   }
 }
 

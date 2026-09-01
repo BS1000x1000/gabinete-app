@@ -47,7 +47,7 @@ Stack: **Angular 19** (frontend) + **NestJS 11** (backend) + **Prisma 5** + **Po
 Serverless Container (backend) + Object Storage (ficheros) + Transactional Email. Frontend Angular
 en **Cloudflare Pages**. CI/CD por **GitHub Actions** (push a `main` → build → registry → redeploy).
 
-**Current state (2026-06)**: clinical nucleus complete and **tests green** (367 unit + 58 E2E with a real Postgres in CI). Code hardening done: n8n removed, Dockerfile built & image pushed to Scaleway registry, Object Storage persistence for report PDFs implemented, rate limiting + Helmet + CORS-to-FRONTEND_URL in place, CI workflow with Postgres service. **Infra in progress on Scaleway**: account + billing alert + DPA validated + HDS question sent; Container Registry + image; Object Storage bucket (`gabinete-archivos`). **Pending**: create the managed DB + the Serverless Container (≈6 July), then activate the deploy pipeline. No domain yet. See `CONTEXTO_…md` §14 for the live deployment status.
+**Current state (2026-06)**: clinical nucleus complete and **tests green** (370 unit + 60 E2E with a real Postgres in CI). Code hardening done: n8n removed, Dockerfile built & image pushed to Scaleway registry, Object Storage persistence for report PDFs implemented, rate limiting + Helmet + CORS-to-FRONTEND_URL in place, CI workflow with Postgres service. **Infra in progress on Scaleway**: account + billing alert + DPA validated + HDS question sent; Container Registry + image; Object Storage bucket (`gabinete-archivos`). **Pending**: create the managed DB + the Serverless Container (≈6 July), then activate the deploy pipeline. No domain yet. See `CONTEXTO_…md` §14 for the live deployment status.
 
 ---
 
@@ -59,8 +59,8 @@ en **Cloudflare Pages**. CI/CD por **GitHub Actions** (push a `main` → build �
 npm run start:dev        # Dev server with watch (port 3000)
 npm run build            # Production build
 npm run lint             # ESLint with auto-fix
-npm test                 # Jest unit tests (367 passing)
-npm run test:e2e         # E2E tests (supertest) — 58 passing
+npm test                 # Jest unit tests (370 passing)
+npm run test:e2e         # E2E tests (supertest) — 60 passing
 npm run test:cov         # Coverage report
 npx jest src/foo/foo.spec.ts   # Single spec file
 ```
@@ -234,7 +234,87 @@ Key routes:
 - `/home/clientes` — client list
 - `/home/estadisticas` — advanced statistics
 - `/home/trabajadores` — therapist management (ADMIN + RECEP)
-- `/home/listado/:id/perfil|sesiones|bonos|progreso|informes|terapeutas`
+- `/home/listado/:id/perfil|sesiones|bonos|progreso|documentacion|contratos|terapeutas`
+- `/home/administracion/...` — bloque económico del autónomo (ver §Administración)
+- `/home/configuracion/festivos` — configuración del centro (ADMIN)
+
+Los roles de las rutas salen de `frontend/src/app/shared/constants/roles.ts`, espejo de
+`backend/src/roles/roles.constants.ts`. No escribas literales de rol sueltos: el sidebar y el guard
+tienen que decidir con la misma lista, y antes uno usaba lista negra y el otro lista blanca.
+
+### Administración — el bloque económico del autónomo
+
+El gabinete es un **colectivo de autónomos independientes** (`docs/hito-r-suscripciones-facturacion.md`):
+cada terapeuta tiene su NIF, su numeración correlativa y sus facturas a las familias. Eso manda sobre
+todo lo que hay aquí.
+
+```
+/home/administracion        roleGuard(ROLES_ADMINISTRACION)  ← RECEP fuera, a propósito
+├── mis-contratos           tabla densa + cuota mensual comprometida + enlace a la ficha
+├── facturacion             Listado | Análisis | Gestoría — una sola carga de datos
+├── datos-fiscales          NIF · IBAN · IRPF · email + gestoría (mismo componente que la ficha)
+└── supervision             ADMIN — vista global + generación de cualquier mes
+
+/home/configuracion         roleGuard(ADMIN)
+└── festivos                configuración de calendario, la consumen contratos y sesiones
+```
+
+**Generación por periodo.** `POST /facturas/generar-mes` (y su `/preview`) admite cualquier mes ya
+cerrado y está acotado por trabajador: cada autónomo recupera los suyos, el ADMIN puede pedir el
+gabinete entero desde Supervisión. Tres cosas que hay que respetar:
+
+- **La serie correlativa es la del año de emisión, no la del periodo facturado.** Recuperar 2025-03
+  hoy emite un `NN/2026` con `periodoFacturado = 2025-03`. Numerar por el año del periodo producía un
+  `47/2025` expedido después del `52/2025`: correlatividad rota.
+- **Los contratos `FINALIZADO` también facturan** si su ventana de fechas cubre el periodo. El estado
+  se evalúa hoy, así que filtrar solo por `ACTIVO` impedía emitir la factura de marzo de un cliente
+  que causó baja en junio.
+- **Los periodos futuros se rechazan** con 400: quemarían números de una serie que no ha empezado, y
+  los números no se liberan (anular deja el hueco).
+
+**Packs y entrega a la gestoría.**
+
+- `FacturasPackService` arma un ZIP con `resumen-facturas_<periodo>.xlsx` (el libro de facturas
+  emitidas, **con las anuladas incluidas** para que no haya huecos sin explicar) y los PDF nombrados
+  `0012_2026-07_Tutor-Pagador.pdf`. Los PDF se leen de Object Storage por `Factura.urlPdfR2` —que
+  guarda la **clave**, no una URL— y solo se regeneran con Puppeteer los que falten, con tope.
+- El **cron de reconciliación** (03:00 diario) rellena los `urlPdfR2 = null`. Es lo que mantiene el
+  pack barato y lo que evita que una factura sin PDF quede excluida del envío por email para siempre.
+- `EnvioGestoria` + `EnvioGestoriaFactura` registran qué se entregó y cuándo; el ZIP enviado se
+  archiva en `gestoria/<trabajadorId>/…`. Por encima de 20 MB se manda el libro adjunto y los PDF por
+  enlace prefirmado: `EmailService` se traga los errores devolviendo `false`, así que un adjunto
+  pasado de tamaño se perdería en silencio.
+- Cron día 5 a las 07:00 para quien tenga `periodicidadGestoria`. Solo periodos cerrados y solo
+  facturas que no hayan salido ya, así que ejecutarlo de más no duplica envíos.
+- **Regla 12** del motor de notificaciones (`FACTURAS_SIN_ENTREGAR`) va como rama de primer nivel en
+  `evaluarReglas`, no dentro de `clientes.map(...)`: no habla de un cliente sino del autónomo. Se
+  retira explícitamente al entregar — nada en el motor quita una notificación cuando deja de aplicar.
+
+> **RGPD:** la gestoría es **encargada del tratamiento** (art. 28) y necesita contrato de encargo. El
+> concepto de la factura revela el tipo de terapia del menor. Los ficheros se nombran con el tutor
+> pagador y no con el menor, pero eso reduce la exposición, no sustituye al contrato.
+
+Reglas que conviene no romper:
+
+- **`soloMias` en todas las pantallas "Mis…".** `GET /facturas` y `GET /contratos` no filtran por
+  trabajador cuando el rol es ADMIN, y el ADMIN también es un autónomo: sin el flag, "Mis facturas" le
+  enseñaba las de todo el gabinete y "Mis ingresos" graficaba los ingresos de los demás como suyos.
+  **Supervisión es la única pantalla que llama sin el flag.**
+- **Los contratos se crean y se replanifican en `listado/:id/contratos`**, no aquí. "Mis contratos" es
+  la vista transversal del autónomo y enlaza a la ficha para actuar.
+- **Sin retención de IRPF.** `RETENCION_IRPF_PARTICULARES = 0` en `facturas.service.ts`: el receptor es
+  el tutor pagador, un particular, y un particular no practica retención. `Trabajador.retencionIrpf` y
+  las columnas de `Factura` se conservan para un futuro receptor empresa.
+- **`anular()` deja hueco en la numeración.** Sigue sin haber factura rectificativa ni campo `serie`;
+  pendiente de la gestoría junto con el registro de facturación (RD 1007/2023 / Verifactu). Es lo
+  primero a resolver antes de emitir a datos reales.
+- **Las facturas se generan y se envían solas** (`facturas-cron.service.ts`: día 1 a las 02:00 genera,
+  a las 09:00 envía). El botón de Supervisión es la recuperación manual, no el camino normal — y hoy
+  nadie ve si el cron funcionó, solo los logs.
+- **Vocabulario compartido**, no reimplementado: `shared/utils/facturacion.utils.ts` (meses, periodos,
+  `esComputable`, totales), `shared/charts/chart-theme.ts` (Chart.js) y los helpers de
+  `interface/contrato.interface.ts` (`tipoColor`, `tipoLabel`, `diaLabel`…). Había tres tablas de meses
+  con dos convenciones y una copia divergente de los colores por tipo de terapia.
 
 ### Styles
 
@@ -335,9 +415,21 @@ separado: `autorizaInformesTerceros`, `autorizaCoordinacionCentro`, `autorizaIma
 `consentimientoMenor14`. Usa `ConsentimientosService.puedeCoordinarConCentro()` antes de
 mandar nada al colegio. **No** derives estos permisos del booleano de `Cliente`.
 
+**Firman uno o los dos tutores.** `ConsentimientoFirmante` (tabla puente) recoge a cada tutor
+legal que suscribe el documento: con dos titulares de la patria potestad lo normal es que
+firmen ambos, y el PDF tiene dos bloques de representante legal. `ConsentimientoRgpd` **no**
+tiene `familiarId`; se lee `firmantes[]`. Una revocación arrastra los mismos firmantes del
+consentimiento que retira. Que firme uno solo teniendo dos tutores es válido (art. 156 CC) y
+no se bloquea, pero el panel y el formulario lo avisan.
+
 Reglas que conviene no romper:
-- Solo un familiar con `esTutorLegal` puede consentir (LOPDGDD art. 7). Se valida **antes** de
-  subir el PDF, para no dejar ficheros huérfanos en el bucket.
+- Solo familiares con `esTutorLegal` pueden consentir (LOPDGDD art. 7), y se validan **todos**
+  antes de subir el PDF, para no dejar ficheros huérfanos en el bucket.
+- `assertTutoresLegales()` devuelve la lista **deduplicada**: la PK de
+  `consentimiento_firmantes` es compuesta y un firmante repetido la rompe. Usa su valor de
+  retorno, no el array de entrada.
+- Los `firmanteIds` viajan por multipart como **campo repetido**; el DTO los normaliza a lista
+  (`aLista()`), porque un solo valor llegaría como string.
 - `versionTexto` es la `PLANTILLA_VERSION` real del documento firmado. Nunca una constante del
   frontend: el texto que la familia firma es el PDF del backend, y no debe existir una segunda
   copia en `perfil-tab`.
@@ -451,8 +543,8 @@ Complex form sections use a shared `ClienteDrawerComponent` with sections: `pers
 ## Testing
 
 ### Backend — current state
-- **Unit**: 367 tests, 27 suites — all green. Jest + @nestjs/testing.
-- **E2E**: 58 tests, 6 suites — all green. supertest + Jest. `test/helpers/create-app.ts` + `test/helpers/prisma-mock.ts`. `ThrottlerGuard` overridden in `create-app.ts`. CI (`ci.yml`) runs a real Postgres service + `prisma migrate deploy` before the suite.
+- **Unit**: 370 tests, 27 suites — all green. Jest + @nestjs/testing.
+- **E2E**: 60 tests, 6 suites — all green. supertest + Jest. `test/helpers/create-app.ts` + `test/helpers/prisma-mock.ts`. `ThrottlerGuard` overridden in `create-app.ts`. CI (`ci.yml`) runs a real Postgres service + `prisma migrate deploy` before the suite.
 
 ### Controller spec pattern
 ```typescript

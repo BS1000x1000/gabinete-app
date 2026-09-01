@@ -121,7 +121,6 @@ export class PerfilTabComponent implements OnInit {
   mostrarFormManual = signal(false);
   ficheroManual     = signal<File | null>(null);
   manualForm        = signal({
-    familiarId: '',
     versionTexto: '',
     motivoRegistroManual: '',
     fechaFirma: '',
@@ -130,6 +129,8 @@ export class PerfilTabComponent implements OnInit {
     autorizaImagenes: false,
     consentimientoMenor14: false,
   });
+  /** Tutores marcados como firmantes. Pueden ser los dos. */
+  firmantesManual = signal<string[]>([]);
 
   get clienteId(): string {
     return this.route.parent?.snapshot.paramMap.get('id') ?? '';
@@ -206,8 +207,10 @@ export class PerfilTabComponent implements OnInit {
   // familia que trae el documento en mano. Exige el escaneado.
   abrirFormManual(): void {
     this.ficheroManual.set(null);
+    // Con un solo tutor legal no hay nada que elegir: se marca solo.
+    const tutores = this.tutoresLegales();
+    this.firmantesManual.set(tutores.length === 1 ? [tutores[0].id] : []);
     this.manualForm.set({
-      familiarId: '',
       versionTexto: '',
       motivoRegistroManual: '',
       fechaFirma: '',
@@ -231,6 +234,19 @@ export class PerfilTabComponent implements OnInit {
     this.manualForm.update(f => ({ ...f, [clave]: valor }));
   }
 
+  /** Marca o desmarca a un tutor como firmante del documento. */
+  toggleFirmanteManual(familiarId: string): void {
+    this.firmantesManual.update((ids) =>
+      ids.includes(familiarId)
+        ? ids.filter((id) => id !== familiarId)
+        : [...ids, familiarId],
+    );
+  }
+
+  esFirmanteManual(familiarId: string): boolean {
+    return this.firmantesManual().includes(familiarId);
+  }
+
   onFicheroManual(event: Event): void {
     const input = event.target as HTMLInputElement;
     const fichero = input.files?.[0] ?? null;
@@ -247,11 +263,22 @@ export class PerfilTabComponent implements OnInit {
     const f = this.manualForm();
     return (
       Boolean(this.ficheroManual()) &&
-      Boolean(f.familiarId) &&
+      this.firmantesManual().length > 0 &&
       f.versionTexto.trim().length > 0 &&
       f.motivoRegistroManual.trim().length >= 10
     );
   });
+
+  /**
+   * Hay dos tutores legales pero solo se ha marcado uno. Es legitimo (art. 156
+   * CC presume que quien actua lo hace con el consentimiento del otro), pero
+   * conviene verlo antes de guardar.
+   */
+  readonly avisoFirmaParcialManual = computed(
+    () =>
+      this.tutoresLegales().length > 1 &&
+      this.firmantesManual().length === 1,
+  );
 
   guardarManual(): void {
     const fichero = this.ficheroManual();
@@ -262,7 +289,7 @@ export class PerfilTabComponent implements OnInit {
     this.errorConsentimiento.set(null);
 
     this.clientesSvc.registrarConsentimientoManual(this.clienteId, fichero, {
-      familiarId: f.familiarId,
+      firmanteIds: this.firmantesManual(),
       versionTexto: f.versionTexto.trim(),
       motivoRegistroManual: f.motivoRegistroManual.trim(),
       ...(f.fechaFirma ? { fechaFirma: new Date(f.fechaFirma).toISOString() } : {}),
@@ -344,6 +371,16 @@ export class PerfilTabComponent implements OnInit {
   readonly tutoresLegales = computed(() =>
     this.familiares().filter((f: any) => f.esTutorLegal),
   );
+
+  /**
+   * El consentimiento vigente lo firmo solo uno de los dos tutores legales.
+   * No invalida nada, pero es justo lo que conviene ver de un vistazo.
+   */
+  readonly firmadoPorUnSoloTutor = computed(() => {
+    const ultimo = this.ultimoConsentimiento();
+    if (!ultimo?.aceptado) return false;
+    return this.tutoresLegales().length > 1 && ultimo.firmantes.length === 1;
+  });
 }
 
 export default PerfilTabComponent;

@@ -5,7 +5,7 @@
 .ajustes-page {
   max-width: 680px;
   margin: 0 auto;
-  padding: 2rem 1.5rem;
+  padding: $spacing-xl $spacing-lg;
 }
 
 // ── Cabecera ─────────────────────────────────────────────────
@@ -63,7 +63,7 @@
 .ajustes-profile {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: $spacing-md;
 }
 
 .ajustes-avatar {
@@ -105,7 +105,7 @@
 .ajustes-section-desc {
   font-size: 0.85rem;
   color: $gray-500;
-  margin-bottom: 1.5rem;
+  margin-bottom: $spacing-lg;
   line-height: 1.6;
 }
 
@@ -128,7 +128,7 @@
 .ajustes-field {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: $spacing-2xs;
 }
 
 .ajustes-label {
@@ -180,7 +180,7 @@
 // ── Botón submit ─────────────────────────────────────────────
 
 .ajustes-actions {
-  padding-top: 0.4rem;
+  padding-top: $spacing-2xs;
 }
 
 .ajustes-submit-btn {
@@ -208,7 +208,7 @@
 
   .ajustes-input--meet {
     padding-left: 2.3rem;
-    padding-right: 0.75rem;
+    padding-right: $spacing-smd;
   }
 }
 
@@ -258,27 +258,27 @@
 .vac-loading {
   font-size: 0.875rem;
   color: $gray-500;
-  padding: 0.75rem 0;
+  padding: $spacing-smd 0;
 }
 
 .vac-empty {
   font-size: 0.85rem;
   color: $gray-500;
-  padding: 0.75rem 0;
+  padding: $spacing-smd 0;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: $spacing-sm;
 }
 
 .vac-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: $spacing-smd;
   padding: 0.6rem 0.85rem;
   border-radius: 0.5rem;
   background: $primary-ultra-light;
-  margin-bottom: 0.5rem;
+  margin-bottom: $spacing-sm;
   flex-wrap: wrap;
 }
 
@@ -315,7 +315,7 @@
 .vac-item-actions {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: $spacing-2xs;
   flex-shrink: 0;
 }
 
@@ -323,7 +323,7 @@
   background: none;
   border: none;
   color: $gray-500;
-  padding: 0.3rem 0.4rem;
+  padding: $spacing-2xs $spacing-2xs;
   border-radius: 0.35rem;
   cursor: pointer;
   font-size: 0.85rem;
@@ -336,7 +336,7 @@
 .vac-confirm {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: $spacing-2xs;
   font-size: 0.78rem;
   white-space: nowrap;
 }
@@ -367,7 +367,7 @@
 }
 
 .vac-form-card {
-  margin-top: 1rem;
+  margin-top: $spacing-md;
   border: 1px solid $primary-light;
   border-radius: $border-radius-lg;
   overflow: hidden;
@@ -382,10 +382,10 @@
 }
 
 .vac-form-body {
-  padding: 1rem;
+  padding: $spacing-md;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
+  gap: $spacing-smd;
 
   @media (max-width: 540px) { grid-template-columns: 1fr; }
 }

@@ -1,216 +1,230 @@
-// Variables
-$primary-color: #0d6efd;
-$bg-gradient-start: #667eea;
-$bg-gradient-end: #764ba2;
+// ============================================================
+// AUTENTICACIÓN — login, recuperar y restablecer contraseña
+//
+// Esta pantalla vivía fuera del sistema: definía su propia paleta
+// (`$primary-color: #0d6efd` y el gradiente #667eea → #764ba2), de modo que se
+// entraba por una pantalla morada a una app verde sobre papel. Ahora usa los
+// tokens de `_variables.scss` y nada más.
+//
+// Dirección: la tinta de marca como fondo y el papel como superficie — el mismo
+// gesto de la app, invertido. Papel sobre bosque da 8.08:1; blanco sobre
+// bosque, 9.72:1.
+// ============================================================
 
-// Contenedor principal
 .login-container {
   min-height: 100vh;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2rem 1rem;
+  padding: $spacing-xl $spacing-md;
   overflow: hidden;
 }
 
-// Background decorativo
+// Fondo: tinta de marca con una veladura del verde bosque. Sin gradientes de
+// plantilla; la profundidad la dan dos halos muy tenues.
 .login-background {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, $bg-gradient-start 0%, $bg-gradient-end 100%);
+  inset: 0;
+  background: radial-gradient(120% 90% at 50% 0%, $primary 0%, $gray-900 62%);
   z-index: -1;
 
-  // Efecto de ondas (opcional)
   &::before,
   &::after {
     content: '';
     position: absolute;
     width: 800px;
     height: 800px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.05);
+    border-radius: $border-radius-full;
+    background: rgba($verde-realce, 0.06);
   }
 
-  &::before {
-    top: -400px;
-    left: -200px;
-  }
-
-  &::after {
-    bottom: -400px;
-    right: -200px;
-  }
+  &::before { top: -400px; left: -200px; }
+  &::after  { bottom: -400px; right: -200px; }
 }
 
-// Contenedor del contenido
 .login-content {
   width: 100%;
   max-width: 420px;
   z-index: 1;
 }
 
-// Card del login
 .login-card {
-  background: $white;
-  backdrop-filter: blur(10px);
-  border-radius: 1.5rem;
-  padding: 2.5rem;
+  background: $bg-card;
+  border: 1px solid rgba($primary, 0.12);
+  border-radius: $border-radius-xl;
+  padding: $spacing-2xl;
   box-shadow:
-    0 10px 40px rgba($primary, 0.12),
-    0 2px 8px rgba($primary, 0.06);
+    0 10px 40px rgba($gray-900, 0.28),
+    0 2px 8px rgba($gray-900, 0.16);
   animation: fadeInUp 0.6s ease-out;
 }
 
-// Logo circular
+// Marca: el papel de la app sobre la tinta, con el verde de realce.
 .logo-circle {
   width: 80px;
   height: 80px;
-  background: linear-gradient(135deg, $bg-gradient-start, $bg-gradient-end);
-  border-radius: 50%;
+  background: linear-gradient(135deg, $primary, $gray-900);
+  border-radius: $border-radius-full;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  
+  box-shadow: 0 4px 12px rgba($gray-900, 0.2);
+
   i {
-    font-size: 2.5rem;
-    color: white;
+    font-size: $font-size-4xl;
+    color: $gray-50;
   }
 }
 
-// Título
 .login-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #2d3748;
-  margin-bottom: 0.25rem;
+  font-size: $font-size-2xl;
+  font-weight: $font-weight-bold;
+  color: $gray-900;
+  margin-bottom: $spacing-xs;
 }
 
-// Form floating customizado
 .form-floating {
   position: relative;
 
   > label {
-    color: #6c757d;
-    font-weight: 500;
+    color: $gray-500;
+    font-weight: $font-weight-medium;
   }
 
   > .form-control {
-    border: 2px solid #e2e8f0;
-    border-radius: 0.75rem;
-    padding: 1rem 0.75rem;
+    border: 2px solid $border-color;
+    border-radius: $border-radius-lg;
+    padding: $spacing-md $spacing-smd;
     height: calc(3.5rem + 2px);
-    transition: all 0.3s ease;
+    transition: border-color $animation-duration-fast $animation-timing,
+                box-shadow $animation-duration-fast $animation-timing;
 
     &:focus {
-      border-color: $primary-color;
-      box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+      border-color: $primary;
+      box-shadow: 0 0 0 0.2rem rgba($primary, 0.15);
     }
 
     &.is-invalid {
-      border-color: #dc3545;
-      
-      &:focus {
-        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.15);
-      }
+      border-color: $danger;
+      &:focus { box-shadow: 0 0 0 0.2rem rgba($danger, 0.15); }
     }
   }
 }
 
-// Toggle de
+// Botón de ver/ocultar contraseña.
+// Antes NO existía: el comentario del fichero quedó cortado en "// Toggle de" y
+// la regla nunca se escribió, así que el botón caía en el flujo normal en vez
+// de ir sobre el input — y el `pe-5` reservaba un hueco que nadie ocupaba.
+.password-toggle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: calc(3.5rem + 2px);
+  padding: 0;
+  color: $gray-500;
+  text-decoration: none;
+  border: none;
+  background: none;
+
+  &:hover { color: $primary-dark; }
+
+  &:focus-visible {
+    outline: 2px solid $primary;
+    outline-offset: -2px;
+    border-radius: $border-radius-sm;
+  }
+
+  i { font-size: $font-size-lg; }
+}
 
 // ============================================================
-// AUTH PAGES — Variantes y estados compartidos
+// AUTH PAGES — variantes y estados compartidos
 // ============================================================
 
-// Variante exito del logo-circle
 .logo-circle--success {
   background: linear-gradient(135deg, $success, $success-dark) !important;
 }
 
-// Variante error del logo-circle
 .logo-circle--error {
   background: linear-gradient(135deg, $danger, $danger-dark) !important;
 }
 
-// Caja informativa (info box)
 .auth-info-box {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba($bg-gradient-start, 0.08);
-  border: 1px solid rgba($bg-gradient-start, 0.2);
-  border-radius: 0.75rem;
-  padding: 0.75rem 1rem;
-  font-size: 0.875rem;
-  color: darken($bg-gradient-end, 10%);
+  background: $primary-ultra-light;
+  border: 1px solid rgba($primary, 0.2);
+  border-radius: $border-radius-lg;
+  padding: $spacing-smd $spacing-md;
+  font-size: $font-size-sm;
+  color: $primary-dark;
 }
 
-// Link de volver
 .auth-back-link {
-  color: #6c757d;
+  color: $gray-500;
   text-decoration: none;
-  font-size: 0.875rem;
-  transition: color 0.2s ease;
+  font-size: $font-size-sm;
+  transition: $transition-color;
 
-  &:hover {
-    color: $bg-gradient-end;
-  }
+  &:hover { color: $primary-dark; }
 }
 
-// Estado exito animado
-.auth-success-state {
-  animation: fadeInUp 0.5s ease-out;
+// Texto sobre el fondo oscuro (footer, enlaces fuera de la card).
+// `.text-muted` daba 1.28 aquí: gris de cuerpo sobre la tinta de marca.
+.auth-sobre-fondo {
+  color: rgba($gray-50, 0.72);
 }
 
-// Indicador de fuerza de contrasena
+.auth-success-state { animation: fadeInUp 0.5s ease-out; }
+
 .password-strength {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: $spacing-sm;
 }
 
 .password-strength-bar {
   flex: 1;
   height: 4px;
-  background: #e2e8f0;
-  border-radius: 9999px;
+  background: $gray-200;
+  border-radius: $border-radius-full;
   overflow: hidden;
 }
 
 .password-strength-fill {
   height: 100%;
-  border-radius: 9999px;
+  border-radius: $border-radius-full;
   transition: width 0.3s ease, background-color 0.3s ease;
 }
 
 .password-strength-label {
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
   min-width: 48px;
   text-align: right;
   transition: color 0.3s ease;
 }
 
-// Indicador de coincidencia
 .password-match-hint {
-  font-size: 0.8rem;
-  font-weight: 500;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: $spacing-2xs;
 
-  &.match-ok  { color: $success; }
-  &.match-fail { color: $danger; }
+  &.match-ok  { color: $success-dark; }
+  &.match-fail { color: $danger-dark; }
 
-  i { font-size: 0.875rem; }
+  i { font-size: $font-size-sm; }
 }
 
-// Animacion fadeInUp (si no esta definida globalmente)
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(16px); }
   to   { opacity: 1; transform: translateY(0); }

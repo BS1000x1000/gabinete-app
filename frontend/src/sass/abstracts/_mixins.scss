@@ -1,18 +1,32 @@
 // ========================================
 // MIXINS DE RESPONSIVE
 // ========================================
+// Desktop-first: los breakpoints son `max-width`. Se resta 0.02px para no
+// solapar con un `min-width` del mismo valor.
+//
+// Antes no habia `@else` final: `respond-to('xs')` compilaba a NADA en
+// silencio y el bloque desaparecia sin aviso. Ahora es un error de build.
 @mixin respond-to($breakpoint) {
-  @if $breakpoint == 'sm' {
-    @media (max-width: $breakpoint-sm) { @content; }
+  @if $breakpoint == 'xs' {
+    @media (max-width: $breakpoint-xs - 0.02) { @content; }
+  }
+  @else if $breakpoint == 'sm' {
+    @media (max-width: $breakpoint-sm - 0.02) { @content; }
   }
   @else if $breakpoint == 'md' {
-    @media (max-width: $breakpoint-md) { @content; }
+    @media (max-width: $breakpoint-md - 0.02) { @content; }
   }
   @else if $breakpoint == 'lg' {
-    @media (max-width: $breakpoint-lg) { @content; }
+    @media (max-width: $breakpoint-lg - 0.02) { @content; }
   }
   @else if $breakpoint == 'xl' {
-    @media (max-width: $breakpoint-xl) { @content; }
+    @media (max-width: $breakpoint-xl - 0.02) { @content; }
+  }
+  @else if $breakpoint == 'xxl' {
+    @media (max-width: $breakpoint-xxl - 0.02) { @content; }
+  }
+  @else {
+    @error "respond-to(): breakpoint '#{$breakpoint}' no existe. Usa xs, sm, md, lg, xl o xxl.";
   }
 }
 
@@ -175,12 +189,36 @@
 }
 
 // ========================================
+// BADGES
+// ========================================
+
+/**
+ * Pastilla de estado legible sobre CUALQUIER superficie de la app.
+ *
+ * El porque: los rellenos `-light` se calibraron sobre tarjeta blanca (1.18-1.27
+ * de contraste, ya justo). Sobre el papel de marca (#f0ead8) caen a 1.00-1.06:
+ * la pastilla desaparece, el badge se lee como texto suelto y el color deja de
+ * codificar nada. El borde al 35% del color medio devuelve 1.58-1.74 contra el
+ * papel, que es suficiente para percibir el contorno, y cumple de sobra el 3:1
+ * que WCAG 1.4.11 pide al limite de un componente con significado.
+ *
+ * $relleno: el token `-light`   $tinta: el token `-dark`   $medio: el color pleno
+ */
+@mixin badge-tono($relleno, $tinta, $medio) {
+  background: $relleno;
+  color: $tinta;
+  border: 1px solid rgba($medio, 0.35);
+}
+
+// ========================================
 // TEXTO
 // ========================================
+// `white-space` DEBE ser nowrap: con `wrap` el text-overflow no llega a
+// aplicarse nunca y el mixin no hacia nada.
 @mixin text-truncate {
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: wrap;
+  white-space: nowrap;
 }
 
 @mixin text-clamp($lines: 2) {
@@ -230,5 +268,75 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+// ── Sub-navegación por pestañas ──────────────────────────────────────────────
+//
+// UN solo patrón de pestañas para toda la app: la subnav de Administración, la
+// ficha del cliente y la ficha del trabajador. Antes eran dos idiomas distintos
+// —Administración con una fina línea y el indicador de 2px; las fichas con un
+// borde de 2px, un indicador de 3px que no encajaba con él, dos pesos visuales
+// de pestaña y un separador flexible que empujaba unas a la derecha— y encima el
+// override `.ficha-tabs-auto` seguía redefiniendo columnas de rejilla sobre un
+// contenedor que ya era flex: CSS muerto.
+//
+// La regla: todas las pestañas pesan igual. Si una es secundaria, va en otro
+// sitio, no en un tono más claro dentro de la misma barra.
+
+@mixin subnav-bar($padding-x: 2rem) {
+  display: flex;
+  align-items: stretch;
+  gap: 0.15rem;
+  padding: 0 $padding-x;
+  border-bottom: 1px solid $gray-200;
+  flex-shrink: 0;
+
+  // Puede desplazarse si de verdad no cabe —así nunca queda una pestaña
+  // inalcanzable— pero sin barra a la vista: son cuatro o seis elementos, no una
+  // lista larga, y una barra de scroll bajo las pestañas ensucia la cabecera.
+  // Las etiquetas no se esconden en móvil: con solo iconos había que adivinar.
+  overflow-x: auto;
+  scrollbar-width: none;          // Firefox
+  -ms-overflow-style: none;       // Edge legacy
+
+  &::-webkit-scrollbar { width: 0; height: 0; display: none; }
+}
+
+@mixin subnav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  // La sangría se encoge con el ancho disponible para que las seis pestañas de
+  // la ficha del cliente quepan sin desplazar. En pantalla ancha vale 1rem, que
+  // es lo que valía antes.
+  padding: 0.65rem clamp(0.55rem, 1.1vw, 1rem);
+  flex-shrink: 0;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: $gray-500;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  // El indicador se solapa con la línea de 1px de la barra, para que quede a ras.
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s, border-color 0.15s;
+
+  i { font-size: 0.85rem; }
+
+  &:hover { color: $primary; text-decoration: none; }
+
+  &:focus-visible {
+    outline: 2px solid $primary;
+    outline-offset: -2px;
+    border-radius: 0.25rem 0.25rem 0 0;
+  }
+
+  &.is-active {
+    color: $primary;
+    border-bottom-color: $primary;
+    font-weight: 600;
   }
 }

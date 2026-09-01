@@ -514,31 +514,41 @@
   white-space: nowrap;
 }
 
+// Estas etiquetas NO usan opacity para el estado inactivo: atenuar el texto
+// componia el color contra el fondo y tiraba el contraste de 7.62 a 2.76, muy
+// por debajo del 4.5 exigible. Lo inactivo se distingue por el borde y por un
+// relleno rebajado; el texto se lee siempre igual de bien.
 .rd-tag--fixed {
-  opacity: 0.8;
   cursor: default;
 }
 
 .rd-tag--selectable {
   cursor: pointer;
   border: 1.5px solid transparent;
-  opacity: 0.55;
-  transition: opacity $animation-duration-fast $animation-timing,
+  transition: border-color $animation-duration-fast $animation-timing,
+              box-shadow $animation-duration-fast $animation-timing,
               transform $animation-duration-fast $animation-timing;
 
-  &:hover { opacity: 0.85; transform: translateY(-1px); }
-  &.rd-tag--active { opacity: 1; border-color: currentColor; }
+  &:hover {
+    transform: translateY(-1px);
+    border-color: currentColor;
+  }
+
+  &.rd-tag--active {
+    border-color: currentColor;
+    box-shadow: 0 0 0 2px rgba($primary, 0.12);
+  }
 }
 
 .rd-tag--registro-diario            { background: $primary-ultra-light; color: $primary; }
-.rd-tag--ausencia                   { background: $danger-light; color: $danger-dark; }
-.rd-tag--coordinacion-familia       { background: $info-light; color: $info-dark; }
-.rd-tag--coordinacion-colegio       { background: $success-light; color: $success-dark; }
-.rd-tag--participacion-familia      { background: $primary-light; color: $primary-dark; }
-.rd-tag--coordinacion-profesionales { background: $warning-light; color: $warning-dark; }
-.rd-tag--revision-objetivos         { background: $secondary-ultra-light; color: $secondary-dark; }
-.rd-tag--evaluacion-inicial         { background: $accent-light; color: $accent-dark; }
-.rd-tag--sesion-grupal              { background: $success-light; color: $success-dark; }
+.rd-tag--ausencia { @include badge-tono($danger-light, $danger-dark, $danger); }
+.rd-tag--coordinacion-familia { @include badge-tono($info-light, $info-dark, $info); }
+.rd-tag--coordinacion-colegio { @include badge-tono($success-light, $success-dark, $success); }
+.rd-tag--participacion-familia { @include badge-tono($primary-light, $primary-dark, $primary); }
+.rd-tag--coordinacion-profesionales { @include badge-tono($warning-light, $warning-dark, $warning); }
+.rd-tag--revision-objetivos { @include badge-tono($secondary-ultra-light, $secondary-dark, $secondary); }
+.rd-tag--evaluacion-inicial { @include badge-tono($accent-light, $accent-dark, $accent); }
+.rd-tag--sesion-grupal { @include badge-tono($success-light, $success-dark, $success); }
 .rd-tag--alta-temporal              { background: $gray-100; color: $gray-500; }
 
 // ==========================================

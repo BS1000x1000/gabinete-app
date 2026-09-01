@@ -2,14 +2,10 @@
 // TRABAJADOR FICHA — Individual profile
 // ========================================
 
-// ── Tab nav override — auto columns ──────
-// Overrides the 5-col grid from _listado.scss.
-// Uses auto-flow so it adapts to 2 or 3 tabs without gaps.
-.ficha-tabs.ficha-tabs-auto {
-  grid-template-columns: unset;
-  grid-auto-flow: column;
-  grid-auto-columns: 1fr;
-}
+// La barra de pestañas es la misma que la de la ficha del cliente y la de
+// Administración (`.ficha-tabs`, mixin `subnav-bar`). Aquí había un override
+// `.ficha-tabs-auto` que redefinía columnas de rejilla, pero `.ficha-tabs` dejó
+// de ser grid hace tiempo: era CSS muerto que no pintaba nada.
 
 // ── Breadcrumb / back nav ─────────────────
 .ficha-breadcrumb {
@@ -66,12 +62,14 @@
 .fchip.fchip-rol {
   font-weight: 600;
 
-  &.rol-admin      { background: #ede9fe; color: #6d28d9; border-color: #c4b5fd; }
-  &.rol-logopeda   { background: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
-  &.rol-neuro      { background: #f3e8ff; color: #7e22ce; border-color: #d8b4fe; }
-  &.rol-to         { background: $warning-light; color: #92400e; border-color: #fde68a; }
-  &.rol-pedagogia  { background: $success-light; color: #065f46; border-color: #6ee7b7; }
-  &.rol-recepcion  { background: $info-light; color: #1e40af; border-color: #93c5fd; }
+  // Antes: violetas, cianes y ambares de otra paleta. Ahora cada rol toma un
+  // token del sistema, todos AA o AAA sobre su relleno.
+  &.rol-admin      { @include badge-tono($danger-light, $danger-dark, $danger); }
+  &.rol-logopeda   { @include badge-tono($malva-light, $malva-dark, $malva); }
+  &.rol-neuro      { @include badge-tono($secondary-light, $secondary-dark, $secondary); }
+  &.rol-to         { @include badge-tono($accent-light, $accent-dark, $accent); }
+  &.rol-pedagogia  { @include badge-tono($success-light, $success-dark, $success); }
+  &.rol-recepcion  { @include badge-tono($info-light, $info-dark, $info); }
   &.rol-terapeuta  { background: $primary-ultra-light; color: darken($primary, 10%); border-color: $primary-light; }
   &.rol-default    { background: $gray-100; color: $gray-600; }
 }
@@ -142,8 +140,8 @@
   padding: 10px 14px;
   border-radius: $border-radius;
   background: $success-light;
-  color: #065f46;
-  border: 1px solid #6ee7b7;
+  color: $success-dark;
+  border: 1px solid rgba($success, 0.35);
   font-size: 0.82rem;
   font-weight: 500;
 
@@ -258,11 +256,11 @@
   letter-spacing: 0.04em;
   white-space: nowrap;
 
-  &.badge-logopeda   { background: #e0f2fe; color: #0369a1; }
-  &.badge-neuro      { background: #f3e8ff; color: #7e22ce; }
-  &.badge-to         { background: $warning-light; color: #92400e; }
-  &.badge-pedagogo   { background: $success-light; color: #065f46; }
-  &.badge-psico      { background: #fce7f3; color: #9d174d; }
+  &.badge-logopeda   { @include badge-tono($malva-light, $malva-dark, $malva); }
+  &.badge-neuro      { @include badge-tono($secondary-light, $secondary-dark, $secondary); }
+  &.badge-to         { @include badge-tono($accent-light, $accent-dark, $accent); }
+  &.badge-pedagogo   { @include badge-tono($success-light, $success-dark, $success); }
+  &.badge-psico      { @include badge-tono($primary-light, $primary-dark, $primary); }
   &.badge-default    { background: $gray-100; color: $gray-600; }
 }
 

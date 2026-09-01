@@ -292,7 +292,7 @@ describe('RBAC (e2e)', () => {
       const res = await request(app.getHttpServer())
         .post('/api/clientes/c1/consentimiento')
         .set('Authorization', `Bearer ${tokenRecep}`)
-        .field('familiarId', '11111111-1111-4111-8111-111111111111')
+        .field('firmanteIds', '11111111-1111-4111-8111-111111111111')
         .field('versionTexto', 'papel externo 2024')
         .field('motivoRegistroManual', 'cartera anterior a la app')
         .attach('fichero', Buffer.from('%PDF-fake'), 'firmado.pdf');
@@ -304,7 +304,7 @@ describe('RBAC (e2e)', () => {
       const res = await request(app.getHttpServer())
         .post('/api/clientes/c1/consentimiento')
         .set('Authorization', `Bearer ${tokenPedagogo}`)
-        .field('familiarId', '11111111-1111-4111-8111-111111111111')
+        .field('firmanteIds', '11111111-1111-4111-8111-111111111111')
         .field('versionTexto', 'papel externo 2024')
         .field('motivoRegistroManual', 'cartera anterior a la app')
         .attach('fichero', Buffer.from('%PDF-fake'), 'firmado.pdf');
@@ -318,9 +318,55 @@ describe('RBAC (e2e)', () => {
       const res = await request(app.getHttpServer())
         .post('/api/clientes/c1/consentimiento')
         .set('Authorization', `Bearer ${tokenAdmin}`)
-        .field('familiarId', '11111111-1111-4111-8111-111111111111')
+        .field('firmanteIds', '11111111-1111-4111-8111-111111111111')
         .field('versionTexto', 'papel externo 2024')
         .field('motivoRegistroManual', 'cartera anterior a la app');
+
+      expect(res.status).toBe(400);
+    });
+  });
+
+  describe('/api/clientes/:id/consentimiento — firman uno o los dos tutores', () => {
+    it('acepta dos firmantes en el mismo multipart', async () => {
+      prisma.cliente.findFirst.mockResolvedValue({ id: 'c1' });
+      // Solo uno de los dos es tutor legal → el registro se rechaza entero.
+      prisma.familiar.findMany.mockResolvedValue([
+        {
+          id: '11111111-1111-4111-8111-111111111111',
+          esTutorLegal: true,
+          nombre: 'Madre',
+          apellidos: 'Uno',
+        },
+        {
+          id: '22222222-2222-4222-8222-222222222222',
+          esTutorLegal: false,
+          nombre: 'Abuela',
+          apellidos: 'Dos',
+        },
+      ]);
+
+      const res = await request(app.getHttpServer())
+        .post('/api/clientes/c1/consentimiento')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .field('firmanteIds', '11111111-1111-4111-8111-111111111111')
+        .field('firmanteIds', '22222222-2222-4222-8222-222222222222')
+        .field('versionTexto', 'papel externo 2024')
+        .field('motivoRegistroManual', 'cartera anterior a la app')
+        .attach('fichero', Buffer.from('%PDF-fake'), 'firmado.pdf');
+
+      // Pasa la validación del DTO (dos UUID) y muere en la regla de negocio,
+      // que es exactamente donde debe morir.
+      expect(res.status).toBe(400);
+      expect(res.body.message).toContain('tutor legal');
+    });
+
+    it('sin ningún firmante → 400', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/api/clientes/c1/consentimiento')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .field('versionTexto', 'papel externo 2024')
+        .field('motivoRegistroManual', 'cartera anterior a la app')
+        .attach('fichero', Buffer.from('%PDF-fake'), 'firmado.pdf');
 
       expect(res.status).toBe(400);
     });
@@ -368,6 +414,267 @@ describe('RBAC (e2e)', () => {
         });
 
       expect(res.status).toBe(400);
+    });
+  });
+
+  // ── Bloque administrativo: RECEP fuera, cada autónomo con lo suyo ────────
+
+  /**
+   * La facturación es asunto de cada autónomo, no de recepción. Hasta ahora el
+   * bloqueo de RECEP vivía solo en el `roleGuard` del frontend: el backend le
+   * dejaba pasar el guard y solo el data scoping le devolvía listas vacías.
+   */
+  describe('/api/facturas y /api/contratos — RECEP fuera del bloque administrativo', () => {
+    it('RECEP: GET /api/facturas → 403', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/facturas')
+        .set('Authorization', `Bearer ${tokenRecep}`);
+
+      expect(res.status).toBe(403);
+    });
+
+    it('RECEP: GET /api/contratos → 403', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/contratos')
+        .set('Authorization', `Bearer ${tokenRecep}`);
+
+      expect(res.status).toBe(403);
+    });
+
+    it('RECEP: GET /api/contratos/cliente/c1 → 403', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/contratos/cliente/c1')
+        .set('Authorization', `Bearer ${tokenRecep}`);
+
+      expect(res.status).toBe(403);
+    });
+
+    it('RECEP: GET /api/horarios-admin → 403', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/horarios-admin')
+        .set('Authorization', `Bearer ${tokenRecep}`);
+
+      expect(res.status).toBe(403);
+    });
+
+    it('PEDAGOGO: GET /api/facturas → pasa el guard', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/facturas')
+        .set('Authorization', `Bearer ${tokenPedagogo}`);
+
+      expect(res.status).not.toBe(403);
+    });
+  });
+
+  /**
+   * El ADMIN también es un autónomo con su propio circuito fiscal: "Mis
+   * facturas" son las suyas. La vista global es Supervisión, que llama sin el
+   * flag.
+   */
+  describe('/api/facturas?soloMias — el ADMIN también se ve solo a sí mismo', () => {
+    it('ADMIN sin soloMias: sin filtro de trabajador', async () => {
+      prisma.factura.findMany.mockResolvedValue([]);
+
+      await request(app.getHttpServer())
+        .get('/api/facturas?anio=2026')
+        .set('Authorization', `Bearer ${tokenAdmin}`);
+
+      const call = prisma.factura.findMany.mock.calls.at(-1)![0];
+      expect(call.where.trabajadorId).toBeUndefined();
+    });
+
+    it('ADMIN con soloMias=true: filtra por su propio id', async () => {
+      prisma.factura.findMany.mockResolvedValue([]);
+
+      await request(app.getHttpServer())
+        .get('/api/facturas?anio=2026&soloMias=true')
+        .set('Authorization', `Bearer ${tokenAdmin}`);
+
+      const call = prisma.factura.findMany.mock.calls.at(-1)![0];
+      expect(call.where.trabajadorId).toBe(adminUser.id);
+    });
+
+    it('ADMIN con soloMias=true en contratos: filtra por su propio id', async () => {
+      prisma.contratoServicio.findMany.mockResolvedValue([]);
+
+      await request(app.getHttpServer())
+        .get('/api/contratos?soloMias=true')
+        .set('Authorization', `Bearer ${tokenAdmin}`);
+
+      const call = prisma.contratoServicio.findMany.mock.calls.at(-1)![0];
+      expect(call.where.trabajadorId).toBe(adminUser.id);
+    });
+  });
+
+  // ── Generación por periodo y packs para la gestoría ──────────────────────
+
+  /**
+   * Generar era `@Roles('ADMIN')` y solo del mes en curso. Ahora cada autónomo
+   * recupera los suyos de cualquier mes cerrado, y el ADMIN mantiene la palanca
+   * global — pero RECEP sigue fuera de todo el bloque.
+   */
+  describe('POST /api/facturas/generar-mes', () => {
+    it('RECEP → 403', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/api/facturas/generar-mes')
+        .set('Authorization', `Bearer ${tokenRecep}`)
+        .send({ anio: 2026, mes: 8 });
+
+      expect(res.status).toBe(403);
+    });
+
+    it('PEDAGOGO: genera acotado a sus propios contratos, sin pedirlo', async () => {
+      prisma.contratoServicio.findMany.mockResolvedValue([]);
+      prisma.factura.findMany.mockResolvedValue([]);
+
+      const res = await request(app.getHttpServer())
+        .post('/api/facturas/generar-mes')
+        .set('Authorization', `Bearer ${tokenPedagogo}`)
+        .send({ anio: 2026, mes: 8 });
+
+      expect(res.status).toBe(201);
+      const where = prisma.contratoServicio.findMany.mock.calls.at(-1)![0].where;
+      expect(where.trabajadorId).toBe(pedagogoUser.id);
+    });
+
+    it('ADMIN sin soloMias: genera para todo el gabinete', async () => {
+      prisma.contratoServicio.findMany.mockResolvedValue([]);
+      prisma.factura.findMany.mockResolvedValue([]);
+
+      await request(app.getHttpServer())
+        .post('/api/facturas/generar-mes')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({ anio: 2026, mes: 8 });
+
+      const where = prisma.contratoServicio.findMany.mock.calls.at(-1)![0].where;
+      expect(where.trabajadorId).toBeUndefined();
+    });
+
+    it('un periodo futuro se rechaza con 400', async () => {
+      const anioFuturo = new Date().getFullYear() + 1;
+
+      const res = await request(app.getHttpServer())
+        .post('/api/facturas/generar-mes')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({ anio: anioFuturo, mes: 1 });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('la previsualización no escribe nada', async () => {
+      prisma.contratoServicio.findMany.mockResolvedValue([]);
+      prisma.factura.findMany.mockResolvedValue([]);
+
+      const res = await request(app.getHttpServer())
+        .post('/api/facturas/generar-mes/preview')
+        .set('Authorization', `Bearer ${tokenPedagogo}`)
+        .send({ anio: 2026, mes: 8 });
+
+      expect(res.status).toBe(200);
+      expect(prisma.factura.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('GET /api/facturas/pack', () => {
+    it('RECEP → 403', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/facturas/pack?periodoDesde=2026-07&periodoHasta=2026-09')
+        .set('Authorization', `Bearer ${tokenRecep}`);
+
+      expect(res.status).toBe(403);
+    });
+
+    it('un terapeuta no puede empaquetar las facturas de otro', async () => {
+      prisma.factura.findMany.mockResolvedValue([]);
+
+      await request(app.getHttpServer())
+        .get('/api/facturas/pack/resumen?periodoDesde=2026-07&periodoHasta=2026-09')
+        .set('Authorization', `Bearer ${tokenPedagogo}`);
+
+      const where = prisma.factura.findMany.mock.calls.at(-1)![0].where;
+      expect(where.trabajadorId).toBe(pedagogoUser.id);
+    });
+
+    it('sin rango ni ids → 400', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/facturas/pack')
+        .set('Authorization', `Bearer ${tokenPedagogo}`);
+
+      expect(res.status).toBe(400);
+    });
+
+    it('un periodo mal formado → 400', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/facturas/pack?periodoDesde=julio&periodoHasta=2026-09')
+        .set('Authorization', `Bearer ${tokenPedagogo}`);
+
+      expect(res.status).toBe(400);
+    });
+  });
+
+  /**
+   * Entregar facturas a la gestoría saca datos personales del gabinete hacia un
+   * tercero, así que el bloqueo tiene que estar en el backend y el alcance ser
+   * el propio autónomo, nunca el de otro.
+   */
+  describe('Entrega a la gestoría', () => {
+    it('RECEP: GET /api/facturas/gestoria/pendientes → 403', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/facturas/gestoria/pendientes')
+        .set('Authorization', `Bearer ${tokenRecep}`);
+
+      expect(res.status).toBe(403);
+    });
+
+    it('RECEP: POST /api/facturas/gestoria/enviar → 403', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/api/facturas/gestoria/enviar')
+        .set('Authorization', `Bearer ${tokenRecep}`)
+        .send({ periodoDesde: '2026-07', periodoHasta: '2026-09' });
+
+      expect(res.status).toBe(403);
+    });
+
+    it('los pendientes son siempre los del que pregunta', async () => {
+      prisma.factura.findMany.mockResolvedValue([]);
+
+      const res = await request(app.getHttpServer())
+        .get('/api/facturas/gestoria/pendientes')
+        .set('Authorization', `Bearer ${tokenPedagogo}`);
+
+      expect(res.status).toBe(200);
+      const where = prisma.factura.findMany.mock.calls.at(-1)![0].where;
+      expect(where.trabajadorId).toBe(pedagogoUser.id);
+      expect(where.entregas).toEqual({ none: { envio: { estado: 'ENVIADO' } } });
+    });
+
+    it('el historial es el propio, no el del gabinete', async () => {
+      prisma.envioGestoria.findMany.mockResolvedValue([]);
+
+      await request(app.getHttpServer())
+        .get('/api/facturas/gestoria/historial')
+        .set('Authorization', `Bearer ${tokenPedagogo}`);
+
+      const where = prisma.envioGestoria.findMany.mock.calls.at(-1)![0].where;
+      expect(where.trabajadorId).toBe(pedagogoUser.id);
+    });
+
+    it('sin email de gestoría configurado no se envía nada', async () => {
+      prisma.factura.findMany.mockResolvedValue([
+        { id: 'f-1', periodoFacturado: '2026-07', estado: 'PENDIENTE', total: 100 },
+      ]);
+      prisma.trabajador.findUnique.mockResolvedValue({
+        ...pedagogoUser,
+        emailGestoria: null,
+      });
+
+      const res = await request(app.getHttpServer())
+        .post('/api/facturas/gestoria/enviar')
+        .set('Authorization', `Bearer ${tokenPedagogo}`)
+        .send({ periodoDesde: '2026-07', periodoHasta: '2026-09' });
+
+      expect(res.status).toBe(400);
+      expect(prisma.envioGestoria.create).not.toHaveBeenCalled();
     });
   });
 

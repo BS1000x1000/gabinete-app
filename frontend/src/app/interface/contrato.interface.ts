@@ -1,4 +1,4 @@
-import { TipoSesion } from './sesion.interface';
+import { TipoSesion, TIPO_SESION_LABELS } from './sesion.interface';
 
 export type EstadoContrato  = 'BORRADOR' | 'ACTIVO' | 'SUSPENDIDO' | 'FINALIZADO';
 
@@ -30,6 +30,25 @@ export const ESTADO_CONTRATO_LABEL: Record<EstadoContrato, string> = {
   SUSPENDIDO: 'Suspendido',
   FINALIZADO: 'Finalizado',
 };
+
+/**
+ * Helpers de etiqueta y color de un contrato. Estaban copiados carácter a
+ * carácter en `mis-contratos` y en `contratos-tab`, y ademas ambos usaban un
+ * gris propio (`#6b7280`) en vez de `TIPO_COLOR_POR_DEFECTO`.
+ */
+export const diaLabel = (n: number): string => DIAS[n] ?? '';
+
+export const tipoLabel = (t: string): string =>
+  TIPO_SESION_LABELS[t as TipoSesion] ?? t;
+
+export const tipoColor = (t: string): string =>
+  TIPO_COLOR[t] ?? TIPO_COLOR_POR_DEFECTO;
+
+/** El mismo color al 9% de opacidad, para el fondo de la píldora de tipo. */
+export const tipoBg = (t: string): string => `${tipoColor(t)}18`;
+
+export const estadoContratoLabel = (e: string): string =>
+  ESTADO_CONTRATO_LABEL[e as EstadoContrato] ?? e;
 export type ModalidadSlot   = 'PRESENCIAL' | 'ONLINE';
 
 export interface ContratoSlot {

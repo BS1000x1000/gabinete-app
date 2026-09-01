@@ -164,8 +164,8 @@
   font-size: $font-size-xs;
   font-weight: $font-weight-semibold;
 
-  &.pagado   { background: $success-light; color: $success-dark; }
-  &.pendiente { background: $warning-light; color: $warning-dark; }
+  &.pagado { @include badge-tono($success-light, $success-dark, $success); }
+  &.pendiente { @include badge-tono($warning-light, $warning-dark, $warning); }
 }
 
 // ── Alerta cobro pendiente ───────────────────────────────
@@ -252,7 +252,12 @@
     background: rgba($success, 0.04);
     border-color: rgba($success, 0.25);
   }
-  &.bono-cancelado { opacity: 0.6; }
+  // Sin opacity: atenuaba tambien el badge de estado (7.26 -> 2.89). Lo
+  // cancelado se marca con la superficie y el borde, no apagando el texto.
+  &.bono-cancelado {
+    background: $gray-100;
+    border-color: $border-color;
+  }
 }
 
 .bono-hist-estado-col {
@@ -280,8 +285,7 @@
   border-radius: $border-radius-full;
   font-size: 0.68rem;
   font-weight: $font-weight-semibold;
-  background: $danger-light;
-  color: $danger-dark;
+  @include badge-tono($danger-light, $danger-dark, $danger);
   white-space: nowrap;
 }
 

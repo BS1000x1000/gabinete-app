@@ -13,6 +13,7 @@ import { AuthService } from '../../../services/auth.service';
 import { environment } from '../../../../environments/environment.development';
 import { EstadisticasAvanzadas } from '../../../interface/dashboard.interface';
 import { ResumenHoras } from '../../../interface/evento-agenda.interface';
+import { tipoColor, tipoLabel } from '../../../interface/contrato.interface';
 
 type Rango = 'semana' | 'mes' | '3meses';
 
@@ -25,14 +26,10 @@ const ERR   = '#96382e';   // danger rojo
 const MUTED = '#798d82';
 const TEAL  = '#3a6b63';
 
-const TIPO_CONFIG: Record<string, { label: string; color: string }> = {
-  PEDAGOGIA:           { label: 'Pedagogía',       color: P    },
-  LOGOPEDIA:           { label: 'Logopedia',        color: S    },
-  NEUROPSICOLOGIA:     { label: 'Neuropsicología',  color: OK   },
-  TERAPIA_OCUPACIONAL: { label: 'T. Ocupacional',   color: WARN },
-  EVALUACION:          { label: 'Evaluación',       color: MUTED },
-  REUNION_COLEGIO:     { label: 'Reunión colegio',  color: TEAL },
-};
+// El color y la etiqueta de cada tipo de terapia salen de `contrato.interface`,
+// que es la única definición. Aquí había una copia con LOGOPEDIA y
+// NEUROPSICOLOGIA intercambiadas respecto a la agenda: la misma terapia se
+// pintaba de un color en el calendario y de otro en las estadísticas.
 
 const TIPO_JORNADA_CONFIG: Record<string, { label: string; color: string; icon: string }> = {
   SESION_CLINICA:           { label: 'Sesiones clínicas',       color: P,       icon: 'bi-heart-pulse' },
@@ -332,10 +329,10 @@ export class EstadisticasComponent implements OnInit {
   private buildDonut(d: EstadisticasAvanzadas): ChartData<'doughnut'> {
     const sorted = [...d.distribucion].sort((a, b) => b.cantidad - a.cantidad);
     return {
-      labels:   sorted.map(i => TIPO_CONFIG[i.tipo]?.label ?? i.tipo),
+      labels:   sorted.map(i => tipoLabel(i.tipo)),
       datasets: [{
         data:            sorted.map(i => i.cantidad),
-        backgroundColor: sorted.map(i => TIPO_CONFIG[i.tipo]?.color ?? MUTED),
+        backgroundColor: sorted.map(i => tipoColor(i.tipo)),
         borderColor:     '#fff',
         borderWidth:     3,
         hoverBorderColor: '#fff',

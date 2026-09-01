@@ -19,7 +19,11 @@ export interface AlcancesConsentimiento {
 }
 
 export interface RegistroConsentimiento extends AlcancesConsentimiento {
-  familiarId: string;
+  /**
+   * Los tutores legales que suscriben el documento. Van varios porque con dos
+   * titulares de la patria potestad lo habitual es que firmen los dos.
+   */
+  firmanteIds: string[];
   /** Version de la plantilla firmada, o una nota si el papel es externo. */
   versionTexto: string;
   /** El PDF firmado que lo acredita. */
@@ -43,8 +47,12 @@ const consentimientoSelect = {
   consentimientoMenor14: true,
   documentoId: true,
   documento: { select: { id: true, nombre: true, mimeType: true } },
-  familiar: {
-    select: { id: true, nombre: true, apellidos: true, parentesco: true },
+  firmantes: {
+    select: {
+      familiar: {
+        select: { id: true, nombre: true, apellidos: true, parentesco: true },
+      },
+    },
   },
   trabajador: { select: { id: true, nombre: true, apellidos: true } },
 } satisfies Prisma.ConsentimientoRgpdSelect;
@@ -88,7 +96,12 @@ export class ConsentimientosService {
     user: UsuarioPeticion,
   ) {
     await this.assertClienteExiste(clienteId);
-    await this.assertTutorLegal(clienteId, datos.familiarId);
+    // Devuelve la lista ya sin repetidos: la clave primaria de
+    // `consentimiento_firmantes` es compuesta y un duplicado la rompe.
+    const firmanteIds = await this.assertTutoresLegales(
+      clienteId,
+      datos.firmanteIds,
+    );
 
     if (datos.documentoId) {
       const doc = await this.prisma.documentoCliente.findFirst({
@@ -105,8 +118,10 @@ export class ConsentimientosService {
     const registro = await this.prisma.consentimientoRgpd.create({
       data: {
         clienteId,
-        familiarId: datos.familiarId,
         trabajadorId: user.userId,
+        firmantes: {
+          create: firmanteIds.map((familiarId) => ({ familiarId })),
+        },
         aceptado: true,
         versionTexto: datos.versionTexto,
         documentoId: datos.documentoId ?? null,
@@ -130,6 +145,7 @@ export class ConsentimientosService {
       metadata: {
         accion: 'OTORGADO',
         consentimientoId: registro.id,
+        firmantes: firmanteIds,
         versionTexto: datos.versionTexto,
         documentoId: datos.documentoId ?? null,
         manual: Boolean(datos.motivoRegistroManual),
@@ -164,8 +180,8 @@ export class ConsentimientosService {
       select: {
         id: true,
         aceptado: true,
-        familiarId: true,
         versionTexto: true,
+        firmantes: { select: { familiarId: true } },
       },
     });
 
@@ -178,9 +194,12 @@ export class ConsentimientosService {
     const registro = await this.prisma.consentimientoRgpd.create({
       data: {
         clienteId,
-        // Se revoca el consentimiento de quien lo otorgo: el navegador no elige.
-        familiarId: vigente.familiarId,
         trabajadorId: user.userId,
+        // Se revoca el consentimiento de quienes lo otorgaron, tal cual: el
+        // navegador no elige a quien se le retira.
+        firmantes: {
+          create: vigente.firmantes.map(({ familiarId }) => ({ familiarId })),
+        },
         aceptado: false,
         versionTexto: vigente.versionTexto,
         motivoRegistroManual: motivo,
@@ -256,10 +275,11 @@ export class ConsentimientosService {
           trabajadorId: admin.id,
         });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Avisar es importante, pero no tanto como dejar la revocacion asentada.
+      const motivo = err instanceof Error ? err.message : String(err);
       this.logger.error(
-        `No se pudo notificar la revocación del cliente ${clienteId}: ${err?.message}`,
+        `No se pudo notificar la revocación del cliente ${clienteId}: ${motivo}`,
       );
     }
   }
@@ -316,24 +336,53 @@ export class ConsentimientosService {
    * Solo un tutor legal puede consentir por un menor (LOPDGDD art. 7). Que el
    * familiar sea el contacto principal no basta.
    *
-   * Es publico para que quien vaya a subir un PDF pueda comprobarlo antes y no
-   * dejar el fichero en el bucket si el dato no cuadra.
+   * Acepta varios porque con dos titulares de la patria potestad lo normal es
+   * que firmen ambos. Es publico para que quien vaya a subir un PDF pueda
+   * comprobarlo antes y no dejar el fichero huerfano en el bucket.
    */
-  async assertTutorLegal(clienteId: string, familiarId: string) {
-    const familiar = await this.prisma.familiar.findFirst({
-      where: { id: familiarId, clienteId },
+  async assertTutoresLegales(
+    clienteId: string,
+    firmanteIds: string[],
+  ): Promise<string[]> {
+    const ids = [...new Set(firmanteIds ?? [])];
+    if (ids.length === 0) {
+      throw new BadRequestException(
+        'Indica al menos un tutor legal que haya firmado el consentimiento',
+      );
+    }
+
+    const familiares = await this.prisma.familiar.findMany({
+      where: { id: { in: ids }, clienteId },
       select: { id: true, esTutorLegal: true, nombre: true, apellidos: true },
     });
-    if (!familiar) {
+
+    if (familiares.length !== ids.length) {
       throw new BadRequestException(
-        'El familiar indicado no pertenece a este cliente',
+        'Alguno de los firmantes indicados no pertenece a este cliente',
       );
     }
-    if (!familiar.esTutorLegal) {
+
+    const noTutores = familiares.filter((f) => !f.esTutorLegal);
+    if (noTutores.length > 0) {
+      const nombres = noTutores
+        .map((f) => `${f.nombre} ${f.apellidos}`)
+        .join(', ');
       throw new BadRequestException(
-        `${familiar.nombre} ${familiar.apellidos} no consta como tutor legal: ` +
-          'solo un tutor legal puede consentir el tratamiento de datos de un menor.',
+        `${nombres} no consta como tutor legal: solo un tutor legal puede ` +
+          'consentir el tratamiento de datos de un menor.',
       );
     }
+
+    return ids;
+  }
+
+  /**
+   * Cuantos tutores legales tiene el cliente. Sirve para avisar cuando solo
+   * firma uno de los dos, que es legitimo (art. 156 CC) pero conviene ver.
+   */
+  async contarTutoresLegales(clienteId: string): Promise<number> {
+    return this.prisma.familiar.count({
+      where: { clienteId, esTutorLegal: true },
+    });
   }
 }

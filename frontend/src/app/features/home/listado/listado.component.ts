@@ -38,10 +38,16 @@ export class ListadoComponent implements OnInit, OnDestroy {
   readonly clienteId = signal<string>('');
 
   /**
-   * Pestañas del día a día: lo que se consulta o se rellena en cada sesión.
-   * La configuración del caso (contratos, terapeutas) va aparte — ver `configTabs`.
+   * Pestañas de la ficha, en orden de uso: primero lo del día a día y al final la
+   * configuración del caso.
+   *
+   * Antes eran dos listas (`workTabs` y `configTabs`) separadas por un hueco
+   * flexible, con las de configuración en un gris más claro. Pesaban distinto sin
+   * comportarse distinto — todas navegan igual y todas se usan— y esa barra no se
+   * parecía a ninguna otra de la app. Ahora es una sola lista con el mismo peso,
+   * como la subnav de Administración.
    */
-  readonly workTabs = computed<WorkTab[]>(() => {
+  readonly tabs = computed<WorkTab[]>(() => {
     const tabs: WorkTab[] = [
       { label: 'Perfil',   icon: 'bi-person-vcard',   target: 'perfil'   },
       { label: 'Sesiones', icon: 'bi-calendar2-week', target: 'sesiones' },
@@ -51,20 +57,10 @@ export class ListadoComponent implements OnInit, OnDestroy {
       tabs.push({ label: 'Seguimiento', icon: 'bi-graph-up', target: 'progreso' });
     }
     tabs.push({ label: 'Documentación', icon: 'bi-folder2', target: 'documentacion' });
-    return tabs;
-  });
-
-  /**
-   * Configuración del caso: se toca al dar de alta y de tarde en tarde, no a diario.
-   * Va en un grupo aparte para que no compita visualmente con lo de arriba.
-   */
-  readonly configTabs = computed<WorkTab[]>(() => {
-    const tabs: WorkTab[] = [
-      { label: 'Terapeutas', icon: 'bi-people', target: 'terapeutas' },
-    ];
     if (!this.auth.isRecep()) {
       tabs.push({ label: 'Contratos', icon: 'bi-file-earmark-ruled', target: 'contratos' });
     }
+    tabs.push({ label: 'Terapeutas', icon: 'bi-people', target: 'terapeutas' });
     return tabs;
   });
 

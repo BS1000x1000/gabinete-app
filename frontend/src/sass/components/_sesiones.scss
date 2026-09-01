@@ -59,7 +59,6 @@
     text-transform: uppercase;
     letter-spacing: 0.4px;
     white-space: nowrap;
-    opacity: 0.75;
     text-overflow: ellipsis;
   }
 
@@ -325,20 +324,16 @@
   white-space: nowrap;
 
   &.badge-programada {
-    background: $warning-light;
-    color: $warning-dark;
+    @include badge-tono($warning-light, $warning-dark, $warning);
   }
   &.badge-completada {
-    background: $success-light;
-    color: $success-dark;
+    @include badge-tono($success-light, $success-dark, $success);
   }
   &.badge-cancelada-aviso {
-    background: $danger-light;
-    color: $danger-dark;
+    @include badge-tono($danger-light, $danger-dark, $danger);
   }
   &.badge-cancelada-sin-aviso {
-    background: $danger-light;
-    color: $danger-dark;
+    @include badge-tono($danger-light, $danger-dark, $danger);
     border: 1.5px solid rgba($danger, 0.3);
   }
 }
@@ -353,12 +348,12 @@
   font-weight: $font-weight-medium;
   white-space: nowrap;
 
-  &.tipo-pedagogia    { background: $secondary-light;  color: $secondary-dark; }
-  &.tipo-neuro        { background: $info-light;       color: $info-dark; }
-  &.tipo-logopedia    { background: $success-light;    color: $success-dark; }
-  &.tipo-to           { background: $danger-light;     color: $danger-dark; }
-  &.tipo-evaluacion   { background: $accent-light;     color: $accent-dark; }
-  &.tipo-reunion      { background: $primary-light;    color: $primary-dark; }
+  &.tipo-pedagogia { @include badge-tono($secondary-light, $secondary-dark, $secondary); }
+  &.tipo-neuro { @include badge-tono($info-light, $info-dark, $info); }
+  &.tipo-logopedia { @include badge-tono($success-light, $success-dark, $success); }
+  &.tipo-to { @include badge-tono($danger-light, $danger-dark, $danger); }
+  &.tipo-evaluacion { @include badge-tono($accent-light, $accent-dark, $accent); }
+  &.tipo-reunion { @include badge-tono($primary-light, $primary-dark, $primary); }
 }
 
 // ==========================================

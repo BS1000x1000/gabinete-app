@@ -12,10 +12,16 @@ import { UpdateHorarioAdminDto } from './dto/update-horario-admin.dto';
 export class HorariosAdminService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * Un ADMIN puede consultar las reglas de otro trabajador pasando `filtroId`,
+   * pero sin filtro se devuelven las suyas: antes el `where` quedaba solo en
+   * `{ activo: true }` y le llegaban las de todo el equipo mezcladas y sin
+   * ningun campo que permitiera distinguirlas.
+   */
   async findAll(userId: string, rol: string, filtroId?: string) {
-    const trabajadorId = rol === 'ADMIN' ? filtroId : userId;
+    const trabajadorId = rol === 'ADMIN' ? (filtroId ?? userId) : userId;
     return this.prisma.horarioAdmin.findMany({
-      where: { ...(trabajadorId ? { trabajadorId } : {}), activo: true },
+      where: { trabajadorId, activo: true },
       orderBy: [{ diaSemana: 'asc' }, { horaInicio: 'asc' }],
     });
   }
