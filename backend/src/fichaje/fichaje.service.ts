@@ -5,6 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { EtiquetaRegistro } from '@prisma/client';
+import { diaDesdeIso } from '../common/fecha/dia.utils';
 import { CreateRegistroDiarioDto, ObjetivoTrabajadoDto, UpdateRegistroDiarioDto } from './dto/create-registro.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { PaginationDto } from '../common/dto/pagination.dto';
@@ -69,8 +70,15 @@ export class FichajeService {
           trabajadorId,
           etiquetas: this.buildEtiquetas(dto.etiquetas),
           ...(dto.proximaSesion !== undefined && { proximaSesion: dto.proximaSesion || null }),
+          // `fechaRegistro` es el DIA al que se refiere el registro, no el
+          // momento en que se escribio. Eso ultimo ya lo guarda `createdAt`.
+          //
+          // Sin normalizar, `new Date("2026-09-02")` daba la medianoche UTC, que
+          // en Madrid se pinta como las 02:00: de ahi salia el "registro hecho a
+          // las 02:00 am". Se guarda a las 12:00 UTC para que el dia local sea
+          // el mismo corra el contenedor en UTC o en Europe/Madrid.
           ...(dto.fechaRegistro && {
-            fechaRegistro: new Date(dto.fechaRegistro),
+            fechaRegistro: diaDesdeIso(dto.fechaRegistro),
           }),
           ...(dto.objetivosGeneralesTrabajados?.length && {
             objetivosGeneralesTrabajados: {
@@ -115,7 +123,8 @@ export class FichajeService {
           data: {
             contenido,
             ...(proximaSesion !== undefined && { proximaSesion: proximaSesion || null }),
-            ...(fechaRegistro && { fechaRegistro: new Date(fechaRegistro) }),
+            // Un dia, no un instante. Ver el comentario en `create`.
+            ...(fechaRegistro && { fechaRegistro: diaDesdeIso(fechaRegistro) }),
             ...(etiquetas !== undefined && { etiquetas: this.buildEtiquetas(etiquetas) }),
             ...(objetivosGeneralesTrabajados?.length && {
               objetivosGeneralesTrabajados: {

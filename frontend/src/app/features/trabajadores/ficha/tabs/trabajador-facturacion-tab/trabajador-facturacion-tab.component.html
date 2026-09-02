@@ -71,6 +71,16 @@
     </div>
 
     <div class="ajustes-field">
+      <label class="ajustes-label">SWIFT / BIC</label>
+      <input type="text" class="form-control ajustes-input" placeholder="CAIXESBBXXX"
+        [ngModel]="form().swift"
+        (ngModelChange)="patch('swift', $event)" />
+      <span class="ajustes-hint text-muted">
+        Se imprime en la factura junto al IBAN.
+      </span>
+    </div>
+
+    <div class="ajustes-field">
       <label class="ajustes-label">% Retención IRPF</label>
       <input type="number" class="form-control ajustes-input" min="0" max="100" step="0.01" placeholder="0"
         [ngModel]="form().retencionIrpf"

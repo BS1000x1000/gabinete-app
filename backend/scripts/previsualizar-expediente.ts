@@ -93,6 +93,7 @@ async function main() {
       diaSemana: diaISO,
       horario: '17:00 a 18:00',
       cuotaMensual: 180,
+      fechaInicioEfectos: '1 de septiembre de 2026',
       ciudadFirma: 'Madrid',
       calendario: filas,
       cursoEtiqueta: calendario.etiquetaCurso(curso),

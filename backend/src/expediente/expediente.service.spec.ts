@@ -161,19 +161,40 @@ describe('ExpedienteService', () => {
       estadoFirma: EstadoFirmaDocumento.GENERADO,
     };
 
-    it('bloquea el envio del consentimiento de datos por no estar validada la plantilla', async () => {
+    /** Desde 2026-09-02 la plantilla esta cerrada: base legal 9.2.a y encargados. */
+    it('deja enviar el consentimiento de datos, ya con la plantilla cerrada', async () => {
       prisma.documentoCliente.findUnique.mockResolvedValue(docConsentimientoDatos);
 
-      await expect(service.marcarEnviado('doc-1', USER)).rejects.toBeInstanceOf(
-        ForbiddenException,
+      await service.marcarEnviado('doc-1', USER);
+
+      expect(prisma.documentoCliente.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ estadoFirma: EstadoFirmaDocumento.ENVIADO }),
+        }),
       );
-      expect(prisma.documentoCliente.update).not.toHaveBeenCalled();
     });
 
-    it('el motivo del bloqueo se explica en el mensaje', async () => {
+    /**
+     * El interruptor sigue siendo la garantia: si la consultora objeta algo, basta
+     * con poner `PLANTILLA_VALIDADA` a false para que el documento deje de salir.
+     * Se prueba el mecanismo, no el valor que tenga hoy la constante.
+     */
+    it('una plantilla sin validar no se puede enviar', async () => {
+      const def: any = DOCUMENTOS_EXPEDIENTE.find(
+        d => d.categoria === CategoriaDocumento.CONSENTIMIENTO_DATOS,
+      );
+      const validadaOriginal = def.validada;
+      def.validada = false;
       prisma.documentoCliente.findUnique.mockResolvedValue(docConsentimientoDatos);
 
-      await expect(service.marcarEnviado('doc-1', USER)).rejects.toThrow(/dictamen/i);
+      try {
+        await expect(service.marcarEnviado('doc-1', USER)).rejects.toBeInstanceOf(
+          ForbiddenException,
+        );
+        expect(prisma.documentoCliente.update).not.toHaveBeenCalled();
+      } finally {
+        def.validada = validadaOriginal;
+      }
     });
 
     it('deja enviar el contrato, cuya plantilla si esta cerrada', async () => {
@@ -380,7 +401,7 @@ describe('ExpedienteService', () => {
       expect(res.puedeGenerar).toBe(true);
     });
 
-    it('el consentimiento de datos nunca sale como enviable', async () => {
+    it('el consentimiento de datos ya sale como enviable', async () => {
       documentos.findByCliente.mockResolvedValue([
         {
           id: 'doc-9',
@@ -395,9 +416,8 @@ describe('ExpedienteService', () => {
       )!;
 
       expect(fila.documentoId).toBe('doc-9');
-      expect(fila.plantillaValidada).toBe(false);
-      expect(fila.puedeEnviar).toBe(false);
-      expect(fila.motivoNoValidada).toMatch(/dictamen/i);
+      expect(fila.plantillaValidada).toBe(true);
+      expect(fila.puedeEnviar).toBe(true);
     });
 
     it('sin contrato no se puede generar nada', async () => {

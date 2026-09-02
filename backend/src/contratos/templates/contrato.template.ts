@@ -17,14 +17,19 @@ import {
  * tabla) y ahora se calcula.
  */
 
-export const PLANTILLA_VERSION = 'contrato-v1-2026-09';
+export const PLANTILLA_VERSION = 'contrato-v2-2026-09';
 
 /** El contrato esta cerrado; los consentimientos no todos. */
 export const PLANTILLA_VALIDADA = true;
 
 const DIA_LABEL: Record<number, string> = {
-  1: 'lunes', 2: 'martes', 3: 'miércoles', 4: 'jueves',
-  5: 'viernes', 6: 'sábados', 7: 'domingos',
+  1: 'lunes',
+  2: 'martes',
+  3: 'miércoles',
+  4: 'jueves',
+  5: 'viernes',
+  6: 'sábados',
+  7: 'domingos',
 };
 
 export interface FilaCalendarioTemplate {
@@ -44,6 +49,15 @@ export interface ContratoTemplateData {
   diaSemana: number | null;
   horario: string | null;
   cuotaMensual: number | null;
+  /**
+   * Desde cuando produce efectos el contrato, en texto largo ("1 de septiembre
+   * de 2026"). Es `fechaInicio`, NO la fecha de firma: el contrato se firma a
+   * menudo semanas despues de empezar el servicio, y hasta ahora el documento no
+   * lo decia en ninguna parte — la unica fecha que llevaba era el hueco
+   * manuscrito de `lugarYFecha()`, o sea la de la firma. Se facturaba el mes
+   * entero desde el dia 1 sin que el papel respaldase desde cuando.
+   */
+  fechaInicioEfectos: string | null;
   ciudadFirma: string | null;
   calendario: FilaCalendarioTemplate[];
   cursoEtiqueta: string;
@@ -64,24 +78,22 @@ export interface ContratoTemplateData {
 
 function filaCalendario(f: FilaCalendarioTemplate): string {
   const dias = f.dias
-    .map(d =>
-      d.haySesion
-        ? String(d.dia)
-        : `<span class="sin-sesion">${d.dia}</span>`,
+    .map((d) =>
+      d.haySesion ? String(d.dia) : `<span class="sin-sesion">${d.dia}</span>`,
     )
     .join(' - ');
   return `
     <tr>
       <td class="mes">${esc(f.mes)} ${esc(f.anio)}</td>
       <td class="dias">${dias}</td>
-      <td>${f.observaciones.map(o => esc(o)).join('<br>')}</td>
+      <td>${f.observaciones.map((o) => esc(o)).join('<br>')}</td>
     </tr>`;
 }
 
 export function buildContratoHtml(d: ContratoTemplateData): string {
   const p = d.profesional;
 
-  const diaTexto = d.diaSemana ? DIA_LABEL[d.diaSemana] ?? null : null;
+  const diaTexto = d.diaSemana ? (DIA_LABEL[d.diaSemana] ?? null) : null;
   const colegio = p.colegioProfesional
     ? `colegiada con el n.º ${esc(p.numeroColegiado ?? '')} en el ${esc(p.colegioProfesional)}`
     : `colegiada con el n.º ${hueco(p.numeroColegiado, 90)}`;
@@ -117,7 +129,8 @@ export function buildContratoHtml(d: ContratoTemplateData): string {
 
   <p>
     acuerdan suscribir el presente contrato de prestación de servicios pedagógicos,
-    que se regirá por las siguientes cláusulas.
+    <strong>con efectos desde el ${hueco(d.fechaInicioEfectos, 150)}</strong>, que se
+    regirá por las siguientes cláusulas.
   </p>
 
   <h2 class="clausula">1. Naturaleza del servicio</h2>
@@ -232,11 +245,15 @@ export function buildContratoHtml(d: ContratoTemplateData): string {
     servicio y el equilibrio en el número de sesiones mensuales</strong>. En estos casos,
     <strong>se informará previamente a la familia</strong>.
   </p>
-  ${d.calendarioSinMunicipio ? `
+  ${
+    d.calendarioSinMunicipio
+      ? `
   <p>
     <em>Los festivos de carácter local, propios de cada municipio, no quedan reflejados en el
     calendario general de este contrato y se gestionarán, en su caso, de forma individual.</em>
-  </p>` : ''}
+  </p>`
+      : ''
+  }
 
   <h3 class="sub">Vacaciones de la profesional y periodos sin servicio</h3>
   <p>
@@ -299,9 +316,11 @@ export function buildContratoHtml(d: ContratoTemplateData): string {
     los festivos del calendario oficial aplicable al centro
     (<strong>${esc(d.calendarioEtiqueta)}</strong>). Esta previsión es aplicable con independencia
     del municipio de residencia de la familia: los días sin servicio son los que cierra el centro.
-    ${d.calendarioSinMunicipio
-      ? 'Los festivos de carácter local no quedan reflejados en esta tabla.'
-      : ''}
+    ${
+      d.calendarioSinMunicipio
+        ? 'Los festivos de carácter local no quedan reflejados en esta tabla.'
+        : ''
+    }
   </p>
 
   <table class="tabla-calendario">
@@ -436,11 +455,19 @@ export function buildContratoHtml(d: ContratoTemplateData): string {
     <strong>El presente contrato se firma por duplicado ejemplar y a un solo efecto, quedando cada
     una de las partes en posesión de un ejemplar.</strong>
   </p>
+  <p>
+    El contrato despliega sus efectos desde la fecha indicada al inicio del documento, con
+    independencia de la fecha en que se produzca su firma, que se hace constar a continuación.
+  </p>
 
   ${lugarYFecha(d.ciudadFirma)}
   ${bloqueFirmas(p.nombreCompleto)}
   ${notas}
   `;
 
-  return documento('Contrato de prestación de servicios pedagógicos', p, cuerpo);
+  return documento(
+    'Contrato de prestación de servicios pedagógicos',
+    p,
+    cuerpo,
+  );
 }

@@ -5,6 +5,7 @@ import { CreateFestivoDto } from './dto/create-festivo.dto';
 import { UpdateFestivoDto } from './dto/update-festivo.dto';
 import { ConfiguracionCentroDto } from './dto/configuracion-centro.dto';
 import { calcularViernesSanto, calcularDomingoPascua } from '../common/utils/pascua';
+import { diaDesdeIso, normalizarDia } from '../common/fecha/dia.utils';
 import {
   AUTONOMICOS,
   LOCALES,
@@ -32,26 +33,11 @@ export type FestivoMin = { fecha: Date; descripcion: string };
 
 const ID_CENTRO = 'centro';
 
-/**
- * Dia natural a las 12:00 UTC — la forma canonica de guardar un festivo.
- *
- * Antes convivian dos: la importacion construia el mediodia local y el alta
- * manual parseaba "2026-05-15" como medianoche UTC. Las dos leian el dia
- * correcto, pero son instantes distintos, asi que el indice unico no las veria
- * como duplicadas. Se usa `Date.UTC` y no el constructor local para que el
- * resultado no dependa de la zona horaria del contenedor, y las 12:00 en vez de
- * las 00:00 para que el dia local sea el mismo se ejecute en UTC o en Madrid.
- */
-export function normalizarDia(fecha: Date): Date {
-  return new Date(Date.UTC(fecha.getFullYear(), fecha.getMonth(), fecha.getDate(), 12, 0, 0, 0));
-}
-
-/** Igual, pero desde "YYYY-MM-DD" — sin pasar por el parseo UTC del string. */
-function normalizarDesdeIso(iso: string): Date {
-  const [a, m, d] = iso.slice(0, 10).split('-').map(Number);
-  if (!a || !m || !d) throw new BadRequestException(`Fecha invalida: ${iso}`);
-  return new Date(Date.UTC(a, m - 1, d, 12, 0, 0, 0));
-}
+// Los helpers de dia natural nacieron aqui, pero no son de festivos: los
+// necesita todo campo que represente un DIA y no un momento (vacaciones, la
+// fecha de un registro diario). Viven en `common/fecha` y se reexporta
+// `normalizarDia` porque medio modulo —y su spec— ya lo importaban de aqui.
+export { normalizarDia };
 
 /**
  * Un festivo nacional que cae en domingo se traslada al lunes siguiente
@@ -198,7 +184,7 @@ export class FestivosService {
   }
 
   async create(dto: CreateFestivoDto) {
-    const fecha = normalizarDesdeIso(dto.fecha);
+    const fecha = diaDesdeIso(dto.fecha);
     const { ccaa, municipio } = this.normalizarAmbito(dto);
 
     const yaEsta = await this.prisma.festivo.findUnique({
@@ -237,7 +223,7 @@ export class FestivosService {
       ccaa:      dto.ccaa      ?? actual.ccaa,
       municipio: dto.municipio ?? actual.municipio,
     });
-    const fecha = dto.fecha ? normalizarDesdeIso(dto.fecha) : actual.fecha;
+    const fecha = dto.fecha ? diaDesdeIso(dto.fecha) : actual.fecha;
 
     const choque = await this.prisma.festivo.findUnique({
       where: { fecha_ccaa_municipio: { fecha, ccaa, municipio } },

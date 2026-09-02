@@ -5,25 +5,110 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { EstadoContrato, EstadoFactura, Prisma } from '@prisma/client';
+import {
+  EstadoContrato,
+  EstadoFactura,
+  EstadoSesion,
+  Prisma,
+} from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../common/storage/storage.service';
 import { FacturasPdfService } from './facturas-pdf.service';
 import { MarcarPagadaDto } from './dto/marcar-pagada.dto';
 import { CrearFacturaPuntualDto } from './dto/crear-factura-puntual.dto';
-import { motivoSinDatosFiscales, toNum } from './facturas.utils';
-import { tipoSesionLabel } from '../common/constants/tipo-sesion';
+import {
+  motivoSinDatosEmisor,
+  motivoSinDatosFiscales,
+  toNum,
+} from './facturas.utils';
 import { EmailService } from '../common/email/email.service';
 import { AuditService } from '../auth/audit.service';
 import { facturaInclude, FacturaCompleta } from './facturas.include';
 
-const EXENCION_IVA = 'Exenta de IVA conforme al Art. 20.1.3 LIVA';
+/**
+ * Texto de exencion que se imprime en la factura, literal y tal cual lo dicto la
+ * gestoria (2026-09-02).
+ *
+ * Es el **20.Uno.10** (clases a titulo particular sobre materias incluidas en los
+ * planes de estudio), NO el 20.Uno.3 que habia antes. El 3 exime la asistencia de
+ * profesionales **sanitarios de la LOPS** (Ley 44/2003) y Belen es pedagoga, que
+ * no esta en esa lista: el articulo que citaba la factura no le amparaba.
+ *
+ * Sigue siendo una constante global, y de momento es correcto: `exencionIvaTexto`
+ * se guarda **por factura**, asi que cada una congela el texto con el que se
+ * expidio y cambiar esto no reescribe el historico. El dia que entre una segunda
+ * autonoma con otro regimen —una logopeda SI es sanitaria de la LOPS y iria por el
+ * 20.Uno.3— esto pasa a ser un campo de `Trabajador` sin migrar nada.
+ */
+const EXENCION_IVA =
+  'Factura exenta de I.V.A (Artículo 20. Uno. 10º. Ley 37/1992)';
 
 /**
  * Cuantos PDF se generan a la vez. Cada uno levanta su propio Chromium, asi que
  * el numero sale de la memoria del contenedor (0,5 vCPU / 2 GB), no de la prisa.
  */
 const CONCURRENCIA_PDF = 3;
+
+/**
+ * Concepto de la cuota mensual, literal y fijo.
+ *
+ * Es el texto del modelo de factura del gabinete y lo pide la propia profesional:
+ * describe el servicio real prestado, que es lo que exige el RD 1619/2012 art. 6,
+ * y encaja con el articulo de exencion que aplica (20.Uno.10, clases a titulo
+ * particular) — cosa que "Cuota mensual de pedagogia" no hacia.
+ *
+ * De paso quita un problema de RGPD que este mismo repo tenia apuntado: el
+ * concepto viejo nombraba el TIPO DE TERAPIA, asi que el libro que se manda a la
+ * gestoria revelaba que tratamiento recibe cada menor. Este no. El mes ya viaja
+ * en `periodoFacturado`, que es donde tiene que estar, y la plantilla lo pinta en
+ * portada ("SEPTIEMBRE 2026").
+ *
+ * Fijo y global por el mismo motivo que `EXENCION_IVA`: `concepto` se guarda por
+ * factura, asi que cada una congela el suyo. El dia que otra autonoma preste otro
+ * servicio, esto pasa a depender del trabajador sin migrar historico.
+ */
+const CONCEPTO_CUOTA_MENSUAL =
+  'Servicios profesionales de reeducación pedagógica y apoyo al aprendizaje adaptado al currículo escolar';
+
+/**
+ * El calendario de facturacion sale de la clausula 3 del contrato que firma la
+ * familia, que dice dos cosas que el generador ignoraba por completo:
+ *
+ *   "...con la excepcion del mes de julio, que se facturara de forma proporcional
+ *   al numero de sesiones efectivamente impartidas. El mes de agosto no sera
+ *   objeto de facturacion."
+ *
+ * Sin esto, un contrato indefinido (`fechaFin = null`) emitia en julio y agosto
+ * la cuota entera, automaticamente y en contra del documento firmado.
+ */
+const MES_AGOSTO = 8;
+const MES_JULIO = 7;
+
+/**
+ * Sesiones que cubre una cuota mensual completa, por cada sesion semanal del
+ * contrato. Cuatro, es decir "la cuota cubre cuatro semanas".
+ *
+ * El contrato habla de "tarifa plana mensual" y NO fija precio por sesion, asi
+ * que el divisor es una decision, no un dato: se eligio 4 por ser el mas facil de
+ * explicar a una familia y el que no cambia de un mes a otro. Con cuota 180 y una
+ * sesion semanal, la sesion sale a 45,00 EUR.
+ */
+const SESIONES_POR_CUOTA = 4;
+
+/**
+ * Que cuenta como "sesion efectivamente impartida" al prorratear julio.
+ *
+ * `CANCELADA_SIN_AVISO` entra porque la clausula 5 lo permite expresamente
+ * ("las cancelaciones solicitadas por la familia con menos de cuarenta y ocho
+ * horas de antelacion podran facturarse integramente como sesion realizada") y la
+ * 6 remata que una sesion no recuperada en plazo "se considerara realizada a
+ * todos los efectos". Dejarla fuera cobraria de menos justo en el caso que el
+ * contrato protege. `CANCELADA_CON_AVISO`, `VACACIONES` y `PROGRAMADA` no cuentan.
+ */
+const ESTADOS_SESION_IMPARTIDA: EstadoSesion[] = [
+  EstadoSesion.COMPLETADA,
+  EstadoSesion.CANCELADA_SIN_AVISO,
+];
 
 export interface ContratoAFacturar {
   contratoId: string;
@@ -134,6 +219,12 @@ export class FacturasService {
             nombreFiscal: true,
             nifFiscal: true,
             retencionIrpf: true,
+            // El emisor tambien es obligatorio (RD 1619/2012 art. 6). Se trae
+            // por el mismo motivo que el destinatario: bloquear antes de quemar
+            // un numero de la serie correlativa.
+            direccionFiscal: true,
+            codigoPostalFiscal: true,
+            ciudadFiscal: true,
           },
         },
         cliente: {
@@ -147,6 +238,9 @@ export class FacturasService {
             nifTutorPagador: true,
           },
         },
+        // Cuantas sesiones semanales tiene el contrato: es el divisor del
+        // prorrateo de julio (`SESIONES_POR_CUOTA` por cada sesion semanal).
+        _count: { select: { slots: true } },
       },
       orderBy: { createdAt: 'asc' },
     });
@@ -166,6 +260,76 @@ export class FacturasService {
   }
 
   /**
+   * Julio se factura A MES VENCIDO, no por adelantado como el resto.
+   *
+   * Es consecuencia directa de prorratearlo por sesiones impartidas: el 1 de
+   * julio todavia no se ha dado ninguna, asi que generarlo entonces emitiria
+   * facturas de 0,00 EUR — y el numero de la serie ya estaria quemado. Se emite
+   * cuando el mes ha terminado.
+   */
+  private assertJulioCerrado(anio: number, mes: number): void {
+    if (mes !== MES_JULIO) return;
+    const hoy = new Date();
+    const finDeJulio = new Date(anio, MES_JULIO, 1);
+    if (hoy < finDeJulio) {
+      throw new BadRequestException(
+        'Julio se factura a mes vencido, porque su importe depende de las ' +
+          'sesiones efectivamente impartidas (cláusula 3 del contrato). ' +
+          'Se puede generar a partir del 1 de agosto.',
+      );
+    }
+  }
+
+  /**
+   * Sesiones impartidas en el periodo, por contrato. Una sola consulta agregada
+   * en vez de una por contrato: en julio se piden todos los del gabinete a la vez.
+   */
+  private async sesionesImpartidasPorContrato(
+    contratoIds: string[],
+    primerDia: Date,
+    ultimoDia: Date,
+  ): Promise<Map<string, number>> {
+    if (contratoIds.length === 0) return new Map();
+    const filas = await this.prisma.sesion.groupBy({
+      by: ['contratoId'],
+      where: {
+        contratoId: { in: contratoIds },
+        estado: { in: ESTADOS_SESION_IMPARTIDA },
+        fechaHoraInicio: { gte: primerDia, lte: ultimoDia },
+      },
+      _count: { _all: true },
+    });
+    return new Map(
+      filas
+        .filter((f): f is typeof f & { contratoId: string } => !!f.contratoId)
+        .map((f) => [f.contratoId, f._count._all]),
+    );
+  }
+
+  /**
+   * Lo que se factura de ese contrato en ese mes. La cuota entera salvo en julio,
+   * que va prorrateado por sesiones impartidas (cláusula 3).
+   *
+   * Se redondea a dos decimales aquí y no al pintar: el importe que se guarda es
+   * el que se cobra, y un `Decimal(10,2)` truncaría en silencio la diferencia.
+   */
+  private importeAFacturar(
+    contrato: {
+      cuotaMensual: { toNumber: () => number } | number;
+      _count: { slots: number };
+    },
+    mes: number,
+    sesionesImpartidas: number,
+  ): number {
+    const cuota = toNum(contrato.cuotaMensual);
+    if (mes !== MES_JULIO) return cuota;
+
+    const sesionesSemanales = contrato._count.slots || 1;
+    const precioSesion = cuota / (sesionesSemanales * SESIONES_POR_CUOTA);
+    return Math.round(precioSesion * sesionesImpartidas * 100) / 100;
+  }
+
+  /**
    * Qué pasaría si se generase ese periodo, sin escribir nada. Es lo que ve el
    * usuario antes de confirmar: hasta ahora el botón era ciego.
    */
@@ -175,6 +339,7 @@ export class FacturasService {
     opts?: { trabajadorId?: string },
   ): Promise<PreviewGeneracion> {
     this.assertPeriodoNoFuturo(anio, mes);
+    this.assertJulioCerrado(anio, mes);
 
     const primerDia = new Date(anio, mes - 1, 1);
     const ultimoDia = new Date(anio, mes, 0, 23, 59, 59);
@@ -195,8 +360,39 @@ export class FacturasService {
     const aGenerar: ContratoAFacturar[] = [];
     const bloqueadas: FalloGeneracion[] = [];
 
+    // Agosto no se factura. Se enseña en `bloqueadas` en vez de devolver una
+    // lista vacía sin más: quien pulsa "generar" tiene que leer POR QUÉ no sale
+    // nada, o parecerá que la pantalla está rota.
+    if (mes === MES_AGOSTO) {
+      return {
+        periodo: periodoFacturado,
+        aGenerar: [],
+        yaFacturadas: contratos.length - pendientes.length,
+        bloqueadas: pendientes.map((c) => ({
+          contratoId: c.id,
+          cliente: this.nombreCliente(c.cliente),
+          motivo:
+            'Agosto no se factura: la cláusula 3 del contrato lo excluye por corresponder al periodo vacacional de la profesional.',
+        })),
+        importeTotal: 0,
+      };
+    }
+
+    const sesionesPorContrato =
+      mes === MES_JULIO
+        ? await this.sesionesImpartidasPorContrato(
+            pendientes.map((c) => c.id),
+            primerDia,
+            ultimoDia,
+          )
+        : new Map<string, number>();
+
     for (const c of pendientes) {
-      const motivo = motivoSinDatosFiscales(c.cliente);
+      // Emisor primero: si a la profesional le faltan sus datos fiscales no hay
+      // ninguna factura posible, asi que enterarse antes ahorra revisar cliente
+      // por cliente un bloqueo que en realidad es uno solo.
+      const motivo =
+        motivoSinDatosEmisor(c.trabajador) ?? motivoSinDatosFiscales(c.cliente);
       if (motivo) {
         bloqueadas.push({
           contratoId: c.id,
@@ -210,7 +406,11 @@ export class FacturasService {
         cliente: this.nombreCliente(c.cliente),
         trabajador: `${c.trabajador.nombre} ${c.trabajador.apellidos}`,
         tipoSesion: c.tipoSesion as string,
-        importe: toNum(c.cuotaMensual),
+        importe: this.importeAFacturar(
+          c,
+          mes,
+          sesionesPorContrato.get(c.id) ?? 0,
+        ),
       });
     }
 
@@ -261,14 +461,11 @@ export class FacturasService {
     opts?: { trabajadorId?: string; user?: { userId: string } },
   ): Promise<ResultadoGeneracion> {
     this.assertPeriodoNoFuturo(anio, mes);
+    this.assertJulioCerrado(anio, mes);
 
     const primerDia = new Date(anio, mes - 1, 1);
     const ultimoDia = new Date(anio, mes, 0, 23, 59, 59);
     const periodoFacturado = this.formatPeriodo(anio, mes);
-    const mesNombre = new Date(anio, mes - 1, 1).toLocaleDateString('es-ES', {
-      month: 'long',
-      year: 'numeric',
-    });
 
     const contratos = await this.contratosDelPeriodo(
       primerDia,
@@ -284,11 +481,41 @@ export class FacturasService {
     const fallidas: FalloGeneracion[] = [];
     const nuevas: FacturaCompleta[] = [];
 
+    // Agosto: no se emite nada. Se sale antes de tocar la serie correlativa.
+    if (mes === MES_AGOSTO) {
+      this.logger.log(
+        `Mes ${periodoFacturado}: agosto no se factura (cláusula 3 del contrato)`,
+      );
+      return {
+        periodo: periodoFacturado,
+        creadas: 0,
+        omitidas: contratos.length - pendientes.length,
+        fallidas: pendientes.map((c) => ({
+          contratoId: c.id,
+          cliente: this.nombreCliente(c.cliente),
+          motivo:
+            'Agosto no se factura: la cláusula 3 del contrato lo excluye por corresponder al periodo vacacional de la profesional.',
+        })),
+      };
+    }
+
+    const sesionesPorContrato =
+      mes === MES_JULIO
+        ? await this.sesionesImpartidasPorContrato(
+            pendientes.map((c) => c.id),
+            primerDia,
+            ultimoDia,
+          )
+        : new Map<string, number>();
+
     for (const contrato of pendientes) {
-      // Antes de nada, los datos fiscales del destinatario. Una factura sin
-      // nombre y NIF del tutor pagador no es una factura valida, y ademas quema
-      // un numero de la serie correlativa que ya no se libera al anularla.
-      const sinDatos = motivoSinDatosFiscales(contrato.cliente);
+      // Antes de nada, los datos fiscales de las dos partes. Una factura sin
+      // NIF y domicilio del emisor, o sin nombre y NIF del tutor pagador, no es
+      // una factura valida (RD 1619/2012 art. 6), y ademas quema un numero de la
+      // serie correlativa que ya no se libera al anularla.
+      const sinDatos =
+        motivoSinDatosEmisor(contrato.trabajador) ??
+        motivoSinDatosFiscales(contrato.cliente);
       if (sinDatos) {
         fallidas.push({
           contratoId: contrato.id,
@@ -302,8 +529,12 @@ export class FacturasService {
         nuevas.push(
           await this.crearFacturaDesdeContrato(
             contrato,
-            mesNombre,
             periodoFacturado,
+            this.importeAFacturar(
+              contrato,
+              mes,
+              sesionesPorContrato.get(contrato.id) ?? 0,
+            ),
           ),
         );
       } catch (err: any) {
@@ -422,14 +653,18 @@ export class FacturasService {
       tipoSesion: string;
       trabajador: { retencionIrpf: { toNumber: () => number } | null | number };
     },
-    mesNombre: string,
     periodoFacturado: string,
+    /**
+     * Ya calculado por `importeAFacturar`: la cuota entera, salvo en julio que
+     * viene prorrateado. Se pasa hecho para que la previsualización y la
+     * generación no puedan discrepar sobre lo que se va a cobrar.
+     */
+    importe: number,
   ): Promise<FacturaCompleta> {
-    const importe = toNum(contrato.cuotaMensual);
     const retencionPct = RETENCION_IRPF_PARTICULARES;
     const retencionImporte = (importe * retencionPct) / 100;
     const total = importe - retencionImporte;
-    const concepto = `Cuota mensual de ${tipoSesionLabel(contrato.tipoSesion).toLowerCase()} — ${mesNombre}`;
+    const concepto = CONCEPTO_CUOTA_MENSUAL;
 
     // La serie correlativa es la del año en que se EXPIDE, no la del periodo que
     // se factura. Numerar por el año del periodo hacía que recuperar 2025-03
@@ -638,11 +873,22 @@ export class FacturasService {
     const trabajadorId = user.userId;
     const trabajador = await this.prisma.trabajador.findUnique({
       where: { id: trabajadorId },
-      select: { retencionIrpf: true },
+      select: {
+        retencionIrpf: true,
+        nifFiscal: true,
+        direccionFiscal: true,
+        codigoPostalFiscal: true,
+        ciudadFiscal: true,
+      },
     });
 
     if (!trabajador) {
       throw new NotFoundException(`Trabajador ${trabajadorId} no encontrado`);
+    }
+
+    const sinEmisor = motivoSinDatosEmisor(trabajador);
+    if (sinEmisor) {
+      throw new BadRequestException(sinEmisor);
     }
 
     // La otra puerta de emision. Misma exigencia que la generacion por periodo:

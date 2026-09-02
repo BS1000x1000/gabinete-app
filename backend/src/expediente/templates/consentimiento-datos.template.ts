@@ -9,23 +9,30 @@ import {
 /**
  * Consentimiento informado para el tratamiento de datos personales.
  *
- * ATENCION: esta plantilla NO esta validada. El documento de origen llega con
- * cinco marcadores `[CONSULTOR]` sin resolver en las secciones 5 (base legal) y
- * 6 (plazos de conservacion), y la duda de fondo es sustantiva: si el
- * tratamiento de datos de salud se ampara en el art. 9.2.h (profesional
- * sanitario) o en el 9.2.a (consentimiento explicito), siendo la profesional
- * pedagoga y no sanitaria.
+ * La duda de fondo era si el tratamiento de datos de salud se ampara en el
+ * art. 9.2.h (profesional sanitario) o en el 9.2.a (consentimiento explicito),
+ * siendo la profesional pedagoga y no sanitaria. **Se resolvio por el 9.2.a**
+ * (2026-09-02): la gestoria confirmo que la actividad se factura exenta por el
+ * art. 20.Uno.10 de la Ley 37/1992 —clases a titulo particular—, es decir que
+ * fiscalmente es ENSENANZA y no asistencia sanitaria. El 9.2.h exige un
+ * profesional sanitario sujeto al secreto profesional por ley, que no es el caso,
+ * asi que la unica base posible para los datos de salud es el consentimiento
+ * explicito. Es lo que la seccion 5 ya recogia.
  *
- * Mientras `PLANTILLA_VALIDADA` sea false, el expediente deja generar y revisar
- * el documento pero bloquea su envio a las familias, y el PDF sale con una
- * franja de aviso bien visible para que nadie lo entregue por error.
+ * La seccion 3 se completo a la vez con los ENCARGADOS DEL TRATAMIENTO. Decia
+ * "los datos no se comunicaran a terceros" y no nombraba ni al alojamiento de la
+ * aplicacion, ni a la gestoria, ni al proveedor de correo. Informar de esto es
+ * obligatorio (art. 13.1.e) y ademas evita tener que volver a pedir la firma a
+ * las familias el dia que la aplicacion se despliegue en servidor: el texto
+ * describe ya el estado final, no el provisional.
  *
- * Para cerrarlo: sustituir el texto de las secciones 5 y 6 por el que fije el
- * dictamen, subir `PLANTILLA_VERSION` y poner `PLANTILLA_VALIDADA` a true.
+ * `PLANTILLA_VALIDADA` se conserva como interruptor: si la consultora objeta
+ * algo, ponerla a false vuelve a bloquear el envio y a estampar la franja de
+ * BORRADOR en el PDF, sin tocar nada mas.
  */
 
-export const PLANTILLA_VERSION = 'consentimiento-datos-v0-borrador-2026-09';
-export const PLANTILLA_VALIDADA = false;
+export const PLANTILLA_VERSION = 'consentimiento-datos-v1-2026-09';
+export const PLANTILLA_VALIDADA = true;
 
 export const MOTIVO_NO_VALIDADA =
   'Las secciones de base legal y plazos de conservación están pendientes del ' +
@@ -38,7 +45,9 @@ export interface ConsentimientoDatosData {
   ciudadFirma: string | null;
 }
 
-export function buildConsentimientoDatosHtml(d: ConsentimientoDatosData): string {
+export function buildConsentimientoDatosHtml(
+  d: ConsentimientoDatosData,
+): string {
   const p = d.profesional;
   const t1 = d.tutores[0] ?? { nombreCompleto: '', nif: null };
   const t2 = d.tutores[1] ?? { nombreCompleto: '', nif: null };
@@ -109,6 +118,30 @@ export function buildConsentimientoDatosHtml(d: ConsentimientoDatosData): string
     <li>Organismos públicos o autoridades competentes, cuando así lo exija una obligación legal.</li>
   </ul>
   <p>Las grabaciones e imágenes de registro interno no se comunicarán ni difundirán en ningún caso.</p>
+  <p>
+    Con independencia de lo anterior, para poder prestar el servicio la profesional se apoya en
+    proveedores que tratan datos por su cuenta y siguiendo sus instrucciones, en calidad de
+    <strong>encargados del tratamiento</strong> (art. 28 RGPD), con los que mantiene suscrito el
+    correspondiente contrato de encargo:
+  </p>
+  <ul>
+    <li>
+      <strong>Proveedor de alojamiento de la aplicación de gestión y de las copias de seguridad</strong>,
+      con servidores situados en la Unión Europea.
+    </li>
+    <li>
+      <strong>Asesoría o gestoría</strong>, para el cumplimiento de las obligaciones fiscales y
+      contables. Únicamente accede a los datos de facturación (persona que figura como pagadora,
+      concepto e importe), nunca a la documentación de la intervención.
+    </li>
+    <li>
+      <strong>Proveedor de correo electrónico</strong>, para el envío de facturas y de la
+      documentación dirigida a la familia.
+    </li>
+  </ul>
+  <p>
+    No se realizan transferencias internacionales de datos fuera del Espacio Económico Europeo.
+  </p>
 
   <h2 class="clausula">4. Datos tratados</h2>
   <p>Podrán recogerse y tratarse las siguientes categorías de datos:</p>

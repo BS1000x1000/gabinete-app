@@ -107,7 +107,7 @@ Standard pattern: `module → controller → service → dto/types`. All DB acce
 | `informes` | Structured reports (`INICIAL` / `SEGUIMIENTO`) + PDF via Puppeteer. Role-scoped: RECEP only sees FINALIZADO. Archives finalized PDF to Object Storage via `StorageService.archivarPdfEnStorage()` (conditional on `SCW_*`). |
 | `documentos` | Documentación externa del expediente (`DocumentoCliente`): subida multipart a Object Storage, URL prefirmada de 5 min para descarga, categorías `INFORME_MEDICO` / `INFORME_ESCOLAR` / `ADMINISTRATIVO` / `OTROS`. Falla de forma visible si faltan `SCW_*` — nunca escribe a disco local. Borrado: ADMIN o quien subió el fichero. |
 | `export` | PDF/Excel exports (sesiones, bonos). Puppeteer + ExcelJS. |
-| `fichaje` | Daily record CRUD + objective linking. ROLES_CLINICOS only. |
+| `fichaje` | Daily record CRUD + objective linking. ROLES_CLINICOS only. **`fechaRegistro` es un DÍA** (12:00 UTC, `diaDesdeIso`), no un instante: cuándo se escribió lo guarda `createdAt`. Ver §Registro diario. |
 | `gas` | GAS evaluation. ROLES_CLINICOS only for mutations. |
 | `consentimientos` | **Único** escritor del consentimiento RGPD. Histórico inmutable + alcances granulares + caché en `Cliente`. Sin controlador: lo consumen `clientes` y `expediente`. Ver §"Consentimiento RGPD". |
 | `festivos` | **Única fuente** del calendario del centro (`delCentro()`). CRUD + importación desde catálogo versionado + `ConfiguracionCentro`. Ver §Calendario del centro. |
@@ -274,10 +274,16 @@ Reglas que conviene no romper:
   en un índice único, así que con columnas nullable el `@@unique([fecha, ccaa, municipio])` no
   impediría el duplicado. Con centinela `''` sí, y `createMany({ skipDuplicates })` por fin sirve
   para algo: se pudo borrar la deduplicación en memoria de la importación.
-- **`fecha` se normaliza a las 12:00 UTC** en todos los caminos de escritura (`normalizarDia()`).
-  El `@@unique` depende de eso: antes la importación guardaba el mediodía local y el alta manual la
-  medianoche UTC, dos instantes distintos para el mismo día. Las 12:00 y no las 00:00 para que el día
-  local sea el mismo se ejecute el contenedor en UTC o en `Europe/Madrid`.
+- **`fecha` se normaliza a las 12:00 UTC** en todos los caminos de escritura. El `@@unique` depende
+  de eso: antes la importación guardaba el mediodía local y el alta manual la medianoche UTC, dos
+  instantes distintos para el mismo día. Las 12:00 y no las 00:00 para que el día local sea el mismo
+  se ejecute el contenedor en UTC o en `Europe/Madrid`.
+
+  > **Convención de todo el proyecto, no solo de festivos.** Los helpers viven en
+  > `common/fecha/dia.utils.ts` (`normalizarDia`, `diaDesdeIso`) y los usa **todo campo que
+  > represente un DÍA y no un momento**. `diaDesdeIso` recorta a `YYYY-MM-DD` **sin pasar por
+  > `new Date(iso)`**, que interpreta una fecha suelta como medianoche UTC y reintroduce el desfase.
+  > `festivos.service` reexporta `normalizarDia` porque medio módulo ya lo importaba de allí.
 - **Los datos van versionados, sin API externa.** Ninguna API pública gratuita cubre los festivos
   **municipales** españoles, que son la mitad difícil; y esto alimenta un documento contractual, que
   no debe depender de una llamada de terceros en tiempo de ejecución. Mantenimiento: una vez al año,
@@ -444,15 +450,67 @@ Reglas que conviene no romper:
   **Supervisión es la única pantalla que llama sin el flag.**
 - **Los contratos se crean y se replanifican en `listado/:id/contratos`**, no aquí. "Mis contratos" es
   la vista transversal del autónomo y enlaza a la ficha para actuar.
+- **El contrato dice desde cuándo produce efectos, y no es la fecha de firma.** El preámbulo imprime
+  `fechaInicio` en texto largo ("con efectos desde el 1 de septiembre de 2026") y la cláusula 13 aclara
+  que eso es independiente de la fecha de firma, que va manuscrita en `lugarYFecha()`. Firmar en
+  octubre un contrato vigente desde el 1 de septiembre es lo normal y ahora el papel lo respalda; antes
+  la única fecha del documento era la de la firma, mientras la app facturaba el mes entero desde el
+  día 1. Al cambiar el texto se subió `PLANTILLA_VERSION` a `contrato-v2-2026-09`, que es lo que queda
+  registrado en `DocumentoCliente.plantillaVersion`.
 - **Sin retención de IRPF.** `RETENCION_IRPF_PARTICULARES = 0` en `facturas.service.ts`: el receptor es
   el tutor pagador, un particular, y un particular no practica retención. `Trabajador.retencionIrpf` y
   las columnas de `Factura` se conservan para un futuro receptor empresa.
+- **La exención de IVA es el 20.Uno.10, no el 20.Uno.3.** `EXENCION_IVA` en `facturas.service.ts`
+  imprime *"Factura exenta de I.V.A (Artículo 20. Uno. 10º. Ley 37/1992)"*, confirmado por la gestoría
+  el 2026-09-02. El 20.Uno.3 —que es lo que decía antes— exime la asistencia de **profesionales
+  sanitarios de la LOPS** (Ley 44/2003), y Belén es pedagoga: no está en esa lista, así que el
+  artículo que citaba la factura no la amparaba. Sigue siendo constante global a propósito:
+  `exencionIvaTexto` se guarda **por factura**, de modo que cada una congela el texto con el que se
+  expidió y cambiar la constante no reescribe el histórico. El día que entre una segunda autónoma con
+  otro régimen —una **logopeda sí** es sanitaria de la LOPS y va por el 20.Uno.3— esto pasa a ser un
+  campo de `Trabajador` sin migrar nada.
+- **La emisión exige datos fiscales de las DOS partes.** `motivoSinDatosFiscales` valida al
+  destinatario (nombre + NIF del tutor pagador) y `motivoSinDatosEmisor` a la profesional (NIF +
+  domicilio completo), ambos en `facturas.utils.ts` y aplicados en los tres caminos de emisión
+  (previsualización, generación por mes y factura puntual). El RD 1619/2012 art. 6 exige los datos del
+  expedidor igual que los del destinatario, y antes solo se miraba al destinatario: una ficha fiscal a
+  medias emitía igual, con el bloque del emisor en blanco en el PDF, y **quemaba un número de la serie
+  correlativa que no se libera** — ni siquiera al anular, que deja el hueco a propósito.
 - **`anular()` deja hueco en la numeración.** Sigue sin haber factura rectificativa ni campo `serie`;
   pendiente de la gestoría junto con el registro de facturación (RD 1007/2023 / Verifactu). Es lo
   primero a resolver antes de emitir a datos reales.
+- **Julio y agosto no son meses normales, porque el contrato dice que no lo son.** La cláusula 3
+  promete julio prorrateado "de forma proporcional al número de sesiones efectivamente impartidas" y
+  agosto sin facturar, y el generador ignoraba las dos cosas: un contrato indefinido emitía cuota
+  entera en ambos, automáticamente y en contra del papel firmado. Ahora:
+  **agosto** sale antes de tocar la serie correlativa y explica por qué en `bloqueadas` / `fallidas`;
+  **julio** se prorratea con `importeAFacturar()` a `cuota ÷ (sesiones semanales × SESIONES_POR_CUOTA)`
+  por sesión impartida. El divisor es 4 —"la cuota cubre cuatro semanas"— y es una **decisión, no un
+  dato**: el contrato habla de "tarifa plana mensual" y no fija precio por sesión. Cuentan como
+  impartidas `COMPLETADA` y `CANCELADA_SIN_AVISO`, esta última porque la cláusula 5 permite facturar
+  como realizada la cancelación con menos de 48 h y la 6 remata que la no recuperada en plazo "se
+  considerará realizada a todos los efectos".
+- **Julio se factura A MES VENCIDO, y es el único.** Consecuencia de prorratearlo por sesiones
+  impartidas: el 1 de julio no se ha dado ninguna, así que emitirlo entonces daría facturas de 0,00 €
+  con su número de serie ya quemado. `assertJulioCerrado()` lo rechaza hasta el 1 de agosto, y
+  `periodoQueTocaFacturar()` (exportada de `facturas-cron.service.ts` para poder probarla sin esperar
+  a agosto) hace que el cron del día 1 **no emita nada en julio** y **emita julio el 1 de agosto**.
+  El cron de email de las 09:00 usa la misma función, o mandaría el periodo equivocado.
 - **Las facturas se generan y se envían solas** (`facturas-cron.service.ts`: día 1 a las 02:00 genera,
   a las 09:00 envía). El botón de Supervisión es la recuperación manual, no el camino normal — y hoy
   nadie ve si el cron funcionó, solo los logs.
+- **El concepto es fijo y no nombra la terapia.** `CONCEPTO_CUOTA_MENSUAL` en `facturas.service.ts`:
+  *"Servicios profesionales de reeducación pedagógica y apoyo al aprendizaje adaptado al currículo
+  escolar"*, que es el del modelo de factura del gabinete. El anterior era `Cuota mensual de
+  ${tipo} — ${mes}`, que describía peor el servicio para el artículo de exención que aplica y, sobre
+  todo, **revelaba el tipo de terapia de cada menor en el libro que se manda a la gestoría**. El mes
+  viaja en `periodoFacturado`, que es donde debe estar, y la plantilla lo pinta en portada.
+- **La plantilla de factura reproduce el modelo del gabinete**: logo (embebido en base64 en
+  `common/documentos/logo.ts`, porque `page.setContent()` no resuelve rutas relativas), Nº de
+  colegiada, IBAN + SWIFT, forma de pago y fecha de vencimiento (emisión + 9 días = los "diez días
+  naturales" de la cláusula 3). **La fila de IVA se pinta siempre, también al 0%**: antes desaparecía
+  justo en el único caso real, así que la factura no declaraba en ninguna parte el tipo aplicado, que
+  es obligatorio. `scripts/previsualizar-factura.ts` genera un PDF de ejemplo para comparar a ojo.
 - **Vocabulario compartido**, no reimplementado: `shared/utils/facturacion.utils.ts` (meses, periodos,
   `esComputable`, totales), `shared/charts/chart-theme.ts` (Chart.js) y los helpers de
   `interface/contrato.interface.ts` (`tipoColor`, `tipoLabel`, `diaLabel`…). Había tres tablas de meses
@@ -705,6 +763,25 @@ Component uses `descargando = signal(false)` + `finalize(() => this.descargando.
 ### Drawer pattern (Registro Diario)
 
 Global `RegistroDrawerService` with `open(clienteId, sesionId?)`. Drawer component subscribes to the service signal. Overlay semitransparent on body.
+
+### Registro diario — el día que refiere vs. cuándo se escribió
+
+Son **dos cosas distintas** y la pantalla las separa:
+
+- **`fechaRegistro` = el DÍA de la sesión.** Se guarda a las 12:00 UTC (`diaDesdeIso`) y se pinta
+  **sin hora**. Antes se guardaba con `new Date("2026-09-02")`, o sea la medianoche UTC, y la
+  tarjeta la pintaba con `dd/MM/yyyy · HH:mm`: **todos los registros salían "hechos a las 02:00 am"**
+  (01:00 en invierno). No era la hora de nada, era el desfase de Madrid.
+- **`createdAt` = cuándo se tecleó.** Ese sí es un instante real y ya era correcto.
+
+La tarjeta enseña `createdAt` **solo cuando cae en un día distinto** al que refiere el registro
+("Escrito el 04/09/2026 · 09:14", en ámbar). Rellenar más tarde es normal y no se trata como error,
+pero un registro tardío es justo donde se cuela una errata en el día, así que se dice.
+
+> El día por defecto del formulario se calcula en **local, no en UTC**. `toISOString()` convierte
+> antes de recortar, así que en Madrid entre medianoche y las 02:00 devolvía la víspera: escribir el
+> registro al llegar a casa a las 00:30 lo fechaba el día anterior. El campo del drawer ya se llama
+> "Fecha de sesión", que es lo que es.
 
 ### ClienteDrawerComponent pattern (Perfil tab)
 

@@ -98,7 +98,9 @@ export class ContratosPdfService {
     };
   }
 
-  private direccionFiscal(t: ContratoConRelaciones['trabajador']): string | null {
+  private direccionFiscal(
+    t: ContratoConRelaciones['trabajador'],
+  ): string | null {
     const partes = [t.direccionFiscal, t.codigoPostalFiscal, t.ciudadFiscal]
       .filter(Boolean)
       .join(', ');
@@ -115,7 +117,7 @@ export class ContratosPdfService {
    */
   tutoresDe(cliente: ContratoConRelaciones['cliente']): TutorContrato[] {
     const todos = cliente.contactosFamiliares ?? [];
-    const marcados = todos.filter(c => c.esTutorLegal);
+    const marcados = todos.filter((c) => c.esTutorLegal);
 
     const elegidos =
       marcados.length > 0
@@ -126,7 +128,7 @@ export class ContratosPdfService {
             return peso(b) - peso(a);
           });
 
-    return elegidos.slice(0, 2).map(c => ({
+    return elegidos.slice(0, 2).map((c) => ({
       nombreCompleto: `${c.nombre} ${c.apellidos}`.trim(),
       nif: c.dni,
     }));
@@ -157,21 +159,28 @@ export class ContratosPdfService {
     if (!p.numeroColegiado) faltan.push('Número de colegiada');
     if (!p.colegioProfesional) faltan.push('Colegio profesional');
     if (!p.direccionProfesional) faltan.push('Domicilio profesional');
-    if (!p.numeroPoliza) faltan.push('Número de póliza del seguro de responsabilidad civil');
+    if (!p.numeroPoliza)
+      faltan.push('Número de póliza del seguro de responsabilidad civil');
 
-    if (tutores.length === 0) faltan.push('Ningún progenitor o tutor legal registrado');
-    else if (tutores.length === 1) faltan.push('Solo hay un tutor legal; el contrato prevé dos');
+    if (tutores.length === 0)
+      faltan.push('Ningún progenitor o tutor legal registrado');
+    else if (tutores.length === 1)
+      faltan.push('Solo hay un tutor legal; el contrato prevé dos');
 
     tutores.forEach((t, i) => {
       if (!t.nombreCompleto) faltan.push(`Nombre del tutor legal ${i + 1}`);
       if (!t.nif) faltan.push(`NIF del tutor legal ${i + 1}`);
     });
 
-    if (!contrato.cliente.contactosFamiliares?.some(c => c.esTutorLegal)) {
-      faltan.push('Nadie está marcado como tutor legal (se han tomado los dos primeros contactos)');
+    if (!contrato.cliente.contactosFamiliares?.some((c) => c.esTutorLegal)) {
+      faltan.push(
+        'Nadie está marcado como tutor legal (se han tomado los dos primeros contactos)',
+      );
     }
-    if (!contrato.cliente.fechaNacimiento) faltan.push('Fecha de nacimiento del menor');
-    if (contrato.slots.length === 0) faltan.push('Día y hora de la sesión semanal');
+    if (!contrato.cliente.fechaNacimiento)
+      faltan.push('Fecha de nacimiento del menor');
+    if (contrato.slots.length === 0)
+      faltan.push('Día y hora de la sesión semanal');
     if (toNum(contrato.cuotaMensual) <= 0) faltan.push('Cuota mensual');
 
     return faltan;
@@ -209,6 +218,15 @@ export class ContratosPdfService {
       diaSemana: slot?.diaSemana ?? null,
       horario: slot ? `${slot.horaInicio} a ${slot.horaFin}` : null,
       cuotaMensual: toNum(contrato.cuotaMensual) || null,
+      // Texto largo a proposito: es una fecha de un documento legal, no un dato
+      // de tabla. Sale de `fechaInicio`, nunca de `fechaFirma`.
+      fechaInicioEfectos: contrato.fechaInicio
+        ? new Date(contrato.fechaInicio).toLocaleDateString('es-ES', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+          })
+        : null,
       ciudadFirma: c.ciudad || null,
       calendario,
       cursoEtiqueta: this.calendario.etiquetaCurso(curso),

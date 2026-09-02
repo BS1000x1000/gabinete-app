@@ -628,8 +628,26 @@
   align-items: center;
   gap: 0.25rem;
   font-size: $font-size-xs;
-  color: $gray-400;
+  // $gray-400 es el gris de deshabilitado (2.94): no vale para texto.
+  color: $gray-500;
   font-weight: $font-weight-semibold;
+}
+
+// Registro escrito un dia distinto al que refiere. No es un error —rellenar
+// mas tarde es normal— pero se dice, porque un registro tardio es donde se
+// cuelan las erratas en el dia.
+.rd-card__meta-tardio {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: $font-size-xs;
+  color: $warning-dark;
+  background: $warning-light;
+  border: 1px solid rgba($warning, 0.35);
+  border-radius: $border-radius-full;
+  padding: 0.15rem 0.6rem;
+
+  i { flex-shrink: 0; }
 }
 
 .rd-card__actions {

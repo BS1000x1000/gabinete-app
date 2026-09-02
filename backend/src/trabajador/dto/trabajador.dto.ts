@@ -242,6 +242,14 @@ export class DatosFiscalesDto {
   @Matches(/^[A-Z]{2}\d{2}[\dA-Z]{1,30}$/, { message: 'Formato IBAN no válido' })
   iban?: string;
 
+  /** BIC/SWIFT: 8 u 11 caracteres (ISO 9362). Se imprime en la factura. */
+  @IsOptional()
+  @IsString()
+  @Matches(/^[A-Z]{6}[0-9A-Z]{2}([0-9A-Z]{3})?$/, {
+    message: 'Formato SWIFT/BIC no válido',
+  })
+  swift?: string;
+
   @IsOptional()
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 })

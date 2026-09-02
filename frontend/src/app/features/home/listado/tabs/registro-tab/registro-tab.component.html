@@ -247,10 +247,22 @@
                     <i class="bi bi-person"></i>
                     {{ reg.trabajador?.nombre }} {{ reg.trabajador?.apellidos }}
                   </span>
+                  <!-- El día al que se refiere el registro. Sin hora: es un
+                       día, no un instante, y la hora que salía aquí era
+                       siempre la misma (las 02:00 = medianoche UTC). -->
                   <span class="rd-card__meta-date">
                     <i class="bi bi-calendar3"></i>
-                    {{ reg.fechaRegistro | date: "dd/MM/yyyy · HH:mm" }}
+                    {{ reg.fechaRegistro | date: "dd/MM/yyyy" }}
                   </span>
+                  @if (esRegistroTardio(reg)) {
+                    <span
+                      class="rd-card__meta-tardio"
+                      [title]="'Se refiere al ' + (reg.fechaRegistro | date: 'dd/MM/yyyy') + ' pero se escribió más tarde. Comprueba que el día sea el correcto.'"
+                    >
+                      <i class="bi bi-clock-history"></i>
+                      Escrito el {{ reg.createdAt | date: "dd/MM/yyyy · HH:mm" }}
+                    </span>
+                  }
                   <div class="rd-card__actions">
                     <button
                       class="rd-card__action-btn"

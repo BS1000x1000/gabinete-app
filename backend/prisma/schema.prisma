@@ -53,6 +53,10 @@ model Trabajador {
   ciudadFiscal       String?  @map("ciudad_fiscal")
   provinciaFiscal    String?  @map("provincia_fiscal")
   iban               String?
+  /// BIC/SWIFT de la cuenta. Va impreso en la factura junto al IBAN, como en el
+  /// modelo del gabinete. No se deduce del IBAN: haria falta una tabla de codigos
+  /// de banco y seria una fuente de error en un documento fiscal.
+  swift              String?
   retencionIrpf      Decimal? @map("retencion_irpf") @db.Decimal(4, 2)
   emailFacturacion   String?  @map("email_facturacion")
 

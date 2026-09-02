@@ -214,6 +214,23 @@ export class RegistroTabComponent implements OnInit {
     return objetivoId in this.objetivosNotasMap();
   }
 
+  /**
+   * ¿Se escribió en un día distinto al que se refiere?
+   *
+   * `fechaRegistro` es el DÍA de la sesión; `createdAt`, el momento en que se
+   * tecleó. Cuando coinciden no hace falta decir nada. Cuando no, conviene
+   * verlo: un registro escrito tres días después puede llevar el día mal, y
+   * esta es la pista para detectarlo.
+   *
+   * Antes esto no se podía saber, porque la tarjeta pintaba `fechaRegistro` con
+   * hora (`dd/MM/yyyy · HH:mm`) y esa hora era siempre la misma —las 02:00, la
+   * medianoche UTC del día elegido— así que no informaba de nada.
+   */
+  esRegistroTardio(reg: RegistroDiario): boolean {
+    if (!reg.createdAt) return false;
+    return new Date(reg.fechaRegistro).toDateString() !== new Date(reg.createdAt).toDateString();
+  }
+
   // ── Edición ──────────────────────────────────────────────────
 
   editarRegistro(reg: RegistroDiario): void {

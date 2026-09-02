@@ -27,6 +27,7 @@ export interface Trabajador {
   ciudadFiscal?: string;
   provinciaFiscal?: string;
   iban?: string;
+  swift?: string;
   retencionIrpf?: number;
   emailFacturacion?: string;
   rol: {
@@ -171,6 +172,7 @@ export class TrabajadorService {
     ciudadFiscal?: string;
     provinciaFiscal?: string;
     iban?: string;
+  swift?: string;
     retencionIrpf?: number;
     emailFacturacion?: string;
   }) {
@@ -206,6 +208,7 @@ export class TrabajadorService {
     ciudadFiscal?: string;
     provinciaFiscal?: string;
     iban?: string;
+  swift?: string;
     retencionIrpf?: number;
     emailFacturacion?: string;
   }) {

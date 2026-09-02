@@ -34,3 +34,42 @@ export function motivoSinDatosFiscales(cliente: DatosPagador): string | null {
   if (sinNif) return 'Falta el NIF del tutor pagador en la ficha del cliente.';
   return null;
 }
+
+/** Datos fiscales del EMISOR de la factura, tal y como viven en `Trabajador`. */
+export interface DatosEmisor {
+  nifFiscal: string | null;
+  direccionFiscal: string | null;
+  codigoPostalFiscal: string | null;
+  ciudadFiscal: string | null;
+}
+
+/**
+ * Por que ese trabajador no puede expedir factura, o `null` si puede.
+ *
+ * El RD 1619/2012 art. 6 exige NIF y domicilio del **obligado a expedir** igual
+ * que los del destinatario, y hasta ahora solo se validaba el destinatario: una
+ * ficha fiscal a medias emitia igualmente, con el bloque del emisor en blanco en
+ * el PDF, y **quemaba un numero de la serie correlativa que no se libera** — ni
+ * siquiera al anular, que deja el hueco a proposito.
+ *
+ * No se exige `nombreFiscal` porque tiene fallback real a nombre + apellidos
+ * (`facturas-pdf.service.ts`), asi que nunca sale vacio. Tampoco `provinciaFiscal`,
+ * que no forma parte del domicilio minimo identificable.
+ *
+ * A diferencia del destinatario, esto se rellena **una sola vez** por autonomo,
+ * asi que bloquear aqui no deja a nadie a medias: o falla para todos sus
+ * contratos o para ninguno, y se arregla en la pantalla de datos fiscales.
+ */
+export function motivoSinDatosEmisor(trabajador: DatosEmisor): string | null {
+  if (vacio(trabajador.nifFiscal)) {
+    return 'Falta el NIF fiscal de la profesional en sus datos fiscales.';
+  }
+  const sinDomicilio =
+    vacio(trabajador.direccionFiscal) ||
+    vacio(trabajador.codigoPostalFiscal) ||
+    vacio(trabajador.ciudadFiscal);
+  if (sinDomicilio) {
+    return 'Falta el domicilio fiscal completo de la profesional (dirección, código postal y ciudad) en sus datos fiscales.';
+  }
+  return null;
+}

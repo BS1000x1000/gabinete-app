@@ -48,6 +48,26 @@ describe('FichajeService', () => {
       expect(prisma.registroDiario.create).toHaveBeenCalledTimes(1);
       expect(r.id).toBe("rd1");
     });
+
+    // `fechaRegistro` es el DIA de la sesion, no el instante en que se teclea.
+    // Guardarlo como `new Date("2026-09-02")` daba la medianoche UTC, que en
+    // Madrid se pinta como las 02:00: de ahi salia el "registro hecho a las
+    // 02:00 am" que se veia en todas las tarjetas.
+    it('guarda la fecha del registro como dia, al mediodia UTC', async()=>{
+      prisma.cliente.findUnique.mockResolvedValue({id:'c1'});
+      prisma.registroDiario.create.mockResolvedValue({id:'rd1'});
+      await svc.create({...dto, fechaRegistro:'2026-09-02'}, 't1');
+      const data = prisma.registroDiario.create.mock.calls[0][0].data;
+      expect(data.fechaRegistro.toISOString()).toBe('2026-09-02T12:00:00.000Z');
+    });
+
+    it('sin fecha explicita no toca el campo: manda el `now()` del modelo', async()=>{
+      prisma.cliente.findUnique.mockResolvedValue({id:'c1'});
+      prisma.registroDiario.create.mockResolvedValue({id:'rd1'});
+      await svc.create(dto, 't1');
+      const data = prisma.registroDiario.create.mock.calls[0][0].data;
+      expect(data.fechaRegistro).toBeUndefined();
+    });
   });
 
   describe('update()', () => {

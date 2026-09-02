@@ -619,6 +619,7 @@ export class TrabajadorService {
         ...(dto.ciudadFiscal !== undefined && { ciudadFiscal: dto.ciudadFiscal }),
         ...(dto.provinciaFiscal !== undefined && { provinciaFiscal: dto.provinciaFiscal }),
         ...(dto.iban !== undefined && { iban: dto.iban }),
+        ...(dto.swift !== undefined && { swift: dto.swift }),
         ...(dto.retencionIrpf !== undefined && { retencionIrpf: dto.retencionIrpf }),
         ...(dto.emailFacturacion !== undefined && { emailFacturacion: dto.emailFacturacion }),
         ...(dto.nombreGestoria !== undefined && { nombreGestoria: dto.nombreGestoria }),

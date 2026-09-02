@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { EstadoFactura } from '@prisma/client';
 import { FacturasService } from './facturas.service';
+import { periodoQueTocaFacturar } from './facturas-cron.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../common/storage/storage.service';
 import { FacturasPdfService } from './facturas-pdf.service';
@@ -58,6 +59,8 @@ const mockContrato = (overrides: Record<string, any> = {}) => ({
   fechaFin: null,
   trabajador: mockTrabajador(),
   cliente: mockCliente(),
+  // Sesiones semanales del contrato: el divisor del prorrateo de julio.
+  _count: { slots: 1 },
   ...overrides,
 });
 
@@ -108,6 +111,9 @@ const makePrismaMock = () => ({
   },
   contratoServicio: {
     findMany: jest.fn(),
+  },
+  sesion: {
+    groupBy: jest.fn().mockResolvedValue([]),
   },
   trabajador: {
     findUnique: jest.fn(),
@@ -309,6 +315,44 @@ describe('FacturasService', () => {
       expect(data.periodoFacturado).toBe(`${anioActual - 1}-03`);
     });
 
+    /**
+     * El concepto es fijo y describe el servicio real. El anterior nombraba el
+     * tipo de terapia ("Cuota mensual de pedagogia"), asi que el libro que se
+     * entrega a la gestoria revelaba que tratamiento recibe cada menor.
+     */
+    it('usa el concepto fijo del modelo, sin nombrar el tipo de terapia', async () => {
+      prisma.contratoServicio.findMany.mockResolvedValue([mockContrato()]);
+      prisma.factura.findMany.mockResolvedValue([]);
+      const txCreate = stubTransaccion();
+
+      await service.generarFacturasMes(2026, 9);
+
+      const { data } = txCreate.mock.calls[0][0];
+      expect(data.concepto).toBe(
+        'Servicios profesionales de reeducación pedagógica y apoyo al aprendizaje adaptado al currículo escolar',
+      );
+      expect(data.concepto).not.toMatch(
+        /pedagog[ií]a\s*$|logopedia|neuropsicolog/i,
+      );
+      // El mes viaja en el periodo, que es donde tiene que estar.
+      expect(data.periodoFacturado).toBe('2026-09');
+    });
+
+    it('estampa la exención del 20.Uno.10, no la del 20.Uno.3', async () => {
+      prisma.contratoServicio.findMany.mockResolvedValue([mockContrato()]);
+      prisma.factura.findMany.mockResolvedValue([]);
+      const txCreate = stubTransaccion();
+
+      await service.generarFacturasMes(2026, 9);
+
+      const { data } = txCreate.mock.calls[0][0];
+      expect(data.exencionIvaTexto).toBe(
+        'Factura exenta de I.V.A (Artículo 20. Uno. 10º. Ley 37/1992)',
+      );
+      expect(data.ivaPorcentaje).toBe(0);
+      expect(data.ivaImporte).toBe(0);
+    });
+
     it('rechaza un periodo futuro: quemaría números de una serie que no ha empezado', async () => {
       const anioFuturo = new Date().getFullYear() + 1;
 
@@ -379,6 +423,43 @@ describe('FacturasService', () => {
       ]);
     });
 
+    /**
+     * El emisor tambien es obligatorio (RD 1619/2012 art. 6), y hasta ahora solo
+     * se validaba el destinatario: una ficha fiscal a medias emitia igual, con el
+     * bloque del emisor en blanco en el PDF, y quemaba un numero de la serie.
+     */
+    it('no emite ni numera si falta el NIF fiscal de la profesional', async () => {
+      prisma.contratoServicio.findMany.mockResolvedValue([
+        mockContrato({ trabajador: mockTrabajador({ nifFiscal: null }) }),
+      ]);
+      prisma.factura.findMany.mockResolvedValue([]);
+
+      const res = await service.generarFacturasMes(2026, 9);
+
+      expect(res.creadas).toBe(0);
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+      expect(res.fallidas).toEqual([
+        {
+          contratoId: 'contrato-1',
+          cliente: 'Pablo Martínez',
+          motivo: expect.stringContaining('NIF fiscal'),
+        },
+      ]);
+    });
+
+    it('no emite si el domicilio fiscal de la profesional esta incompleto', async () => {
+      prisma.contratoServicio.findMany.mockResolvedValue([
+        mockContrato({ trabajador: mockTrabajador({ ciudadFiscal: '  ' }) }),
+      ]);
+      prisma.factura.findMany.mockResolvedValue([]);
+
+      const res = await service.generarFacturasMes(2026, 9);
+
+      expect(res.creadas).toBe(0);
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+      expect(res.fallidas[0].motivo).toContain('domicilio fiscal');
+    });
+
     it('un contrato sin datos no impide facturar al resto', async () => {
       prisma.contratoServicio.findMany.mockResolvedValue([
         mockContrato({ cliente: mockCliente({ nombreTutorPagador: null }) }),
@@ -398,6 +479,117 @@ describe('FacturasService', () => {
 
       expect(res.creadas).toBe(1);
       expect(res.fallidas).toHaveLength(1);
+    });
+  });
+
+  // ── calendario de facturación (cláusula 3 del contrato) ────────────────────
+
+  describe('julio y agosto', () => {
+    it('agosto no se factura y explica por qué', async () => {
+      prisma.contratoServicio.findMany.mockResolvedValue([mockContrato()]);
+      prisma.factura.findMany.mockResolvedValue([]);
+
+      const res = await service.generarFacturasMes(2026, 8);
+
+      expect(res.creadas).toBe(0);
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+      expect(res.fallidas[0].motivo).toContain('Agosto no se factura');
+    });
+
+    /**
+     * Julio depende de sesiones que el día 1 todavía no se han dado: emitirlo
+     * entonces daría facturas de 0,00 € con el número de serie ya quemado.
+     */
+    it('rechaza julio mientras julio no ha terminado', async () => {
+      const anioActual = new Date().getFullYear();
+      const enJulio = new Date(anioActual, 6, 1);
+      jest.useFakeTimers().setSystemTime(enJulio);
+
+      await expect(service.generarFacturasMes(anioActual, 7)).rejects.toThrow(
+        BadRequestException,
+      );
+      expect(prisma.contratoServicio.findMany).not.toHaveBeenCalled();
+
+      jest.useRealTimers();
+    });
+
+    it('prorratea julio por sesiones impartidas', async () => {
+      prisma.contratoServicio.findMany.mockResolvedValue([
+        mockContrato({ cuotaMensual: { toNumber: () => 180 } }),
+      ]);
+      prisma.factura.findMany.mockResolvedValue([]);
+      // 2 sesiones impartidas de las 4 que cubre la cuota
+      prisma.sesion.groupBy.mockResolvedValue([
+        { contratoId: 'contrato-1', _count: { _all: 2 } },
+      ]);
+      const txCreate = stubTransaccion();
+
+      await service.generarFacturasMes(2025, 7);
+
+      const { data } = txCreate.mock.calls[0][0];
+      expect(data.importe).toBe(90);
+      expect(data.total).toBe(90);
+    });
+
+    it('julio sin sesiones impartidas se factura a cero, no a cuota entera', async () => {
+      prisma.contratoServicio.findMany.mockResolvedValue([mockContrato()]);
+      prisma.factura.findMany.mockResolvedValue([]);
+      prisma.sesion.groupBy.mockResolvedValue([]);
+      const txCreate = stubTransaccion();
+
+      await service.generarFacturasMes(2025, 7);
+
+      expect(txCreate.mock.calls[0][0].data.importe).toBe(0);
+    });
+
+    it('el divisor crece con las sesiones semanales del contrato', async () => {
+      prisma.contratoServicio.findMany.mockResolvedValue([
+        mockContrato({
+          cuotaMensual: { toNumber: () => 360 },
+          _count: { slots: 2 },
+        }),
+      ]);
+      prisma.factura.findMany.mockResolvedValue([]);
+      // 360 / (2 slots * 4) = 45 €/sesión; 3 sesiones -> 135 €
+      prisma.sesion.groupBy.mockResolvedValue([
+        { contratoId: 'contrato-1', _count: { _all: 3 } },
+      ]);
+      const txCreate = stubTransaccion();
+
+      await service.generarFacturasMes(2025, 7);
+
+      expect(txCreate.mock.calls[0][0].data.importe).toBe(135);
+    });
+
+    it('un mes normal sigue cobrando la cuota entera', async () => {
+      prisma.contratoServicio.findMany.mockResolvedValue([mockContrato()]);
+      prisma.factura.findMany.mockResolvedValue([]);
+      const txCreate = stubTransaccion();
+
+      await service.generarFacturasMes(2026, 9);
+
+      expect(txCreate.mock.calls[0][0].data.importe).toBe(120);
+      expect(prisma.sesion.groupBy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('periodoQueTocaFacturar()', () => {
+    it('el 1 de julio no emite nada: julio va a mes vencido', () => {
+      expect(periodoQueTocaFacturar(new Date(2027, 6, 1))).toBeNull();
+    });
+
+    it('el 1 de agosto emite JULIO, ya cerrado', () => {
+      expect(periodoQueTocaFacturar(new Date(2027, 7, 1))).toEqual({
+        anio: 2027,
+        mes: 7,
+      });
+    });
+
+    it('el resto del año emite el mes en curso, por adelantado', () => {
+      expect(periodoQueTocaFacturar(new Date(2026, 8, 1))).toEqual({
+        anio: 2026,
+        mes: 9,
+      });
     });
   });
 

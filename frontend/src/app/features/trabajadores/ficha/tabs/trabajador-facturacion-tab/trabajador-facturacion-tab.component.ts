@@ -19,6 +19,7 @@ type FiscalForm = {
   ciudadFiscal: string;
   provinciaFiscal: string;
   iban: string;
+  swift: string;
   retencionIrpf: number;
   emailFacturacion: string;
   nombreGestoria: string;
@@ -57,7 +58,7 @@ export class TrabajadorFacturacionTabComponent implements OnInit, OnDestroy {
   readonly form = signal<FiscalForm>({
     nifFiscal: '', nombreFiscal: '', direccionFiscal: '',
     codigoPostalFiscal: '', ciudadFiscal: '', provinciaFiscal: '',
-    iban: '', retencionIrpf: 0, emailFacturacion: '',
+    iban: '', swift: '', retencionIrpf: 0, emailFacturacion: '',
     nombreGestoria: '', emailGestoria: '', periodicidadGestoria: 'NINGUNA',
   });
 
@@ -90,6 +91,7 @@ export class TrabajadorFacturacionTabComponent implements OnInit, OnDestroy {
       ciudadFiscal:       t?.ciudadFiscal       ?? '',
       provinciaFiscal:    t?.provinciaFiscal    ?? '',
       iban:               t?.iban               ?? '',
+      swift:              t?.swift              ?? '',
       retencionIrpf:      t?.retencionIrpf      ?? 0,
       emailFacturacion:   t?.emailFacturacion   ?? '',
       nombreGestoria:     t?.nombreGestoria     ?? '',

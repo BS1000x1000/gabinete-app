@@ -80,8 +80,19 @@ export class DrawerRegistroComponent implements OnDestroy {
     });
   }
 
+  /**
+   * El día de HOY en local, no en UTC.
+   *
+   * `toISOString()` convierte a UTC antes de recortar, así que en Madrid entre
+   * medianoche y las 02:00 devolvía el día anterior: escribir el registro de
+   * una sesión al llegar a casa a las 00:30 lo fechaba en la víspera. Es
+   * exactamente el tipo de errata en el día de registro que hay que evitar.
+   */
   private hoy(): string {
-    return new Date().toISOString().split('T')[0];
+    const d = new Date();
+    const mes = String(d.getMonth() + 1).padStart(2, '0');
+    const dia = String(d.getDate()).padStart(2, '0');
+    return `${d.getFullYear()}-${mes}-${dia}`;
   }
 
   private onOpen(clienteId: string | null): void {
@@ -176,7 +187,11 @@ export class DrawerRegistroComponent implements OnDestroy {
       clienteId:                    v.clienteId!,
       contenido:                    v.contenido!,
       proximaSesion:                v.proximaSesion || undefined,
-      fechaRegistro:                v.fechaRegistro ? new Date(v.fechaRegistro).toISOString() : undefined,
+      // Se manda el DÍA tal cual ("2026-09-02"), no un instante. Pasarlo por
+      // `new Date(...).toISOString()` lo convertía en medianoche UTC, que en
+      // Madrid se lee como las 02:00: de ahí venía el "registro hecho a las
+      // 02:00 am". Cuándo se escribió de verdad ya lo guarda `createdAt`.
+      fechaRegistro:                v.fechaRegistro || undefined,
       sesionId:                     this.state().sesionId ?? undefined,
       etiquetas:                    (['REGISTRO_DIARIO', ...this.etiquetasSeleccionadas()] as EtiquetaRegistro[]),
       objetivosGeneralesTrabajados: Array.from(this.objetivosSeleccionados()).map((id) => ({ objetivoGeneralId: id })),
