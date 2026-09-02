@@ -5,7 +5,15 @@ import { CreateFestivoDto } from './dto/create-festivo.dto';
 import { UpdateFestivoDto } from './dto/update-festivo.dto';
 import { ConfiguracionCentroDto } from './dto/configuracion-centro.dto';
 import { calcularViernesSanto, calcularDomingoPascua } from '../common/utils/pascua';
-import { AUTONOMICOS, LOCALES, ANIOS_VERIFICADOS, nombreCcaa } from './data/calendarios';
+import {
+  AUTONOMICOS,
+  LOCALES,
+  ANIOS_VERIFICADOS,
+  nombreCcaa,
+  contarDiasLocales,
+  type DiaFijo,
+  type DiaMovil,
+} from './data/calendarios';
 
 const FESTIVOS_FIJOS = [
   { mes: 1,  dia: 1,  descripcion: 'Año Nuevo' },
@@ -298,38 +306,60 @@ export class FestivosService {
   /** Qué falta por cargar en el catálogo, para que la pantalla lo avise. */
   private municipiosSinDatos(cfg: { municipio: string }): string[] {
     if (!cfg.municipio) return ['(sin municipio elegido)'];
-    return (LOCALES[cfg.municipio]?.dias.length ?? 0) === 0 ? [cfg.municipio] : [];
+    return contarDiasLocales(LOCALES[cfg.municipio]) === 0 ? [cfg.municipio] : [];
   }
 
   private candidatos(anio: number, cfg: { ccaaCodigo: string; municipio: string }) {
     const pascua = calcularDomingoPascua(anio);
     const dia = (mes: number, d: number) => new Date(Date.UTC(anio, mes - 1, d, 12, 0, 0, 0));
 
+    /**
+     * Un dia de fecha fija, trasladado al lunes si cae en domingo.
+     *
+     * Se aplica a nacionales Y autonomicos. Antes solo a los nacionales, y eso
+     * era un fallo con consecuencias: el 2 de mayo de 2027 cae en domingo y la
+     * Comunidad de Madrid lo traslada al lunes 3. Sin el traslado, el calendario
+     * cerraba el centro un domingo —donde no hay ninguna sesion— y dejaba el
+     * lunes abierto, o sea una sesion de mas en el contrato de toda familia de
+     * lunes.
+     *
+     * Los LOCALES no pasan por aqui a proposito: sus dos dias los elige el
+     * ayuntamiento cada ano, y a veces escoge fin de semana deliberadamente
+     * (Fuenlabrada, 26 de diciembre de 2026, sabado). Trasladarlos seria
+     * inventarse un festivo que nadie ha decretado.
+     */
+    const fijo = (f: DiaFijo) => {
+      const { fecha, trasladado } = trasladarSiDomingo(dia(f.mes, f.dia));
+      return {
+        fecha,
+        descripcion: trasladado ? `${f.descripcion} (trasladado del domingo)` : f.descripcion,
+      };
+    };
+
+    /** Un dia atado a la Pascua: `offsetPascua` dias desde el Domingo de Resurreccion. */
+    const movil = (f: DiaMovil) => {
+      const d = new Date(pascua);
+      d.setDate(d.getDate() + f.offsetPascua);
+      return { fecha: normalizarDia(d), descripcion: f.descripcion };
+    };
+
     const nacionales = [
-      ...FESTIVOS_FIJOS.map(f => {
-        const { fecha, trasladado } = trasladarSiDomingo(dia(f.mes, f.dia));
-        return {
-          fecha,
-          descripcion: trasladado ? `${f.descripcion} (trasladado del domingo)` : f.descripcion,
-        };
-      }),
+      ...FESTIVOS_FIJOS.map(fijo),
       { fecha: normalizarDia(calcularViernesSanto(anio)), descripcion: 'Viernes Santo' },
     ].map(f => ({ ...f, ambito: AmbitoFestivo.NACIONAL, ccaa: '', municipio: '' }));
 
     const cal = AUTONOMICOS[cfg.ccaaCodigo];
     const autonomicos = [
-      ...(cal?.fijos ?? []).map(f => ({ fecha: dia(f.mes, f.dia), descripcion: f.descripcion })),
-      ...(cal?.moviles ?? []).map(f => {
-        const d = new Date(pascua);
-        d.setDate(d.getDate() + f.offsetPascua);
-        return { fecha: normalizarDia(d), descripcion: f.descripcion };
-      }),
+      ...(cal?.fijos ?? []).map(fijo),
+      ...(cal?.moviles ?? []).map(movil),
     ].map(f => ({ ...f, ambito: AmbitoFestivo.AUTONOMICO, ccaa: cfg.ccaaCodigo, municipio: '' }));
 
     const local = cfg.municipio ? LOCALES[cfg.municipio] : undefined;
-    const locales = (local?.dias ?? []).map(f => ({
-      fecha: dia(f.mes, f.dia),
-      descripcion: f.descripcion,
+    const locales = [
+      ...(local?.fijos ?? []).map(f => ({ fecha: dia(f.mes, f.dia), descripcion: f.descripcion })),
+      ...(local?.moviles ?? []).map(movil),
+    ].map(f => ({
+      ...f,
       ambito: AmbitoFestivo.LOCAL,
       ccaa: local!.ccaa,
       municipio: cfg.municipio,

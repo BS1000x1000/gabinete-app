@@ -109,6 +109,63 @@ export function restar(base: Tramo[], ocupados: Tramo[]): Tramo[] {
   return libres;
 }
 
+// ── Eje de tiempo ───────────────────────────────────────────
+//
+// Mismo criterio que la agenda (`agenda.component.ts:452-480`), en minutos y
+// sin `Date`: la ventana envuelve toda la actividad, deja una hora de respiro a
+// cada lado y nunca baja de un mínimo. Sin ese mínimo, una semana floja daría
+// un eje de dos horas que "baila" al declarar la primera franja.
+
+/** Ventana horaria mínima, en horas. */
+export const VENTANA_MINIMA_H = 6;
+
+/**
+ * Horas a pintar, deducidas de la actividad. Los límites son solo del relleno,
+ * nunca de los datos: nada puede quedar recortado.
+ *
+ * Sin nada declarado devuelve 09:00–19:00, igual que la agenda: un eje neutro
+ * es mejor punto de partida que uno de medianoche a medianoche.
+ */
+export function rangoHorario(tramos: Tramo[], minimoHoras = VENTANA_MINIMA_H): Tramo {
+  const validos = unir(tramos);
+  if (!validos.length) return { inicio: 9 * 60, fin: 19 * 60 };
+
+  let inicioH = Math.max(0, Math.floor(Math.min(...validos.map(t => t.inicio)) / 60) - 1);
+  let finH = Math.min(24, Math.ceil(Math.max(...validos.map(t => t.fin)) / 60) + 1);
+
+  while (finH - inicioH < minimoHoras && (finH < 24 || inicioH > 0)) {
+    if (finH < 24) finH++;
+    else inicioH--;
+  }
+  return { inicio: inicioH * 60, fin: finH * 60 };
+}
+
+/** Marcas de hora en punto del rango, para la regla y las líneas verticales. */
+export function marcasHorarias(rango: Tramo): number[] {
+  const marcas: number[] = [];
+  for (let m = rango.inicio; m <= rango.fin; m += 60) marcas.push(m);
+  return marcas;
+}
+
+/** Posición de un minuto dentro del rango, en % del ancho. */
+export function pct(minuto: number, rango: Tramo): number {
+  const span = rango.fin - rango.inicio;
+  if (span <= 0) return 0;
+  return Math.min(100, Math.max(0, ((minuto - rango.inicio) / span) * 100));
+}
+
+/**
+ * Ancho de un tramo en % del rango. Recorta a los bordes: un bloque que se sale
+ * del eje se dibuja hasta donde llega, no fuera de la pista.
+ */
+export function anchoPct(tramo: Tramo, rango: Tramo): number {
+  const span = rango.fin - rango.inicio;
+  if (span <= 0) return 0;
+  const inicio = Math.max(tramo.inicio, rango.inicio);
+  const fin = Math.min(tramo.fin, rango.fin);
+  return Math.max(0, ((fin - inicio) / span) * 100);
+}
+
 /** "3 h 30 min", "45 min", "2 h". Para las cifras del resumen. */
 export function formatoHoras(minutos: number): string {
   if (minutos <= 0) return '0 min';

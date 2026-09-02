@@ -1,16 +1,17 @@
 // ============================================================
 // PRIMITIVAS COMPARTIDAS — el sistema de diseño de la ficha
 //
-// Dirección: "cuaderno del gabinete". Papel cálido, tinta lila, mucho aire.
+// Dirección: "cuaderno del gabinete". Papel cálido, tinta verde, mucho aire.
 // Ni clínico ni infantil: un cuaderno bien llevado en una sala luminosa.
 //
-// Regla que gobierna el conjunto: EL LILA SEÑALA, NO RELLENA. Marca lo activo,
+// Regla que gobierna el conjunto: EL VERDE SEÑALA, NO RELLENA. Marca lo activo,
 // lo seleccionado y la acción primaria. Todo lo demás vive sobre papel y grises
 // cálidos. Un acento vale cuando escasea.
 //
-// Regla de contraste: `$primary` (3.9:1 sobre papel) vale para rellenos, bordes
-// e iconos, pero NO para texto pequeño. Para texto sobre fondo claro se usa
-// `$primary-dark` (6.4:1).
+// Regla de contraste: `$primary` da 8.08 sobre papel y vale también para texto;
+// `$primary-dark` (12.34) es el énfasis sobre fondos claros. El que NO vale para
+// texto es `$gray-400` (2.94): es el gris de deshabilitado. Para texto
+// secundario, `$gray-500` (4.66).
 //
 // Estas clases sustituyen a los dialectos que habían crecido por separado:
 // 14 sistemas de botón, 20 de badge, 6 de estado vacío y 8 de cabecera.

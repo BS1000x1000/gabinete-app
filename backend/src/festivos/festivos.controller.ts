@@ -5,7 +5,7 @@ import { FestivosService } from './festivos.service';
 import { CreateFestivoDto } from './dto/create-festivo.dto';
 import { UpdateFestivoDto } from './dto/update-festivo.dto';
 import { ConfiguracionCentroDto } from './dto/configuracion-centro.dto';
-import { CCAA, LOCALES } from './data/calendarios';
+import { CCAA, LOCALES, contarDiasLocales } from './data/calendarios';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../roles/roles.guard';
 import { Roles } from '../roles/roles.decorator';
@@ -28,7 +28,7 @@ export class FestivosController {
         ccaa: m.ccaa,
         provincia: m.provincia,
         /** Sin datos = declarado en el catalogo pero sin festivos cargados. */
-        sinDatos: m.dias.length === 0,
+        sinDatos: contarDiasLocales(m) === 0,
       })),
     };
   }

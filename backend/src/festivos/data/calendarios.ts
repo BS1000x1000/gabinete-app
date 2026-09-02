@@ -89,40 +89,66 @@ export const AUTONOMICOS: Record<string, CalendarioAutonomico> = {
 export interface CalendarioLocal {
   ccaa: string;
   provincia: string;
-  /** Los dos festivos locales. Vacio = no cargados todavia (ver cabecera). */
-  dias: DiaFijo[];
+  /** Festivos locales de fecha fija. Vacio = no cargados todavia (ver cabecera). */
+  fijos: DiaFijo[];
+  /**
+   * Festivos locales atados a la Pascua, como los autonomicos.
+   *
+   * No es un caso raro: Alcorcon celebra Santo Domingo y San Dominguin el
+   * Lunes de Pascua, que cambia cada ano (21 de abril en 2025, 6 de abril en
+   * 2026). Mientras `CalendarioLocal` solo admitia fechas fijas, ese municipio
+   * no era representable y se quedaba en el catalogo declarado pero sin datos.
+   */
+  moviles?: DiaMovil[];
 }
 
 /**
  * Festivos locales por municipio.
  *
- * Un municipio con `dias: []` esta declarado pero sin datos: la importacion lo
- * reporta como pendiente en vez de generar un calendario incompleto en
- * silencio. Es deliberado — un festivo local que falta produce un contrato con
- * una sesion de mas.
+ * Un municipio sin `fijos` ni `moviles` esta declarado pero sin datos: la
+ * importacion lo reporta como pendiente en vez de generar un calendario
+ * incompleto en silencio. Es deliberado — un festivo local que falta produce un
+ * contrato con una sesion de mas.
  */
 export const LOCALES: Record<string, CalendarioLocal> = {
   Madrid: {
     ccaa: 'MAD',
     provincia: 'Madrid',
-    dias: [
+    fijos: [
       { mes: 5, dia: 15, descripcion: 'San Isidro Labrador' },
       { mes: 11, dia: 9, descripcion: 'Nuestra Señora de la Almudena' },
     ],
   },
+  // Pendiente de cotejar con el bando municipal: 14 de septiembre (Cristo de la
+  // Misericordia) y 26 de diciembre (San Esteban) en 2026, ambos fijos.
   Fuenlabrada: {
     ccaa: 'MAD',
     provincia: 'Madrid',
-    dias: [],
+    fijos: [],
   },
+  // Pendiente de cotejar con el bando municipal: 8 de septiembre (Nuestra Senora
+  // de los Remedios, fijo) y Santo Domingo / San Dominguin, que es el Lunes de
+  // Pascua y por tanto va en `moviles` con `offsetPascua: 1`.
   Alcorcón: {
     ccaa: 'MAD',
     provincia: 'Madrid',
-    dias: [],
+    fijos: [],
   },
 };
 
 export const MUNICIPIOS: readonly string[] = Object.keys(LOCALES);
+
+/**
+ * Cuantos festivos tiene cargados un municipio, fijos y moviles.
+ *
+ * Vive aqui y no en cada consumidor porque "este municipio esta sin datos" lo
+ * deciden dos sitios —el aviso de la pantalla (`/festivos/catalogo`) y el
+ * `sinDatos` de la importacion— y tienen que decidirlo igual. Contar solo los
+ * fijos dejaria a Alcorcon marcado como vacio teniendo su Lunes de Pascua.
+ */
+export function contarDiasLocales(local?: CalendarioLocal): number {
+  return (local?.fijos.length ?? 0) + (local?.moviles?.length ?? 0);
+}
 
 /**
  * Anos cuyo calendario autonomico y local ha revisado una persona contra el

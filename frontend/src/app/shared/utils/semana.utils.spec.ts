@@ -1,4 +1,7 @@
-import { aMinutos, aHhMm, duracion, formatoHoras, restar, solapan, totalMinutos, unir } from './semana.utils';
+import {
+  aMinutos, aHhMm, anchoPct, duracion, formatoHoras, marcasHorarias, pct,
+  rangoHorario, restar, solapan, totalMinutos, unir,
+} from './semana.utils';
 
 /** Azúcar para leer los tests en horas y no en minutos. */
 const t = (inicio: string, fin: string) => ({ inicio: aMinutos(inicio), fin: aMinutos(fin) });
@@ -110,6 +113,80 @@ describe('semana.utils', () => {
   describe('totalMinutos', () => {
     it('suma las duraciones', () => {
       expect(totalMinutos([t('10:00', '11:00'), t('16:00', '17:30')])).toBe(150);
+    });
+  });
+
+  describe('rangoHorario — el eje compartido', () => {
+    const leerRango = (r: { inicio: number; fin: number }) => `${aHhMm(r.inicio)}-${aHhMm(r.fin)}`;
+
+    it('sin nada declarado da un eje neutro, no de medianoche a medianoche', () => {
+      expect(leerRango(rangoHorario([]))).toBe('09:00-19:00');
+    });
+
+    it('envuelve la actividad con una hora de respiro a cada lado', () => {
+      // 16:00-20:00 → 15:00-21:00, pero el mínimo de 6 h ya se cumple.
+      expect(leerRango(rangoHorario([t('16:00', '20:00')]))).toBe('15:00-21:00');
+    });
+
+    it('estira hasta el mínimo cuando la actividad es corta', () => {
+      // 17:00-17:50 daría 16:00-18:00 (2 h); se estira a 6 h.
+      const r = rangoHorario([t('17:00', '17:50')]);
+      expect((r.fin - r.inicio) / 60).toBe(6);
+    });
+
+    it('nunca recorta: los límites son del relleno, no de los datos', () => {
+      const r = rangoHorario([t('08:30', '21:15')]);
+      expect(r.inicio).toBeLessThanOrEqual(aMinutos('08:30'));
+      expect(r.fin).toBeGreaterThanOrEqual(aMinutos('21:15'));
+    });
+
+    it('no se sale del día al estirar contra el borde', () => {
+      const r = rangoHorario([t('22:00', '23:30')]);
+      expect(r.fin).toBeLessThanOrEqual(24 * 60);
+      expect(r.inicio).toBeGreaterThanOrEqual(0);
+      expect((r.fin - r.inicio) / 60).toBeGreaterThanOrEqual(6);
+    });
+
+    it('cubre todos los días a la vez, que es lo que alinea la semana', () => {
+      // Viernes por la mañana y lunes por la tarde comparten eje.
+      expect(leerRango(rangoHorario([t('10:00', '14:00'), t('16:00', '20:00')])))
+        .toBe('09:00-21:00');
+    });
+  });
+
+  describe('marcasHorarias', () => {
+    it('da una marca por hora en punto, extremos incluidos', () => {
+      expect(marcasHorarias(t('09:00', '12:00')).map(aHhMm))
+        .toEqual(['09:00', '10:00', '11:00', '12:00']);
+    });
+  });
+
+  describe('pct / anchoPct', () => {
+    const rango = t('09:00', '21:00');   // 12 h
+
+    it('sitúa el inicio, el medio y el final', () => {
+      expect(pct(aMinutos('09:00'), rango)).toBe(0);
+      expect(pct(aMinutos('15:00'), rango)).toBe(50);
+      expect(pct(aMinutos('21:00'), rango)).toBe(100);
+    });
+
+    it('la misma hora cae en el mismo sitio en todos los días', () => {
+      // Es lo que permite comparar el lunes a las 17:00 con el miércoles.
+      expect(pct(aMinutos('17:00'), rango)).toBe(pct(aMinutos('17:00'), rango));
+    });
+
+    it('recorta lo que se sale del eje en vez de desbordar la pista', () => {
+      expect(pct(aMinutos('08:00'), rango)).toBe(0);
+      expect(pct(aMinutos('23:00'), rango)).toBe(100);
+      expect(anchoPct(t('20:00', '23:00'), rango)).toBeCloseTo((60 / 720) * 100, 5);
+    });
+
+    it('un tramo enteramente fuera no ocupa ancho', () => {
+      expect(anchoPct(t('06:00', '07:00'), rango)).toBe(0);
+    });
+
+    it('el ancho es proporcional a la duración', () => {
+      expect(anchoPct(t('10:00', '11:00'), rango)).toBeCloseTo(100 / 12, 5);
     });
   });
 

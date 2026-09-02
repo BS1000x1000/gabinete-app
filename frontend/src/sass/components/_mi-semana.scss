@@ -1,0 +1,417 @@
+// ============================================================
+// MI SEMANA — disponibilidad, clientes y tiempo de administracion
+//
+// Siete filas contra un MISMO eje de horas. Es lo que permite ver que las
+// 17:00 del lunes caen encima de las 17:00 del miercoles, que es justo lo que
+// se mira al colocar un cliente semanal.
+//
+// El hueco libre no se lee: se VE. Es el trozo de banda que queda vacio. Antes
+// esta pantalla lo escribia ("Libre: 16:00-17:00 · 19:00-20:00") y habia que
+// colocarlo mentalmente.
+//
+// Del vocabulario de la agenda se toma la semantica, no el layout:
+//   solido = cita real   ·   discontinuo = generado   ·   posiciones en %
+// El layout es horizontal a proposito: `ag-week-grid` necesita la altura de un
+// shell a pantalla completa, y esta pestaña vive en un panel ancho y bajo.
+//
+// Lo REALMENTE trabajado se cuenta en Estadisticas -> Registro de jornada;
+// esto es el plan, aquello el contador.
+// ============================================================
+
+// Ancho de la columna del dia. Un solo sitio: lo comparten la regla y las filas.
+$sem-col-dia: 4.5rem;
+// Alto de la pista. Da para un bloque legible sin convertir la semana en scroll.
+$sem-alto-pista: 2.4rem;
+
+.sem {
+  display: flex;
+  flex-direction: column;
+}
+
+.sem__fila {
+  display: grid;
+  grid-template-columns: $sem-col-dia minmax(0, 1fr);
+  align-items: start;
+  gap: $spacing-sm;
+  padding: $spacing-2xs 0;
+  border-bottom: 1px solid $border-color-light;
+
+  &:last-of-type { border-bottom: none; }
+
+  // Un dia sin nada no se atenua hasta desaparecer: el dia vacio es justo
+  // donde puede caer el cliente nuevo.
+  &--vacia { opacity: 0.7; }
+
+  &--regla {
+    padding-top: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+}
+
+.sem__dia {
+  padding-top: $spacing-2xs;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+  color: $gray-700;
+  line-height: 1.4;
+}
+
+.sem__cuerpo {
+  min-width: 0;
+}
+
+// ── La pista: el lienzo de un dia ───────────────────────────
+
+.sem__pista {
+  position: relative;
+  height: $sem-alto-pista;
+  border-radius: $border-radius-sm;
+  background: $gray-50;
+
+  &--regla {
+    height: 1.1rem;
+    background: transparent;
+    overflow: visible;
+  }
+}
+
+.sem__marca {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  font-size: 0.68rem;
+  font-weight: $font-weight-semibold;
+  color: $gray-500;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.sem__linea {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: $gray-200;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+// ── Banda de disponibilidad ─────────────────────────────────
+// El lienzo sobre el que se dibuja el dia. Clicable para editarla: la banda ES
+// la franja, asi que pinchar en ella la abre.
+
+.sem__banda {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  padding: 0;
+  border: 1px solid $primary-light;
+  border-radius: $border-radius-sm;
+  background: $primary-ultra-light;
+  cursor: pointer;
+
+  &:hover:not(:disabled) { border-color: $primary; }
+
+  &:focus-visible {
+    outline: 2px solid $primary;
+    outline-offset: 1px;
+  }
+
+  &:disabled { cursor: default; }
+}
+
+// ── El hueco libre: la respuesta a la pregunta ──────────────
+// No es interactivo: el hueco informa, los botones actuan.
+
+.sem__hueco {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.sem__hueco-txt {
+  font-size: 0.66rem;
+  font-weight: $font-weight-semibold;
+  color: $success-dark;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+// ── Bloques: clientes y administracion ──────────────────────
+
+.sem__bloque {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  min-width: 3px;              // un bloque corto sigue siendo visible y clicable
+  padding: 0 $spacing-xs;
+  border: 1px solid transparent;
+  border-left-width: 3px;
+  border-radius: $border-radius-sm;
+  overflow: hidden;
+  font-size: 0.68rem;
+  font-weight: $font-weight-semibold;
+  text-align: left;
+
+  // Solido = cita real, el mismo codigo que la agenda.
+  &--cliente {
+    border-left-style: solid;
+  }
+
+  // Discontinuo = generado / administrativo, tambien como en la agenda.
+  &--admin {
+    border: 1px dashed $gray-300;
+    border-left: 3px dashed $gray-400;
+    background: $white;
+    color: $gray-600;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      border-color: $primary;
+      color: $primary-dark;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $primary;
+      outline-offset: 1px;
+    }
+
+    &:disabled { cursor: default; }
+  }
+
+  // Cae fuera de la disponibilidad declarada. Se informa, no se corrige:
+  // un sabado que sale sin avisar es un hecho, no un error.
+  &--fuera {
+    box-shadow: inset 0 0 0 1px rgba($warning, 0.6);
+  }
+}
+
+.sem__bloque-txt {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  i { margin-right: 0.2rem; }
+}
+
+.sem__bloque-icono {
+  flex-shrink: 0;
+  font-size: 0.62rem;
+  opacity: 0.75;
+}
+
+// ── Pie de fila: acciones y cuentas ─────────────────────────
+
+.sem__pie {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: $spacing-xs;
+  margin-top: $spacing-xs;
+  min-height: 1.8rem;
+}
+
+.sem__totales {
+  margin-left: auto;
+  font-size: 0.74rem;
+  color: $gray-500;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.sem__totales-libre {
+  color: $success-dark;
+  font-weight: $font-weight-semibold;
+}
+
+// ── Formulario inline, en el dia que toca ───────────────────
+
+.sem__form {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+  margin-top: $spacing-xs;
+  padding: $spacing-sm $spacing-smd;
+  border: 1px dashed $primary;
+  border-radius: $border-radius-lg;
+  background: $primary-ultra-light;
+}
+
+.sem__form-label {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $gray-600;
+}
+
+.sem__form-aviso {
+  flex-basis: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-2xs;
+  margin: 0;
+  padding-top: $spacing-sm;
+  border-top: 1px solid rgba($warning, 0.25);
+  font-size: 0.78rem;
+  line-height: $line-height-normal;
+  color: $warning-dark;
+
+  i { flex-shrink: 0; margin-top: 0.1rem; color: $warning; }
+}
+
+.sem__sep {
+  font-size: $font-size-xs;
+  color: $gray-500;
+}
+
+// Copiar el mismo horario a otros dias. Es el ATAJO, no el predeterminado:
+// el dia base ya viene elegido por el boton que abrio el formulario.
+.sem__copiar {
+  flex-basis: 100%;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: $spacing-xs;
+  padding-top: $spacing-sm;
+  border-top: 1px solid $primary-light;
+}
+
+.sem__copiar-label {
+  font-size: 0.74rem;
+  color: $gray-500;
+}
+
+.sem__hora {
+  width: 7rem;
+  padding: 0.25rem $spacing-sm;
+  font-size: $font-size-sm;
+}
+
+.sem__titulo {
+  flex: 1;
+  min-width: 10rem;
+  padding: 0.25rem $spacing-sm;
+  font-size: $font-size-sm;
+}
+
+// ── Leyenda ─────────────────────────────────────────────────
+
+.sem__leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-md;
+  margin: $spacing-smd 0 0;
+  padding-top: $spacing-sm;
+  border-top: 1px solid $border-color-light;
+  font-size: 0.72rem;
+  color: $gray-500;
+}
+
+.sem__leyenda-item {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-2xs;
+}
+
+.sem__muestra {
+  width: 1.1rem;
+  height: 0.7rem;
+  border-radius: 2px;
+  border: 1px solid transparent;
+
+  &--libre   { background: $primary-ultra-light; border-color: $primary-light; }
+  &--cliente { background: rgba($primary, 0.12); border-left: 3px solid $primary; }
+  &--admin   { background: $white; border: 1px dashed $gray-400; }
+}
+
+// ── Resumen de la semana ────────────────────────────────────
+// Misma caja de contexto que `.cal-centro` en festivos: verde de serie, ambar
+// cuando algo no cuadra. El borde izquierdo de 3px es patron del proyecto.
+
+.semana-resumen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-xl;
+  padding: $spacing-smd $spacing-md;
+  margin-bottom: $spacing-lg;
+  border: 1px solid $primary-light;
+  border-left: 3px solid $primary;
+  border-radius: $border-radius-lg;
+  background: $primary-ultra-light;
+
+  &--alerta {
+    border-color: rgba($warning, 0.35);
+    border-left-color: $warning;
+    background: $warning-light;
+  }
+}
+
+.semana-resumen__item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.semana-resumen__valor {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  line-height: $line-height-tight;
+  color: $primary;
+  font-variant-numeric: tabular-nums;
+
+  &--libre { color: $success-dark; }
+
+  .semana-resumen--alerta & { color: $warning-dark; }
+}
+
+.semana-resumen__label {
+  font-size: 0.74rem;
+  font-weight: $font-weight-semibold;
+  color: $gray-500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.semana-resumen__aviso {
+  flex-basis: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-2xs;
+  margin: 0;
+  padding-top: $spacing-sm;
+  border-top: 1px solid rgba($warning, 0.25);
+  font-size: 0.8rem;
+  line-height: $line-height-normal;
+  color: $warning-dark;
+
+  i { flex-shrink: 0; margin-top: 0.1rem; color: $warning; }
+}
+
+// ── Estrecho ────────────────────────────────────────────────
+// El dia pasa arriba y la pista ocupa el ancho completo: una fila por dia
+// aguanta el movil mucho mejor que siete columnas estrujadas.
+
+@include respond-to('sm') {
+  .sem__fila {
+    grid-template-columns: minmax(0, 1fr);
+    gap: $spacing-2xs;
+  }
+
+  .sem__dia { padding-top: 0; }
+
+  .sem__fila--regla .sem__dia { display: none; }
+
+  .sem__totales {
+    margin-left: 0;
+    flex-basis: 100%;
+  }
+}

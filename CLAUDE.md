@@ -289,6 +289,18 @@ Reglas que conviene no romper:
 - Los nacionales **se calculan**, no se listan: `FESTIVOS_FIJOS` + `calcularViernesSanto` +
   `trasladarSiDomingo` (art. 37.2 ET). En el curso 2026-2027 son justo los dos traslados los que
   hacen que las familias de lunes pierdan sesión.
+- **El traslado del domingo vale para nacionales Y autonómicos, nunca para locales.** El 2 de mayo
+  de 2027 cae en domingo y Madrid lo pasa al lunes 3; mientras el traslado solo se aplicó a los
+  nacionales, el calendario cerraba el centro un domingo —donde no hay ninguna sesión— y dejaba el
+  lunes abierto: una sesión de más en el contrato de toda familia de lunes. Los **locales** quedan
+  fuera a propósito: sus dos días los elige el ayuntamiento cada año y a veces escoge fin de semana
+  queriendo (Fuenlabrada, 26 de diciembre de 2026, sábado). Trasladarlos sería inventar un festivo.
+- **Un festivo local puede ser móvil.** `CalendarioLocal` tiene `fijos` y `moviles`, igual que
+  `CalendarioAutonomico`: Alcorcón celebra Santo Domingo y San Dominguín el **Lunes de Pascua**
+  (`offsetPascua: 1`), que cambia de fecha cada año. Cuando solo admitía fechas fijas, ese municipio
+  no era representable y se quedaba declarado pero sin datos. "Sin datos" lo decide
+  `contarDiasLocales()`, compartido por la importación y por `/festivos/catalogo`, para que el aviso
+  de la pantalla y el `sinDatos` no puedan discrepar.
 
 **Sesión en día festivo: avisa, no bloquea.** `evaluarAvisos` emite el tipo `'FESTIVO'`, que llevaba
 declarado en `AvisoSesion` desde el principio y **no se emitía nunca**. Es la filosofía que el propio
@@ -322,11 +334,22 @@ estaba partido en tres sitios.
   cogido dos veces (`DisponibilidadCliente`, `DisponibilidadClienteTrabajador`, más el módulo
   `disponibilidad`) y un tercero sería peor que el desajuste de nombre. El aviso se llama
   `FUERA_DE_DISPONIBILIDAD`. Razonamiento completo en el doc-comment del modelo en `schema.prisma`.
-- **La pestaña son SIETE días, siempre**, aunque estén vacíos: el día que aún no tiene nada es justo
-  donde puede caer el cliente nuevo. Cada día muestra sus franjas, los clientes que ya las ocupan,
-  los bloques de administración y **el hueco libre que queda** — que es la pregunta real ("¿dónde
-  meto al que entra?"). Esta pestaña es el *planificador*; el *contador* es Estadísticas → Registro
-  de jornada.
+- **Es una línea de tiempo, no una lista.** Siete filas contra un **eje de horas compartido**: la
+  disponibilidad es una banda, los clientes van sólidos encima, la administración discontinua, y
+  **el hueco libre es el trozo de banda que queda vacío**. Se ve, no se lee. El eje común es lo que
+  permite comparar las 17:00 del lunes con las 17:00 del miércoles, que es justo lo que se hace al
+  colocar un cliente semanal; antes esto era texto (`Libre: 16:00–17:00 · 19:00–20:00`) y había que
+  situarlo mentalmente. Los **siete días salen siempre**, aunque estén vacíos: el día vacío es
+  justo donde puede caer el cliente nuevo. Esta pestaña es el *planificador*; el *contador* es
+  Estadísticas → Registro de jornada.
+- **Se reutiliza la semántica de la agenda, no su layout.** Sólido = cita real, discontinuo =
+  generado, color de categoría desde `TIPO_COLOR`, posiciones en `%` y rango horario deducido de
+  los datos con ventana mínima de 6 h (`rangoHorario` en `shared/utils/semana.utils.ts`, calcado de
+  `agenda.component.ts`). El layout es horizontal a propósito: `ag-week-grid` necesita la altura de
+  un shell a pantalla completa y esta pestaña vive en un panel ancho y bajo — y así una fila por
+  día aguanta el móvil mucho mejor que siete columnas estrujadas.
+- **Solapar avisa, no bloquea**, igual que los avisos de sesión: declarar una franja sobre otra, o
+  administración encima de un cliente, sale advertido en el formulario y se guarda igual.
 - **Los clientes de la rejilla salen de `ContratoSlot`** (`GET /contratos/carga-semanal`), no de las
   sesiones: el patrón recurrente es estable, y la semana concreta varía con cancelaciones, festivos
   y vacaciones. El filtro es `estado ACTIVO` **+ vigencia por fechas hoy**. Ojo: la regla de
@@ -448,19 +471,49 @@ sass/
 └── pages/       # _login.scss, _home.scss, etc.
 ```
 
-Key SCSS variables:
+**La paleta es CREMA Y VERDE BOSQUE.** No es lila (eso fue una versión anterior y sobrevivió en la
+documentación mucho después de morir en el código) y sobre todo **no es la escala slate de Tailwind**.
+Los neutros son cálidos a propósito. Fuente de verdad: `frontend/src/sass/abstracts/_variables.scss`.
+
 ```scss
-$primary: #7c6fd6;          // lila — main color
-$secondary: #5a9de8;         // azul — secondary
-$primary-ultra-light: #f5f3fc;
-$primary-light: #e8e4f8;
-$success: #10b981;
-$danger: #ef4444;
-$warning: #f59e0b;
-$shadow-card: 0 1px 3px rgba(0,0,0,0.08), 0 0 0 1px rgba(124,111,214,0.05);
+$primary: #2d4a3e;           // 8.08  verde bosque — SEÑALA, no rellena
+$primary-dark: #1f2a24;      // 12.34 hover y texto sobre claro
+$primary-light: #d9e8da;     //       fondos de selección
+$primary-ultra-light: #eef4ec;
+$secondary: #3a5c74;         // 5.89  azul pizarra — apoyo, nunca compite
+$success: #2f6b43;   $warning: #8a6018;   $danger: #96382e;   $info: #345c6b;
+
+// Grises CÁLIDOS. El fondo de la app es papel, no un gris azulado.
+$gray-50:  #f0ead8;          //       papel — fondo de la app
+$gray-100: #e5eadf;          //       salvia — superficies hundidas, filas alternas
+$gray-200: #c2cdc3;          //       bordes
+$gray-400: #798d82;          //  2.94 DESHABILITADO — prohibido para texto
+$gray-500: #556d62;          //  4.66 texto secundario (el más claro admisible)
+$gray-600: #2d4a3e;          //  8.08 texto normal
+$gray-800: #23322b;          // 11.18 títulos
+
+$shadow-card: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba($primary, 0.06);
 $border-radius-lg: 0.75rem;
 $font-family-base: "Plus Jakarta Sans", ...
 ```
+
+**Cero hex a mano.** Todo color sale de un token. Los ratios de contraste están medidos y anotados
+en `_variables.scss`; un literal se salta esa auditoría. `#f8fafc` sobre papel `#f0ead8` no es un
+matiz, es una isla — ya pasó una vez en "Mi semana" y hubo que rehacer la pantalla.
+
+**Usa las primitivas antes de escribir CSS nuevo.** `abstracts/_componentes.scss` define
+`.gb-btn` (+ `--primary --ghost --peligro --icon --sm`), `.gb-badge`, `.gb-chip`, `.gb-card`,
+`.gb-table` + `.gb-table-wrap` + `.gb-fila`, `.gb-empty`, `.gb-dato`, `.gb-header`, `.gb-segmented`.
+Nacieron para matar 14 sistemas de botón y 20 de badge; no añadas el 15º.
+
+**Foco visible: obligatorio y manual.** `base/_reset.scss` quita el `outline` de todo `button` y
+**no hay `:focus-visible` global** que lo reponga. Cada control interactivo declara el suyo, con los
+patrones canónicos de `_componentes.scss`: botón → `box-shadow: 0 0 0 3px rgba($primary, .25)`;
+control pequeño → `outline: 2px solid $primary; outline-offset: 1px`. Lo que hereda de `.gb-btn` ya
+lo trae. `prefers-reduced-motion` sí está cubierto globalmente en `base/_utilities.scss`.
+
+**Breakpoints con `@include respond-to('sm'|'md'|…)`** (`_mixins.scss`), no `@media` con píxeles
+literales. No son equivalentes: `respond-to` resta `0.02px`.
 
 Icons: Bootstrap Icons (`bi-*`).
 

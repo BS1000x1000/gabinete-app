@@ -1551,3 +1551,34 @@ $ag-px-hora-min: 44px;   // suelo de legibilidad de una hora
     flex: 1 1 100%;
   }
 }
+
+// ── Eventos virtuales ───────────────────────────────────────
+// Los bloques de tiempo de administracion (`HorarioAdmin`) se materializan en
+// la agenda como eventos generados, no reales. Discontinuo = generado, que es
+// el mismo codigo que usa "Mi semana".
+//
+// Vivian en `_horarios-admin.scss` porque nacieron con aquel modulo, pero son
+// reglas de la AGENDA: se pintan aqui y solo aqui.
+
+.ag-card--virtual {
+  opacity: 0.75;
+  border-style: dashed !important;
+}
+
+.ag-virtual-icon {
+  font-size: 0.75rem;
+  color: $gray-400;
+  margin-left: $spacing-xs;
+}
+
+.ag-week-grid__event--virtual {
+  opacity: 0.7;
+  border-style: dashed !important;
+  border-width: 1.5px !important;
+}
+
+.ag-virtual-icon-sm {
+  font-size: 0.625rem;
+  color: rgba($white, 0.8);
+  margin-left: 0.2rem;
+}
