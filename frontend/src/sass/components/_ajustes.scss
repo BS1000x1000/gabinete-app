@@ -405,3 +405,14 @@
   grid-column: 1 / -1;
   padding-top: 0.1rem;
 }
+
+// Marca los campos que bloquean la EMISION de facturas, no el guardado. La ficha
+// se rellena a trozos y guardarla a medias es legitimo; lo que no lo es, facturar
+// a medias. Por eso es una marca y un aviso, no un `required` en el input.
+// Mismos campos que exige `motivoSinDatosEmisor()` en el backend.
+.ajustes-req {
+  margin-left: 0.15rem;
+  color: $warning-dark;
+  font-weight: $font-weight-bold;
+  cursor: help;
+}

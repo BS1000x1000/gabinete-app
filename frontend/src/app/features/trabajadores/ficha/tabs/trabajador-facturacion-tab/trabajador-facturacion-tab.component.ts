@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, DestroyRef, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, DestroyRef, inject, signal, computed } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -26,6 +26,21 @@ type FiscalForm = {
   emailGestoria: string;
   periodicidadGestoria: PeriodicidadEnvio;
 };
+
+/**
+ * El mensaje legible de un error del backend.
+ *
+ * `ValidationPipe` de Nest devuelve `message` como **array** de strings, uno por
+ * regla incumplida. Interpolarlo tal cual pintaba los mensajes pegados por comas,
+ * asi que un fallo de formato en el IBAN se leia como ruido en vez de como una
+ * instruccion.
+ */
+function mensajeDeError(err: any): string {
+  const msg = err?.error?.message;
+  if (Array.isArray(msg) && msg.length) return msg.join('. ') + '.';
+  if (typeof msg === 'string' && msg) return msg;
+  return 'Error al guardar los datos fiscales.';
+}
 
 @Component({
   selector: 'app-trabajador-facturacion-tab',
@@ -60,6 +75,30 @@ export class TrabajadorFacturacionTabComponent implements OnInit, OnDestroy {
     codigoPostalFiscal: '', ciudadFiscal: '', provinciaFiscal: '',
     iban: '', swift: '', retencionIrpf: 0, emailFacturacion: '',
     nombreGestoria: '', emailGestoria: '', periodicidadGestoria: 'NINGUNA',
+  });
+
+  /**
+   * Lo que le falta a la ficha para poder EMITIR una factura, no para guardarla.
+   *
+   * Son los mismos campos que exige `motivoSinDatosEmisor()` en el backend
+   * (`facturas.utils.ts`): el RD 1619/2012 art. 6 pide NIF y domicilio del
+   * expedidor igual que los del destinatario. Se avisa aqui porque si no el
+   * bloqueo aparece mucho mas tarde, al generar el mes, y desde una pantalla
+   * distinta de la que hay que arreglar.
+   *
+   * No se marcan como `required` en los inputs a proposito: la ficha se rellena a
+   * trozos y guardarla a medias es legitimo. Lo que no es legitimo es facturar
+   * a medias.
+   */
+  readonly faltaParaFacturar = computed(() => {
+    const f = this.form();
+    const vacio = (v: string) => !v || !v.trim();
+    return [
+      vacio(f.nifFiscal) && 'NIF fiscal',
+      vacio(f.direccionFiscal) && 'dirección fiscal',
+      vacio(f.codigoPostalFiscal) && 'código postal',
+      vacio(f.ciudadFiscal) && 'ciudad',
+    ].filter((x): x is string => typeof x === 'string');
   });
 
   readonly guardando = signal(false);
@@ -122,7 +161,7 @@ export class TrabajadorFacturacionTabComponent implements OnInit, OnDestroy {
           if (this.exitoTimer !== null) clearTimeout(this.exitoTimer);
           this.exitoTimer = setTimeout(() => this.exito.set(false), 3500);
         },
-        error: (err: any) => this.error.set(err?.error?.message ?? 'Error al guardar los datos fiscales.'),
+        error: (err: any) => this.error.set(mensajeDeError(err)),
       });
   }
 }

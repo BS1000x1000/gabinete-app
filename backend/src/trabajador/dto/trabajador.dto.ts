@@ -15,6 +15,11 @@ import {
   ValidateIf,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import {
+  Trim,
+  TrimUpper,
+  siTieneValor,
+} from '../../common/dto/texto.decorators';
 import { PeriodicidadEnvio } from '@prisma/client';
 
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/;
@@ -187,17 +192,34 @@ export class UpdateTrabajadorDto {
   urlVideollamada?: string;
 }
 
+/**
+ * Datos fiscales del autonomo. Todo opcional: la ficha se rellena a trozos.
+ *
+ * Los campos con formato (IBAN, SWIFT, los dos emails) llevan
+ * `@ValidateIf(v !== '' && v != null)` ademas de `@IsOptional()`, y no es
+ * redundante: **`@IsOptional()` solo salta con `null` o `undefined`**, y el
+ * formulario manda cadena vacia para todo lo que no se ha rellenado. Sin el
+ * `ValidateIf`, guardar la ficha con el SWIFT o el email de la gestoria en blanco
+ * devolvia un 400 — que es justo el estado normal de una ficha a medio rellenar.
+ *
+ * Se conserva la cadena vacia en vez de normalizarla a `undefined` porque el
+ * servicio hace `...(dto.x !== undefined && { x: dto.x })`: con `undefined`,
+ * **vaciar un campo no lo vaciaria en la BD**, se quedaria el valor viejo.
+ */
 export class DatosFiscalesDto {
   /**
    * Gestoria a la que se entregan las facturas. Va por trabajador: cada autonomo
    * puede tener la suya.
    */
   @IsOptional()
+  @Trim()
   @IsString()
   @MaxLength(200)
   nombreGestoria?: string;
 
   @IsOptional()
+  @ValidateIf(siTieneValor)
+  @Trim()
   @IsEmail()
   @MaxLength(200)
   emailGestoria?: string;
@@ -208,42 +230,54 @@ export class DatosFiscalesDto {
   periodicidadGestoria?: PeriodicidadEnvio;
 
   @IsOptional()
+  @TrimUpper()
   @IsString()
   @MaxLength(20)
   nifFiscal?: string;
 
   @IsOptional()
+  @Trim()
   @IsString()
   @MaxLength(200)
   nombreFiscal?: string;
 
   @IsOptional()
+  @Trim()
   @IsString()
   @MaxLength(500)
   direccionFiscal?: string;
 
   @IsOptional()
+  @Trim()
   @IsString()
   @MaxLength(10)
   codigoPostalFiscal?: string;
 
   @IsOptional()
+  @Trim()
   @IsString()
   @MaxLength(100)
   ciudadFiscal?: string;
 
   @IsOptional()
+  @Trim()
   @IsString()
   @MaxLength(100)
   provinciaFiscal?: string;
 
   @IsOptional()
+  @ValidateIf(siTieneValor)
+  @TrimUpper()
   @IsString()
-  @Matches(/^[A-Z]{2}\d{2}[\dA-Z]{1,30}$/, { message: 'Formato IBAN no válido' })
+  @Matches(/^[A-Z]{2}\d{2}(?:\s?[\dA-Z]){1,30}$/, {
+    message: 'Formato IBAN no válido',
+  })
   iban?: string;
 
   /** BIC/SWIFT: 8 u 11 caracteres (ISO 9362). Se imprime en la factura. */
   @IsOptional()
+  @ValidateIf(siTieneValor)
+  @TrimUpper()
   @IsString()
   @Matches(/^[A-Z]{6}[0-9A-Z]{2}([0-9A-Z]{3})?$/, {
     message: 'Formato SWIFT/BIC no válido',
@@ -258,6 +292,8 @@ export class DatosFiscalesDto {
   retencionIrpf?: number;
 
   @IsOptional()
+  @ValidateIf(siTieneValor)
+  @Trim()
   @IsEmail()
   @MaxLength(200)
   emailFacturacion?: string;

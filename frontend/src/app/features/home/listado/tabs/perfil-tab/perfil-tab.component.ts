@@ -102,6 +102,37 @@ export class PerfilTabComponent implements OnInit {
     this.pagadorForm.update(f => ({ ...f, [k]: v }));
   }
 
+  /**
+   * El familiar marcado como responsable de pago, si lo hay.
+   *
+   * Son cosas distintas y a propósito: `esContactoPrincipal` es a quién se llama
+   * primero, `esTutorLegal` quién firma, y el DESTINATARIO FISCAL vive en campos
+   * propios de `Cliente` porque puede no ser ninguno de los familiares — un
+   * abuelo, una empresa — y su NIF puede diferir del DNI de la ficha.
+   */
+  readonly responsablePago = computed(
+    () => this.familiares().find((f: any) => f.esResponsablePago) ?? null,
+  );
+
+  /**
+   * Copia los datos del responsable de pago al formulario fiscal.
+   *
+   * Es un botón y no un relleno automático: nada debe sobrescribir en silencio lo
+   * que alguien ha escrito a mano. Pero teclear la misma persona dos veces es
+   * justo como los dos sitios acaban divergiendo, y sin nombre y NIF la factura
+   * ni siquiera se emite (`motivoSinDatosFiscales`).
+   */
+  copiarDelResponsablePago(): void {
+    const r: any = this.responsablePago();
+    if (!r) return;
+    this.pagadorForm.update(f => ({
+      ...f,
+      nombreTutorPagador: `${r.nombre ?? ''} ${r.apellidos ?? ''}`.trim(),
+      nifTutorPagador: r.dni ?? f.nifTutorPagador,
+      emailFacturacion: r.email ?? f.emailFacturacion,
+    }));
+  }
+
   // ── Consentimiento RGPD ─────────────────────────────
   // El panel es de lectura: el consentimiento nace al subir el PDF firmado en
   // la pestana Documentacion. Aqui solo se consulta, se revoca y — para ADMIN —

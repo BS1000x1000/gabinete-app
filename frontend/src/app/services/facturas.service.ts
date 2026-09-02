@@ -23,6 +23,23 @@ import { triggerDownload } from '../shared/utils/download.utils';
 
 interface WrappedResponse<T> { data: T }
 
+/**
+ * Espejo de `CrearFacturaPuntualDto` del backend.
+ *
+ * `contratoId` va casi siempre vacío: al rellenarlo, el índice único
+ * `(contratoId, periodoFacturado)` hace que la generación automática de ese mes
+ * **omita ese contrato**. Es deliberado para prorratear un mes a mano, y una
+ * trampa si se pone sin querer.
+ */
+export interface FacturaPuntualPayload {
+  clienteId: string;
+  fechaEmision: string;
+  periodoFacturado: string;
+  concepto: string;
+  importe: number;
+  contratoId?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class FacturasService {
   private http   = inject(HttpClient);
@@ -109,6 +126,23 @@ export class FacturasService {
         mes,
         soloMias,
       })
+      .pipe(map(res => this.unwrap(res)));
+  }
+
+  /**
+   * Factura suelta, fuera de la cuota mensual.
+   *
+   * La cláusula 2 del contrato reserva para esto los informes de mayor extensión
+   * y los documentos para terceros: "no quedan incluidos en la tarifa mensual y
+   * serán objeto de presupuesto y facturación independiente".
+   *
+   * Se emite siempre a nombre de quien la pide — el backend ignora cualquier
+   * intento de facturar por otro — y **quema un número de la serie correlativa**
+   * igual que las mensuales.
+   */
+  crearFacturaPuntual(payload: FacturaPuntualPayload) {
+    return this.http
+      .post<WrappedResponse<Factura>>(`${this.apiUrl}/puntual`, payload)
       .pipe(map(res => this.unwrap(res)));
   }
 

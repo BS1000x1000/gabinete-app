@@ -19,10 +19,18 @@
     <button type="button" class="btn-close float-end" (click)="error.set(null)"></button>
   </div>
 
+  <div *ngIf="faltaParaFacturar().length" class="adm-alert adm-alert-warning">
+    <i class="bi bi-receipt-cutoff me-2"></i>
+    <span>
+      Con estos datos <strong>no se pueden emitir facturas</strong>: falta
+      {{ faltaParaFacturar().join(', ') }}. La ficha se puede guardar igualmente.
+    </span>
+  </div>
+
   <div class="ajustes-fiscal-grid">
 
     <div class="ajustes-field">
-      <label class="ajustes-label">NIF fiscal</label>
+      <label class="ajustes-label">NIF fiscal<span class="ajustes-req" title="Obligatorio para emitir facturas">*</span></label>
       <input type="text" class="form-control ajustes-input" placeholder="12345678A"
         [ngModel]="form().nifFiscal"
         (ngModelChange)="patch('nifFiscal', $event)" />
@@ -36,21 +44,21 @@
     </div>
 
     <div class="ajustes-field ajustes-field-full">
-      <label class="ajustes-label">Dirección fiscal completa</label>
+      <label class="ajustes-label">Dirección fiscal completa<span class="ajustes-req" title="Obligatorio para emitir facturas">*</span></label>
       <textarea class="form-control ajustes-input" rows="2" placeholder="Calle, número, piso, ciudad, CP"
         [ngModel]="form().direccionFiscal"
         (ngModelChange)="patch('direccionFiscal', $event)"></textarea>
     </div>
 
     <div class="ajustes-field">
-      <label class="ajustes-label">Código postal</label>
+      <label class="ajustes-label">Código postal<span class="ajustes-req" title="Obligatorio para emitir facturas">*</span></label>
       <input type="text" class="form-control ajustes-input" placeholder="28001"
         [ngModel]="form().codigoPostalFiscal"
         (ngModelChange)="patch('codigoPostalFiscal', $event)" />
     </div>
 
     <div class="ajustes-field">
-      <label class="ajustes-label">Ciudad</label>
+      <label class="ajustes-label">Ciudad<span class="ajustes-req" title="Obligatorio para emitir facturas">*</span></label>
       <input type="text" class="form-control ajustes-input" placeholder="Madrid"
         [ngModel]="form().ciudadFiscal"
         (ngModelChange)="patch('ciudadFiscal', $event)" />

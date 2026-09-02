@@ -39,6 +39,10 @@
         <i class="bi bi-magic me-1"></i>Generar mes…
       </button>
 
+      <button class="adm-btn-ghost adm-toolbar-accion" type="button" (click)="abrirPuntual()">
+        <i class="bi bi-file-earmark-plus me-1"></i>Factura suelta…
+      </button>
+
       <div class="adm-segmented" role="tablist" aria-label="Vista de facturación">
         <button class="adm-segmented-item" type="button" role="tab"
           [class.is-active]="vista() === 'listado'"
@@ -688,11 +692,7 @@
             <app-estado-vacio
               icono="bi-check2-circle"
               titulo="No hay nada que generar"
-              [descripcion]="prev.yaFacturadas
-                ? prev.yaFacturadas + ' contrato(s) de este periodo ya tienen factura.'
-                : prev.bloqueadas.length
-                  ? 'Los contratos del periodo están a la espera de los datos fiscales del tutor pagador.'
-                  : 'Ningún contrato estaba vigente en este periodo.'" />
+              [descripcion]="motivoNadaQueGenerar(prev)" />
           } @else {
             <div class="adm-preview-resumen">
               Se emitirán <strong>{{ prev.aGenerar.length }}</strong>
@@ -894,6 +894,113 @@
               <i class="bi bi-send me-1"></i>
             }
             Enviar paquete
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Modal: factura suelta, fuera de la cuota mensual -->
+@if (modalPuntual()) {
+  <div class="adm-modal-overlay"
+    (click)="$event.target === $event.currentTarget && cerrarPuntual()">
+    <div class="adm-modal adm-modal--ancho" role="dialog">
+      <div class="adm-modal-header">
+        <h5 class="adm-modal-title">
+          <i class="bi bi-file-earmark-plus me-2"></i>Emitir una factura suelta
+        </h5>
+        <button class="adm-modal-close" (click)="cerrarPuntual()" type="button">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <div class="adm-modal-body">
+        @if (puntualCreada(); as f) {
+          <div class="adm-alert adm-alert-success">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            <span>
+              Emitida la factura <strong>{{ f.numeroFormateado }}</strong> por
+              <strong>{{ f.total | number:'1.2-2' }} €</strong>. Ya aparece en el listado.
+            </span>
+          </div>
+        } @else {
+          <p class="adm-modal-desc">
+            Para lo que no entra en la cuota mensual: informes de mayor extensión o
+            documentos solicitados para terceros. La cuota mensual se emite sola el día 1.
+          </p>
+
+          <div class="adm-alert adm-alert-warning">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <span>
+              Consume un número de la serie correlativa, y anularla
+              <strong>no lo libera</strong>. No es un borrador.
+            </span>
+          </div>
+
+          @if (puntualError()) {
+            <div class="adm-alert adm-alert-danger mb-3">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ puntualError() }}
+            </div>
+          }
+
+          <div class="adm-filters-row mb-3">
+            <div class="adm-filter-group">
+              <label class="adm-filter-label">Cliente</label>
+              <select class="adm-select"
+                [ngModel]="puntualClienteId()"
+                (ngModelChange)="puntualClienteId.set($event)">
+                <option value="">Selecciona…</option>
+                @for (c of puntualClientes(); track c.id) {
+                  <option [value]="c.id">{{ c.nombre }}</option>
+                }
+              </select>
+            </div>
+            <div class="adm-filter-group">
+              <label class="adm-filter-label">Fecha de emisión</label>
+              <input type="date" class="adm-select"
+                [ngModel]="puntualFecha()"
+                (ngModelChange)="puntualFecha.set($event)" />
+            </div>
+            <div class="adm-filter-group">
+              <label class="adm-filter-label">Periodo facturado</label>
+              <input type="month" class="adm-select"
+                [ngModel]="puntualPeriodo()"
+                (ngModelChange)="puntualPeriodo.set($event)" />
+            </div>
+            <div class="adm-filter-group">
+              <label class="adm-filter-label">Importe (€)</label>
+              <input type="number" class="adm-select" min="0" step="0.01"
+                [ngModel]="puntualImporte()"
+                (ngModelChange)="puntualImporte.set($event === null || $event === '' ? null : +$event)" />
+            </div>
+          </div>
+
+          <div class="adm-filter-group">
+            <label class="adm-filter-label">Concepto</label>
+            <input type="text" class="adm-select" maxlength="500"
+              placeholder="Informe pedagógico para el centro educativo"
+              [ngModel]="puntualConcepto()"
+              (ngModelChange)="puntualConcepto.set($event)" />
+          </div>
+        }
+      </div>
+
+      <div class="adm-modal-footer">
+        <button class="adm-btn-ghost" (click)="cerrarPuntual()" type="button">
+          {{ puntualCreada() ? 'Cerrar' : 'Cancelar' }}
+        </button>
+        @if (!puntualCreada()) {
+          <button class="adm-btn-primary"
+            [disabled]="puntualCargando() || !puntualValido()"
+            (click)="confirmarPuntual()"
+            type="button">
+            @if (puntualCargando()) {
+              <span class="spinner-border spinner-border-sm me-1" style="width:14px;height:14px"></span>
+            } @else {
+              <i class="bi bi-file-earmark-plus me-1"></i>
+            }
+            Emitir factura
           </button>
         }
       </div>

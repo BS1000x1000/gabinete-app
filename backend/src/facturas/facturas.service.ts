@@ -895,11 +895,33 @@ export class FacturasService {
     // sin destinatario fiscal completo no se expide ni se numera.
     const cliente = await this.prisma.cliente.findUnique({
       where: { id: dto.clienteId },
-      select: { nombreTutorPagador: true, nifTutorPagador: true },
+      select: {
+        nombreTutorPagador: true,
+        nifTutorPagador: true,
+        // Para comprobar que quien factura atiende de verdad a este cliente.
+        trabajadoresAsignados: {
+          where: { trabajadorId, activo: true },
+          select: { id: true },
+          take: 1,
+        },
+      },
     });
     if (!cliente) {
       throw new NotFoundException(`Cliente ${dto.clienteId} no encontrado`);
     }
+
+    // La factura se emite SIEMPRE a nombre de quien la pide (`trabajadorId` sale
+    // de `user`, ni el ADMIN puede emitir por otro), pero el cliente venia por id
+    // sin comprobar nada: cualquier rol clinico podia facturar por API a un
+    // cliente que no atiende. `ClienteTrabajador` es lo que gobierna el acceso a
+    // la ficha, asi que es tambien el criterio correcto aqui — el mismo que
+    // aplica `ContratosService.create` al dar de alta un contrato.
+    if (cliente.trabajadoresAsignados.length === 0) {
+      throw new ForbiddenException(
+        'No puedes emitir una factura a un cliente que no tienes asignado.',
+      );
+    }
+
     const sinDatos = motivoSinDatosFiscales(cliente);
     if (sinDatos) {
       throw new BadRequestException(sinDatos);

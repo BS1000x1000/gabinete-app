@@ -5,15 +5,25 @@ import * as ExcelJS from 'exceljs';
  * facturas. Estaba como funcion privada de modulo dentro de `export.service.ts`,
  * asi que el libro de facturas emitidas habria sido una segunda copia.
  *
- * La paleta es la lila del sistema de diseno anterior; el resto de la app ya usa
- * el verde de marca. Se deja como estaba para no cambiar de aspecto los exports
- * existentes en el mismo movimiento — cambiarla es una decision de diseno aparte.
+ * Los colores son los tokens de marca de `sass/abstracts/_variables.scss`, en
+ * ARGB porque es lo que pide ExcelJS. Hasta el 2026-09-02 esto llevaba la paleta
+ * LILA del sistema de diseno anterior (`#7C6FD6`), que ya no existe en ninguna
+ * otra parte del producto: el libro que se entrega a la gestoria era el ultimo
+ * sitio donde sobrevivia. Si cambian los tokens, cambiar tambien estos.
+ *
+ * Al no haber SCSS en el backend no hay forma de importarlos, asi que van
+ * duplicados a proposito y anotados con su nombre de variable para que se
+ * puedan cruzar a mano.
  */
 
-const CABECERA_BG = 'FF7C6FD6';
-const CABECERA_BORDE = 'FF5A4FA8';
-const FILA_ALTERNA = 'FFF5F3FC';
-const FILA_BORDE = 'FFE8E4F8';
+/** `$primary` — verde bosque. */
+const CABECERA_BG = 'FF2D4A3E';
+/** `$primary-dark` — el borde de la cabecera y el marco de la fila de totales. */
+const CABECERA_BORDE = 'FF1F2A24';
+/** `$gray-100` — salvia, el token que el propio design system llama "filas alternas". */
+const FILA_ALTERNA = 'FFE5EADF';
+/** `$gray-200` — bordes. */
+const FILA_BORDE = 'FFC2CDC3';
 
 export const EXCEL_CONTENT_TYPE =
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';

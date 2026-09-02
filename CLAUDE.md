@@ -476,6 +476,44 @@ Reglas que conviene no romper:
   expedidor igual que los del destinatario, y antes solo se miraba al destinatario: una ficha fiscal a
   medias emitía igual, con el bloque del emisor en blanco en el PDF, y **quemaba un número de la serie
   correlativa que no se libera** — ni siquiera al anular, que deja el hueco a propósito.
+- **Hay DOS puertas de emisión, no una.** La generación por mes
+  (`POST /facturas/generar-mes`) y la **factura suelta** (`POST /facturas/puntual`), que existía sin
+  interfaz hasta el 2026-09-02 y ahora tiene su modal en Facturación → *"Factura suelta…"*. La cubre
+  la cláusula 2 del contrato: los informes de mayor extensión y los documentos para terceros *"no
+  quedan incluidos en la tarifa mensual y serán objeto de presupuesto y facturación independiente"*.
+  Consume número de serie igual que las mensuales, y el modal lo avisa.
+  - El desplegable de clientes sale de `ClientesService.getMisClientes()`, **no** de
+    `clientesUnicos()` del propio componente: ese se deriva de las facturas ya emitidas, o sea que
+    solo lista a quien ya tiene una — justo los que no hacen falta para emitir una nueva.
+  - `crearFacturaPuntual` exige que el cliente esté **asignado al terapeuta que emite**
+    (`ClienteTrabajador` con `activo: true`) y devuelve 403 si no. Antes buscaba el cliente por id sin
+    comprobar nada: cualquier rol clínico podía facturar por API a un cliente que no atiende. Es el
+    mismo criterio que gobierna el acceso a la ficha.
+  - Rellenar `contratoId` hace que la generación automática de ese mes **omita ese contrato**, por el
+    `@@unique([contratoId, periodoFacturado])`. Útil a propósito para prorratear un mes a mano, trampa
+    si se pone sin querer; por eso el modal no lo ofrece.
+- **El destinatario fiscal es un campo propio, no un flag de `Familiar`.** Hay cuatro papeles y no
+  tienen por qué recaer en la misma persona: `esContactoPrincipal` (a quién se llama primero),
+  `esResponsablePago` (quién paga), `esTutorLegal` (quién firma contrato y consentimientos) y el
+  **destinatario de la factura**, que vive en `Cliente.nombreTutorPagador` / `nifTutorPagador`. Son
+  campos libres a propósito: el pagador puede no ser ninguno de los familiares registrados —un
+  abuelo, una empresa— y su NIF puede diferir del DNI de la ficha.
+  - Como se teclean a mano, el perfil ofrece **"Usar sus datos"** para copiarlos del familiar marcado
+    como responsable de pago. Es un botón y no un relleno automático: nada debe sobrescribir en
+    silencio lo que alguien escribió. Escribir la misma persona en dos sitios es como los dos acaban
+    divergiendo, y sin nombre y NIF la factura ni siquiera se emite.
+  - **Sin `Cliente.emailFacturacion` la factura NO se envía** (`enviarEmailFactura` sale con un warn),
+    y **no hay fallback al email del contacto principal** — el formulario prometía uno que no existe.
+    Implementarlo sería peor que no tenerlo: la factura lleva el nombre y el NIF del pagador, y
+    mandarla al correo de otro progenitor es justo lo que no debe pasar.
+- **La gestoría solo recibe periodos CERRADOS.** `pendientesDeEntregar` filtra
+  `periodoFacturado < periodoActual`, así que con el mes en curso abierto la pestaña Gestoría no
+  ofrece nada y enseña un aviso explicándolo. No es un fallo: mientras el mes sigue abierto puede
+  emitirse alguna factura más y el paquete saldría incompleto.
+- **El modal de generación enseña el motivo REAL de que no salga nada** (`motivoNadaQueGenerar`).
+  Antes daba por hecho que un contrato bloqueado siempre esperaba los datos fiscales del tutor, lo
+  cual es falso desde que agosto no se factura: el backend manda el texto bueno en
+  `bloqueadas[].motivo` y la pantalla lo tiraba.
 - **`anular()` deja hueco en la numeración.** Sigue sin haber factura rectificativa ni campo `serie`;
   pendiente de la gestoría junto con el registro de facturación (RD 1007/2023 / Verifactu). Es lo
   primero a resolver antes de emitir a datos reales.

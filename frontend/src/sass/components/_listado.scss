@@ -1223,8 +1223,32 @@
 
 .pagador-hint {
   font-size: 0.74rem;
-  color: $gray-400;
+  // $gray-400 es el token de DESHABILITADO (2.94) y aqui hay texto que hay que
+  // leer: sin email de facturacion la factura no se envia. $gray-500 es el mas
+  // claro admisible para texto segun la propia auditoria de contraste.
+  color: $gray-500;
   margin-top: 0.15rem;
+  line-height: 1.5;
+}
+
+// Atajo para traer al pagador desde el familiar marcado como responsable de pago.
+// Teclear la misma persona en dos sitios es como acaban divergiendo.
+.pagador-atajo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.85rem;
+  padding: 0.55rem 0.75rem;
+  background: $primary-ultra-light;
+  border: 1px solid rgba($primary, 0.18);
+  border-radius: $border-radius-lg;
+}
+
+.pagador-atajo-txt {
+  font-size: 0.78rem;
+  color: $gray-600;
 }
 
 .pagador-actions {

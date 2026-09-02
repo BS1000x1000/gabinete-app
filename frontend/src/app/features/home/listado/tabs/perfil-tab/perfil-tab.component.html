@@ -318,6 +318,17 @@
             <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ errorPagador() }}
           </div>
 
+          <div *ngIf="responsablePago() as r" class="pagador-atajo">
+            <span class="pagador-atajo-txt">
+              <i class="bi bi-person-check me-1"></i>
+              Responsable de pago en contactos: <strong>{{ r.nombre }} {{ r.apellidos }}</strong>
+            </span>
+            <button class="btn-rgpd btn-rgpd-ghost" type="button"
+              (click)="copiarDelResponsablePago()">
+              <i class="bi bi-arrow-down-square me-1"></i>Usar sus datos
+            </button>
+          </div>
+
           <div class="pagador-grid">
             <div class="pagador-field">
               <label class="pagador-label">NIF del tutor pagador</label>
@@ -354,7 +365,11 @@
               <input type="email" class="form-control pagador-input" placeholder="email@familia.com"
                 [ngModel]="pagadorForm().emailFacturacion"
                 (ngModelChange)="patchPagador('emailFacturacion', $event)" />
-              <span class="pagador-hint">Si se deja vacío, se usará el email principal del familiar</span>
+              <span class="pagador-hint">
+                Sin este email <strong>la factura no se envía</strong>. No se usa el del
+                contacto principal: la factura lleva el nombre y el NIF del pagador y no
+                debe llegar a otra persona.
+              </span>
             </div>
           </div>
 

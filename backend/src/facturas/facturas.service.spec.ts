@@ -112,6 +112,9 @@ const makePrismaMock = () => ({
   contratoServicio: {
     findMany: jest.fn(),
   },
+  cliente: {
+    findUnique: jest.fn(),
+  },
   sesion: {
     groupBy: jest.fn().mockResolvedValue([]),
   },
@@ -479,6 +482,90 @@ describe('FacturasService', () => {
 
       expect(res.creadas).toBe(1);
       expect(res.fallidas).toHaveLength(1);
+    });
+  });
+
+  // ── crearFacturaPuntual ────────────────────────────────────────────────────
+
+  describe('crearFacturaPuntual()', () => {
+    const DTO = {
+      clienteId: 'cliente-1',
+      fechaEmision: '2026-08-31',
+      periodoFacturado: '2026-08',
+      concepto: 'Informe para el centro educativo',
+      importe: 60,
+    } as any;
+
+    const clientePuntual = (overrides: Record<string, any> = {}) => ({
+      nombreTutorPagador: 'Ana Martínez',
+      nifTutorPagador: '87654321B',
+      trabajadoresAsignados: [{ id: 'ct-1' }],
+      ...overrides,
+    });
+
+    beforeEach(() => {
+      prisma.trabajador.findUnique.mockResolvedValue(mockTrabajador());
+      prisma.cliente.findUnique.mockResolvedValue(clientePuntual());
+    });
+
+    it('emite y numera con la serie del año de emisión', async () => {
+      const txCreate = stubTransaccion();
+
+      await service.crearFacturaPuntual(DTO, TERAPEUTA_USER);
+
+      const { data } = txCreate.mock.calls[0][0];
+      expect(data.anio).toBe(2026);
+      expect(data.concepto).toBe('Informe para el centro educativo');
+      expect(data.importe).toBe(60);
+      expect(data.trabajadorId).toBe(TERAPEUTA_USER.userId);
+    });
+
+    /**
+     * `trabajadorId` sale de `user`, pero el cliente venia por id sin comprobar
+     * nada: cualquier rol clinico podia facturar por API a un cliente ajeno.
+     * `ClienteTrabajador` gobierna el acceso a la ficha y es el criterio aqui.
+     */
+    it('rechaza facturar a un cliente que no se tiene asignado', async () => {
+      prisma.cliente.findUnique.mockResolvedValue(
+        clientePuntual({ trabajadoresAsignados: [] }),
+      );
+
+      await expect(
+        service.crearFacturaPuntual(DTO, TERAPEUTA_USER),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+    });
+
+    it('tampoco el ADMIN puede facturar a un cliente que no atiende', async () => {
+      prisma.cliente.findUnique.mockResolvedValue(
+        clientePuntual({ trabajadoresAsignados: [] }),
+      );
+
+      await expect(
+        service.crearFacturaPuntual(DTO, ADMIN_USER),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('exige los datos fiscales del tutor pagador', async () => {
+      prisma.cliente.findUnique.mockResolvedValue(
+        clientePuntual({ nifTutorPagador: '  ' }),
+      );
+
+      await expect(
+        service.crearFacturaPuntual(DTO, TERAPEUTA_USER),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+    });
+
+    it('exige los datos fiscales del emisor', async () => {
+      prisma.trabajador.findUnique.mockResolvedValue(
+        mockTrabajador({ nifFiscal: null }),
+      );
+
+      await expect(
+        service.crearFacturaPuntual(DTO, TERAPEUTA_USER),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(prisma.$transaction).not.toHaveBeenCalled();
     });
   });
 

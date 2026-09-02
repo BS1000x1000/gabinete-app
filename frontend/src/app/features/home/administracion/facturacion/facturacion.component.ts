@@ -5,7 +5,11 @@ import { RouterLink } from '@angular/router';
 import { BaseChartDirective } from 'ng2-charts';
 import type { ChartData, ChartOptions, Plugin } from 'chart.js';
 import { finalize, forkJoin } from 'rxjs';
-import { FacturasService } from '../../../../services/facturas.service';
+import {
+  FacturasService,
+  FacturaPuntualPayload,
+} from '../../../../services/facturas.service';
+import { ClientesService } from '../../../../services/cliente.service';
 import {
   EstadoFactura,
   Factura,
@@ -102,6 +106,27 @@ const DONUT_CENTER = donutCenterPlugin({
  * contiguas enseñaban cifras que no cuadraban. Ahora hay una carga y un único
  * juego de KPIs; lo que cambia entre vistas es cómo se leen.
  */
+/** Hoy en `AAAA-MM-DD`, en local. `toISOString()` convierte a UTC antes de
+ * recortar, así que en Madrid entre medianoche y las 02:00 devolvía la víspera. */
+function hoyIso(): string {
+  const d = new Date();
+  const mes = String(d.getMonth() + 1).padStart(2, '0');
+  const dia = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${mes}-${dia}`;
+}
+
+/**
+ * El mensaje legible de un error del backend. `ValidationPipe` de Nest devuelve
+ * `message` como array, uno por regla incumplida; interpolarlo tal cual pinta los
+ * mensajes pegados por comas.
+ */
+function mensajeDeError(err: any): string {
+  const msg = err?.error?.message;
+  if (Array.isArray(msg) && msg.length) return msg.join('. ') + '.';
+  if (typeof msg === 'string' && msg) return msg;
+  return 'No se pudo emitir la factura.';
+}
+
 @Component({
   selector: 'app-facturacion',
   standalone: true,
@@ -118,6 +143,7 @@ const DONUT_CENTER = donutCenterPlugin({
 })
 export default class FacturacionComponent implements OnInit {
   private facturasService = inject(FacturasService);
+  private clienteService = inject(ClientesService);
   private auth = inject(AuthService);
 
   /** Solo el ADMIN puede generar para todo el gabinete. */
@@ -198,6 +224,36 @@ export default class FacturacionComponent implements OnInit {
   genSoloMias = signal(true);
   genPreview = signal<PreviewGeneracion | null>(null);
   genResultado = signal<ResultadoGeneracion | null>(null);
+
+  // ── Factura puntual ──────────────────────────────────────────────────────
+  /**
+   * Factura suelta, fuera de la cuota mensual: lo que la cláusula 2 del contrato
+   * llama "objeto de presupuesto y facturación independiente" (informes largos,
+   * documentos para terceros).
+   */
+  modalPuntual = signal(false);
+  puntualClientes = signal<{ id: string; nombre: string }[]>([]);
+  puntualClienteId = signal('');
+  puntualFecha = signal(hoyIso());
+  puntualPeriodo = signal(periodoDeHoy());
+  puntualConcepto = signal('');
+  puntualImporte = signal<number | null>(null);
+  puntualCargando = signal(false);
+  puntualError = signal<string | null>(null);
+  puntualCreada = signal<Factura | null>(null);
+
+  /**
+   * Los clientes NO salen de `clientesUnicos()`: ese se deriva de las facturas ya
+   * emitidas, así que solo lista a quien ya tiene una — justo los que no hacen
+   * falta aquí. `getMisClientes()` viene además acotado por terapeuta.
+   */
+  readonly puntualValido = computed(
+    () =>
+      !!this.puntualClienteId() &&
+      !!this.puntualConcepto().trim() &&
+      (this.puntualImporte() ?? 0) > 0 &&
+      /^\d{4}-(0[1-9]|1[0-2])$/.test(this.puntualPeriodo()),
+  );
   genCargando = signal(false);
   genError = signal<string | null>(null);
 
@@ -617,6 +673,81 @@ export default class FacturacionComponent implements OnInit {
           this.genPreview.set(null);
           this.genError.set(err?.error?.message ?? 'No se pudo consultar el periodo.');
         },
+      });
+  }
+
+  /**
+   * Por qué no sale nada al generar un periodo.
+   *
+   * El backend manda el motivo real en `bloqueadas[].motivo` y la pantalla lo
+   * tiraba: daba por hecho que un contrato bloqueado siempre esperaba los datos
+   * fiscales del tutor. Desde que agosto no se factura (cláusula 3 del contrato)
+   * eso es directamente falso, y el usuario leía un mensaje que no explicaba nada.
+   *
+   * Con un solo motivo distinto se enseña tal cual; con varios se enumeran, que es
+   * justo cuando el texto genérico más engaña.
+   */
+  motivoNadaQueGenerar(prev: PreviewGeneracion): string {
+    if (prev.yaFacturadas) {
+      return `${prev.yaFacturadas} contrato(s) de este periodo ya tienen factura.`;
+    }
+    const motivos = [...new Set(prev.bloqueadas.map((b) => b.motivo))];
+    if (motivos.length === 1) return motivos[0];
+    if (motivos.length > 1) return motivos.join(' · ');
+    return 'Ningún contrato estaba vigente en este periodo.';
+  }
+
+  abrirPuntual(): void {
+    this.modalPuntual.set(true);
+    this.puntualError.set(null);
+    this.puntualCreada.set(null);
+    this.puntualClienteId.set('');
+    this.puntualConcepto.set('');
+    this.puntualImporte.set(null);
+    this.puntualFecha.set(hoyIso());
+    this.puntualPeriodo.set(periodoDeHoy());
+
+    this.clienteService.getMisClientes().subscribe({
+      next: (cs) =>
+        this.puntualClientes.set(
+          cs
+            .map((c) => ({
+              id: c.id as string,
+              nombre: `${c.nombre} ${c.apellidos}`.trim(),
+            }))
+            .sort((a: { nombre: string }, b: { nombre: string }) => a.nombre.localeCompare(b.nombre)),
+        ),
+      error: () => this.puntualError.set('No se pudo cargar la lista de clientes.'),
+    });
+  }
+
+  cerrarPuntual(): void {
+    this.modalPuntual.set(false);
+  }
+
+  confirmarPuntual(): void {
+    if (!this.puntualValido()) return;
+    this.puntualCargando.set(true);
+    this.puntualError.set(null);
+
+    const payload: FacturaPuntualPayload = {
+      clienteId: this.puntualClienteId(),
+      fechaEmision: this.puntualFecha(),
+      periodoFacturado: this.puntualPeriodo(),
+      concepto: this.puntualConcepto().trim(),
+      importe: this.puntualImporte() ?? 0,
+    };
+
+    this.facturasService
+      .crearFacturaPuntual(payload)
+      .pipe(finalize(() => this.puntualCargando.set(false)))
+      .subscribe({
+        next: (f) => {
+          this.puntualCreada.set(f);
+          // Recargar: la factura nueva tiene que aparecer en el listado.
+          this.cargar();
+        },
+        error: (err: any) => this.puntualError.set(mensajeDeError(err)),
       });
   }
 
