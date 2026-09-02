@@ -1,5 +1,5 @@
 import { escapeHtml } from '../../common/utils/html.utils';
-import { LOGO_GABINETE_DATA_URI } from '../../common/documentos/logo';
+import { LOGO_BASE64 } from '../../common/marca/logo';
 
 function esc(v: unknown): string {
   if (v == null) return '';
@@ -138,7 +138,7 @@ export function buildFacturaHtml(d: FacturaTemplateData): string {
 <div class="page">
 
   <div class="header">
-    <div class="logo"><img src="${LOGO_GABINETE_DATA_URI}" alt=""/></div>
+    <div class="logo"><img src="${LOGO_BASE64}" alt=""/></div>
     <div class="titulo">
       <h1>FACTURA</h1>
       <div class="periodo">${esc(d.periodoEtiqueta)}</div>

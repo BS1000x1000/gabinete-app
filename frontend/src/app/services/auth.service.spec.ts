@@ -155,11 +155,29 @@ describe('AuthService', () => {
       expect(service.currentUser()).toEqual(mockUser);
     });
 
-    it('inicia las notificaciones tras login exitoso', () => {
+    it('carga las notificaciones tras login exitoso', () => {
       service.login({ username: 'ana', password: '1234' }).subscribe();
       httpMock.expectOne(`${API}/auth/login`).flush({ user: mockUser });
       expect(notifSvc.cargar).toHaveBeenCalled();
-      expect(notifSvc.conectarSSE).toHaveBeenCalled();
+    });
+
+    /**
+     * OJO: esto documenta un estado, no un diseño.
+     *
+     * El SSE de notificaciones está **apagado en el cliente**: la llamada a
+     * `conectarSSE()` está comentada en `auth.service.ts` y también en
+     * `home.component.ts`. El backend sí expone `@Sse('stream')` y
+     * `desconectarSSE()` se sigue llamando al cerrar sesión, así que la mitad del
+     * circuito está viva — parece que se comentó para depurar y no se revirtió.
+     *
+     * Este test afirma el estado actual a propósito: si alguien vuelve a activar
+     * el SSE, se pondrá en rojo y obligará a decidir conscientemente, en vez de
+     * dejar el asunto enterrado como estaba.
+     */
+    it('NO conecta el SSE: está comentado en auth.service.ts', () => {
+      service.login({ username: 'ana', password: '1234' }).subscribe();
+      httpMock.expectOne(`${API}/auth/login`).flush({ user: mockUser });
+      expect(notifSvc.conectarSSE).not.toHaveBeenCalled();
     });
 
     it('maneja respuesta envuelta en { data: {...} }', () => {

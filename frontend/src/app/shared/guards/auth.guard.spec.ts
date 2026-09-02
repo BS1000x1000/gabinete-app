@@ -1,23 +1,25 @@
 import { TestBed } from '@angular/core/testing';
+import { signal } from '@angular/core';
 import { provideRouter, Router } from '@angular/router';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 
 import { authGuard } from './auth.guard';
+import { AuthService } from '../../services/auth.service';
 
-/** Genera un JWT falso pero base64-válido con el payload dado. */
-function makeJwt(payload: object): string {
-  const encoded = btoa(JSON.stringify(payload));
-  return `header.${encoded}.signature`;
-}
-
-const TOKEN_KEY = 'access_token';
-const USER_KEY = 'current_user';
-
-const expiraEn1h = () => Math.floor(Date.now() / 1000) + 3600;
-const expiradoHace1h = () => Math.floor(Date.now() / 1000) - 3600;
-
+/**
+ * El guard delega en `AuthService.isAuthenticated()` y no sabe nada de tokens.
+ *
+ * La version anterior de este spec decodificaba JWTs de `localStorage` y
+ * comprobaba su caducidad a mano, porque asi era el guard cuando se escribio.
+ * La sesion paso a viajar en una **cookie HttpOnly** —que el navegador manda
+ * sola con `withCredentials`— y el guard se simplifico a esta pregunta unica,
+ * pero el spec se quedo probando la implementacion vieja: 11 casos en rojo
+ * desde entonces. Un JWT en `localStorage` es legible por cualquier script de
+ * la pagina; la cookie HttpOnly no, y por eso se cambio.
+ */
 describe('authGuard', () => {
   let router: Router;
+  let autenticado: ReturnType<typeof signal<boolean>>;
 
   const runGuard = () =>
     TestBed.runInInjectionContext(() =>
@@ -25,90 +27,39 @@ describe('authGuard', () => {
     );
 
   beforeEach(() => {
-    localStorage.clear();
-    TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    autenticado = signal(false);
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([]),
+        { provide: AuthService, useValue: { isAuthenticated: autenticado } },
+      ],
+    });
     router = TestBed.inject(Router);
     spyOn(router, 'navigate');
   });
 
-  afterEach(() => localStorage.clear());
+  describe('con sesión activa', () => {
+    beforeEach(() => autenticado.set(true));
 
-  // ── Sin token ───────────────────────────────────────────────────
-
-  describe('sin token en localStorage', () => {
-    it('deniega el acceso (devuelve false)', () => {
-      expect(runGuard()).toBeFalse();
+    it('permite el acceso', () => {
+      expect(runGuard()).toBe(true);
     });
 
-    it('navega a /login', () => {
-      runGuard();
-      expect(router.navigate).toHaveBeenCalledWith(['/login']);
-    });
-  });
-
-  // ── Token válido ────────────────────────────────────────────────
-
-  describe('con token válido (no expirado)', () => {
-    beforeEach(() => {
-      localStorage.setItem(TOKEN_KEY, makeJwt({ sub: 'user-1', exp: expiraEn1h() }));
-    });
-
-    it('permite el acceso (devuelve true)', () => {
-      expect(runGuard()).toBeTrue();
-    });
-
-    it('no navega a /login', () => {
+    it('no redirige', () => {
       runGuard();
       expect(router.navigate).not.toHaveBeenCalled();
     });
-
-    it('no elimina el token de localStorage', () => {
-      runGuard();
-      expect(localStorage.getItem(TOKEN_KEY)).not.toBeNull();
-    });
   });
 
-  // ── Token expirado ──────────────────────────────────────────────
+  describe('sin sesión', () => {
+    beforeEach(() => autenticado.set(false));
 
-  describe('con token expirado', () => {
-    beforeEach(() => {
-      localStorage.setItem(TOKEN_KEY, makeJwt({ sub: 'user-1', exp: expiradoHace1h() }));
-      localStorage.setItem(USER_KEY, JSON.stringify({ id: 'user-1' }));
+    it('deniega el acceso', () => {
+      expect(runGuard()).toBe(false);
     });
 
-    it('deniega el acceso (devuelve false)', () => {
-      expect(runGuard()).toBeFalse();
-    });
-
-    it('navega a /login', () => {
+    it('redirige a /login', () => {
       runGuard();
-      expect(router.navigate).toHaveBeenCalledWith(['/login']);
-    });
-
-    it('elimina el access_token de localStorage', () => {
-      runGuard();
-      expect(localStorage.getItem(TOKEN_KEY)).toBeNull();
-    });
-
-    it('elimina el current_user de localStorage', () => {
-      runGuard();
-      expect(localStorage.getItem(USER_KEY)).toBeNull();
-    });
-  });
-
-  // ── Token malformado ────────────────────────────────────────────
-
-  describe('con token malformado', () => {
-    it('deniega el acceso si el payload no es JSON válido', () => {
-      localStorage.setItem(TOKEN_KEY, 'header.not_base64_json.sig');
-      expect(runGuard()).toBeFalse();
-      expect(router.navigate).toHaveBeenCalledWith(['/login']);
-      expect(localStorage.getItem(TOKEN_KEY)).toBeNull();
-    });
-
-    it('deniega el acceso si solo hay una parte (sin puntos)', () => {
-      localStorage.setItem(TOKEN_KEY, 'token_sin_puntos');
-      expect(runGuard()).toBeFalse();
       expect(router.navigate).toHaveBeenCalledWith(['/login']);
     });
   });

@@ -6,8 +6,13 @@ import { provideRouter, Router } from '@angular/router';
 import { LoginComponent } from './login.component';
 import { NotificacionesService } from '../../services/notificaciones.service';
 import { of } from 'rxjs';
+import { environment } from '../../../environments/environment.development';
 
-const API_LOGIN = 'http://localhost:3000/api/auth/login';
+// Derivado del environment, no escrito a mano: `apiUrl` paso de ser una URL
+// absoluta (`http://localhost:3000/api`) a la relativa `/api`, y este literal se
+// quedo apuntando a la vieja. Los 8 casos de la suite llevaban en rojo desde
+// entonces, esperando una peticion a un host que ya nadie usa.
+const API_LOGIN = `${environment.apiUrl}/auth/login`;
 
 const mockUser = {
   id: 'u1',

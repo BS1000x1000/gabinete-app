@@ -67,11 +67,16 @@ describe('ClientesService', () => {
 
   // ── getAll ────────────────────────────────────────────────────────────────
   describe('getAll()', () => {
-    it('hace GET a /clientes y devuelve lista', () => {
+    /**
+     * El endpoint esta paginado desde que se anadio `PaginationDto` (por defecto
+     * 100, tope 500), asi que `getAll()` pide explicitamente `?limit=500`. El
+     * spec seguia esperando la URL desnuda y llevaba en rojo desde entonces.
+     */
+    it('hace GET a /clientes pidiendo el tope de paginación', () => {
       const lista = [mockClienteBackend(), mockClienteBackend({ id: 'cliente-2', dni: '87654321B' })];
       service.getAll().subscribe((res) => expect(res).toHaveSize(2));
 
-      const req = httpMock.expectOne(API);
+      const req = httpMock.expectOne(`${API}?limit=500`);
       expect(req.request.method).toBe('GET');
       req.flush(wrap(lista));
     });

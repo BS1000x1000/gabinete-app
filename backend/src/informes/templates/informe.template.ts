@@ -538,7 +538,7 @@ export function buildInformeHtml(datos: InformeTemplateData): string {
     <div class="masthead-logo"><img src="${LOGO_BASE64}" alt=""></div>
     <!-- Title -->
     <div class="masthead-body">
-      <div class="masthead-name">Informe Belén Palacios</div>
+      <div class="masthead-name">Informe Pedagógico</div>
       <div class="masthead-sub">Evaluación · Intervención · Seguimiento</div>
     </div>
     <!-- Report type badge -->

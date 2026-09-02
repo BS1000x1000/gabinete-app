@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { of, throwError, Subject, BehaviorSubject } from 'rxjs';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
@@ -47,6 +49,13 @@ describe('ListadoComponent', () => {
     await TestBed.configureTestingModule({
       imports: [ListadoComponent],
       providers: [
+        // `ListadoComponent` inyecta `AuthService`, que a su vez inyecta
+        // `HttpClient` y `NotificacionesService`. Sin estos providers el
+        // `beforeEach` reventaba con `No provider for HttpClient!` y se caian
+        // los 16 casos de la suite antes de ejecutar ninguna asercion.
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
         { provide: ClientesService, useValue: clientesSvc },
         {
           provide: ActivatedRoute,

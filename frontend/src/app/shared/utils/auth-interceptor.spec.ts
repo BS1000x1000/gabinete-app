@@ -1,12 +1,27 @@
 import { TestBed } from '@angular/core/testing';
-import { provideHttpClient, withInterceptors, HttpClient } from '@angular/common/http';
-import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { provideRouter, Router } from '@angular/router';
+import {
+  HttpClient,
+  provideHttpClient,
+  withInterceptors,
+} from '@angular/common/http';
+import {
+  HttpTestingController,
+  provideHttpClientTesting,
+} from '@angular/common/http/testing';
 
 import { authInterceptor } from './auth-interceptor';
 
-const TOKEN_KEY = 'access_token';
-
+/**
+ * El JWT viaja en una **cookie HttpOnly**: el navegador la manda solo, siempre
+ * que la peticion lleve `withCredentials`. El interceptor no inyecta ninguna
+ * cabecera `Authorization`, y eso es deliberado — una cookie HttpOnly no es
+ * legible desde JavaScript, que es justo lo que se buscaba al dejar de guardar
+ * el token en `localStorage`.
+ *
+ * La version anterior de este spec afirmaba que se anadia `Bearer <token>`
+ * leyendolo de `localStorage`. Llevaba 3 casos en rojo desde la migracion.
+ */
 describe('authInterceptor', () => {
   let http: HttpClient;
   let httpMock: HttpTestingController;
@@ -16,110 +31,71 @@ describe('authInterceptor', () => {
     localStorage.clear();
     TestBed.configureTestingModule({
       providers: [
+        provideRouter([]),
         provideHttpClient(withInterceptors([authInterceptor])),
         provideHttpClientTesting(),
-        provideRouter([]),
       ],
     });
     http = TestBed.inject(HttpClient);
     httpMock = TestBed.inject(HttpTestingController);
     router = TestBed.inject(Router);
+    spyOn(router, 'navigate');
   });
 
   afterEach(() => {
-    localStorage.clear();
     httpMock.verify();
+    localStorage.clear();
   });
 
-  // ── Inyección del token ─────────────────────────────────────────
+  describe('credenciales', () => {
+    it('manda la petición con withCredentials para que viaje la cookie', () => {
+      http.get('/api/algo').subscribe();
 
-  describe('cabecera Authorization', () => {
-    it('añade "Bearer <token>" cuando hay token en localStorage', () => {
-      localStorage.setItem(TOKEN_KEY, 'mi-jwt-token');
-      http.get('/api/test').subscribe();
-      const req = httpMock.expectOne('/api/test');
-      expect(req.request.headers.get('Authorization')).toBe('Bearer mi-jwt-token');
+      const req = httpMock.expectOne('/api/algo');
+      expect(req.request.withCredentials).toBe(true);
       req.flush({});
     });
 
-    it('NO añade Authorization cuando no hay token', () => {
-      http.get('/api/test').subscribe();
-      const req = httpMock.expectOne('/api/test');
-      expect(req.request.headers.get('Authorization')).toBeNull();
+    it('NO añade cabecera Authorization: el token no está en JavaScript', () => {
+      http.get('/api/algo').subscribe();
+
+      const req = httpMock.expectOne('/api/algo');
+      expect(req.request.headers.has('Authorization')).toBe(false);
       req.flush({});
     });
 
-    it('no modifica otros headers ya existentes en la petición', () => {
-      localStorage.setItem(TOKEN_KEY, 'tok');
-      http.get('/api/test', { headers: { 'X-Custom': 'valor' } }).subscribe();
-      const req = httpMock.expectOne('/api/test');
-      expect(req.request.headers.get('X-Custom')).toBe('valor');
-      expect(req.request.headers.get('Authorization')).toBe('Bearer tok');
+    it('respeta las cabeceras que ya traía la petición', () => {
+      http.get('/api/algo', { headers: { 'X-Propia': 'valor' } }).subscribe();
+
+      const req = httpMock.expectOne('/api/algo');
+      expect(req.request.headers.get('X-Propia')).toBe('valor');
       req.flush({});
     });
   });
 
-  // ── Error 401 ───────────────────────────────────────────────────
+  describe('manejo de errores', () => {
+    it('ante un 401 limpia el usuario cacheado y manda a /login', () => {
+      http.get('/api/algo').subscribe({ error: () => undefined });
+      localStorage.setItem('current_user', '{"id":"1"}');
 
-  describe('manejo de errores 401', () => {
-    it('elimina el token de localStorage al recibir 401', () => {
-      localStorage.setItem(TOKEN_KEY, 'expired-token');
-      http.get('/api/protected').subscribe({ error: () => {} });
       httpMock
-        .expectOne('/api/protected')
-        .flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
-      expect(localStorage.getItem(TOKEN_KEY)).toBeNull();
-    });
+        .expectOne('/api/algo')
+        .flush('no autorizado', { status: 401, statusText: 'Unauthorized' });
 
-    it('navega a /login al recibir 401', () => {
-      spyOn(router, 'navigate');
-      localStorage.setItem(TOKEN_KEY, 'expired-token');
-      http.get('/api/protected').subscribe({ error: () => {} });
-      httpMock
-        .expectOne('/api/protected')
-        .flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
+      expect(localStorage.getItem('current_user')).toBeNull();
       expect(router.navigate).toHaveBeenCalledWith(['/login']);
     });
 
-    it('propaga el error para que el subscriber lo reciba', () => {
-      let errorCapturado: any;
-      http.get('/api/test').subscribe({ error: (e) => (errorCapturado = e) });
-      httpMock
-        .expectOne('/api/test')
-        .flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
-      expect(errorCapturado).toBeTruthy();
-      expect(errorCapturado.status).toBe(401);
-    });
-  });
+    it('no toca la sesión ante otros errores', () => {
+      localStorage.setItem('current_user', '{"id":"1"}');
+      http.get('/api/algo').subscribe({ error: () => undefined });
 
-  // ── Otros errores ───────────────────────────────────────────────
-
-  describe('otros errores HTTP', () => {
-    it('NO navega a /login en error 500', () => {
-      spyOn(router, 'navigate');
-      http.get('/api/test').subscribe({ error: () => {} });
       httpMock
-        .expectOne('/api/test')
-        .flush('Server Error', { status: 500, statusText: 'Internal Server Error' });
+        .expectOne('/api/algo')
+        .flush('boom', { status: 500, statusText: 'Server Error' });
+
+      expect(localStorage.getItem('current_user')).not.toBeNull();
       expect(router.navigate).not.toHaveBeenCalled();
-    });
-
-    it('NO navega a /login en error 403', () => {
-      spyOn(router, 'navigate');
-      http.get('/api/test').subscribe({ error: () => {} });
-      httpMock
-        .expectOne('/api/test')
-        .flush('Forbidden', { status: 403, statusText: 'Forbidden' });
-      expect(router.navigate).not.toHaveBeenCalled();
-    });
-
-    it('propaga el error en casos distintos a 401', () => {
-      let errorCapturado: any;
-      http.get('/api/test').subscribe({ error: (e) => (errorCapturado = e) });
-      httpMock
-        .expectOne('/api/test')
-        .flush('Error', { status: 500, statusText: 'Server Error' });
-      expect(errorCapturado.status).toBe(500);
     });
   });
 });

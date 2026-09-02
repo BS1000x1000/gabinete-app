@@ -47,7 +47,7 @@ Stack: **Angular 19** (frontend) + **NestJS 11** (backend) + **Prisma 5** + **Po
 Serverless Container (backend) + Object Storage (ficheros) + Transactional Email. Frontend Angular
 en **Cloudflare Pages**. CI/CD por **GitHub Actions** (push a `main` → build → registry → redeploy).
 
-**Current state (2026-06)**: clinical nucleus complete and **tests green** (469 unit + 60 E2E with a real Postgres in CI). Code hardening done: n8n removed, Dockerfile built & image pushed to Scaleway registry, Object Storage persistence for report PDFs implemented, rate limiting + Helmet + CORS-to-FRONTEND_URL in place, CI workflow with Postgres service. **Infra in progress on Scaleway**: account + billing alert + DPA validated + HDS question sent; Container Registry + image; Object Storage bucket (`gabinete-archivos`). **Pending**: create the managed DB + the Serverless Container (≈6 July), then activate the deploy pipeline. No domain yet. See `CONTEXTO_…md` §14 for the live deployment status.
+**Current state (2026-09)**: clinical nucleus complete and **tests green** — backend 517 unit + 60 E2E con Postgres real, frontend **450 unit** (estaban 40 en rojo hasta el 2026-09-03; ver §Deuda saldada). Code hardening done: n8n removed, Dockerfile built & image pushed to Scaleway registry, Object Storage persistence for report PDFs implemented, rate limiting + Helmet + CORS-to-FRONTEND_URL in place, CI workflow with Postgres service. **Infra in progress on Scaleway**: account + billing alert + DPA validated + HDS question sent; Container Registry + image; Object Storage bucket (`gabinete-archivos`). **Pending**: create the managed DB + the Serverless Container (≈6 July), then activate the deploy pipeline. No domain yet. See `CONTEXTO_…md` §14 for the live deployment status.
 
 ---
 
@@ -897,11 +897,64 @@ Legacy URL redirects still active in `listado.routes.ts` (e.g. `/cliente → /pe
 ## Known gaps / technical debt
 
 ### Minor code debt (not blocking)
-- `ClientesComponent` still navigates to `/cliente` (legacy) in lines 131 and 198 — works via redirect but should point to `/perfil` directly
 - `rbac.e2e-spec.ts` has a minor TypeScript strict error (`username` property type) — runtime correct, tests pass
 - Imagen Docker pesa ~2,28 GB (más de lo esperado) — optimizar después (revisar qué arrastra el runner)
 - Cruce de versiones Prisma: cliente/CLI `5.22.0` vs `@prisma/adapter-pg` `^7.4.0` — revisar coherencia
 - Tests con `--forceExit` (handle abierto, prob. pool de Prisma) — cerrar en origen
+
+### Deuda saldada (2026-09-03)
+
+- **La suite de frontend estaba en rojo y ahora está en verde** (450 en verde, 0 fallos). Los 40
+  fallos **no eran configuración**: eran tests que describían una aplicación que ya no existe. El
+  `authGuard` y el `authInterceptor` seguían probando un JWT en `localStorage` con cabecera `Bearer`,
+  cuando la sesión pasó a **cookie HttpOnly + `withCredentials`**; el spec de login apuntaba a
+  `http://localhost:3000/api` cuando `apiUrl` ya es `/api`; y el de `ClientesService` no contaba con
+  la paginación (`?limit=500`). Se reescribieron contra el comportamiento real.
+- **El frontend ya está en CI.** `ci.yml` tenía un solo job de backend —se llamaba literalmente
+  *"CI — backend tests"*— así que ningún cambio de frontend se verificaba al subir. Ahora hay un job
+  con `ng build --configuration production` + `ng test`. El build es la mitad del valor: Angular 19
+  typechequea las plantillas.
+- **Un logo, no dos.** La factura usaba un `common/documentos/logo.ts` propio (246×332) mientras el
+  contrato, los consentimientos y los informes usaban `common/marca/logo.ts` (`LOGO_BASE64`, 400×332).
+  Eran el mismo logo a dos resoluciones y la familia recibía documentos con logos distintos. Se
+  unificó en `LOGO_BASE64` y se borró el duplicado.
+- **Código muerto retirado**, todo verificado con 0 referencias antes de borrar:
+  `shared/components/utils/data.ts` (1090 líneas de datos de la plantilla original: profesores "John
+  Doe", fotos de Pexels, `export let role = "student"`), los modelos `lesson`/`turno`/`nav-item`, el
+  componente `data-field` y su SCSS, los dos shims de `app/guards/` (re-exports que nadie importaba),
+  `backend/src/interfaces/cliente.interface.ts` (del scaffold, con `id: number`),
+  `common/constants/tipo-sesion.ts` (huérfano desde que el concepto de factura pasó a ser fijo),
+  `scripts/generar_informe.py` y `n8n-workflows/`. Más 4 SCSS huérfanos y basura de raíz.
+
+> **Lo que NO se borró, a propósito.** En este repo abundan los falsos positivos de "código muerto":
+> endpoints sin UI que sí son funcionalidad (`DELETE /clientes/:id/anonimizar` es el borrado del
+> art. 17 RGPD), rutas que solo dispara un cron (`POST /contratos/cron/ventana`), endpoints de
+> bootstrap (`POST /roles/seed`), ramas gobernadas por un flag (`PLANTILLA_VALIDADA`) y el árbol
+> `bonos/` entero, que está **congelado** —su ruta está comentada— pero sigue vivo en el motor de
+> reglas y en los exports. `POST /facturas/puntual` estuvo meses sin interfaz y resultó ser justo la
+> funcionalidad que hacía falta. Antes de borrar algo por "no lo llama nadie", comprobarlo.
+
+### Deuda conocida, no saldada
+
+- **El SSE está apagado en el cliente.** El backend expone `@Sse('stream')` y `desconectarSSE()` se
+  sigue llamando al cerrar sesión, pero las dos llamadas a `conectarSSE()` están **comentadas**
+  (`auth.service.ts` y `home.component.ts`). Las notificaciones en tiempo real (Hito F, marcado ✅)
+  no funcionan. El test `auth.service.spec.ts` lo afirma explícitamente para que reactivarlo obligue
+  a decidirlo, en vez de quedar enterrado.
+- **`TIPO_SESION_LABELS` existe dos veces en el frontend con textos distintos**
+  (`interface/bono.interface.ts` y `interface/sesion.interface.ts`): la misma terapia se lee
+  "Ter. Ocupacional" en una pantalla y "Terapia Ocupacional" en otra.
+- **Siete listas de días de la semana** repartidas por el repo, con tres convenciones de índice
+  distintas (0=Domingo, 1=Lunes, y una con `''` de relleno). `calendario-contrato.service.ts` ya
+  lleva un comentario avisando de que esto causó un bug de un día de desfase.
+- **Cuatro implementaciones de escapado HTML** (`html.utils.ts`, `documento-base.ts`,
+  `email.service.ts`, `factura.template.ts`) en código que genera PDF y email.
+- **Dependencias sin usar**: `@fullcalendar/*` (6 paquetes), `ngx-bootstrap`, `@angular/cdk`,
+  `@angular/animations`, `@angular/platform-browser-dynamic`, `ngx-scrollbar` en el frontend;
+  `@prisma/adapter-pg` (además **incompatible**: 7.x contra cliente Prisma 5.22), `pg` y
+  `@nestjs/axios` en el backend.
+- **`registros.service.spec.ts` pasa en verde contra `GET /registros/mis-registros`, que no existe**
+  en el backend. Test que da falsa confianza.
 
 ### Done (infra/hardening — 2026-06)
 - **n8n eliminado:** módulo `n8n` + `docker-compose.yml` + referencias borrados.
