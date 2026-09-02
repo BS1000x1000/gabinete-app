@@ -1,78 +1,57 @@
 import { Component, inject, signal, computed, effect, OnInit } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BaseChartDirective } from 'ng2-charts';
-import type { ChartData, ChartOptions, Plugin } from 'chart.js';
-import { forkJoin, map } from 'rxjs';
+import type { ChartData, ChartOptions } from 'chart.js';
+import { forkJoin } from 'rxjs';
 import { startOfWeek, startOfMonth, endOfDay, subMonths } from 'date-fns';
 
 import { formatMinutosHoras } from '../../../shared/utils/date';
 import { DashboardService } from '../../../services/dashboard.service';
+import { TrabajadorService } from '../../../services/trabajadores.service';
 import { AuthService } from '../../../services/auth.service';
-import { environment } from '../../../../environments/environment.development';
 import { EstadisticasAvanzadas } from '../../../interface/dashboard.interface';
-import { ResumenHoras } from '../../../interface/evento-agenda.interface';
+import {
+  HorasTrabajadasResponse,
+  TIPO_EVENTO_CONFIG,
+} from '../../../interface/evento-agenda.interface';
 import { tipoColor, tipoLabel } from '../../../interface/contrato.interface';
+import { EstadoErrorComponent } from '../../../shared/components/estado-vista/estado-vista.component';
+import {
+  CHART_COLORS,
+  donutCenterPlugin,
+  ejeCategorias,
+  ejeNumerico,
+  leyenda,
+  tooltipBase,
+} from '../../../shared/charts/chart-theme';
 
 type Rango = 'semana' | 'mes' | '3meses';
 
-const FONT  = 'Plus Jakarta Sans, sans-serif';
-const P     = '#2d4a3e';   // primary lila
-const S     = '#3a5c74';   // secondary azul
-const OK    = '#2f6b43';   // success verde
-const WARN  = '#8a6018';   // warning naranja
-const ERR   = '#96382e';   // danger rojo
-const MUTED = '#798d82';
-const TEAL  = '#3a6b63';
-
 // El color y la etiqueta de cada tipo de terapia salen de `contrato.interface`,
-// que es la única definición. Aquí había una copia con LOGOPEDIA y
-// NEUROPSICOLOGIA intercambiadas respecto a la agenda: la misma terapia se
-// pintaba de un color en el calendario y de otro en las estadísticas.
+// y la paleta y las piezas de Chart.js de `shared/charts/chart-theme`. Aquí
+// había copias de las dos cosas: una tabla de colores por terapia con LOGOPEDIA
+// y NEUROPSICOLOGIA intercambiadas respecto a la agenda, y un tema entero
+// (fuente, paleta, tooltip, plugin del donut) paralelo al compartido.
 
-const TIPO_JORNADA_CONFIG: Record<string, { label: string; color: string; icon: string }> = {
-  SESION_CLINICA:           { label: 'Sesiones clínicas',       color: P,       icon: 'bi-heart-pulse' },
-  COORDINACION_EQUIPO:      { label: 'Coordinación equipo',     color: '#6b5a8a', icon: 'bi-people-fill' },
-  COORDINACION_COLEGIO:     { label: 'Coordinación colegio',    color: '#3a5c74', icon: 'bi-building' },
-  COORDINACION_PROFESIONAL: { label: 'Coordinación profesional',color: TEAL,    icon: 'bi-person-lines-fill' },
-  TIEMPO_ADMINISTRACION:    { label: 'Administración',          color: '#556d62', icon: 'bi-clipboard2-check' },
-  FORMACION:                { label: 'Formación',               color: WARN,    icon: 'bi-mortarboard' },
-  OTRO:                     { label: 'Otro',                    color: MUTED,   icon: 'bi-calendar-event' },
-};
-
-// Plugin: texto central en el donut
-const DONUT_CENTER_PLUGIN: Plugin<'doughnut'> = {
-  id: 'donutCenter',
-  beforeDraw(chart) {
-    const { ctx, chartArea, data } = chart;
-    if (!chartArea) return;
-    const total = (data.datasets[0].data as number[]).reduce((a, b) => a + b, 0);
-    const cx = chartArea.left + (chartArea.right  - chartArea.left) / 2;
-    const cy = chartArea.top  + (chartArea.bottom - chartArea.top)  / 2;
-    ctx.save();
-    ctx.textAlign    = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.font = `700 22px ${FONT}`;
-    ctx.fillStyle = P;
-    ctx.fillText(total.toString(), cx, cy - 10);
-    ctx.font = `500 11px ${FONT}`;
-    ctx.fillStyle = MUTED;
-    ctx.fillText('Total', cx, cy + 10);
-    ctx.restore();
+/**
+ * Configuración de cada actividad de la jornada.
+ *
+ * `SESION_CLINICA` no es un `TipoEvento` —no es un evento de agenda, es la
+ * sesión misma—, y por eso esto se copió entero en su día. Se añade a la fuente
+ * en lugar de reescribirla: las etiquetas de la copia ya se habían separado de
+ * las de la agenda ("Coordinación equipo" frente a "Coordinación de equipo").
+ */
+const CONFIG_JORNADA: Record<string, { label: string; color: string; icon: string }> = {
+  SESION_CLINICA: {
+    label: 'Sesiones clínicas',
+    color: CHART_COLORS.primary,
+    icon: 'bi-heart-pulse',
   },
+  ...TIPO_EVENTO_CONFIG,
 };
 
-const TOOLTIP_OPTS = {
-  backgroundColor: '#23322b',
-  titleFont: { family: FONT, size: 12, weight: 600 as const },
-  bodyFont:  { family: FONT, size: 12 },
-  padding: 10,
-  cornerRadius: 8,
-  displayColors: true,
-  boxWidth: 10,
-  boxHeight: 10,
-};
+const CONFIG_JORNADA_FALLBACK = { color: CHART_COLORS.muted, icon: 'bi-circle' };
 
 // ── Opciones estáticas (no cambian, se definen una vez) ─────────────────────
 
@@ -81,19 +60,21 @@ const LINE_OPTS: ChartOptions<'line'> = {
   maintainAspectRatio: false,
   plugins: {
     legend:  { display: false },
-    tooltip: TOOLTIP_OPTS,
+    tooltip: tooltipBase(),
   },
   scales: {
-    x: {
-      grid:   { display: false },
-      border: { display: false },
-      ticks:  { font: { family: FONT, size: 11 }, color: '#798d82' },
-    },
+    x: ejeCategorias(),
     y: { display: false, min: 0 },
   },
   elements: {
     line:  { tension: 0.4, borderWidth: 2.5 },
-    point: { radius: 4, hoverRadius: 6, backgroundColor: P, borderColor: '#fff', borderWidth: 2 },
+    point: {
+      radius: 4,
+      hoverRadius: 6,
+      backgroundColor: CHART_COLORS.primary,
+      borderColor: CHART_COLORS.surface,
+      borderWidth: 2,
+    },
   },
 };
 
@@ -102,75 +83,50 @@ const DONUT_OPTS: ChartOptions<'doughnut'> = {
   maintainAspectRatio: false,
   cutout: '65%',
   plugins: {
-    legend: {
-      position: 'bottom',
-      labels: { font: { family: FONT, size: 11 }, boxWidth: 10, boxHeight: 10, padding: 12 },
-    },
-    tooltip: TOOLTIP_OPTS,
+    legend:  leyenda('bottom'),
+    tooltip: tooltipBase(),
   },
 };
+
+// La leyenda compartida no separa las etiquetas arriba; estas barras sí lo
+// necesitan porque llevan tres series.
+const LEYENDA_BARRAS = leyenda('top');
 
 const BAR_OPTS: ChartOptions<'bar'> = {
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
-    legend: {
-      position: 'top',
-      align:    'start',
-      labels: { font: { family: FONT, size: 11 }, boxWidth: 10, boxHeight: 10, padding: 16 },
-    },
-    tooltip: TOOLTIP_OPTS,
+    legend:  { ...LEYENDA_BARRAS, labels: { ...LEYENDA_BARRAS.labels, padding: 16 } },
+    tooltip: tooltipBase(),
   },
   scales: {
-    x: {
-      stacked: true,
-      grid:    { display: false },
-      border:  { display: false },
-      ticks:   { font: { family: FONT, size: 11 }, color: '#798d82' },
-    },
-    y: {
-      stacked: true,
-      border:  { display: false },
-      grid:    { color: '#f5f5f5' },
-      ticks:   { font: { family: FONT, size: 11 }, color: '#798d82' },
-    },
+    x: { ...ejeCategorias(), stacked: true },
+    y: { ...ejeNumerico(), stacked: true },
   },
 };
 
 // ────────────────────────────────────────────────────────────────────────────
 
-interface Trabajador { id: string; nombre: string; apellidos: string; }
-interface WrappedResponse<T> { data: T; }
-interface DesgloseTipoItem { tipo: string; minutos: number; }
-
-interface HorasTrabajadasResponse {
-  semanas: Array<{
-    semana: string;
-    labelSemana: string;
-    minutosClinicas: number;
-    minutosNoClinicas: number;
-  }>;
-  totales: ResumenHoras;
-  desgloseTipo: DesgloseTipoItem[];
-}
-
 @Component({
   selector: 'app-estadisticas',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseChartDirective],
+  imports: [CommonModule, FormsModule, BaseChartDirective, EstadoErrorComponent],
   templateUrl: './estadisticas.component.html',
 })
 export class EstadisticasComponent implements OnInit {
-  private dashboardSvc = inject(DashboardService);
-  protected auth       = inject(AuthService);
-  private http         = inject(HttpClient);
+  private dashboardSvc    = inject(DashboardService);
+  private trabajadoresSvc = inject(TrabajadorService);
+  protected auth          = inject(AuthService);
 
   // ── State ──────────────────────────────────────────────────────────────
   datos        = signal<EstadisticasAvanzadas | null>(null);
   isLoading    = signal(false);
+  error        = signal<string | null>(null);
   rangoActivo  = signal<Rango>('mes');
-  trabajadorId = '';
-  trabajadores = signal<Trabajador[]>([]);
+  trabajadorId = signal('');
+
+  /** El servicio ya cachea la lista en su propio signal. */
+  readonly trabajadores = this.trabajadoresSvc.trabajadores;
 
   protected canVerTodos = computed(() => this.auth.isAdmin() || this.auth.isRecep());
 
@@ -192,7 +148,7 @@ export class EstadisticasComponent implements OnInit {
   });
 
   // ── Chart data (signals → driven by effect) ────────────────────────────
-  lineData  = signal<ChartData<'line'>>({ labels: [], datasets: [{ data: [], label: 'Sesiones', borderColor: P, backgroundColor: 'rgba(45,74,62,0.10)', fill: 'origin' }] });
+  lineData  = signal<ChartData<'line'>>({ labels: [], datasets: [] });
   donutData = signal<ChartData<'doughnut'>>({ labels: [], datasets: [{ data: [], backgroundColor: [] }] });
   barData   = signal<ChartData<'bar'>>({ labels: [], datasets: [] });
 
@@ -200,6 +156,17 @@ export class EstadisticasComponent implements OnInit {
   horasData      = signal<HorasTrabajadasResponse | null>(null);
   horasBarData   = signal<ChartData<'bar'>>({ labels: [], datasets: [] });
   isLoadingHoras = signal(false);
+
+  /** Minutos clínicos del periodo. La plantilla los pedía haciendo la cuenta. */
+  readonly minutosClinicos = computed(() => {
+    const t = this.horasData()?.totales;
+    return t ? t.horasClinicas * 60 + t.minutosClinicas : 0;
+  });
+
+  readonly minutosNoClinicos = computed(() => {
+    const t = this.horasData()?.totales;
+    return t ? t.horasNoClinicas * 60 + t.minutosNoClinicas : 0;
+  });
 
   readonly desgloseConPorcentaje = computed(() => {
     const h = this.horasData();
@@ -209,7 +176,7 @@ export class EstadisticasComponent implements OnInit {
     return h.desgloseTipo.map(d => ({
       ...d,
       pct: Math.round((d.minutos / total) * 100),
-      config: TIPO_JORNADA_CONFIG[d.tipo] ?? { label: d.tipo, color: MUTED, icon: 'bi-circle' },
+      config: CONFIG_JORNADA[d.tipo] ?? { label: d.tipo, ...CONFIG_JORNADA_FALLBACK },
     }));
   });
 
@@ -217,22 +184,13 @@ export class EstadisticasComponent implements OnInit {
   readonly lineOpts   = LINE_OPTS;
   readonly donutOpts  = DONUT_OPTS;
   readonly barOpts    = BAR_OPTS;
-  readonly donutPlugins: Plugin<'doughnut'>[] = [DONUT_CENTER_PLUGIN];
+  readonly donutPlugins = [donutCenterPlugin({ id: 'donutCenterEstadisticas', tamano: 22 })];
 
   readonly horasBarOpts: ChartOptions<'bar'> = {
     ...BAR_OPTS,
     scales: {
       ...BAR_OPTS.scales,
-      y: {
-        stacked: true,
-        border:  { display: false },
-        grid:    { color: '#f5f5f5' },
-        ticks:   {
-          font: { family: FONT, size: 11 },
-          color: '#798d82',
-          callback: (v) => `${v}h`,
-        },
-      },
+      y: { ...ejeNumerico('h'), stacked: true },
     },
   };
 
@@ -253,12 +211,9 @@ export class EstadisticasComponent implements OnInit {
 
   // ── Lifecycle ──────────────────────────────────────────────────────────
   ngOnInit(): void {
-    if (this.canVerTodos()) {
-      this.http
-        .get<WrappedResponse<Trabajador[]>>(`${environment.apiUrl}/trabajadores`)
-        .pipe(map(r => r.data || (r as unknown as Trabajador[])))
-        .subscribe({ next: t => this.trabajadores.set(t) });
-    }
+    // Solo ADMIN y RECEP pueden mirar los datos de otro: el backend impone su
+    // propio userId al resto, así que para ellos el selector no tiene sentido.
+    if (this.canVerTodos()) this.trabajadoresSvc.getTrabajadores().subscribe();
     this.cargar();
   }
 
@@ -274,16 +229,17 @@ export class EstadisticasComponent implements OnInit {
   cargar(): void {
     this.isLoading.set(true);
     this.isLoadingHoras.set(true);
+    this.error.set(null);
     this.datos.set(null);
     this.horasData.set(null);
 
     const hasta = endOfDay(new Date());
     const desde = this.getDesde(this.rangoActivo());
-    const tId   = this.trabajadorId || undefined;
+    const tId   = this.trabajadorId() || undefined;
 
     forkJoin([
       this.dashboardSvc.getEstadisticasAvanzadas(desde, hasta, tId),
-      this.dashboardSvc.getHorasHistoricas<HorasTrabajadasResponse>(desde, hasta, tId),
+      this.dashboardSvc.getHorasHistoricas(desde, hasta, tId),
     ]).subscribe({
       next: ([d, h]) => {
         this.datos.set(d);
@@ -291,7 +247,13 @@ export class EstadisticasComponent implements OnInit {
         this.isLoading.set(false);
         this.isLoadingHoras.set(false);
       },
-      error: () => {
+      // Sin esto, un fallo de red dejaba `datos()` en null y la pantalla se veía
+      // igual que un periodo sin sesiones: el usuario concluía que no había
+      // datos cuando lo que había era un error.
+      error: (err) => {
+        this.error.set(
+          err?.error?.message ?? 'No se han podido cargar las estadísticas.',
+        );
         this.isLoading.set(false);
         this.isLoadingHoras.set(false);
       },
@@ -312,13 +274,13 @@ export class EstadisticasComponent implements OnInit {
       datasets: [{
         label:           'Sesiones',
         data:            d.evolucion.map(e => e.total),
-        borderColor:     P,
+        borderColor:     CHART_COLORS.primary,
         backgroundColor: 'rgba(45,74,62,0.10)',
         fill:            'origin',
         tension:         0.4,
         borderWidth:     2.5,
-        pointBackgroundColor:  P,
-        pointBorderColor:      '#fff',
+        pointBackgroundColor:  CHART_COLORS.primary,
+        pointBorderColor:      CHART_COLORS.surface,
         pointBorderWidth:      2,
         pointRadius:           4,
         pointHoverRadius:      6,
@@ -333,9 +295,9 @@ export class EstadisticasComponent implements OnInit {
       datasets: [{
         data:            sorted.map(i => i.cantidad),
         backgroundColor: sorted.map(i => tipoColor(i.tipo)),
-        borderColor:     '#fff',
+        borderColor:     CHART_COLORS.surface,
         borderWidth:     3,
-        hoverBorderColor: '#fff',
+        hoverBorderColor: CHART_COLORS.surface,
         hoverOffset:     6,
       }],
     };
@@ -345,9 +307,9 @@ export class EstadisticasComponent implements OnInit {
     return {
       labels: d.sesionesPorEstado.map(s => s.semana),
       datasets: [
-        { label: 'Completadas', data: d.sesionesPorEstado.map(s => s.completadas), backgroundColor: OK,   borderRadius: 3 },
-        { label: 'Programadas', data: d.sesionesPorEstado.map(s => s.programadas), backgroundColor: S,    borderRadius: 3 },
-        { label: 'Canceladas',  data: d.sesionesPorEstado.map(s => s.canceladas),  backgroundColor: ERR,  borderRadius: 3 },
+        { label: 'Completadas', data: d.sesionesPorEstado.map(s => s.completadas), backgroundColor: CHART_COLORS.success,   borderRadius: 3 },
+        { label: 'Programadas', data: d.sesionesPorEstado.map(s => s.programadas), backgroundColor: CHART_COLORS.secondary, borderRadius: 3 },
+        { label: 'Canceladas',  data: d.sesionesPorEstado.map(s => s.canceladas),  backgroundColor: CHART_COLORS.danger,    borderRadius: 3 },
       ],
     };
   }
@@ -359,27 +321,25 @@ export class EstadisticasComponent implements OnInit {
         {
           label: 'Horas clínicas',
           data: h.semanas.map(s => Math.round((s.minutosClinicas / 60) * 10) / 10),
-          backgroundColor: P,
+          backgroundColor: CHART_COLORS.primary,
           borderRadius: 3,
         },
         {
           label: 'Admin/Coordinación',
           data: h.semanas.map(s => Math.round((s.minutosNoClinicas / 60) * 10) / 10),
-          backgroundColor: MUTED,
+          backgroundColor: CHART_COLORS.muted,
           borderRadius: 3,
         },
       ],
     };
   }
 
+  /**
+   * Un único formateador. Había dos: este, importado, y una copia local que se
+   * diferenciaba solo en omitir el "0h" por debajo de la hora — comportamiento
+   * que ahora tiene el compartido.
+   */
   readonly formatHoras = formatMinutosHoras;
-
-  formatMinutos(min: number): string {
-    const h = Math.floor(min / 60);
-    const m = min % 60;
-    if (h === 0) return `${m}m`;
-    return m > 0 ? `${h}h ${m}m` : `${h}h`;
-  }
 
   // ── View helpers ──────────────────────────────────────────────────────
   getInitials(nombre: string, apellidos: string): string {

@@ -1,87 +1,15 @@
-// ── Ajustes card full-width ──────────────────────────────────
-.ajustes-card--full {
-  grid-column: 1 / -1;
-}
+// ============================================================
+// MI SEMANA — disponibilidad, clientes y tiempo de administracion
+// ============================================================
+//
+// Una sola rejilla de siete dias que responde a "donde meto al cliente que
+// entra": de cuando a cuando se acepta, que hay ya puesto y que hueco queda.
+//
+// Tabla densa, no tarjetas: son siete filas que se leen de un vistazo y se
+// comparan entre si. Lo REALMENTE trabajado se cuenta en Estadisticas ->
+// Registro de jornada; esto es el plan, aquello el contador.
 
-// ── Horarios admin — lista de reglas ────────────────────────
-.horarios-loading,
-.horarios-empty {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: #94a3b8;
-  font-size: 0.875rem;
-  padding: 0.75rem 0;
-
-  i { font-size: 1.1rem; }
-}
-
-.horarios-lista {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.horarios-dia-grupo {
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-}
-
-.horarios-dia-label {
-  flex-shrink: 0;
-  width: 5rem;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: #64748b;
-  padding-top: 0.5rem;
-  text-transform: capitalize;
-}
-
-.horarios-dia-reglas {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.375rem;
-}
-
-.horarios-regla {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  background: $primary-ultra-light;
-  border: 1px solid $primary-light;
-  border-radius: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.875rem;
-
-  &--editando {
-    background: $white;
-    border-color: $primary;
-    flex-wrap: wrap;
-  }
-}
-
-.horarios-regla-hora {
-  font-weight: 600;
-  color: #1e293b;
-  white-space: nowrap;
-}
-
-.horarios-regla-titulo {
-  flex: 1;
-  color: #475569;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.horarios-regla-actions {
-  display: flex;
-  gap: 0.25rem;
-  margin-left: auto;
-}
+// ── Controles compartidos (edicion inline) ──────────────────
 
 .horarios-btn {
   border: none;
@@ -90,10 +18,11 @@
   border-radius: 0.375rem;
   cursor: pointer;
   font-size: 0.8125rem;
+  line-height: 1;
   transition: background 0.15s;
 
   &--edit {
-    color: #64748b;
+    color: $gray-500;
     &:hover { background: #e2e8f0; color: $primary; }
   }
   &--delete {
@@ -109,6 +38,11 @@
     color: #94a3b8;
     &:hover { background: #f1f5f9; }
   }
+}
+
+.horarios-regla-actions {
+  display: inline-flex;
+  gap: 0.25rem;
 }
 
 .horarios-sep {
@@ -129,107 +63,284 @@
   font-size: 0.875rem;
 }
 
-// ── Formulario nueva regla ───────────────────────────────────
-.horarios-form-nueva {
-  background: #f8fafc;
-  border: 1px dashed #cbd5e1;
-  border-radius: 0.75rem;
-  padding: 1rem;
-  margin-bottom: 1rem;
+// ── El dia ───────────────────────────────────────────────────
+
+.semana-dia {
+  padding: $spacing-smd 0;
+  border-bottom: 1px solid #eef1f6;
+
+  &:last-child { border-bottom: none; }
+
+  // Un dia sin nada no se oculta: el sabado vacio es justo donde puede caer
+  // el cliente nuevo, asi que tiene que estar para poder declararlo.
+  &--vacio { opacity: 0.62; }
 }
 
-.horarios-form-nueva__label {
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: #475569;
-  margin-bottom: 0.5rem;
-}
-
-.horarios-dias-selector {
+.semana-dia__hdr {
   display: flex;
-  gap: 0.375rem;
+  align-items: center;
   flex-wrap: wrap;
-  margin-bottom: 1rem;
-}
-
-.horarios-dia-btn {
-  width: 2.25rem;
-  height: 2.25rem;
-  border: 1.5px solid #cbd5e1;
-  border-radius: 50%;
-  background: $white;
-  color: #475569;
-  font-size: 0.75rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s;
-
-  &:hover {
-    border-color: $primary;
-    color: $primary;
-    background: $primary-ultra-light;
-  }
-
-  &--activo {
-    background: $primary;
-    border-color: $primary;
-    color: $white;
-
-    &:hover {
-      background: darken($primary, 8%);
-      border-color: darken($primary, 8%);
-      color: $white;
-    }
-  }
-}
-
-.horarios-form-nueva__fila {
-  display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  margin-bottom: 0.75rem;
-}
-
-.horarios-form-nueva__campo {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-
-  &--titulo {
-    flex: 1;
-    min-width: 12rem;
-  }
-}
-
-.horarios-form-nueva__actions {
-  display: flex;
   gap: 0.5rem;
 }
 
-// ── Botón añadir ─────────────────────────────────────────────
-.horarios-add-btn {
+.semana-dia__nombre {
+  flex-shrink: 0;
+  width: 5.5rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.semana-dia__franjas {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.semana-dia__totales {
+  margin-left: auto;
+  font-size: 0.78rem;
+  color: $gray-500;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.semana-dia__libre-total {
+  color: $success;
+  font-weight: 600;
+}
+
+// ── Franja de disponibilidad ────────────────────────────────
+
+.semana-franja {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
-  background: transparent;
+  gap: 0.375rem;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid $primary-light;
+  border-radius: 999px;
+  background: $primary-ultra-light;
+  color: $primary;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+
+  i { font-size: 0.7rem; }
+
+  &--editando {
+    border-radius: $border-radius-lg;
+    background: $white;
+    border-color: $primary;
+  }
+
+  &--ninguna {
+    border-style: dashed;
+    border-color: #cbd5e1;
+    background: transparent;
+    color: #94a3b8;
+    font-weight: 500;
+  }
+}
+
+// ── Boton de anadir, por dia ────────────────────────────────
+//
+// Uno por dia y por tipo. Antes habia un solo formulario global con un
+// selector de varios dias y UNA franja para todos: lunes 10-12 y miercoles
+// 16-18 obligaba a abrirlo dos veces.
+
+.semana-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.2rem 0.55rem;
   border: 1.5px dashed #cbd5e1;
-  border-radius: 0.5rem;
-  color: #64748b;
-  font-size: 0.875rem;
-  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  background: transparent;
+  color: $gray-500;
+  font-size: 0.78rem;
   cursor: pointer;
   transition: all 0.15s;
-  margin-top: 0.5rem;
 
   &:hover {
     border-color: $primary;
     color: $primary;
     background: $primary-ultra-light;
   }
+
+  i { font-size: 0.7rem; }
+
+  &--admin {
+    margin-top: 0.375rem;
+    margin-left: 5.5rem;
+  }
 }
 
-// ── Eventos virtuales en el calendario ──────────────────────
+// ── Formulario de alta inline ───────────────────────────────
+
+.semana-alta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0.25rem 5.5rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px dashed $primary;
+  border-radius: $border-radius-lg;
+  background: $primary-ultra-light;
+}
+
+.semana-alta__label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+// ── Linea de tiempo del dia ─────────────────────────────────
+
+.semana-eventos {
+  list-style: none;
+  margin: 0.375rem 0 0 5.5rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.semana-evento {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: 0.5rem;
+  background: #f8fafc;
+  font-size: 0.8125rem;
+
+  &--fuera {
+    background: $warning-light;
+  }
+}
+
+.semana-evento__hora {
+  flex-shrink: 0;
+  width: 6.5rem;
+  font-weight: 600;
+  color: #1e293b;
+  font-variant-numeric: tabular-nums;
+}
+
+.semana-evento__nombre {
+  color: #334155;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  &--admin {
+    color: $gray-500;
+    font-style: italic;
+  }
+}
+
+.semana-evento__tipo {
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.semana-evento__online {
+  color: $secondary;
+  font-size: 0.8rem;
+}
+
+.semana-evento__aviso {
+  margin-left: auto;
+  color: $warning-dark;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+// ── El hueco libre: la respuesta a la pregunta ──────────────
+
+.semana-libre {
+  margin: 0.375rem 0 0 5.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.8rem;
+  color: $success;
+
+  i { font-size: 0.75rem; }
+
+  strong { font-variant-numeric: tabular-nums; }
+}
+
+// ── Resumen de la semana ────────────────────────────────────
+
+.semana-resumen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-xl;
+  padding: $spacing-smd $spacing-md;
+  margin-bottom: $spacing-lg;
+  border: 1px solid $primary-light;
+  border-left: 3px solid $primary;
+  border-radius: $border-radius-lg;
+  background: $primary-ultra-light;
+
+  &--alerta {
+    border-color: rgba($warning, 0.35);
+    border-left-color: $warning;
+    background: $warning-light;
+  }
+}
+
+.semana-resumen__item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.semana-resumen__valor {
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: $primary;
+  font-variant-numeric: tabular-nums;
+
+  &--libre { color: $success; }
+
+  .semana-resumen--alerta & { color: $warning-dark; }
+}
+
+.semana-resumen__label {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: $gray-500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.semana-resumen__aviso {
+  flex-basis: 100%;
+  display: flex;
+  align-items: center;
+  gap: $spacing-2xs;
+  margin: 0;
+  padding-top: $spacing-sm;
+  border-top: 1px solid rgba($warning, 0.25);
+  font-size: 0.8rem;
+  color: $warning-dark;
+}
+
+// ── Eventos virtuales en el calendario (agenda) ─────────────
+//
+// Los bloques de administracion se materializan como eventos virtuales; se
+// pintan discontinuos para distinguirlos de un evento real.
+
 .ag-card--virtual {
   opacity: 0.75;
   border-style: dashed !important;
@@ -251,4 +362,20 @@
   font-size: 0.625rem;
   color: rgba(255, 255, 255, 0.8);
   margin-left: 0.2rem;
+}
+
+// ── Estrecho ────────────────────────────────────────────────
+//
+// Por debajo de ~640px la sangria de 5.5rem se come el contenido: los
+// bloques pasan a ocupar el ancho completo.
+
+@media (max-width: 640px) {
+  .semana-dia__nombre { width: 100%; }
+  .semana-dia__totales { margin-left: 0; }
+  .semana-eventos,
+  .semana-libre,
+  .semana-alta { margin-left: 0; }
+  .semana-add--admin { margin-left: 0; }
+  .semana-evento__hora { width: 100%; }
+  .semana-evento__aviso { margin-left: 0; }
 }

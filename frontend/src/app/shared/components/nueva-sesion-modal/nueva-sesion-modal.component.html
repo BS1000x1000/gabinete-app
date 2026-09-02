@@ -137,19 +137,44 @@
           {{ saveError() }}
         </div>
       }
+      <!-- La sesión YA está creada: avisar no es bloquear. Pero el modal no se
+           cierra solo mientras haya algo que leer. -->
+      @if (avisos().length) {
+        <div class="nsm-avisos">
+          <div class="nsm-avisos__head">
+            <i class="bi bi-check-circle-fill"></i>
+            Sesión creada, con {{ avisos().length === 1 ? 'una advertencia' : 'advertencias' }}
+          </div>
+          <ul class="nsm-avisos__list">
+            @for (a of avisos(); track a.tipo + a.mensaje) {
+              <li>
+                <i class="bi" [class]="'bi ' + AVISO_ICONO[a.tipo]"></i>
+                <span>{{ a.mensaje }}</span>
+              </li>
+            }
+          </ul>
+        </div>
+      }
+
       <div class="nsm-footer__actions">
-        <button type="button" class="nsm-btn nsm-btn--ghost" (click)="close()" [disabled]="isSaving()">
-          Cancelar
-        </button>
-        <button type="button" class="nsm-btn nsm-btn--primary" (click)="save()" [disabled]="isSaving()">
-          @if (isSaving()) {
-            <span class="nsm-spinner"></span>
-            Guardando...
-          } @else {
-            <i class="bi bi-calendar-plus"></i>
-            Crear sesión
-          }
-        </button>
+        @if (avisos().length) {
+          <button type="button" class="nsm-btn nsm-btn--primary" (click)="cerrarTrasAvisos()">
+            Entendido
+          </button>
+        } @else {
+          <button type="button" class="nsm-btn nsm-btn--ghost" (click)="close()" [disabled]="isSaving()">
+            Cancelar
+          </button>
+          <button type="button" class="nsm-btn nsm-btn--primary" (click)="save()" [disabled]="isSaving()">
+            @if (isSaving()) {
+              <span class="nsm-spinner"></span>
+              Guardando...
+            } @else {
+              <i class="bi bi-calendar-plus"></i>
+              Crear sesión
+            }
+          </button>
+        }
       </div>
     </div>
 

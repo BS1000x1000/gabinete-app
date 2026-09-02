@@ -47,6 +47,15 @@ export interface ContratoTemplateData {
   ciudadFirma: string | null;
   calendario: FilaCalendarioTemplate[];
   cursoEtiqueta: string;
+  /**
+   * El calendario de festivos que rige el centro, ya resuelto: "Comunidad de
+   * Madrid · Fuenlabrada". Antes la plantilla nombraba a Madrid a pelo y avisaba
+   * dos veces de que los festivos locales no se reflejaban, porque el modelo no
+   * sabia distinguir un municipio de otro. Ahora si, y el contrato lo dice.
+   */
+  calendarioEtiqueta: string;
+  /** Si el centro no tiene municipio elegido, los locales siguen sin salir. */
+  calendarioSinMunicipio: boolean;
   /** Frases literales de la clausula 4, con las fechas ya calculadas. */
   periodoNavidad: string;
   periodoSemanaSanta: string;
@@ -211,7 +220,8 @@ export function buildContratoHtml(d: ContratoTemplateData): string {
 
   <h3 class="sub">Festivos</h3>
   <p>
-    Las sesiones que coincidan con festivos nacionales o autonómicos de la Comunidad de Madrid
+    Las sesiones que coincidan con festivos del calendario oficial aplicable al centro
+    (<strong>${esc(d.calendarioEtiqueta)}</strong>)
     <strong>no se prestarán con carácter general</strong>, no siendo objeto de recuperación ni
     compensación, y considerándose incluidas dentro del cómputo general de la tarifa mensual,
     <strong>sin que ello dé lugar a reducción de la cuota ni a devolución parcial alguna</strong>.
@@ -222,11 +232,11 @@ export function buildContratoHtml(d: ContratoTemplateData): string {
     servicio y el equilibrio en el número de sesiones mensuales</strong>. En estos casos,
     <strong>se informará previamente a la familia</strong>.
   </p>
+  ${d.calendarioSinMunicipio ? `
   <p>
     <em>Los festivos de carácter local, propios de cada municipio, no quedan reflejados en el
-    calendario general de este contrato y se gestionarán, en su caso, de forma individual según el
-    municipio de residencia de cada familia.</em>
-  </p>
+    calendario general de este contrato y se gestionarán, en su caso, de forma individual.</em>
+  </p>` : ''}
 
   <h3 class="sub">Vacaciones de la profesional y periodos sin servicio</h3>
   <p>
@@ -286,9 +296,12 @@ export function buildContratoHtml(d: ContratoTemplateData): string {
     A continuación, se detalla la previsión orientativa de <strong>sesiones para el curso
     ${esc(d.cursoEtiqueta)}</strong>, tomando como referencia las
     <strong>sesiones semanales fijadas en ${diaTexto ? esc(diaTexto) : '—'}</strong> y considerando
-    los festivos del calendario oficial de la Comunidad de Madrid. Esta previsión es aplicable con
-    independencia del municipio de residencia de la familia; los festivos de carácter local no
-    quedan reflejados en esta tabla y se gestionarán, en su caso, de forma individual.
+    los festivos del calendario oficial aplicable al centro
+    (<strong>${esc(d.calendarioEtiqueta)}</strong>). Esta previsión es aplicable con independencia
+    del municipio de residencia de la familia: los días sin servicio son los que cierra el centro.
+    ${d.calendarioSinMunicipio
+      ? 'Los festivos de carácter local no quedan reflejados en esta tabla.'
+      : ''}
   </p>
 
   <table class="tabla-calendario">
@@ -305,10 +318,10 @@ export function buildContratoHtml(d: ContratoTemplateData): string {
   </table>
 
   <p class="nota-pie">
-    Nota: el calendario se ha elaborado sobre la base de los festivos nacionales y autonómicos
-    registrados en la aplicación para el curso indicado. Los festivos de ámbito autonómico sujetos
-    a decreto anual se confirmarán cuando la Comunidad de Madrid publique el calendario oficial
-    correspondiente, y esta tabla se actualizará en consecuencia si fuera necesario.
+    Nota: el calendario se ha elaborado sobre la base de los festivos registrados en la aplicación
+    para el curso indicado (${esc(d.calendarioEtiqueta)}). Los festivos sujetos a decreto o bando
+    anual se confirmarán cuando se publique el calendario oficial correspondiente, y esta tabla se
+    actualizará en consecuencia si fuera necesario.
   </p>
 
   <h2 class="clausula">5. Ausencias y cancelaciones</h2>

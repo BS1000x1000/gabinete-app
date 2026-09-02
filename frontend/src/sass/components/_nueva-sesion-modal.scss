@@ -355,3 +355,50 @@ $nsm-transition:    0.25s cubic-bezier(0.4, 0, 0.2, 1);
 @keyframes nsm-spin {
   to { transform: rotate(360deg); }
 }
+
+// ── Avisos al crear ──────────────────────────────────────────
+//
+// Solape, fuera de jornada, vacaciones o festivo. La sesion ya esta creada
+// cuando esto aparece: el backend los devolvia desde el principio y ningun
+// componente los leia, asi que ni los solapes llegaban a verse.
+//
+// Ocre y no rojo a proposito: no es un error, la sesion existe. Es informacion
+// que hay que leer antes de cerrar.
+
+.nsm-avisos {
+  border: 1px solid rgba($warning, 0.35);
+  border-radius: 0.5rem;
+  background: $warning-light;
+  padding: 0.6rem 0.8rem;
+  margin-bottom: $spacing-smd;
+}
+
+.nsm-avisos__head {
+  display: flex;
+  align-items: center;
+  gap: $spacing-2xs;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: $warning-dark;
+  margin-bottom: $spacing-2xs;
+
+  i { color: $success; }
+}
+
+.nsm-avisos__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  li {
+    display: flex;
+    align-items: flex-start;
+    gap: $spacing-2xs;
+    font-size: 0.8rem;
+    line-height: 1.45;
+    color: $warning-dark;
+    padding: 0.15rem 0;
+
+    i { flex-shrink: 0; margin-top: 0.15rem; opacity: 0.8; }
+  }
+}

@@ -16,6 +16,7 @@ import puppeteer from 'puppeteer';
 import { CONTRATO_PDF_INCLUDE } from '../src/contratos/contratos.include';
 import { ContratosPdfService } from '../src/contratos/contratos-pdf.service';
 import { CalendarioContratoService } from '../src/expediente/calendario-contrato.service';
+import { FestivosService } from '../src/festivos/festivos.service';
 import { buildContratoHtml } from '../src/contratos/templates/contrato.template';
 import { buildConsentimientoInformadoHtml } from '../src/expediente/templates/consentimiento-informado.template';
 import { buildConsentimientoDatosHtml } from '../src/expediente/templates/consentimiento-datos.template';
@@ -41,7 +42,8 @@ async function main() {
   }
 
   const calendario = new CalendarioContratoService();
-  const svc = new ContratosPdfService(null as any, prisma as any, calendario);
+  const festivos = new FestivosService(prisma as any);
+  const svc = new ContratosPdfService(null as any, prisma as any, calendario, festivos);
 
   const datos = await svc.construirDatos(contrato as any);
   const faltantes = svc.faltantes(contrato as any);

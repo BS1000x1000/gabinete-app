@@ -95,7 +95,10 @@ describe('FacturasPackService', () => {
 
       const { where } = prisma.factura.findMany.mock.calls[0][0];
       expect(where.trabajadorId).toBe('trabajador-1');
-      expect(where.periodoFacturado).toEqual({ gte: '2026-07', lte: '2026-09' });
+      expect(where.periodoFacturado).toEqual({
+        gte: '2026-07',
+        lte: '2026-09',
+      });
     });
 
     it('el ADMIN puede pedir sin filtro de trabajador', async () => {
@@ -125,9 +128,9 @@ describe('FacturasPackService', () => {
     });
 
     it('sin rango ni ids → 400', async () => {
-      await expect(service.facturasDeLaSeleccion(TERAPEUTA, {})).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        service.facturasDeLaSeleccion(TERAPEUTA, {}),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('rango invertido → 400', async () => {
@@ -178,7 +181,7 @@ describe('FacturasPackService', () => {
 
       const totales = filas[3];
       expect(totales[0]).toBe('TOTAL');
-      expect(totales[3]).toBe('1 facturas');
+      expect(totales[3]).toBe('1 factura');
       expect(totales[11]).toBe(120);
     });
 
@@ -190,16 +193,36 @@ describe('FacturasPackService', () => {
       expect(filas[1][4]).toBe('87654321B');
     });
 
-    it('cae al nombre del cliente si no hay tutor pagador registrado', async () => {
+    it('deja el destinatario vacío en vez de nombrar al menor sin tutor pagador', async () => {
       const f = mockFactura({
-        cliente: { nombre: 'Pablo', apellidos: 'Martínez', nombreTutorPagador: null, nifTutorPagador: null },
+        cliente: {
+          nombre: 'Pablo',
+          apellidos: 'Martínez',
+          nombreTutorPagador: null,
+          nifTutorPagador: null,
+        },
       });
 
       const libro = await service.construirLibro([f] as any);
       const { filas } = await leerHoja(libro.buffer);
 
-      expect(filas[1][3]).toBe('Pablo Martínez');
-      expect(filas[1][4]).toBe('');
+      expect(filas[1][3]).toBeUndefined();
+      expect(filas[1][4]).toBeUndefined();
+    });
+
+    it('escribe las fechas como fecha y no como texto, para poder ordenar', async () => {
+      const libro = await service.construirLibro([mockFactura()] as any);
+      const { filas } = await leerHoja(libro.buffer);
+
+      expect(filas[1][1]).toBeInstanceOf(Date);
+    });
+
+    it('pluraliza la fila de totales', async () => {
+      const facturas = [mockFactura(), mockFactura({ id: 'f-2', numero: 13 })];
+      const libro = await service.construirLibro(facturas as any);
+      const { filas } = await leerHoja(libro.buffer);
+
+      expect(filas[3][3]).toBe('2 facturas');
     });
   });
 
@@ -225,7 +248,9 @@ describe('FacturasPackService', () => {
         mockFactura({ id: 'f-2', numero: 13, periodoFacturado: '2026-12' }),
       ];
 
-      expect(service.resumen(facturas as any).filename).toBe('facturas_12345678A_2026.zip');
+      expect(service.resumen(facturas as any).filename).toBe(
+        'facturas_12345678A_2026.zip',
+      );
     });
 
     it('los ficheros llevan el número delante y el tutor pagador saneado', () => {
@@ -235,6 +260,21 @@ describe('FacturasPackService', () => {
         'resumen-facturas_2026-07.xlsx',
         '0012_2026-07_Ana-Martínez-Ruiz.pdf',
       ]);
+    });
+
+    it('nombra el PDF sin el menor cuando falta el tutor pagador', () => {
+      const f = mockFactura({
+        cliente: {
+          nombre: 'Pablo',
+          apellidos: 'Martínez',
+          nombreTutorPagador: null,
+          nifTutorPagador: null,
+        },
+      });
+
+      expect(service.resumen([f] as any).ficheros[1]).toBe(
+        '0012_2026-07_sin-destinatario.pdf',
+      );
     });
 
     it('lo anulado no cuenta en el importe del resumen', () => {
@@ -253,7 +293,9 @@ describe('FacturasPackService', () => {
     it('lee los PDF del almacenamiento sin lanzar Puppeteer', async () => {
       const pack = await service.construirPack([mockFactura()] as any);
 
-      expect(storageMock.download).toHaveBeenCalledWith('facturas/trabajador-1/2026/12.pdf');
+      expect(storageMock.download).toHaveBeenCalledWith(
+        'facturas/trabajador-1/2026/12.pdf',
+      );
       expect(pdfMock.generarPdf).not.toHaveBeenCalled();
       expect(pack.contentType).toBe('application/zip');
       expect(pack.incidencias).toEqual([]);
@@ -262,7 +304,9 @@ describe('FacturasPackService', () => {
     });
 
     it('regenera el PDF solo cuando no está archivado', async () => {
-      const pack = await service.construirPack([mockFactura({ urlPdfR2: null })] as any);
+      const pack = await service.construirPack([
+        mockFactura({ urlPdfR2: null }),
+      ] as any);
 
       expect(storageMock.download).not.toHaveBeenCalled();
       expect(pdfMock.generarPdf).toHaveBeenCalledTimes(1);

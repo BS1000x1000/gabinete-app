@@ -33,8 +33,8 @@ const mkUser = (overrides: TestUserOverrides) => ({
   apellidos: 'User',
   email: 'test@test.es',
   rolId: 'rol-1',
-  resetPasswordToken: null as null,
-  resetPasswordExpires: null as null,
+  resetPasswordToken: null,
+  resetPasswordExpires: null,
   createdAt: new Date(),
   updatedAt: new Date(),
   ...overrides,
@@ -73,7 +73,8 @@ async function loginAs(
     .send({ username: user.username, password: 'Test123!' });
 
   // JWT goes in HttpOnly cookie — extract from Set-Cookie header
-  const setCookie: string = (res.headers['set-cookie'] as string[] | undefined)?.[0] ?? '';
+  const setCookie: string =
+    (res.headers['set-cookie'] as string[] | undefined)?.[0] ?? '';
   const token = setCookie.split(';')[0].split('=').slice(1).join('=');
   return token;
 }
@@ -92,9 +93,9 @@ describe('RBAC (e2e)', () => {
     app = await createTestApp(prisma);
     await app.init();
 
-    tokenRecep    = await loginAs(app, prisma, recepUser);
+    tokenRecep = await loginAs(app, prisma, recepUser);
     tokenPedagogo = await loginAs(app, prisma, pedagogoUser);
-    tokenAdmin    = await loginAs(app, prisma, adminUser);
+    tokenAdmin = await loginAs(app, prisma, adminUser);
   });
 
   afterAll(async () => {
@@ -211,7 +212,11 @@ describe('RBAC (e2e)', () => {
       const res = await request(app.getHttpServer())
         .post('/api/informes')
         .set('Authorization', `Bearer ${tokenPedagogo}`)
-        .send({ clienteId: 'no-existe', tipoInforme: 'INICIAL', titulo: 'Test' });
+        .send({
+          clienteId: 'no-existe',
+          tipoInforme: 'INICIAL',
+          titulo: 'Test',
+        });
 
       expect(res.status).not.toBe(403);
     });
@@ -281,7 +286,6 @@ describe('RBAC (e2e)', () => {
       expect(res.status).toBe(200);
     });
   });
-
 
   // ── Consentimiento RGPD ──────────────────────────────────────────────────
   // El registro manual es la excepcion (papel firmado fuera de la app) y queda
@@ -533,7 +537,8 @@ describe('RBAC (e2e)', () => {
         .send({ anio: 2026, mes: 8 });
 
       expect(res.status).toBe(201);
-      const where = prisma.contratoServicio.findMany.mock.calls.at(-1)![0].where;
+      const where =
+        prisma.contratoServicio.findMany.mock.calls.at(-1)![0].where;
       expect(where.trabajadorId).toBe(pedagogoUser.id);
     });
 
@@ -546,7 +551,8 @@ describe('RBAC (e2e)', () => {
         .set('Authorization', `Bearer ${tokenAdmin}`)
         .send({ anio: 2026, mes: 8 });
 
-      const where = prisma.contratoServicio.findMany.mock.calls.at(-1)![0].where;
+      const where =
+        prisma.contratoServicio.findMany.mock.calls.at(-1)![0].where;
       expect(where.trabajadorId).toBeUndefined();
     });
 
@@ -588,7 +594,9 @@ describe('RBAC (e2e)', () => {
       prisma.factura.findMany.mockResolvedValue([]);
 
       await request(app.getHttpServer())
-        .get('/api/facturas/pack/resumen?periodoDesde=2026-07&periodoHasta=2026-09')
+        .get(
+          '/api/facturas/pack/resumen?periodoDesde=2026-07&periodoHasta=2026-09',
+        )
         .set('Authorization', `Bearer ${tokenPedagogo}`);
 
       const where = prisma.factura.findMany.mock.calls.at(-1)![0].where;
@@ -601,6 +609,39 @@ describe('RBAC (e2e)', () => {
         .set('Authorization', `Bearer ${tokenPedagogo}`);
 
       expect(res.status).toBe(400);
+    });
+
+    /**
+     * Express resuelve por orden de declaración. Con `@Get(':id')` declarado
+     * antes, `GET /facturas/pack` entraba por la ruta paramétrica con
+     * `id = "pack"` y el `ParseUUIDPipe` devolvía 400: descargar el paquete no
+     * llegaba nunca a su controlador. Este test lo fija.
+     */
+    it('/pack no lo intercepta la ruta :id', async () => {
+      prisma.factura.findMany.mockResolvedValue([]);
+
+      const res = await request(app.getHttpServer())
+        .get('/api/facturas/pack?ids=02633320-4ba7-456b-aae0-36ecaba40be7')
+        .set('Authorization', `Bearer ${tokenPedagogo}`);
+
+      // 400 por selección vacía, no por "uuid is expected" sobre la palabra "pack".
+      expect(res.body.message).not.toContain('uuid');
+      expect(prisma.factura.findMany).toHaveBeenCalled();
+    });
+
+    it('una sola factura seleccionada es una selección válida', async () => {
+      prisma.factura.findMany.mockResolvedValue([]);
+
+      await request(app.getHttpServer())
+        .get(
+          '/api/facturas/pack/resumen?ids=02633320-4ba7-456b-aae0-36ecaba40be7',
+        )
+        .set('Authorization', `Bearer ${tokenPedagogo}`);
+
+      const where = prisma.factura.findMany.mock.calls.at(-1)![0].where;
+      expect(where.id).toEqual({
+        in: ['02633320-4ba7-456b-aae0-36ecaba40be7'],
+      });
     });
 
     it('un periodo mal formado → 400', async () => {
@@ -645,7 +686,9 @@ describe('RBAC (e2e)', () => {
       expect(res.status).toBe(200);
       const where = prisma.factura.findMany.mock.calls.at(-1)![0].where;
       expect(where.trabajadorId).toBe(pedagogoUser.id);
-      expect(where.entregas).toEqual({ none: { envio: { estado: 'ENVIADO' } } });
+      expect(where.entregas).toEqual({
+        none: { envio: { estado: 'ENVIADO' } },
+      });
     });
 
     it('el historial es el propio, no el del gabinete', async () => {
@@ -661,7 +704,12 @@ describe('RBAC (e2e)', () => {
 
     it('sin email de gestoría configurado no se envía nada', async () => {
       prisma.factura.findMany.mockResolvedValue([
-        { id: 'f-1', periodoFacturado: '2026-07', estado: 'PENDIENTE', total: 100 },
+        {
+          id: 'f-1',
+          periodoFacturado: '2026-07',
+          estado: 'PENDIENTE',
+          total: 100,
+        },
       ]);
       prisma.trabajador.findUnique.mockResolvedValue({
         ...pedagogoUser,
@@ -682,12 +730,16 @@ describe('RBAC (e2e)', () => {
 
   describe('Sin token', () => {
     it('GET /api/registros/cliente/c1 sin token → 401', async () => {
-      const res = await request(app.getHttpServer()).get('/api/registros/cliente/c1');
+      const res = await request(app.getHttpServer()).get(
+        '/api/registros/cliente/c1',
+      );
       expect(res.status).toBe(401);
     });
 
     it('GET /api/informes/cliente/c1 sin token → 401', async () => {
-      const res = await request(app.getHttpServer()).get('/api/informes/cliente/c1');
+      const res = await request(app.getHttpServer()).get(
+        '/api/informes/cliente/c1',
+      );
       expect(res.status).toBe(401);
     });
   });

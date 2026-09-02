@@ -17,9 +17,17 @@ export class HorariosAdminService {
    * pero sin filtro se devuelven las suyas: antes el `where` quedaba solo en
    * `{ activo: true }` y le llegaban las de todo el equipo mezcladas y sin
    * ningun campo que permitiera distinguirlas.
+   *
+   * Pedir las de otro sin ser ADMIN es un 403, no un silencio. Antes devolvia
+   * las tuyas como si nada, asi que la pantalla ensenaba unos datos afirmando
+   * que eran de otra persona. `VacacionesService.resolveTarget` ya rechazaba de
+   * forma explicita; esto era la asimetria.
    */
   async findAll(userId: string, rol: string, filtroId?: string) {
-    const trabajadorId = rol === 'ADMIN' ? (filtroId ?? userId) : userId;
+    if (filtroId && filtroId !== userId && rol !== 'ADMIN') {
+      throw new ForbiddenException('No tienes acceso al horario de otro trabajador');
+    }
+    const trabajadorId = filtroId ?? userId;
     return this.prisma.horarioAdmin.findMany({
       where: { trabajadorId, activo: true },
       orderBy: [{ diaSemana: 'asc' }, { horaInicio: 'asc' }],

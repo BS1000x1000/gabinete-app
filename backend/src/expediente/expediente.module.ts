@@ -7,6 +7,7 @@ import { PdfModule } from '../common/pdf/pdf.module';
 import { DocumentosModule } from '../documentos/documentos.module';
 import { ConsentimientosModule } from '../consentimientos/consentimientos.module';
 import { ContratosPdfService } from '../contratos/contratos-pdf.service';
+import { FestivosModule } from '../festivos/festivos.module';
 
 /**
  * Expediente inicial del cliente: contrato y los dos consentimientos.
@@ -22,7 +23,7 @@ import { ContratosPdfService } from '../contratos/contratos-pdf.service';
  * `StorageService`, que tambien se declara en cada modulo que lo usa.
  */
 @Module({
-  imports: [PrismaModule, PdfModule, DocumentosModule, ConsentimientosModule],
+  imports: [PrismaModule, PdfModule, DocumentosModule, ConsentimientosModule, FestivosModule],
   controllers: [ExpedienteController],
   providers: [ExpedienteService, CalendarioContratoService, ContratosPdfService],
   exports: [ExpedienteService],

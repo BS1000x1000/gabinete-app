@@ -62,8 +62,11 @@ export class FacturasPdfService {
       provinciaFiscal: t.provinciaFiscal ?? '',
       iban: t.iban ?? '',
       emailFacturacion: t.emailFacturacion ?? t.email,
-      nombreTutorPagador:
-        c.nombreTutorPagador ?? `${c.nombre} ${c.apellidos}`,
+      // Sin fallback al nombre del menor: el destinatario de la factura es el
+      // tutor pagador. Las facturas nuevas ya no se emiten sin estos datos
+      // (`motivoSinDatosFiscales`); las antiguas salen con el bloque vacio, que
+      // es visible, en vez de con el nombre del nino, que no lo era.
+      nombreTutorPagador: c.nombreTutorPagador ?? '',
       nifTutorPagador: c.nifTutorPagador ?? '',
       direccionFiscalTutor: c.direccionFiscalTutor ?? '',
       codigoPostalTutor: c.codigoPostalTutor ?? '',

@@ -77,12 +77,24 @@ export const ejeCategorias = () => ({
   ticks:  { ...ticksBase },
 });
 
-/** Eje de importes: rejilla tenue y sufijo €. */
-export const ejeEuros = () => ({
+/**
+ * Eje de magnitudes: rejilla tenue y, si se pide, sufijo en los ticks.
+ *
+ * El sufijo es un parametro porque los mismos ejes sirven para euros, para
+ * horas y para conteos pelados; con `ejeEuros` como unica pieza, `estadisticas`
+ * tenia que escribirse sus ejes a mano y ahi empezo a divergir el tema.
+ */
+export const ejeNumerico = (sufijo = '') => ({
   border: { display: false },
   grid:   { color: CHART_COLORS.grid },
-  ticks:  { ...ticksBase, callback: (v: any) => `${v}€` },
+  ticks:  {
+    ...ticksBase,
+    ...(sufijo && { callback: (v: any) => `${v}${sufijo}` }),
+  },
 });
+
+/** Eje de importes: rejilla tenue y sufijo €. */
+export const ejeEuros = () => ejeNumerico('€');
 
 export const leyenda = (position: 'top' | 'bottom' = 'top') => ({
   position,

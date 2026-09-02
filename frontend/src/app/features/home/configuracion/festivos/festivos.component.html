@@ -1,10 +1,83 @@
 <div class="festivos-page">
 
-  <!-- ── Header ──────────────────────────────────────────────── -->
+  <!-- ══ Calendario del centro ═══════════════════════════════════
+       La declaración de qué días cierra. Todo lo demás depende de
+       esto: contratos, agenda, avisos y vacaciones leen de aquí. -->
+  <section class="cal-centro" [class.cal-centro--alerta]="sinMunicipio() || municipioSinDatos()">
+
+    <div class="cal-centro__main">
+      <div class="cal-centro__label">
+        <i class="bi bi-geo-alt-fill"></i>
+        <span>El centro se rige por el calendario de</span>
+      </div>
+
+      <div class="cal-centro__selects">
+        <select
+          class="cal-centro__select"
+          [ngModel]="configuracion()?.ccaaCodigo ?? ''"
+          (ngModelChange)="cambiarCcaa($event)"
+          [disabled]="guardandoConfig() || cargando()"
+        >
+          @for (c of catalogo()?.ccaa ?? []; track c.codigo) {
+            <option [value]="c.codigo">{{ c.nombre }}</option>
+          }
+        </select>
+
+        <span class="cal-centro__sep">·</span>
+
+        <select
+          class="cal-centro__select"
+          [ngModel]="configuracion()?.municipio ?? ''"
+          (ngModelChange)="cambiarMunicipio($event)"
+          [disabled]="guardandoConfig() || cargando()"
+        >
+          <option value="">Sin municipio</option>
+          @for (m of municipiosDeLaCcaa(); track m.nombre) {
+            <option [value]="m.nombre">{{ m.nombre }}{{ m.sinDatos ? ' (sin datos)' : '' }}</option>
+          }
+        </select>
+
+        @if (guardandoConfig()) {
+          <span class="spinner-border spinner-border-sm cal-centro__spin"></span>
+        }
+      </div>
+    </div>
+
+    <!-- El aviso honesto: la pantalla dice lo que NO sabe, en vez de
+         dar por completo un calendario al que le faltan días. -->
+    @if (sinMunicipio()) {
+      <p class="cal-centro__aviso">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <span>
+          <strong>Sin municipio elegido.</strong> Los festivos nacionales y autonómicos ya se
+          aplican, pero <strong>los dos festivos locales no entran</strong> en los contratos ni en
+          la agenda. Elige el municipio del centro.
+        </span>
+      </p>
+    } @else if (municipioSinDatos()) {
+      <p class="cal-centro__aviso">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <span>
+          <strong>{{ configuracion()?.municipio }} no tiene festivos locales cargados.</strong>
+          Añádelos a mano desde el bando municipal: si faltan, el contrato saldrá con una sesión de
+          más en la tabla del calendario.
+        </span>
+      </p>
+    }
+
+    @if (errorConfig()) {
+      <p class="cal-centro__error">
+        <i class="bi bi-x-circle-fill"></i>{{ errorConfig() }}
+      </p>
+    }
+  </section>
+
+  <!-- ══ Barra de año y acciones ══════════════════════════════ -->
   <div class="festivos-header">
     <h5 class="festivos-title">
       <i class="bi bi-calendar2-check"></i>
-      Gestión de Festivos
+      Festivos de {{ anioActivo() }}
+      <span class="festivos-title-sub">{{ etiquetaCalendario() }}</span>
     </h5>
 
     <div class="festivos-header-actions">
@@ -19,21 +92,19 @@
         </button>
       </div>
 
-      @if (!tieneNacionales() && !cargando()) {
-        <button
-          class="festivos-import-btn"
-          (click)="importarNacionales()"
-          [disabled]="guardando()"
-          type="button"
-        >
-          @if (guardando()) {
-            <span class="spinner-border spinner-border-sm"></span>
-          } @else {
-            <i class="bi bi-cloud-download"></i>
-          }
-          Importar nacionales {{ anioActivo() }}
-        </button>
-      }
+      <button
+        class="festivos-import-btn"
+        (click)="previsualizar()"
+        [disabled]="importando() || cargando()"
+        type="button"
+      >
+        @if (importando()) {
+          <span class="spinner-border spinner-border-sm"></span>
+        } @else {
+          <i class="bi bi-cloud-download"></i>
+        }
+        Importar calendario {{ anioActivo() }}
+      </button>
 
       <button class="festivos-add-btn" (click)="toggleFormulario()" type="button">
         <i class="bi" [class.bi-plus-lg]="!mostrarFormulario()" [class.bi-x-lg]="mostrarFormulario()"></i>
@@ -43,7 +114,79 @@
     </div>
   </div>
 
-  <!-- ── Loading ─────────────────────────────────────────────── -->
+  <!-- ══ Previsualización de la importación ═══════════════════
+       Inline y no en modal, para poder cotejarla con la tabla que
+       ya está debajo sin perderla de vista. -->
+  @if (previsualizacion(); as prev) {
+    <div class="festivos-preview">
+      <div class="festivos-preview__head">
+        <div>
+          <strong>{{ prev.length }} festivos</strong> en el calendario de {{ anioActivo() }}
+          @if (previstoNuevo() === 0) {
+            <span class="festivos-preview__nota">— ya están todos cargados</span>
+          } @else {
+            <span class="festivos-preview__nota">— {{ previstoNuevo() }} se añadirían</span>
+          }
+        </div>
+        <div class="festivos-preview__actions">
+          <button class="festivos-confirm-no" (click)="cancelarImportacion()" type="button">Cancelar</button>
+          <button
+            class="festivos-submit-btn"
+            (click)="confirmarImportacion()"
+            [disabled]="importando()"
+            type="button"
+          >
+            Importar
+          </button>
+        </div>
+      </div>
+
+      <ul class="festivos-preview__list">
+        @for (p of prev; track p.fecha + p.descripcion) {
+          <li>
+            <span class="festivos-preview__fecha">
+              {{ p.fecha | date:'dd MMM' }}
+              <em>{{ diaSemana(p.fecha) }}</em>
+            </span>
+            <span class="festivos-preview__desc">{{ p.descripcion }}</span>
+            <span
+              class="festivos-badge"
+              [class.festivos-badge-nacional]="p.ambito === 'NACIONAL'"
+              [class.festivos-badge-autonomico]="p.ambito === 'AUTONOMICO'"
+              [class.festivos-badge-local]="p.ambito === 'LOCAL'"
+            >{{ AMBITO_LABEL[p.ambito] }}</span>
+          </li>
+        }
+      </ul>
+    </div>
+  }
+
+  @if (resultadoImport(); as res) {
+    <div class="festivos-resultado" [class.festivos-resultado--aviso]="res.sinDatos.length > 0 || res.sinVerificar">
+      <i class="bi" [class.bi-check-circle-fill]="!res.sinDatos.length && !res.sinVerificar"
+         [class.bi-exclamation-triangle-fill]="res.sinDatos.length > 0 || res.sinVerificar"></i>
+      <div>
+        <div>
+          Importados <strong>{{ res.importados }}</strong>;
+          {{ res.omitidos }} ya estaban.
+        </div>
+        @if (res.sinDatos.length) {
+          <div class="festivos-resultado__linea">
+            Sin festivos locales en el catálogo: <strong>{{ res.sinDatos.join(', ') }}</strong>.
+            Añádelos a mano.
+          </div>
+        }
+        @if (res.sinVerificar) {
+          <div class="festivos-resultado__linea">
+            Este año todavía no se ha cotejado con el boletín oficial. Revisa las fechas
+            autonómicas y locales antes de generar contratos.
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ══ Carga ═══════════════════════════════════════════════ -->
   @if (cargando()) {
     <div class="festivos-loading">
       <span class="spinner-border spinner-border-sm me-2"></span>Cargando festivos...
@@ -52,33 +195,46 @@
 
   @if (!cargando()) {
 
-    <!-- ── Vacío ────────────────────────────────────────────── -->
+    <!-- ══ Vacío ═════════════════════════════════════════════ -->
     @if (!festivos().length && !mostrarFormulario()) {
       <div class="festivos-empty">
         <div class="festivos-empty-icon">🗓️</div>
         <p class="mb-1 fw-semibold">No hay festivos para {{ anioActivo() }}</p>
-        <p class="mb-0 small text-muted">Importa los nacionales o añade uno manualmente.</p>
+        <p class="mb-0 small text-muted">
+          Importa el calendario del centro o añade uno manualmente.
+        </p>
       </div>
     }
 
-    <!-- ── Tabla ────────────────────────────────────────────── -->
+    <!-- ══ Tabla ═════════════════════════════════════════════ -->
     @if (festivos().length) {
       <div class="festivos-table-wrap">
         <table class="festivos-table">
           <thead>
             <tr>
               <th>Fecha</th>
+              <th>Día</th>
               <th>Descripción</th>
               <th>Ámbito</th>
-              <th>CCAA / Provincia</th>
+              <th>Aplica a</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
             @for (f of festivos(); track f.id) {
-              <tr>
-                <td>{{ f.fecha | date:'dd/MM/yyyy' }}</td>
+              <tr [class.festivos-row--inactiva]="fueraDelCalendario(f)">
+                <td class="festivos-td-fecha">{{ f.fecha | date:'dd/MM/yyyy' }}</td>
+
+                <!-- El día de la semana decide qué familias pierden sesión.
+                     En fin de semana el festivo no quita nada. -->
+                <td>
+                  <span class="festivos-dia" [class.festivos-dia--finde]="esFinDeSemana(f.fecha)">
+                    {{ diaSemana(f.fecha) }}
+                  </span>
+                </td>
+
                 <td>{{ f.descripcion }}</td>
+
                 <td>
                   <span
                     class="festivos-badge"
@@ -89,14 +245,17 @@
                     {{ AMBITO_LABEL[f.ambito] }}
                   </span>
                 </td>
+
                 <td>
-                  @if (f.ccaa || f.provincia) {
-                    <span>{{ f.ccaa }}@if (f.ccaa && f.provincia) { · }{{ f.provincia }}</span>
-                  } @else {
-                    <span class="text-muted">—</span>
+                  {{ aplicaA(f) }}
+                  @if (fueraDelCalendario(f)) {
+                    <span class="festivos-fuera" title="No pertenece al calendario del centro, así que no se aplica">
+                      no aplica
+                    </span>
                   }
                 </td>
-                <td>
+
+                <td class="festivos-td-acciones">
                   @if (confirmEliminarId() === f.id) {
                     <div class="festivos-confirm">
                       <span>¿Eliminar?</span>
@@ -106,6 +265,14 @@
                   } @else {
                     <button
                       class="festivos-del-btn"
+                      (click)="editar(f)"
+                      title="Editar"
+                      type="button"
+                    >
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <button
+                      class="festivos-del-btn festivos-del-btn--danger"
                       (click)="pedirConfirmar(f.id)"
                       title="Eliminar"
                       [disabled]="eliminandoId() === f.id"
@@ -126,11 +293,14 @@
       </div>
     }
 
-    <!-- ── Formulario colapsable ────────────────────────────── -->
+    <!-- ══ Alta / edición ════════════════════════════════════ -->
     @if (mostrarFormulario()) {
       <div class="festivos-form-card">
         <div class="festivos-form-header" (click)="toggleFormulario()">
-          <span><i class="bi bi-plus-circle me-2"></i>Añadir festivo</span>
+          <span>
+            <i class="bi me-2" [class.bi-plus-circle]="!editandoId()" [class.bi-pencil]="editandoId()"></i>
+            {{ editandoId() ? 'Editar festivo' : 'Añadir festivo' }}
+          </span>
           <i class="bi bi-chevron-up"></i>
         </div>
         <div class="festivos-form-body">
@@ -150,7 +320,7 @@
             <input
               type="text"
               class="festivos-f-input"
-              placeholder="Ej: Día de la Constitución"
+              placeholder="Ej: Nuestra Señora de la Almudena"
               [ngModel]="form().descripcion"
               (ngModelChange)="patchForm('descripcion', $event)"
             />
@@ -169,34 +339,37 @@
             </select>
           </div>
 
-          <div>
-            <label class="festivos-f-label">Año</label>
-            <input type="number" class="festivos-f-input" [value]="anioActivo()" readonly />
-          </div>
-
-          @if (form().ambito !== 'NACIONAL') {
-            <div class="festivos-form-full">
-              <label class="festivos-f-label">Comunidad autónoma</label>
-              <input
-                type="text"
-                class="festivos-f-input"
-                placeholder="Ej: Cataluña"
+          <!-- Listas cerradas: el texto libre era la causa de que un festivo
+               mal escrito desapareciera sin avisar. -->
+          @if (form().ambito === 'AUTONOMICO') {
+            <div>
+              <label class="festivos-f-label">Comunidad autónoma *</label>
+              <select
+                class="festivos-f-select"
                 [ngModel]="form().ccaa"
                 (ngModelChange)="patchForm('ccaa', $event)"
-              />
+              >
+                <option value="">Elige una…</option>
+                @for (c of catalogo()?.ccaa ?? []; track c.codigo) {
+                  <option [value]="c.codigo">{{ c.nombre }}</option>
+                }
+              </select>
             </div>
           }
 
           @if (form().ambito === 'LOCAL') {
-            <div class="festivos-form-full">
-              <label class="festivos-f-label">Provincia</label>
-              <input
-                type="text"
-                class="festivos-f-input"
-                placeholder="Ej: Barcelona"
-                [ngModel]="form().provincia"
-                (ngModelChange)="patchForm('provincia', $event)"
-              />
+            <div>
+              <label class="festivos-f-label">Municipio *</label>
+              <select
+                class="festivos-f-select"
+                [ngModel]="form().municipio"
+                (ngModelChange)="patchForm('municipio', $event)"
+              >
+                <option value="">Elige uno…</option>
+                @for (m of catalogo()?.municipios ?? []; track m.nombre) {
+                  <option [value]="m.nombre">{{ m.nombre }}</option>
+                }
+              </select>
             </div>
           }
 
@@ -210,10 +383,8 @@
             <button class="festivos-submit-btn" (click)="guardarFestivo()" [disabled]="guardando()" type="button">
               @if (guardando()) {
                 <span class="spinner-border spinner-border-sm me-2"></span>
-              } @else {
-                <i class="bi bi-plus-circle me-2"></i>
               }
-              {{ guardando() ? 'Guardando...' : 'Añadir festivo' }}
+              {{ guardando() ? 'Guardando...' : (editandoId() ? 'Guardar cambios' : 'Añadir festivo') }}
             </button>
           </div>
 

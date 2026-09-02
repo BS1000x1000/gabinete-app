@@ -18,7 +18,22 @@ const FILA_BORDE = 'FFE8E4F8';
 export const EXCEL_CONTENT_TYPE =
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
-export type CeldaExcel = string | number;
+/**
+ * `Date` se escribe como fecha real y `null` deja la celda vacia de verdad. Antes
+ * solo habia `string | number`, asi que las fechas viajaban ya formateadas y la
+ * gestoria no podia ordenar ni filtrar por ellas, y los huecos se guardaban como
+ * cadena vacia en la tabla de textos compartidos.
+ */
+export type CeldaExcel = string | number | Date | null;
+
+/**
+ * Formatos de celda de uso comun, para no repetir los codigos de Excel.
+ */
+export const FORMATO = {
+  FECHA: 'dd/mm/yyyy',
+  EUROS: '#,##0.00 "€"',
+  PORCENTAJE: '0"%"',
+} as const;
 
 export interface BuildExcelOpts {
   sheetName: string;
@@ -29,6 +44,11 @@ export interface BuildExcelOpts {
    * distinga del cuerpo sin tener que leerla.
    */
   totales?: CeldaExcel[];
+  /**
+   * `numFmt` por columna, alineado con `headers`. Opcional y por posicion: los
+   * exports que ya existian no pasan nada y se comportan igual que antes.
+   */
+  formatos?: (string | undefined)[];
 }
 
 export async function buildExcel(opts: BuildExcelOpts): Promise<Buffer> {
@@ -43,7 +63,11 @@ export async function buildExcel(opts: BuildExcelOpts): Promise<Buffer> {
 
   const headerRow = ws.getRow(1);
   headerRow.eachCell((cell) => {
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: CABECERA_BG } };
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: CABECERA_BG },
+    };
     cell.font = { color: { argb: 'FFFFFFFF' }, bold: true, size: 11 };
     cell.alignment = { vertical: 'middle', horizontal: 'center' };
     cell.border = {
@@ -58,7 +82,8 @@ export async function buildExcel(opts: BuildExcelOpts): Promise<Buffer> {
   opts.rows.forEach((row, i) => {
     const r = ws.addRow(row);
     const bg = i % 2 === 0 ? 'FFFFFFFF' : FILA_ALTERNA;
-    r.eachCell((cell) => {
+    r.eachCell({ includeEmpty: true }, (cell, col) => {
+      aplicarFormato(cell, opts.formatos?.[col - 1]);
       cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bg } };
       cell.border = {
         top: { style: 'hair', color: { argb: FILA_BORDE } },
@@ -71,9 +96,14 @@ export async function buildExcel(opts: BuildExcelOpts): Promise<Buffer> {
 
   if (opts.totales) {
     const r = ws.addRow(opts.totales);
-    r.eachCell((cell) => {
+    r.eachCell({ includeEmpty: true }, (cell, col) => {
+      aplicarFormato(cell, opts.formatos?.[col - 1]);
       cell.font = { bold: true };
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: FILA_ALTERNA } };
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: FILA_ALTERNA },
+      };
       cell.border = {
         top: { style: 'thin', color: { argb: CABECERA_BORDE } },
         bottom: { style: 'thin', color: { argb: CABECERA_BORDE } },
@@ -83,4 +113,17 @@ export async function buildExcel(opts: BuildExcelOpts): Promise<Buffer> {
 
   const buf = await wb.xlsx.writeBuffer();
   return Buffer.from(buf);
+}
+
+/**
+ * Aplica el formato de una columna. Los numeros van a la derecha: con el formato
+ * de euros puesto y el texto centrado por defecto la columna de importes no se
+ * podia leer en vertical.
+ */
+function aplicarFormato(cell: ExcelJS.Cell, formato: string | undefined): void {
+  if (!formato) return;
+  cell.numFmt = formato;
+  if (typeof cell.value === 'number') {
+    cell.alignment = { horizontal: 'right' };
+  }
 }

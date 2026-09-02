@@ -96,6 +96,8 @@ async function main() {
       ciudadFirma: 'Madrid',
       calendario: filas,
       cursoEtiqueta: calendario.etiquetaCurso(curso),
+      calendarioEtiqueta: 'Comunidad de Madrid · Fuenlabrada',
+      calendarioSinMunicipio: false,
       periodoNavidad: calendario.textoPeriodosSinServicio(curso, FESTIVOS).navidad,
       periodoSemanaSanta: calendario.textoPeriodosSinServicio(curso, FESTIVOS).semanaSanta,
       notas: null,

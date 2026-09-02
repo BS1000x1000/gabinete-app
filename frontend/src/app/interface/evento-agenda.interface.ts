@@ -55,6 +55,29 @@ export interface ResumenHoras {
   totalMinutos: number;
 }
 
+/** Minutos dedicados a un tipo de actividad en el periodo consultado. */
+export interface DesgloseTipoJornada {
+  tipo: string;
+  minutos: number;
+}
+
+/**
+ * `GET /dashboard/horas-trabajadas`. Vive aqui, junto a `ResumenHoras`, del que
+ * depende: estaba declarada dentro de `estadisticas.component.ts`, asi que el
+ * servicio tenia que pedirla como generico (`getHorasHistoricas<T>`) y nadie
+ * mas podia consumir el endpoint sin volver a escribir el tipo.
+ */
+export interface HorasTrabajadasResponse {
+  semanas: Array<{
+    semana: string;
+    labelSemana: string;
+    minutosClinicas: number;
+    minutosNoClinicas: number;
+  }>;
+  totales: ResumenHoras;
+  desgloseTipo: DesgloseTipoJornada[];
+}
+
 export const TIPO_EVENTO_CONFIG: Record<
   TipoEvento,
   { label: string; color: string; icon: string }

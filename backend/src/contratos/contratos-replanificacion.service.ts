@@ -6,9 +6,10 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { createHash } from 'crypto';
-import { AmbitoFestivo, EstadoContrato, EstadoSesion, ModalidadSesion } from '@prisma/client';
+import { EstadoContrato, EstadoSesion, ModalidadSesion } from '@prisma/client';
 import { getISOWeek, getISOWeekYear } from 'date-fns';
 import { PrismaService } from '../prisma/prisma.service';
+import { FestivosService } from '../festivos/festivos.service';
 import { ReplanificarContratoDto } from './dto/replanificar-contrato.dto';
 import { PreviewReplanificacion } from './replanificacion.types';
 import {
@@ -28,7 +29,10 @@ type SesionActual = { id: string; fechaHoraInicio: Date; fechaHoraFin: Date };
 export class ContratosReplanificacionService {
   private readonly logger = new Logger(ContratosReplanificacionService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly festivos: FestivosService,
+  ) {}
 
   // ============================================================
   // VISTA PREVIA
@@ -413,25 +417,20 @@ export class ContratosReplanificacionService {
     return contrato;
   }
 
+  /**
+   * El calendario es el del CENTRO. El contrato ya no aporta la provincia del
+   * cliente: los festivos no dependen de donde vive la familia sino de que dias
+   * cierra el local.
+   */
   private async cargarCalendario(
-    contrato: { trabajadorId: string; cliente: { provincia: string } },
+    contrato: { trabajadorId: string },
     desde: Date,
     hasta: Date,
   ) {
     const anos = añosCubiertos(desde, hasta);
-    const provincia = contrato.cliente.provincia;
 
     const [festivos, vacaciones] = await Promise.all([
-      this.prisma.festivo.findMany({
-        where: {
-          anio: { in: anos },
-          OR: [
-            { ambito: AmbitoFestivo.NACIONAL },
-            { ambito: AmbitoFestivo.AUTONOMICO, ccaa: provincia },
-            { ambito: AmbitoFestivo.LOCAL, provincia },
-          ],
-        },
-      }),
+      this.festivos.delCentro(anos),
       this.prisma.periodoVacaciones.findMany({
         where: { trabajadorId: contrato.trabajadorId },
       }),

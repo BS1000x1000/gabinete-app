@@ -7,12 +7,13 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { AmbitoFestivo, EstadoContrato, EstadoSesion, ModalidadSesion } from '@prisma/client';
+import { EstadoContrato, EstadoSesion, ModalidadSesion, TipoSesion } from '@prisma/client';
 import { CreateContratoDto } from './dto/create-contrato.dto';
 import { UpdateContratoDto } from './dto/update-contrato.dto';
 import { ContratosPdfService } from './contratos-pdf.service';
 import { ExpedienteService } from '../expediente/expediente.service';
 import { StorageService } from '../common/storage/storage.service';
+import { FestivosService } from '../festivos/festivos.service';
 import { HORIZONTE_GENERACION_MESES } from './contratos.constants';
 import { randomUUID } from 'crypto';
 import {
@@ -37,6 +38,18 @@ import { CONTRATO_PDF_INCLUDE } from './contratos.include';
 /** 10 MB: un contrato escaneado cabe de sobra; corta subidas accidentales. */
 export const TAMANO_MAX_CONTRATO = 10 * 1024 * 1024;
 
+/** Una cita recurrente de la semana del terapeuta, aplanada desde ContratoSlot. */
+export interface CargaSemanalSlot {
+  contratoId: string;
+  clienteId: string;
+  clienteNombre: string;
+  tipoSesion: TipoSesion;
+  horaInicio: string;
+  horaFin: string;
+  duracionMinutos: number;
+  modalidad: ModalidadSesion;
+}
+
 /** Fichero en memoria de multer. Tipado local para no depender de @types/multer. */
 export interface FicheroContrato {
   originalname: string;
@@ -54,6 +67,7 @@ export class ContratosService {
     private readonly pdfService: ContratosPdfService,
     private readonly expediente: ExpedienteService,
     private readonly storage: StorageService,
+    private readonly festivos: FestivosService,
   ) {}
 
   async create(dto: CreateContratoDto, user: { userId: string; rol: string }) {
@@ -185,19 +199,13 @@ export class ContratosService {
 
     const fechaInicio = desde;
     const anos        = añosCubiertos(fechaInicio, fechaFin);
-    const provincia   = contrato.cliente.provincia;
 
+    // El calendario es el del CENTRO, no el de la provincia del cliente: un
+    // festivo local cierra el local, no cierra a la familia. Esta query estaba
+    // copiada aqui, en la replanificacion y en el PDF, y las tres casaban texto
+    // libre contra texto libre.
     const [festivos, vacaciones] = await Promise.all([
-      this.prisma.festivo.findMany({
-        where: {
-          anio: { in: anos },
-          OR: [
-            { ambito: AmbitoFestivo.NACIONAL },
-            { ambito: AmbitoFestivo.AUTONOMICO, ccaa: provincia },
-            { ambito: AmbitoFestivo.LOCAL, provincia },
-          ],
-        },
-      }),
+      this.festivos.delCentro(anos),
       this.prisma.periodoVacaciones.findMany({
         where: { trabajadorId: contrato.trabajadorId },
       }),
@@ -265,6 +273,73 @@ export class ContratosService {
       include: CONTRATO_INCLUDE,
       orderBy: { createdAt: 'desc' },
     });
+  }
+
+  /**
+   * Carga semanal recurrente del terapeuta: que cliente cae cada dia y a que
+   * hora, segun los contratos vigentes HOY.
+   *
+   * Sale de `ContratoSlot` y no de las sesiones porque la pregunta que responde
+   * es de planificacion —"donde meto al cliente que entra"— y para eso vale el
+   * patron estable, no la semana concreta, que varia con cancelaciones,
+   * festivos y vacaciones. Las sesiones reales ya se ven en la Agenda.
+   *
+   * OJO con el filtro de estado: en FACTURACION un contrato `FINALIZADO` cuya
+   * ventana de fechas cubre el periodo si factura, y filtrar solo por `ACTIVO`
+   * es un error conocido y documentado. Aqui la pregunta es otra —que ocupa el
+   * calendario HOY—, asi que `ACTIVO` + vigencia por fechas es lo correcto: un
+   * contrato terminado ya no ocupa hueco. No "corregirlo" a la regla de
+   * facturacion, que responde a otra pregunta.
+   */
+  async cargaSemanal(trabajadorId: string, user: { userId: string; rol: string }) {
+    // Mismo criterio que `HorariosLaboralesService.assertPuedeVer`: la ficha
+    // ajena se mira en solo lectura, y solo la mira un ADMIN. RECEP no llega
+    // hasta aqui —la pestana es ROLES_CLINICOS—, pero la regla no depende de eso.
+    if (user.userId !== trabajadorId && user.rol !== 'ADMIN') {
+      throw new ForbiddenException('No tienes acceso a la carga semanal de este trabajador');
+    }
+
+    const hoy = new Date();
+
+    const contratos = await this.prisma.contratoServicio.findMany({
+      where: {
+        trabajadorId,
+        estado: EstadoContrato.ACTIVO,
+        fechaInicio: { lte: hoy },
+        OR: [{ fechaFin: null }, { fechaFin: { gte: hoy } }],
+      },
+      select: {
+        id: true,
+        tipoSesion: true,
+        cliente: { select: { id: true, nombre: true, apellidos: true } },
+        slots: true,
+      },
+    });
+
+    const porDia = new Map<number, CargaSemanalSlot[]>();
+    for (const contrato of contratos) {
+      for (const slot of contrato.slots) {
+        const lista = porDia.get(slot.diaSemana) ?? [];
+        lista.push({
+          contratoId: contrato.id,
+          clienteId: contrato.cliente.id,
+          clienteNombre: `${contrato.cliente.nombre} ${contrato.cliente.apellidos}`.trim(),
+          tipoSesion: contrato.tipoSesion,
+          horaInicio: slot.horaInicio,
+          horaFin: slot.horaFin,
+          duracionMinutos: slot.duracionMinutos,
+          modalidad: slot.modalidad,
+        });
+        porDia.set(slot.diaSemana, lista);
+      }
+    }
+
+    return Array.from(porDia.entries())
+      .sort(([a], [b]) => a - b)
+      .map(([dia, slots]) => ({
+        dia,
+        slots: slots.sort((a, b) => a.horaInicio.localeCompare(b.horaInicio)),
+      }));
   }
 
   async findOne(id: string, user: { userId: string; rol: string }) {

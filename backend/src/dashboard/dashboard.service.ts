@@ -695,16 +695,23 @@ export class DashboardService {
       }
       const distribucion = [...tipoMap.entries()].map(([tipo, cantidad]) => ({ tipo, cantidad }));
 
-      // Top clientes con nombres
-      const topClientes = await Promise.all(
-        topClientesRaw.map(async (item) => {
-          const cliente = await this.prisma.cliente.findUnique({
-            where: { id: item.clienteId },
-            select: { id: true, nombre: true, apellidos: true },
-          });
-          return { cliente, total: item._count.clienteId };
-        }),
-      );
+      // Top clientes con nombres.
+      //
+      // Una sola consulta y un Map, no diez `findUnique` en un `Promise.all`:
+      // el groupBy ya devuelve los ids, y resolver los nombres uno a uno hacía
+      // once viajes a la base de datos para pintar una lista de diez filas.
+      const clientes = await this.prisma.cliente.findMany({
+        where: { id: { in: topClientesRaw.map((t) => t.clienteId) } },
+        select: { id: true, nombre: true, apellidos: true },
+      });
+      const clientePorId = new Map(clientes.map((c) => [c.id, c]));
+
+      // El orden lo manda `topClientesRaw`, que viene ordenado por número de
+      // sesiones descendente; `findMany` no garantiza ninguno.
+      const topClientes = topClientesRaw.map((item) => ({
+        cliente: clientePorId.get(item.clienteId) ?? null,
+        total: item._count.clienteId,
+      }));
 
       return {
         resumen: { totalSesiones, sesionesCompletadas, clientesActivos, totalRegistros },

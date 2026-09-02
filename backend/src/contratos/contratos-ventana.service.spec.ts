@@ -4,6 +4,7 @@ import { ContratosPdfService } from './contratos-pdf.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../common/storage/storage.service';
 import { ExpedienteService } from '../expediente/expediente.service';
+import { FestivosService } from '../festivos/festivos.service';
 
 /**
  * La ventana móvil y las sesiones que genera tienen que cerrar exactamente.
@@ -47,6 +48,8 @@ describe('ContratosService — ventana móvil', () => {
         { provide: StorageService, useValue: { isConfigured: false } },
         // Crear un contrato dispara la generacion del expediente inicial.
         { provide: ExpedienteService, useValue: { generar: jest.fn().mockResolvedValue({}) } },
+        // El calendario del centro; estos tests miran la ventana, no los festivos.
+        { provide: FestivosService, useValue: { delCentro: jest.fn().mockResolvedValue([]) } },
       ],
     }).compile();
 

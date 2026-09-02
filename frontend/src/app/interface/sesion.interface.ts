@@ -4,6 +4,20 @@
  */
 export type ModalidadSesion = 'PRESENCIAL' | 'ONLINE';
 
+/**
+ * Aviso al crear o mover una sesión. **Nunca impide guardar**: el gabinete a
+ * veces necesita una sesión a deshora —una evaluación un sábado, una
+ * recuperación en festivo, que el propio contrato prevé— y la app no debe
+ * estorbar. Avisar sí; bloquear no.
+ *
+ * El backend los devolvía desde el principio y ningún componente los leía, así
+ * que ni los solapes se veían.
+ */
+export interface AvisoSesion {
+  tipo: 'FUERA_DE_DISPONIBILIDAD' | 'SOLAPE_TERAPEUTA' | 'SOLAPE_CLIENTE' | 'FESTIVO' | 'VACACIONES';
+  mensaje: string;
+}
+
 export interface SesionData {
   id: string;
   fechaHoraInicio: string; // ISO string
@@ -13,6 +27,9 @@ export interface SesionData {
   modalidad?: ModalidadSesion;
   notas?: string;
   objetivosTrabajados?: string; // Texto libre de objetivos
+
+  /** Solo viene en la respuesta de creación; no se persiste. */
+  avisos?: AvisoSesion[];
 
   clienteId: string;
   trabajadorId: string;

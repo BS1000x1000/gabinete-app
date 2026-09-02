@@ -492,6 +492,12 @@
     // Hereda .est-chart-card
   }
 
+  // Periodo sin ninguna actividad registrada: la tarjeta va sola, separada de
+  // los KPI. Estaba como `style="margin-top"` en la plantilla.
+  .jornada-sin-actividad {
+    margin-top: $spacing-md;
+  }
+
   .jornada-desglose-card {
     // Hereda .est-chart-card — altura auto
     .chart-wrap { height: auto; }

@@ -70,6 +70,11 @@ export interface PreviewGeneracion {
   aGenerar: ContratoAFacturar[];
   /** Contratos del periodo que ya tienen factura: no se tocan. */
   yaFacturadas: number;
+  /**
+   * Contratos que no se facturarán por faltar el nombre o el NIF del tutor
+   * pagador. Se enseñan antes de generar para poder completarlos.
+   */
+  bloqueadas: FalloGeneracion[];
   importeTotal: number;
 }
 

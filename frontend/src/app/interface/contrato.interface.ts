@@ -88,6 +88,31 @@ export interface ContratoServicio {
   _count:     { sesiones: number };
 }
 
+/**
+ * Carga semanal recurrente del terapeuta: qué cliente cae cada día y a qué
+ * hora, aplanado desde los slots de los contratos vigentes.
+ *
+ * Es el PATRÓN, no la semana concreta: para decidir dónde entra un cliente
+ * nuevo vale más "los miércoles a las 17:00 está ocupado" que lo que haya en
+ * la agenda de esta semana, que varía con cancelaciones, festivos y vacaciones.
+ */
+export interface CargaSemanalSlot {
+  contratoId:      string;
+  clienteId:       string;
+  clienteNombre:   string;
+  tipoSesion:      TipoSesion;
+  horaInicio:      string;   // "HH:mm"
+  horaFin:         string;
+  duracionMinutos: number;
+  modalidad:       ModalidadSlot;
+}
+
+/** Solo vienen los días con actividad; el backend no rellena los vacíos. */
+export interface CargaSemanalDia {
+  dia:   number;   // 1=Lun..7=Dom (ISO)
+  slots: CargaSemanalSlot[];
+}
+
 export interface SlotPayload {
   diaSemana:       number;
   horaInicio:      string;

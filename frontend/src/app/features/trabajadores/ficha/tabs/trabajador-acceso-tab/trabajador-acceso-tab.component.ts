@@ -32,6 +32,77 @@ export class TrabajadorAccesoTabComponent implements OnInit, OnDestroy {
     () => this.auth.currentTrabajadorId() === this.trabajadorId,
   );
 
+  /** Rol y baja: solo un ADMIN, y nunca sobre si mismo. */
+  readonly puedeGestionarCuenta = computed(
+    () => this.auth.isAdmin() && !this.esPropioUsuario(),
+  );
+
+  // ══ Contrasena ════════════════════════════════════════════
+  //
+  // Vivia sola en /home/cuenta, una pantalla entera para un unico campo, con lo
+  // que el espacio personal quedaba partido en tres sitios: la contrasena alli,
+  // los datos fiscales en Administracion y el perfil en la ficha. Aqui es donde
+  // toca: "Acceso" es la cuenta.
+  //
+  // Dos caminos distintos a proposito: uno mismo verifica su contrasena actual;
+  // un ADMIN resetea la de otro sin conocerla. El segundo endpoint existia y
+  // estaba huerfano, sin ninguna pantalla que lo llamara.
+
+  readonly formPassword = signal({ passwordActual: '', passwordNueva: '', confirmar: '' });
+  readonly guardandoPassword = signal(false);
+  readonly errorPassword = signal<string | null>(null);
+  readonly mostrarPassword = signal({ actual: false, nueva: false, confirmar: false });
+
+  setPassword(campo: 'passwordActual' | 'passwordNueva' | 'confirmar', valor: string): void {
+    this.formPassword.update(f => ({ ...f, [campo]: valor }));
+    this.errorPassword.set(null);
+  }
+
+  toggleMostrarPassword(campo: 'actual' | 'nueva' | 'confirmar'): void {
+    this.mostrarPassword.update(m => ({ ...m, [campo]: !m[campo] }));
+  }
+
+  cambiarPassword(): void {
+    const { passwordActual, passwordNueva, confirmar } = this.formPassword();
+    const propio = this.esPropioUsuario();
+
+    if (propio && !passwordActual) {
+      this.errorPassword.set('Escribe tu contraseña actual.');
+      return;
+    }
+    if (!passwordNueva || !confirmar) {
+      this.errorPassword.set('Completa la nueva contraseña y su confirmación.');
+      return;
+    }
+    if (passwordNueva.length < 8) {
+      this.errorPassword.set('La nueva contraseña debe tener al menos 8 caracteres.');
+      return;
+    }
+    if (passwordNueva !== confirmar) {
+      this.errorPassword.set('Las contraseñas nuevas no coinciden.');
+      return;
+    }
+
+    this.guardandoPassword.set(true);
+    this.errorPassword.set(null);
+
+    const op$ = propio
+      ? this.trabajadorSvc.cambiarPasswordPropio(passwordActual, passwordNueva)
+      : this.trabajadorSvc.cambiarPassword(this.trabajadorId, passwordActual, passwordNueva);
+
+    op$.subscribe({
+      next: () => {
+        this.guardandoPassword.set(false);
+        this.formPassword.set({ passwordActual: '', passwordNueva: '', confirmar: '' });
+        this.mostrarExito(propio ? 'Contraseña actualizada.' : 'Contraseña restablecida.');
+      },
+      error: (err: any) => {
+        this.errorPassword.set(err?.error?.message ?? 'No se pudo cambiar la contraseña.');
+        this.guardandoPassword.set(false);
+      },
+    });
+  }
+
   ngOnInit(): void {
     this.trabajadorId = this.route.parent?.snapshot.paramMap.get('id') ?? '';
     this.cargar();

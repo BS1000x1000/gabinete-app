@@ -65,19 +65,34 @@ export class TrabajadorFichaComponent implements OnInit, OnDestroy {
 
   readonly rolClass = computed(() => this.getRolColor(this.trabajador()?.rol?.codigo));
 
+  /**
+   * Las pestañas están donde tienen que estar; lo que fallaba eran los nombres.
+   *
+   * - "Horario" no decía qué horario: son la jornada y el tiempo de
+   *   administración, o sea "Mi semana".
+   * - "Facturación" significaba datos fiscales aquí y facturas emitidas en
+   *   Administración, dos cosas distintas con el mismo rótulo.
+   *
+   * "Mi semana" y "Vacaciones" se ocultan a RECEP porque sus backends son
+   * ROLES_CLINICOS: antes se mostraban y devolvían un 403 que en Vacaciones ni
+   * siquiera se veía —el subscribe no tenía handler de error—, así que la lista
+   * salía vacía sin explicación.
+   */
   readonly tabs = computed<WorkTab[]>(() => {
     const tabs: WorkTab[] = [
-      { label: 'Perfil',      icon: 'bi-person-badge',  target: 'perfil'      },
-      { label: 'Clientes',    icon: 'bi-people',         target: 'clientes'    },
-      { label: 'Horario',     icon: 'bi-arrow-repeat',   target: 'horario'     },
-      { label: 'Vacaciones',  icon: 'bi-sun',            target: 'vacaciones'  },
+      { label: 'Perfil',   icon: 'bi-person-badge', target: 'perfil'   },
+      { label: 'Clientes', icon: 'bi-people',       target: 'clientes' },
     ];
     if (!this.auth.isRecep()) {
-      tabs.push({ label: 'Facturación', icon: 'bi-receipt', target: 'facturacion' });
+      tabs.push(
+        { label: 'Mi semana',      icon: 'bi-calendar-week', target: 'semana'      },
+        { label: 'Vacaciones',     icon: 'bi-sun',           target: 'vacaciones'  },
+        { label: 'Datos fiscales', icon: 'bi-receipt',       target: 'facturacion' },
+      );
     }
-    if (this.auth.isAdmin()) {
-      tabs.push({ label: 'Acceso', icon: 'bi-shield-lock', target: 'acceso' });
-    }
+    // Acceso siempre: en la ficha propia es donde se cambia la contraseña, y
+    // solo un ADMIN mirando a otro ve el rol y la baja.
+    tabs.push({ label: 'Acceso', icon: 'bi-shield-lock', target: 'acceso' });
     return tabs;
   });
 

@@ -59,25 +59,20 @@
     </button>
 
     <!-- Dropdown menu -->
-    <div class="sidebar-profile-dropdown" *ngIf="dropdownAbierto()">
-      <a
-        *ngIf="miPerfilRoute()"
-        class="sidebar-profile-dropdown-item"
-        [routerLink]="miPerfilRoute()"
-        (click)="dropdownAbierto.set(false)"
-      >
-        <i class="bi bi-person-circle"></i>
-        <span>Mi perfil</span>
-      </a>
-      <a
-        class="sidebar-profile-dropdown-item"
-        routerLink="/home/cuenta"
-        (click)="dropdownAbierto.set(false)"
-      >
-        <i class="bi bi-key"></i>
-        <span>Mi cuenta</span>
-      </a>
-      <div class="sidebar-profile-dropdown-divider"></div>
+    @if (dropdownAbierto()) {
+    <div class="sidebar-profile-dropdown">
+      <!-- El separador va dentro: sin ficha propia no hay nada que separar. -->
+      @if (miFichaRoute(); as ficha) {
+        <a
+          class="sidebar-profile-dropdown-item"
+          [routerLink]="ficha"
+          (click)="dropdownAbierto.set(false)"
+        >
+          <i class="bi bi-person-circle"></i>
+          <span>Mi ficha</span>
+        </a>
+        <div class="sidebar-profile-dropdown-divider"></div>
+      }
       <button
         class="sidebar-profile-dropdown-item sidebar-profile-dropdown-item--danger"
         type="button"
@@ -87,6 +82,7 @@
         <span>Cerrar sesión</span>
       </button>
     </div>
+    }
   </div>
 
 

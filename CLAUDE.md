@@ -47,7 +47,7 @@ Stack: **Angular 19** (frontend) + **NestJS 11** (backend) + **Prisma 5** + **Po
 Serverless Container (backend) + Object Storage (ficheros) + Transactional Email. Frontend Angular
 en **Cloudflare Pages**. CI/CD por **GitHub Actions** (push a `main` → build → registry → redeploy).
 
-**Current state (2026-06)**: clinical nucleus complete and **tests green** (370 unit + 60 E2E with a real Postgres in CI). Code hardening done: n8n removed, Dockerfile built & image pushed to Scaleway registry, Object Storage persistence for report PDFs implemented, rate limiting + Helmet + CORS-to-FRONTEND_URL in place, CI workflow with Postgres service. **Infra in progress on Scaleway**: account + billing alert + DPA validated + HDS question sent; Container Registry + image; Object Storage bucket (`gabinete-archivos`). **Pending**: create the managed DB + the Serverless Container (≈6 July), then activate the deploy pipeline. No domain yet. See `CONTEXTO_…md` §14 for the live deployment status.
+**Current state (2026-06)**: clinical nucleus complete and **tests green** (469 unit + 60 E2E with a real Postgres in CI). Code hardening done: n8n removed, Dockerfile built & image pushed to Scaleway registry, Object Storage persistence for report PDFs implemented, rate limiting + Helmet + CORS-to-FRONTEND_URL in place, CI workflow with Postgres service. **Infra in progress on Scaleway**: account + billing alert + DPA validated + HDS question sent; Container Registry + image; Object Storage bucket (`gabinete-archivos`). **Pending**: create the managed DB + the Serverless Container (≈6 July), then activate the deploy pipeline. No domain yet. See `CONTEXTO_…md` §14 for the live deployment status.
 
 ---
 
@@ -59,7 +59,7 @@ en **Cloudflare Pages**. CI/CD por **GitHub Actions** (push a `main` → build �
 npm run start:dev        # Dev server with watch (port 3000)
 npm run build            # Production build
 npm run lint             # ESLint with auto-fix
-npm test                 # Jest unit tests (370 passing)
+npm test                 # Jest unit tests (469 passing)
 npm run test:e2e         # E2E tests (supertest) — 60 passing
 npm run test:cov         # Coverage report
 npx jest src/foo/foo.spec.ts   # Single spec file
@@ -110,6 +110,10 @@ Standard pattern: `module → controller → service → dto/types`. All DB acce
 | `fichaje` | Daily record CRUD + objective linking. ROLES_CLINICOS only. |
 | `gas` | GAS evaluation. ROLES_CLINICOS only for mutations. |
 | `consentimientos` | **Único** escritor del consentimiento RGPD. Histórico inmutable + alcances granulares + caché en `Cliente`. Sin controlador: lo consumen `clientes` y `expediente`. Ver §"Consentimiento RGPD". |
+| `festivos` | **Única fuente** del calendario del centro (`delCentro()`). CRUD + importación desde catálogo versionado + `ConfiguracionCentro`. Ver §Calendario del centro. |
+| `horarios-laborales` | **Disponibilidad** del terapeuta: cuándo puede coger cliente. Nombre histórico del módulo (ver §Ficha del trabajador). Alimenta el aviso `FUERA_DE_DISPONIBILIDAD` al crear sesión (`evaluarAvisos`); nunca bloquea. Se edita en "Mi semana". |
+| `horarios-admin` | Bloques recurrentes de tiempo de administración. Se materializan como eventos virtuales en la agenda (`eventos-agenda.findByPeriodo`). |
+| `vacaciones` | Periodos de ausencia por trabajador. Rechaza rangos que incluyan festivos del centro. |
 | `roles` | Role CRUD. |
 | `health` | Health check endpoint. |
 
@@ -235,12 +239,127 @@ Key routes:
 - `/home/estadisticas` — advanced statistics
 - `/home/trabajadores` — therapist management (ADMIN + RECEP)
 - `/home/listado/:id/perfil|sesiones|bonos|progreso|documentacion|contratos|terapeutas`
+- `/home/trabajadores/:id/perfil|clientes|semana|vacaciones|facturacion|acceso` — ficha del
+  terapeuta, y también **"Mi ficha"** (el enlace del avatar). Ver §Ficha del trabajador
 - `/home/administracion/...` — bloque económico del autónomo (ver §Administración)
-- `/home/configuracion/festivos` — configuración del centro (ADMIN)
+- `/home/configuracion/festivos` — calendario del centro (ADMIN). Ver §Calendario del centro
+- `/home/cuenta` y `/home/ajustes` — redirigen a `/home/trabajadores/:miId/acceso` (`miFichaGuard`)
 
 Los roles de las rutas salen de `frontend/src/app/shared/constants/roles.ts`, espejo de
 `backend/src/roles/roles.constants.ts`. No escribas literales de rol sueltos: el sidebar y el guard
 tienen que decidir con la misma lista, y antes uno usaba lista negra y el otro lista blanca.
+
+### Calendario del centro — los festivos son del local, no del cliente
+
+Un festivo local cierra **el centro**; no cierra a la familia. El calendario se elige una vez en
+`/home/configuracion/festivos` (`ConfiguracionCentro`, fila única) y todo lo demás lee de ahí.
+
+Antes se resolvía contra `Cliente.provincia`: texto libre contra texto libre, con el ámbito `LOCAL`
+guardado **por provincia**, así que era imposible distinguir Fuenlabrada de Alcorcón. Un festivo que
+no casaba desaparecía en silencio y el contrato salía **con una sesión de más** — un documento que
+firma la familia y que fija una cuota mensual.
+
+**`FestivosService.delCentro(anios)` es la única fuente.** Estaba copiada en `contratos.service`,
+`contratos-replanificacion.service` y `contratos-pdf.service`; ahora las tres la llaman. Resuelve
+`NACIONAL ∪ (AUTONOMICO con la CCAA del centro) ∪ (LOCAL con su municipio)`. El ámbito LOCAL casa
+**solo por municipio**, no por municipio + CCAA: la CCAA la fija ya el catálogo, y exigir las dos
+reintroduce la clase de fallo que esto viene a quitar.
+
+Reglas que conviene no romper:
+
+- **`ccaa` guarda un CÓDIGO (`"MAD"`), no un nombre.** Sale de la lista cerrada de
+  `festivos/data/calendarios.ts`, que alimenta los desplegables. No hay ningún campo de texto libre
+  en la pantalla, a propósito.
+- **`ccaa` y `municipio` son `NOT NULL DEFAULT ''`**, no nullable. En Postgres varios `NULL` conviven
+  en un índice único, así que con columnas nullable el `@@unique([fecha, ccaa, municipio])` no
+  impediría el duplicado. Con centinela `''` sí, y `createMany({ skipDuplicates })` por fin sirve
+  para algo: se pudo borrar la deduplicación en memoria de la importación.
+- **`fecha` se normaliza a las 12:00 UTC** en todos los caminos de escritura (`normalizarDia()`).
+  El `@@unique` depende de eso: antes la importación guardaba el mediodía local y el alta manual la
+  medianoche UTC, dos instantes distintos para el mismo día. Las 12:00 y no las 00:00 para que el día
+  local sea el mismo se ejecute el contenedor en UTC o en `Europe/Madrid`.
+- **Los datos van versionados, sin API externa.** Ninguna API pública gratuita cubre los festivos
+  **municipales** españoles, que son la mitad difícil; y esto alimenta un documento contractual, que
+  no debe depender de una llamada de terceros en tiempo de ejecución. Mantenimiento: una vez al año,
+  en otoño, con el BOCM y los bandos municipales, anotando el año en `ANIOS_VERIFICADOS`.
+- **La pantalla confiesa lo que no sabe.** Sin municipio elegido, o con un municipio del catálogo sin
+  festivos cargados, sale un aviso en ámbar y la importación lo devuelve en `sinDatos` /
+  `sinVerificar`. Es deliberado: un calendario incompleto que parece completo es exactamente el fallo
+  que había.
+- Los nacionales **se calculan**, no se listan: `FESTIVOS_FIJOS` + `calcularViernesSanto` +
+  `trasladarSiDomingo` (art. 37.2 ET). En el curso 2026-2027 son justo los dos traslados los que
+  hacen que las familias de lunes pierdan sesión.
+
+**Sesión en día festivo: avisa, no bloquea.** `evaluarAvisos` emite el tipo `'FESTIVO'`, que llevaba
+declarado en `AvisoSesion` desde el principio y **no se emitía nunca**. Es la filosofía que el propio
+módulo declara —"avisar es útil; bloquear sería estorbar"— y el contrato prevé expresamente sesiones
+de recuperación excepcionales. El alta de **vacaciones** sí rechaza un rango con festivos: esa
+validación solo existía en `vac-picker`, es decir, solo en el navegador.
+
+> Los avisos de `POST /sesiones` (solape, fuera de disponibilidad, vacaciones, festivo) los devolvía el
+> backend desde el principio y **ningún componente los leía**. Se pintan en el modal de Nueva sesión,
+> que ya no se autocierra cuando hay algo que leer.
+
+### Ficha del trabajador — "Mi ficha" y "Equipo" son la misma pantalla
+
+Las seis pestañas están bien ubicadas; lo que fallaba eran los nombres y que el espacio personal
+estaba partido en tres sitios.
+
+```
+/home/trabajadores/:id      ← "Equipo" (ADMIN+RECEP) y "Mi ficha" (avatar) llevan aquí
+├── perfil                  identidad profesional
+├── clientes                cartera asignada
+├── semana                  ROLES_CLINICOS — disponibilidad + clientes + tiempo de administración
+├── vacaciones              ROLES_CLINICOS
+├── facturacion             ROLES_CLINICOS — "Datos fiscales" (mismo componente que Administración)
+└── acceso                  contraseña (propia o reset de ADMIN) + rol y baja (solo ADMIN sobre otro)
+```
+
+- **"Mi semana" es disponibilidad, no jornada.** Aquí nadie tiene jornada contratada: son
+  autónomos. Lo que se declara es **cuándo se puede coger cliente** ("los lunes de 16:00 a 20:00"),
+  que además cambia según lo que vaya saliendo — puede aparecer un sábado o no aparecer ninguno.
+  El modelo Prisma sigue llamándose `HorarioLaboral` **a propósito**: `Disponibilidad` ya está
+  cogido dos veces (`DisponibilidadCliente`, `DisponibilidadClienteTrabajador`, más el módulo
+  `disponibilidad`) y un tercero sería peor que el desajuste de nombre. El aviso se llama
+  `FUERA_DE_DISPONIBILIDAD`. Razonamiento completo en el doc-comment del modelo en `schema.prisma`.
+- **La pestaña son SIETE días, siempre**, aunque estén vacíos: el día que aún no tiene nada es justo
+  donde puede caer el cliente nuevo. Cada día muestra sus franjas, los clientes que ya las ocupan,
+  los bloques de administración y **el hueco libre que queda** — que es la pregunta real ("¿dónde
+  meto al que entra?"). Esta pestaña es el *planificador*; el *contador* es Estadísticas → Registro
+  de jornada.
+- **Los clientes de la rejilla salen de `ContratoSlot`** (`GET /contratos/carga-semanal`), no de las
+  sesiones: el patrón recurrente es estable, y la semana concreta varía con cancelaciones, festivos
+  y vacaciones. El filtro es `estado ACTIVO` **+ vigencia por fechas hoy**. Ojo: la regla de
+  facturación —un `FINALIZADO` cuya ventana cubre el periodo sí factura— **no aplica aquí** y
+  "corregirlo" llenaría la rejilla de clientes que ya no vienen.
+- **Se declara un día cada vez, con SUS horas.** Antes el alta era un selector de varios días con
+  **una sola franja** que se abanicaba en N peticiones idénticas: lunes 10:00-12:00 y miércoles
+  16:00-18:00 obligaba a abrir el formulario dos veces. El backend siempre lo soportó (una fila por
+  día); era el formulario el que no. El `forkJoin` que lo mandaba tampoco era transaccional.
+- **La disponibilidad la escribe solo su dueño, ni siquiera un ADMIN** — el mismo criterio que ya
+  imponía `HorariosAdminService.create` y que la UI daba por hecho con `puedeEditar`. Leerla sí
+  puede el ADMIN, en solo lectura.
+- **Los horarios de la pestaña Clientes son otra cosa** y usan otra convención de día
+  (`DisponibilidadClienteTrabajador`, **0=Dom..6=Sáb**, no la ISO 1..7 de contratos y horarios).
+  Desde 2026-08-31 ya no mandan sobre las sesiones, así que pueden estar desfasados: la foto fiable
+  es "Mi semana".
+- **`PATCH /trabajadores/me` toma `UpdateMeDto`, nunca `UpdateTrabajadorDto`.** Ese incluye `rolId` y
+  `activo`: cualquier usuario autenticado podía ascenderse a ADMIN con una sola petición, y
+  `GET /roles` —abierto a todo autenticado— le daba el id. Si añades un campo a
+  `UpdateTrabajadorDto`, decide a mano si entra en `UpdateMeDto`: la lista blanca se mantiene a
+  propósito, para que no arrastre lo que venga.
+- **El tab Perfil usa `PATCH /me` en la ficha propia** y `PATCH /:id` (ADMIN-only) en la ajena. Antes
+  siempre el segundo, así que un clínico veía "Editar" en su propia ficha y se comía un 403.
+- **"Facturación" significaba dos cosas**: datos fiscales en la ficha y facturas emitidas en
+  Administración. En la ficha se llama ya **Datos fiscales**. No hay duplicación de código:
+  `/home/administracion/datos-fiscales` carga *el mismo componente*.
+- **RECEP no ve "Mi semana", "Vacaciones" ni "Datos fiscales"**: sus backends son `ROLES_CLINICOS`.
+  Antes se mostraban y devolvían un 403 que en Vacaciones ni se veía —el `subscribe` no tenía handler
+  de error—, así que la lista salía vacía sin explicación.
+- **`horarios-admin.findAll` lanza 403** al pedir las de otro sin ser ADMIN. Antes devolvía las tuyas
+  en silencio, o sea: enseñaba unos datos afirmando que eran de otra persona.
+- **Asignar y desasignar clientes exige el mismo permiso que leer la lista** (gestión, o uno sobre sí
+  mismo). No tenían ninguna comprobación.
 
 ### Administración — el bloque económico del autónomo
 
@@ -256,7 +375,7 @@ todo lo que hay aquí.
 └── supervision             ADMIN — vista global + generación de cualquier mes
 
 /home/configuracion         roleGuard(ADMIN)
-└── festivos                configuración de calendario, la consumen contratos y sesiones
+└── festivos                calendario del centro — ver §Calendario del centro
 ```
 
 **Generación por periodo.** `POST /facturas/generar-mes` (y su `/preview`) admite cualquier mes ya
@@ -543,7 +662,7 @@ Complex form sections use a shared `ClienteDrawerComponent` with sections: `pers
 ## Testing
 
 ### Backend — current state
-- **Unit**: 370 tests, 27 suites — all green. Jest + @nestjs/testing.
+- **Unit**: 469 tests, 34 suites — all green. Jest + @nestjs/testing.
 - **E2E**: 60 tests, 6 suites — all green. supertest + Jest. `test/helpers/create-app.ts` + `test/helpers/prisma-mock.ts`. `ThrottlerGuard` overridden in `create-app.ts`. CI (`ci.yml`) runs a real Postgres service + `prisma migrate deploy` before the suite.
 
 ### Controller spec pattern

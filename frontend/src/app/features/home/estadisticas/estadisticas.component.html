@@ -15,8 +15,8 @@
     @if (canVerTodos() && trabajadores().length > 0) {
       <select
         class="est-terapeuta-select form-select form-select-sm"
-        [(ngModel)]="trabajadorId"
-        (ngModelChange)="onTrabajadorChange()">
+        [ngModel]="trabajadorId()"
+        (ngModelChange)="trabajadorId.set($event); onTrabajadorChange()">
         <option value="">Todos los terapeutas</option>
         @for (t of trabajadores(); track t.id) {
           <option [value]="t.id">{{ t.nombre }} {{ t.apellidos }}</option>
@@ -28,6 +28,15 @@
       <i class="bi bi-arrow-clockwise"></i>
     </button>
   </div>
+
+  <!-- ══ ERROR ═════════════════════════════════════════════════════════════ -->
+  <!--
+    Sin esto, un fallo de red se veía igual que un periodo sin sesiones: la
+    pantalla caía en el estado vacío y el usuario concluía que no había datos.
+  -->
+  @if (error()) {
+    <app-estado-error [texto]="error()!" />
+  }
 
   <!-- ══ SKELETON ══════════════════════════════════════════════════════════ -->
   @if (isLoading()) {
@@ -218,7 +227,7 @@
           <div class="jornada-kpi__icon"><i class="bi bi-heart-pulse-fill"></i></div>
           <div class="jornada-kpi__body">
             <div class="jornada-kpi__value">
-              {{ formatHoras(horasData()!.totales.horasClinicas * 60 + horasData()!.totales.minutosClinicas) }}
+              {{ formatHoras(minutosClinicos()) }}
             </div>
             <div class="jornada-kpi__label">Tiempo clínico</div>
             <div class="jornada-kpi__sub">sesiones completadas</div>
@@ -228,7 +237,7 @@
           <div class="jornada-kpi__icon"><i class="bi bi-calendar2-week-fill"></i></div>
           <div class="jornada-kpi__body">
             <div class="jornada-kpi__value">
-              {{ formatHoras(horasData()!.totales.horasNoClinicas * 60 + horasData()!.totales.minutosNoClinicas) }}
+              {{ formatHoras(minutosNoClinicos()) }}
             </div>
             <div class="jornada-kpi__label">Tiempo no clínico</div>
             <div class="jornada-kpi__sub">coordinación · admin · formación</div>
@@ -272,7 +281,7 @@
                         <span>{{ item.config.label }}</span>
                       </div>
                       <div class="jornada-desglose-item__right">
-                        <span class="jornada-desglose-item__time">{{ formatMinutos(item.minutos) }}</span>
+                        <span class="jornada-desglose-item__time">{{ formatHoras(item.minutos) }}</span>
                         <span class="jornada-desglose-item__pct">{{ item.pct }}%</span>
                       </div>
                     </div>
@@ -292,7 +301,7 @@
 
         </div>
       } @else {
-        <div class="est-chart-card" style="margin-top: 16px">
+        <div class="est-chart-card jornada-sin-actividad">
           <div class="chart-empty">
             <i class="bi bi-clock"></i> Sin actividad registrada en este período
           </div>

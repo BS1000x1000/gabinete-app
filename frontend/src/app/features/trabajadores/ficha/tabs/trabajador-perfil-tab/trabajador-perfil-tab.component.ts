@@ -139,7 +139,15 @@ export class TrabajadorPerfilTabComponent implements OnInit, OnDestroy {
       urlVideollamada:   url || null,
     };
 
-    this.trabajadorSvc.updateTrabajador(this.trabajadorId, payload).subscribe({
+    // Ficha propia -> `PATCH /me`; ficha ajena -> `PATCH /:id`, que es
+    // ADMIN-only. Antes siempre se usaba el segundo, asi que un clinico veia el
+    // boton "Editar" en su propia ficha y recibia un 403 al guardar.
+    const esPropia = this.auth.currentTrabajadorId() === this.trabajadorId;
+    const op$ = esPropia
+      ? this.trabajadorSvc.updateMe(payload)
+      : this.trabajadorSvc.updateTrabajador(this.trabajadorId, payload);
+
+    op$.subscribe({
       next: (res) => {
         this.trabajador.set(res.data);
         this.editando.set(false);

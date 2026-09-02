@@ -4,8 +4,13 @@ import { EstadoFactura, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../common/storage/storage.service';
 import { FacturasPdfService } from './facturas-pdf.service';
-import { buildExcel, EXCEL_CONTENT_TYPE } from '../common/excel/excel.utils';
-import { toNum } from './facturas.utils';
+import {
+  buildExcel,
+  CeldaExcel,
+  EXCEL_CONTENT_TYPE,
+  FORMATO,
+} from '../common/excel/excel.utils';
+import { motivoSinDatosFiscales, toNum } from './facturas.utils';
 import { facturaInclude, FacturaCompleta } from './facturas.include';
 
 /**
@@ -69,6 +74,29 @@ const CABECERAS_LIBRO = [
   'Método de cobro',
 ];
 
+/**
+ * `numFmt` por columna, en el mismo orden que `CABECERAS_LIBRO`. Las fechas
+ * viajaban formateadas como texto y la gestoria no podia ordenar el libro por
+ * fecha de emision, que es justo como lo mira.
+ */
+const FORMATOS_LIBRO: (string | undefined)[] = [
+  undefined, // Nº factura
+  FORMATO.FECHA, // Fecha emisión
+  undefined, // Periodo
+  undefined, // Destinatario
+  undefined, // NIF
+  undefined, // Concepto
+  FORMATO.EUROS, // Base imponible
+  FORMATO.PORCENTAJE, // IVA %
+  FORMATO.EUROS, // IVA €
+  FORMATO.PORCENTAJE, // Retención %
+  FORMATO.EUROS, // Retención €
+  FORMATO.EUROS, // Total
+  undefined, // Estado
+  FORMATO.FECHA, // Fecha cobro
+  undefined, // Método de cobro
+];
+
 @Injectable()
 export class FacturasPackService {
   private readonly logger = new Logger(FacturasPackService.name);
@@ -108,7 +136,9 @@ export class FacturasPackService {
         );
       }
       if (periodoDesde > periodoHasta) {
-        throw new BadRequestException('El periodo inicial es posterior al final.');
+        throw new BadRequestException(
+          'El periodo inicial es posterior al final.',
+        );
       }
       where.periodoFacturado = { gte: periodoDesde, lte: periodoHasta };
     }
@@ -155,12 +185,14 @@ export class FacturasPackService {
   // ── Libro de facturas emitidas ────────────────────────────────────────────
 
   async construirLibro(facturas: FacturaCompleta[]): Promise<ArchivoPack> {
-    const rows = facturas.map((f) => [
+    const rows: CeldaExcel[][] = facturas.map((f) => [
       f.numeroFormateado,
-      this.fecha(f.fechaEmision),
+      new Date(f.fechaEmision),
       f.periodoFacturado,
-      f.cliente.nombreTutorPagador ?? `${f.cliente.nombre} ${f.cliente.apellidos}`,
-      f.cliente.nifTutorPagador ?? '',
+      // Nunca el nombre del menor: el destinatario fiscal es el tutor pagador y,
+      // si falta, la celda se queda vacia y la factura sale como incidencia.
+      f.cliente.nombreTutorPagador ?? null,
+      f.cliente.nifTutorPagador ?? null,
       f.concepto,
       toNum(f.importe),
       toNum(f.ivaPorcentaje),
@@ -169,27 +201,29 @@ export class FacturasPackService {
       toNum(f.retencionImporte),
       toNum(f.total),
       this.estadoLabel(f.estado),
-      f.fechaPago ? this.fecha(f.fechaPago) : '',
-      f.metodoPago ?? '',
+      f.fechaPago ? new Date(f.fechaPago) : null,
+      f.metodoPago ?? null,
     ]);
 
-    const computables = facturas.filter((f) => f.estado !== EstadoFactura.ANULADA);
-    const totales = [
+    const computables = facturas.filter(
+      (f) => f.estado !== EstadoFactura.ANULADA,
+    );
+    const totales: CeldaExcel[] = [
       'TOTAL',
-      '',
-      '',
-      `${computables.length} facturas`,
-      '',
-      '',
+      null,
+      null,
+      `${computables.length} ${computables.length === 1 ? 'factura' : 'facturas'}`,
+      null,
+      null,
       computables.reduce((s, f) => s + toNum(f.importe), 0),
-      '',
+      null,
       computables.reduce((s, f) => s + toNum(f.ivaImporte), 0),
-      '',
+      null,
       computables.reduce((s, f) => s + toNum(f.retencionImporte), 0),
       computables.reduce((s, f) => s + toNum(f.total), 0),
-      '',
-      '',
-      '',
+      null,
+      null,
+      null,
     ];
 
     const buffer = await buildExcel({
@@ -197,6 +231,7 @@ export class FacturasPackService {
       headers: CABECERAS_LIBRO,
       rows,
       totales,
+      formatos: FORMATOS_LIBRO,
     });
 
     return {
@@ -233,7 +268,21 @@ export class FacturasPackService {
     zip.append(libro.buffer, { name: libro.filename });
 
     for (const factura of facturas) {
-      const pdf = await this.obtenerPdf(factura, regenerados < MAX_PDF_REGENERADOS);
+      // Facturas antiguas emitidas antes de que se exigieran los datos fiscales
+      // del pagador. Van igualmente en el paquete (existen y numeran), pero el
+      // usuario tiene que enterarse de que su destinatario esta incompleto.
+      const sinDatos = motivoSinDatosFiscales(factura.cliente);
+      if (sinDatos) {
+        incidencias.push({
+          numeroFormateado: factura.numeroFormateado,
+          motivo: sinDatos,
+        });
+      }
+
+      const pdf = await this.obtenerPdf(
+        factura,
+        regenerados < MAX_PDF_REGENERADOS,
+      );
       if (!pdf) {
         incidencias.push({
           numeroFormateado: factura.numeroFormateado,
@@ -249,7 +298,7 @@ export class FacturasPackService {
     }
 
     if (incidencias.length) {
-      this.logger.warn(`Pack con ${incidencias.length} facturas sin PDF`);
+      this.logger.warn(`Pack con ${incidencias.length} incidencia(s)`);
     }
 
     await zip.finalize();
@@ -278,9 +327,14 @@ export class FacturasPackService {
     }
     if (!puedeRegenerar) return null;
     try {
-      return { buffer: await this.pdfService.generarPdf(factura), regenerado: true };
+      return {
+        buffer: await this.pdfService.generarPdf(factura),
+        regenerado: true,
+      };
     } catch (err) {
-      this.logger.error(`No se pudo regenerar el PDF de ${factura.numeroFormateado}: ${err}`);
+      this.logger.error(
+        `No se pudo regenerar el PDF de ${factura.numeroFormateado}: ${err}`,
+      );
       return null;
     }
   }
@@ -295,9 +349,14 @@ export class FacturasPackService {
    * pasear el nombre del menor por el nombre de fichero.
    */
   private nombrePdf(f: FacturaCompleta): string {
-    const destinatario =
-      f.cliente.nombreTutorPagador ?? `${f.cliente.apellidos} ${f.cliente.nombre}`;
-    return `${String(f.numero).padStart(4, '0')}_${f.periodoFacturado}_${this.sanear(destinatario)}.pdf`;
+    const numero = String(f.numero).padStart(4, '0');
+    // Sin tutor pagador NO se cae al nombre del menor: eso metia el nombre del
+    // nino en el fichero que se manda a la gestoria, justo lo que este nombrado
+    // por el tutor existe para evitar. Se queda en el numero y el periodo.
+    const destinatario = f.cliente.nombreTutorPagador;
+    if (!destinatario?.trim())
+      return `${numero}_${f.periodoFacturado}_sin-destinatario.pdf`;
+    return `${numero}_${f.periodoFacturado}_${this.sanear(destinatario)}.pdf`;
   }
 
   private nombreLibro(facturas: FacturaCompleta[]): string {
@@ -312,7 +371,9 @@ export class FacturasPackService {
 
   /** "2026-3T" si el rango cae en un trimestre; "2026-07_2026-11" si no. */
   private etiquetaPeriodo(facturas: FacturaCompleta[]): string {
-    const periodos = [...new Set(facturas.map((f) => f.periodoFacturado))].sort();
+    const periodos = [
+      ...new Set(facturas.map((f) => f.periodoFacturado)),
+    ].sort();
     const desde = periodos[0];
     const hasta = periodos[periodos.length - 1];
     if (desde === hasta) return desde;
@@ -339,10 +400,6 @@ export class FacturasPackService {
       .trim()
       .replace(/\s+/g, '-')
       .replace(/[^\p{L}\p{N}.\-]+/gu, '_');
-  }
-
-  private fecha(d: Date): string {
-    return new Date(d).toLocaleDateString('es-ES');
   }
 
   private estadoLabel(e: EstadoFactura): string {

@@ -1,7 +1,6 @@
 import { Component, inject, computed, signal, HostListener } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { Router } from '@angular/router';
-import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../../services/auth.service';
 import { RegistroDrawerService } from '../../../../services/registro-drawer.service';
 import { NuevaSesionModalService } from '../../../../services/nueva-sesion-modal.service';
@@ -21,7 +20,7 @@ interface QuickAction {
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, CommonModule],
+  imports: [RouterLink, RouterLinkActive],
   templateUrl: './sidebar.component.html',
 })
 export class SidebarComponent {
@@ -65,7 +64,13 @@ export class SidebarComponent {
     return actions;
   });
 
-  readonly miPerfilRoute = computed(() => {
+  /**
+   * "Mi ficha" y no "Mi perfil": es la misma pantalla con la que un ADMIN
+   * supervisa a otro, y ahora reúne todo lo personal —perfil, semana,
+   * vacaciones, datos fiscales y contraseña—. La entrada "Mi cuenta", que solo
+   * llevaba al cambio de contraseña, sobra.
+   */
+  readonly miFichaRoute = computed(() => {
     const id = this.auth.currentTrabajadorId();
     return id ? `/home/trabajadores/${id}` : null;
   });

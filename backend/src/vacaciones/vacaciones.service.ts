@@ -1,13 +1,17 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateVacacionesDto } from './dto/create-vacaciones.dto';
+import { FestivosService } from '../festivos/festivos.service';
 
 type ConflictoSesion = { id: string; fecha: string; cliente: string; tipoSesion: string };
 type ConflictoEvento = { id: string; fecha: string; titulo: string; tipo: string };
 
 @Injectable()
 export class VacacionesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly festivos: FestivosService,
+  ) {}
 
   async getMisVacaciones(trabajadorId: string) {
     return this.prisma.periodoVacaciones.findMany({
@@ -32,6 +36,23 @@ export class VacacionesService {
 
     if (fin < inicio) {
       throw new BadRequestException('La fecha de fin debe ser posterior o igual a la de inicio');
+    }
+
+    // Un festivo dentro del periodo no es vacaciones: ya es un dia sin servicio
+    // y contarlo gastaria un dia de mas. El selector del frontend lo impide
+    // desde el principio, pero solo el frontend; cualquier otro camino a este
+    // endpoint se lo saltaba.
+    const anios = [inicio.getUTCFullYear(), fin.getUTCFullYear()].filter(
+      (a, i, xs) => xs.indexOf(a) === i,
+    );
+    const dentro = (await this.festivos.delCentro(anios)).filter(f => {
+      const d = new Date(f.fecha);
+      return d.getTime() >= inicio.getTime() && d.getTime() <= fin.getTime();
+    });
+    if (dentro.length > 0) {
+      throw new BadRequestException(
+        `El rango incluye festivos: ${dentro.map(f => f.descripcion).join(', ')}. Ajusta las fechas.`,
+      );
     }
 
     return this.prisma.periodoVacaciones.create({

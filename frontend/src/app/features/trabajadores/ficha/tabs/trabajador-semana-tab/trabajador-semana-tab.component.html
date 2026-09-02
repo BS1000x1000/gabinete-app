@@ -1,0 +1,351 @@
+<div class="perfil-tab" *ngIf="!cargando()">
+
+  <!-- ══ Resumen ════════════════════════════════════════════════
+       Las cuatro cifras que deciden si cabe alguien más. Antes esto era
+       "% de la jornada que no es clínico", que para un autónomo sin
+       jornada declarada era un 0% con pinta de dato. -->
+  @if (hayAlgoQueResumir()) {
+    <div class="semana-resumen" [class.semana-resumen--alerta]="excedeDisponibilidad()">
+      <div class="semana-resumen__item">
+        <span class="semana-resumen__valor">{{ formatoHoras(minutosDisponibles()) }}</span>
+        <span class="semana-resumen__label">Disponibilidad</span>
+      </div>
+      <div class="semana-resumen__item">
+        <span class="semana-resumen__valor">{{ formatoHoras(minutosClientes()) }}</span>
+        <span class="semana-resumen__label">Clientes</span>
+      </div>
+      <div class="semana-resumen__item">
+        <span class="semana-resumen__valor">{{ formatoHoras(minutosAdmin()) }}</span>
+        <span class="semana-resumen__label">Administración</span>
+      </div>
+      <div class="semana-resumen__item">
+        <span class="semana-resumen__valor semana-resumen__valor--libre">
+          {{ formatoHoras(minutosLibres()) }}
+        </span>
+        <span class="semana-resumen__label">Libre</span>
+      </div>
+      @if (excedeDisponibilidad()) {
+        <p class="semana-resumen__aviso">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+          Hay más tiempo ocupado que disponibilidad declarada. Revisa las franjas
+          o los clientes marcados fuera de horario.
+        </p>
+      }
+    </div>
+  }
+
+  <!-- ══ Cabecera ═══════════════════════════════════════════════ -->
+  <div class="trab-section-hdr mb-2">
+    <span class="trab-section-title">
+      <i class="bi bi-calendar-week me-2"></i>Mi semana
+    </span>
+  </div>
+
+  <p class="text-muted small mb-3">
+    @if (puedeEditar()) {
+      Los días y horas en los que puedes coger cliente, con lo que ya tienes
+      puesto y el hueco que queda. No bloquea nada: sirve para avisarte si
+      programas una sesión fuera y para saber dónde cabe alguien nuevo.
+    } @else {
+      Disponibilidad y tiempo de administración declarados por este profesional.
+    }
+  </p>
+
+  <!-- Errores -->
+  @if (errorDisp()) {
+    <div class="alert alert-danger py-2 mb-3">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ errorDisp() }}
+      <button type="button" class="btn-close float-end" (click)="errorDisp.set(null)"></button>
+    </div>
+  }
+  @if (errorReglas()) {
+    <div class="alert alert-danger py-2 mb-3">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ errorReglas() }}
+      <button type="button" class="btn-close float-end" (click)="errorReglas.set(null)"></button>
+    </div>
+  }
+  @if (errorCarga()) {
+    <div class="alert alert-warning py-2 mb-3">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ errorCarga() }}
+      Las franjas y los bloques siguen siendo editables.
+      <button type="button" class="btn-close float-end" (click)="errorCarga.set(null)"></button>
+    </div>
+  }
+
+  <!-- ══ La semana, día a día ═══════════════════════════════════
+       Un solo listado de siete días que informa y edita. Antes eran dos
+       formularios con un selector de varios días y UNA franja para todos,
+       así que lunes de 10 a 12 y miércoles de 16 a 18 obligaba a abrirlo
+       dos veces. Aquí cada día se declara con sus horas. -->
+  <div class="perfil-card">
+    <div class="perfil-card-body">
+
+      @for (d of semana(); track d.dia) {
+        <div class="semana-dia" [class.semana-dia--vacio]="d.vacio">
+
+          <!-- Cabecera del día: nombre, franjas disponibles y totales -->
+          <div class="semana-dia__hdr">
+            <span class="semana-dia__nombre">{{ d.label }}</span>
+
+            <div class="semana-dia__franjas">
+              @for (franja of d.franjas; track franja.id) {
+                @if (puedeEditar() && tramoEditando()?.id === franja.id) {
+                  <span class="semana-franja semana-franja--editando">
+                    <input
+                      type="time"
+                      class="form-control horarios-input-time"
+                      [value]="formTramoEditar().horaInicio"
+                      (change)="setFormTramoEditar('horaInicio', $any($event.target).value)"
+                    />
+                    <span class="horarios-sep">–</span>
+                    <input
+                      type="time"
+                      class="form-control horarios-input-time"
+                      [value]="formTramoEditar().horaFin"
+                      (change)="setFormTramoEditar('horaFin', $any($event.target).value)"
+                    />
+                    <button class="horarios-btn horarios-btn--save" (click)="guardarEdicionTramo()"
+                            [disabled]="guardando()" title="Guardar">
+                      <i class="bi bi-check-lg"></i>
+                    </button>
+                    <button class="horarios-btn horarios-btn--cancel" (click)="cancelarEdicionTramo()"
+                            title="Cancelar">
+                      <i class="bi bi-x-lg"></i>
+                    </button>
+                  </span>
+                } @else {
+                  <span class="semana-franja">
+                    <i class="bi bi-unlock"></i>
+                    {{ franja.horaInicio }}–{{ franja.horaFin }}
+                    @if (puedeEditar()) {
+                      <button class="horarios-btn horarios-btn--edit" (click)="iniciarEdicionTramo(franja)"
+                              title="Editar franja">
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                      <button class="horarios-btn horarios-btn--delete" (click)="eliminarTramo(franja.id)"
+                              title="Eliminar franja">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    }
+                  </span>
+                }
+              }
+
+              @if (d.franjas.length === 0) {
+                <span class="semana-franja semana-franja--ninguna">Sin disponibilidad</span>
+              }
+
+              @if (puedeEditar() && !estaAbierta(d.dia, 'disponibilidad')) {
+                <button type="button" class="semana-add" (click)="abrirAlta(d.dia, 'disponibilidad')">
+                  <i class="bi bi-plus-lg"></i> franja
+                </button>
+              }
+            </div>
+
+            @if (!d.vacio) {
+              <span class="semana-dia__totales">
+                @if (d.numClientes > 0) {
+                  {{ d.numClientes }} {{ d.numClientes === 1 ? 'cliente' : 'clientes' }}
+                  · {{ formatoHoras(d.minutosClientes) }}
+                }
+                @if (d.minutosLibre > 0) {
+                  <span class="semana-dia__libre-total">· {{ formatoHoras(d.minutosLibre) }} libre</span>
+                }
+              </span>
+            }
+          </div>
+
+          <!-- Alta de franja de disponibilidad, en ESTE día y con SUS horas -->
+          @if (estaAbierta(d.dia, 'disponibilidad')) {
+            <div class="semana-alta">
+              <span class="semana-alta__label">Disponible el {{ d.label | lowercase }} de</span>
+              <input
+                type="time"
+                class="form-control horarios-input-time"
+                [value]="formAlta().horaInicio"
+                (change)="setFormAlta('horaInicio', $any($event.target).value)"
+              />
+              <span class="horarios-sep">a</span>
+              <input
+                type="time"
+                class="form-control horarios-input-time"
+                [value]="formAlta().horaFin"
+                (change)="setFormAlta('horaFin', $any($event.target).value)"
+              />
+              <button type="button" class="btn btn-primary btn-sm" (click)="guardarAlta()"
+                      [disabled]="guardando()">
+                <span *ngIf="guardando()" class="spinner-border spinner-border-sm me-1"></span>
+                Añadir
+              </button>
+              <button type="button" class="btn btn-outline-secondary btn-sm" (click)="cerrarAlta()">
+                Cancelar
+              </button>
+            </div>
+          }
+
+          <!-- Línea de tiempo del día: clientes y administración, en orden -->
+          @if (d.eventos.length > 0) {
+            <ul class="semana-eventos">
+              @for (ev of d.eventos; track $index) {
+                <li class="semana-evento" [class.semana-evento--fuera]="ev.clase === 'cliente' && ev.fuera">
+                  <span class="semana-evento__hora">{{ ev.horaInicio }}–{{ ev.horaFin }}</span>
+
+                  @if (ev.clase === 'cliente') {
+                    <span class="semana-evento__nombre">{{ ev.slot.clienteNombre }}</span>
+                    <span
+                      class="semana-evento__tipo"
+                      [style.color]="tipoColor(ev.slot.tipoSesion)"
+                      [style.background]="tipoBg(ev.slot.tipoSesion)"
+                    >{{ tipoLabel(ev.slot.tipoSesion) }}</span>
+                    @if (ev.slot.modalidad === 'ONLINE') {
+                      <i class="bi bi-camera-video semana-evento__online" title="Online"></i>
+                    }
+                    @if (ev.fuera) {
+                      <span class="semana-evento__aviso" title="Fuera de la disponibilidad declarada">
+                        <i class="bi bi-exclamation-triangle"></i> fuera de tu disponibilidad
+                      </span>
+                    }
+
+                  } @else {
+                    @if (puedeEditar() && reglaEditando()?.id === ev.regla.id) {
+                      <input
+                        type="time"
+                        class="form-control horarios-input-time"
+                        [value]="formEditar().horaInicio"
+                        (change)="setFormEditar('horaInicio', $any($event.target).value)"
+                      />
+                      <span class="horarios-sep">–</span>
+                      <input
+                        type="time"
+                        class="form-control horarios-input-time"
+                        [value]="formEditar().horaFin"
+                        (change)="setFormEditar('horaFin', $any($event.target).value)"
+                      />
+                      <input
+                        type="text"
+                        class="form-control horarios-input-titulo"
+                        placeholder="Título (opcional)"
+                        [value]="formEditar().titulo"
+                        (input)="setFormEditar('titulo', $any($event.target).value)"
+                      />
+                      <span class="horarios-regla-actions">
+                        <button class="horarios-btn horarios-btn--save" (click)="guardarEdicion()"
+                                [disabled]="guardando()" title="Guardar">
+                          <i class="bi bi-check-lg"></i>
+                        </button>
+                        <button class="horarios-btn horarios-btn--cancel" (click)="cancelarEdicion()"
+                                title="Cancelar">
+                          <i class="bi bi-x-lg"></i>
+                        </button>
+                      </span>
+                    } @else {
+                      <span class="semana-evento__nombre semana-evento__nombre--admin">
+                        <i class="bi bi-arrow-repeat me-1"></i>{{ ev.regla.titulo }}
+                      </span>
+                      @if (puedeEditar()) {
+                        <span class="horarios-regla-actions">
+                          <button class="horarios-btn horarios-btn--edit" (click)="iniciarEdicion(ev.regla)"
+                                  title="Editar bloque">
+                            <i class="bi bi-pencil"></i>
+                          </button>
+                          <button class="horarios-btn horarios-btn--delete" (click)="eliminarRegla(ev.regla.id)"
+                                  title="Eliminar bloque">
+                            <i class="bi bi-trash"></i>
+                          </button>
+                        </span>
+                      }
+                    }
+                  }
+                </li>
+              }
+            </ul>
+          }
+
+          <!-- Los huecos: la respuesta a "¿dónde meto al que entra?" -->
+          @if (d.libres.length > 0) {
+            <p class="semana-libre">
+              <i class="bi bi-unlock"></i>
+              Libre: <strong>{{ huecos(d.libres) }}</strong>
+            </p>
+          }
+
+          <!-- Alta de bloque de administración, en ESTE día -->
+          @if (estaAbierta(d.dia, 'admin')) {
+            <div class="semana-alta">
+              <span class="semana-alta__label">Administración el {{ d.label | lowercase }} de</span>
+              <input
+                type="time"
+                class="form-control horarios-input-time"
+                [value]="formAlta().horaInicio"
+                (change)="setFormAlta('horaInicio', $any($event.target).value)"
+              />
+              <span class="horarios-sep">a</span>
+              <input
+                type="time"
+                class="form-control horarios-input-time"
+                [value]="formAlta().horaFin"
+                (change)="setFormAlta('horaFin', $any($event.target).value)"
+              />
+              <input
+                type="text"
+                class="form-control horarios-input-titulo"
+                placeholder="Tiempo de Administración"
+                [value]="formAlta().titulo"
+                (input)="setFormAlta('titulo', $any($event.target).value)"
+              />
+              <button type="button" class="btn btn-primary btn-sm" (click)="guardarAlta()"
+                      [disabled]="guardando()">
+                <span *ngIf="guardando()" class="spinner-border spinner-border-sm me-1"></span>
+                Añadir
+              </button>
+              <button type="button" class="btn btn-outline-secondary btn-sm" (click)="cerrarAlta()">
+                Cancelar
+              </button>
+            </div>
+          } @else if (puedeEditar()) {
+            <button type="button" class="semana-add semana-add--admin" (click)="abrirAlta(d.dia, 'admin')">
+              <i class="bi bi-plus-lg"></i> bloque de administración
+            </button>
+          }
+
+        </div>
+      }
+
+    </div>
+  </div>
+
+  <p class="text-muted small mt-3 mb-0">
+    Los bloques de administración se repiten solos en el calendario; desde la
+    Agenda puedes cambiarlos o quitarlos solo un día concreto. Los clientes
+    salen de los contratos vigentes: para moverlos, replanifica el contrato
+    desde la ficha del cliente.
+  </p>
+
+</div>
+
+<!-- Loader -->
+<div *ngIf="cargando()" class="d-flex justify-content-center py-5">
+  <div class="spinner-border text-primary" role="status"></div>
+</div>
+
+<app-confirm-modal
+  *ngIf="pendingDeleteId()"
+  title="Eliminar bloque recurrente"
+  message="¿Eliminar este bloque? Desaparecerá del calendario a partir de ahora."
+  confirmLabel="Eliminar"
+  confirmClass="btn-danger"
+  icon="bi-trash"
+  (confirmed)="onConfirmarEliminar()"
+  (cancelled)="onCancelarEliminar()"
+></app-confirm-modal>
+
+<app-confirm-modal
+  *ngIf="pendingDeleteTramo()"
+  title="Eliminar franja de disponibilidad"
+  message="¿Eliminar esta franja? Dejará de avisarte de las sesiones fuera de ese horario y sus huecos ya no contarán como libres."
+  confirmLabel="Eliminar"
+  confirmClass="btn-danger"
+  icon="bi-trash"
+  (confirmed)="onConfirmarEliminarTramo()"
+  (cancelled)="onCancelarEliminarTramo()"
+></app-confirm-modal>

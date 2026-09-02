@@ -1,8 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AmbitoFestivo } from '@prisma/client';
 import { CreateFestivoDto } from './dto/create-festivo.dto';
-import { calcularViernesSanto } from '../common/utils/pascua';
+import { UpdateFestivoDto } from './dto/update-festivo.dto';
+import { ConfiguracionCentroDto } from './dto/configuracion-centro.dto';
+import { calcularViernesSanto, calcularDomingoPascua } from '../common/utils/pascua';
+import { AUTONOMICOS, LOCALES, ANIOS_VERIFICADOS, nombreCcaa } from './data/calendarios';
 
 const FESTIVOS_FIJOS = [
   { mes: 1,  dia: 1,  descripcion: 'Año Nuevo' },
@@ -16,50 +19,236 @@ const FESTIVOS_FIJOS = [
   { mes: 12, dia: 25, descripcion: 'Natividad del Señor' },
 ];
 
+/** Lo minimo que necesita quien solo pregunta "que dias cierra el centro". */
+export type FestivoMin = { fecha: Date; descripcion: string };
+
+const ID_CENTRO = 'centro';
+
+/**
+ * Dia natural a las 12:00 UTC — la forma canonica de guardar un festivo.
+ *
+ * Antes convivian dos: la importacion construia el mediodia local y el alta
+ * manual parseaba "2026-05-15" como medianoche UTC. Las dos leian el dia
+ * correcto, pero son instantes distintos, asi que el indice unico no las veria
+ * como duplicadas. Se usa `Date.UTC` y no el constructor local para que el
+ * resultado no dependa de la zona horaria del contenedor, y las 12:00 en vez de
+ * las 00:00 para que el dia local sea el mismo se ejecute en UTC o en Madrid.
+ */
+export function normalizarDia(fecha: Date): Date {
+  return new Date(Date.UTC(fecha.getFullYear(), fecha.getMonth(), fecha.getDate(), 12, 0, 0, 0));
+}
+
+/** Igual, pero desde "YYYY-MM-DD" — sin pasar por el parseo UTC del string. */
+function normalizarDesdeIso(iso: string): Date {
+  const [a, m, d] = iso.slice(0, 10).split('-').map(Number);
+  if (!a || !m || !d) throw new BadRequestException(`Fecha invalida: ${iso}`);
+  return new Date(Date.UTC(a, m - 1, d, 12, 0, 0, 0));
+}
+
 /**
  * Un festivo nacional que cae en domingo se traslada al lunes siguiente
  * (art. 37.2 del Estatuto de los Trabajadores).
  *
- * Importa más de lo que parece: la tabla de sesiones del contrato se calcula
+ * Importa mas de lo que parece: la tabla de sesiones del contrato se calcula
  * sobre estos festivos, y en el curso 2026-2027 son justo los dos traslados
  * (1-nov y 6-dic de 2026, ambos domingo) los que hacen que las familias de
- * lunes pierdan sesión. Sin trasladar, el contrato saldría con dos sesiones de
- * más.
+ * lunes pierdan sesion. Sin trasladar, el contrato saldria con dos sesiones de
+ * mas.
  *
- * Es la regla general; algún año el decreto autonómico puede resolverlo de otro
- * modo, y para eso está el alta manual de festivos.
+ * Es la regla general; algun ano el decreto autonomico puede resolverlo de otro
+ * modo, y para eso esta el alta manual de festivos.
  */
 function trasladarSiDomingo(fecha: Date): { fecha: Date; trasladado: boolean } {
-  if (fecha.getDay() !== 0) return { fecha, trasladado: false };
+  if (fecha.getUTCDay() !== 0) return { fecha, trasladado: false };
   const lunes = new Date(fecha);
-  lunes.setDate(lunes.getDate() + 1);
+  lunes.setUTCDate(lunes.getUTCDate() + 1);
   return { fecha: lunes, trasladado: true };
+}
+
+export interface ResultadoImportacion {
+  importados: number;
+  omitidos: number;
+  /** Municipios declarados en el catalogo pero todavia sin festivos cargados. */
+  sinDatos: string[];
+  /** El ano no lo ha revisado nadie contra el BOCM ni los bandos municipales. */
+  sinVerificar: boolean;
 }
 
 @Injectable()
 export class FestivosService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getFestivos(anio: number, ccaa?: string, provincia?: string) {
+  // ============================================================
+  // CONFIGURACION DEL CENTRO
+  // ============================================================
+
+  /**
+   * El calendario que rige el centro. Fila unica; si falta —base recien
+   * migrada, o restaurada de un backup anterior— se crea con el minimo que no
+   * miente: comunidad de Madrid y ningun municipio, porque los festivos locales
+   * no se adivinan.
+   */
+  async getConfiguracion() {
+    const cfg = await this.prisma.configuracionCentro.findUnique({ where: { id: ID_CENTRO } });
+    if (cfg) return cfg;
+    return this.prisma.configuracionCentro.create({
+      data: { id: ID_CENTRO, ccaaCodigo: 'MAD', municipio: '', provincia: 'Madrid' },
+    });
+  }
+
+  async setConfiguracion(dto: ConfiguracionCentroDto) {
+    const municipio = dto.municipio?.trim() ?? '';
+    if (municipio && !LOCALES[municipio]) {
+      throw new BadRequestException(
+        `El municipio "${municipio}" no esta en el catalogo. Anadelo en festivos/data/calendarios.ts.`,
+      );
+    }
+    const provincia = municipio ? LOCALES[municipio].provincia : (dto.provincia?.trim() || '');
+
+    return this.prisma.configuracionCentro.upsert({
+      where:  { id: ID_CENTRO },
+      update: { ccaaCodigo: dto.ccaaCodigo, municipio, provincia },
+      create: { id: ID_CENTRO, ccaaCodigo: dto.ccaaCodigo, municipio, provincia },
+    });
+  }
+
+  // ============================================================
+  // CONSULTA
+  // ============================================================
+
+  /**
+   * Los dias que cierra el centro en los anos dados. **Unica fuente.**
+   *
+   * Antes esta query estaba copiada en `contratos.service`,
+   * `contratos-replanificacion.service` y `contratos-pdf.service`, y las tres
+   * la resolvian contra `Cliente.provincia`: texto libre contra texto libre. Un
+   * festivo que no casara desaparecia en silencio y el contrato salia con una
+   * sesion de mas — un documento que firma la familia y que fija una cuota.
+   *
+   * El ambito LOCAL casa solo por municipio, no por municipio + CCAA: la CCAA de
+   * un municipio ya la fija el catalogo, y exigir las dos reintroduce la clase
+   * de fallo que esto viene a quitar.
+   */
+  async delCentro(anios: number[]): Promise<FestivoMin[]> {
+    if (anios.length === 0) return [];
+    const cfg = await this.getConfiguracion();
+
+    const ambitos: any[] = [
+      { ambito: AmbitoFestivo.NACIONAL },
+      { ambito: AmbitoFestivo.AUTONOMICO, ccaa: cfg.ccaaCodigo },
+    ];
+    if (cfg.municipio) {
+      ambitos.push({ ambito: AmbitoFestivo.LOCAL, municipio: cfg.municipio });
+    }
+
     return this.prisma.festivo.findMany({
-      where: {
-        anio,
-        ...(ccaa ? { ccaa } : {}),
-        ...(provincia ? { provincia } : {}),
-      },
+      where: { anio: { in: anios }, OR: ambitos },
+      select: { fecha: true, descripcion: true },
       orderBy: { fecha: 'asc' },
     });
   }
 
+  /** Listado completo de un ano, para la pantalla de administracion. */
+  async getFestivos(anio: number) {
+    return this.prisma.festivo.findMany({
+      where: { anio },
+      orderBy: { fecha: 'asc' },
+    });
+  }
+
+  // ============================================================
+  // MUTACION
+  // ============================================================
+
+  /**
+   * Normaliza ambito <-> ccaa <-> municipio. El DTO valida cada campo por
+   * separado; esto valida que la combinacion tenga sentido, que es lo que antes
+   * permitia crear un LOCAL sin municipio —invisible para siempre— o un
+   * NACIONAL con comunidad.
+   */
+  private normalizarAmbito(dto: { ambito: AmbitoFestivo; ccaa?: string; municipio?: string }) {
+    const ccaa      = dto.ccaa?.trim() ?? '';
+    const municipio = dto.municipio?.trim() ?? '';
+
+    switch (dto.ambito) {
+      case AmbitoFestivo.NACIONAL:
+        return { ccaa: '', municipio: '' };
+
+      case AmbitoFestivo.AUTONOMICO:
+        if (!ccaa) throw new BadRequestException('Un festivo autonomico necesita comunidad autonoma.');
+        return { ccaa, municipio: '' };
+
+      case AmbitoFestivo.LOCAL:
+        if (!municipio) throw new BadRequestException('Un festivo local necesita municipio.');
+        if (!LOCALES[municipio]) {
+          throw new BadRequestException(
+            `El municipio "${municipio}" no esta en el catalogo. Anadelo en festivos/data/calendarios.ts.`,
+          );
+        }
+        return { ccaa: LOCALES[municipio].ccaa, municipio };
+    }
+  }
+
   async create(dto: CreateFestivoDto) {
+    const fecha = normalizarDesdeIso(dto.fecha);
+    const { ccaa, municipio } = this.normalizarAmbito(dto);
+
+    const yaEsta = await this.prisma.festivo.findUnique({
+      where: { fecha_ccaa_municipio: { fecha, ccaa, municipio } },
+    });
+    if (yaEsta) {
+      throw new BadRequestException(
+        `Ya hay un festivo ese dia con el mismo ambito: "${yaEsta.descripcion}".`,
+      );
+    }
+
     return this.prisma.festivo.create({
       data: {
-        fecha: new Date(dto.fecha),
-        descripcion: dto.descripcion,
+        fecha,
+        descripcion: dto.descripcion.trim(),
         ambito: dto.ambito,
-        ccaa: dto.ccaa ?? null,
-        provincia: dto.provincia ?? null,
-        anio: new Date(dto.fecha).getFullYear(),
+        ccaa,
+        municipio,
+        anio: fecha.getUTCFullYear(),
+      },
+    });
+  }
+
+  /**
+   * Corregir un festivo sin borrarlo y recrearlo. Antes no existia: una fecha
+   * mal tecleada solo se arreglaba con un borrado, y borrar un festivo es lo
+   * que hace que un contrato salga con una sesion de mas.
+   */
+  async update(id: string, dto: UpdateFestivoDto) {
+    const actual = await this.prisma.festivo.findUnique({ where: { id } });
+    if (!actual) throw new NotFoundException(`Festivo ${id} no encontrado`);
+
+    const ambito = dto.ambito ?? actual.ambito;
+    const { ccaa, municipio } = this.normalizarAmbito({
+      ambito,
+      ccaa:      dto.ccaa      ?? actual.ccaa,
+      municipio: dto.municipio ?? actual.municipio,
+    });
+    const fecha = dto.fecha ? normalizarDesdeIso(dto.fecha) : actual.fecha;
+
+    const choque = await this.prisma.festivo.findUnique({
+      where: { fecha_ccaa_municipio: { fecha, ccaa, municipio } },
+    });
+    if (choque && choque.id !== id) {
+      throw new BadRequestException(
+        `Ya hay un festivo ese dia con el mismo ambito: "${choque.descripcion}".`,
+      );
+    }
+
+    return this.prisma.festivo.update({
+      where: { id },
+      data: {
+        fecha,
+        descripcion: dto.descripcion?.trim() ?? actual.descripcion,
+        ambito,
+        ccaa,
+        municipio,
+        anio: fecha.getUTCFullYear(),
       },
     });
   }
@@ -70,57 +259,102 @@ export class FestivosService {
     await this.prisma.festivo.delete({ where: { id } });
   }
 
-  async importarNacionales(anio: number): Promise<{ importados: number; omitidos: number }> {
-    const viernesSanto = calcularViernesSanto(anio);
+  // ============================================================
+  // IMPORTACION
+  // ============================================================
 
-    const candidatos = [
+  /** Los festivos que el catalogo cargaria para un ano, sin escribir nada. */
+  async previsualizarCalendario(anio: number) {
+    const cfg = await this.getConfiguracion();
+    return this.candidatos(anio, cfg);
+  }
+
+  /**
+   * Carga el calendario del ano: nacionales + autonomicos de la comunidad del
+   * centro + locales de su municipio.
+   *
+   * Ya no hace falta deduplicar en memoria: la tabla tiene indice unico, asi que
+   * `skipDuplicates` por fin sirve para algo. Y reporta lo que NO ha podido
+   * cargar (`sinDatos`, `sinVerificar`) en vez de dejar un calendario incompleto
+   * que parece completo.
+   */
+  async importarCalendario(anio: number): Promise<ResultadoImportacion> {
+    const cfg = await this.getConfiguracion();
+    const candidatos = this.candidatos(anio, cfg);
+
+    const { count } = await this.prisma.festivo.createMany({
+      data: candidatos,
+      skipDuplicates: true,
+    });
+
+    return {
+      importados: count,
+      omitidos: candidatos.length - count,
+      sinDatos: this.municipiosSinDatos(cfg),
+      sinVerificar: !ANIOS_VERIFICADOS.includes(anio),
+    };
+  }
+
+  /** Qué falta por cargar en el catálogo, para que la pantalla lo avise. */
+  private municipiosSinDatos(cfg: { municipio: string }): string[] {
+    if (!cfg.municipio) return ['(sin municipio elegido)'];
+    return (LOCALES[cfg.municipio]?.dias.length ?? 0) === 0 ? [cfg.municipio] : [];
+  }
+
+  private candidatos(anio: number, cfg: { ccaaCodigo: string; municipio: string }) {
+    const pascua = calcularDomingoPascua(anio);
+    const dia = (mes: number, d: number) => new Date(Date.UTC(anio, mes - 1, d, 12, 0, 0, 0));
+
+    const nacionales = [
       ...FESTIVOS_FIJOS.map(f => {
-        const original = new Date(anio, f.mes - 1, f.dia, 12, 0, 0);
-        const { fecha, trasladado } = trasladarSiDomingo(original);
+        const { fecha, trasladado } = trasladarSiDomingo(dia(f.mes, f.dia));
         return {
           fecha,
-          descripcion: trasladado
-            ? `${f.descripcion} (trasladado del domingo)`
-            : f.descripcion,
+          descripcion: trasladado ? `${f.descripcion} (trasladado del domingo)` : f.descripcion,
         };
       }),
-      { fecha: viernesSanto, descripcion: 'Viernes Santo' },
-    ].map(f => ({
-      fecha: f.fecha,
+      { fecha: normalizarDia(calcularViernesSanto(anio)), descripcion: 'Viernes Santo' },
+    ].map(f => ({ ...f, ambito: AmbitoFestivo.NACIONAL, ccaa: '', municipio: '' }));
+
+    const cal = AUTONOMICOS[cfg.ccaaCodigo];
+    const autonomicos = [
+      ...(cal?.fijos ?? []).map(f => ({ fecha: dia(f.mes, f.dia), descripcion: f.descripcion })),
+      ...(cal?.moviles ?? []).map(f => {
+        const d = new Date(pascua);
+        d.setDate(d.getDate() + f.offsetPascua);
+        return { fecha: normalizarDia(d), descripcion: f.descripcion };
+      }),
+    ].map(f => ({ ...f, ambito: AmbitoFestivo.AUTONOMICO, ccaa: cfg.ccaaCodigo, municipio: '' }));
+
+    const local = cfg.municipio ? LOCALES[cfg.municipio] : undefined;
+    const locales = (local?.dias ?? []).map(f => ({
+      fecha: dia(f.mes, f.dia),
       descripcion: f.descripcion,
-      ambito: AmbitoFestivo.NACIONAL,
-      ccaa: null,
-      provincia: null,
-      anio,
+      ambito: AmbitoFestivo.LOCAL,
+      ccaa: local!.ccaa,
+      municipio: cfg.municipio,
     }));
 
-    // `createMany({ skipDuplicates })` aquí no hace nada: `Festivo` no tiene
-    // ninguna restricción única, solo índices. Sin este filtro previo, volver a
-    // importar un año duplicaba los diez registros y falseaba el calendario.
-    const existentes = await this.prisma.festivo.findMany({
-      where: { anio, ambito: AmbitoFestivo.NACIONAL },
-      select: { fecha: true },
-    });
-    const yaEsta = new Set(existentes.map(e => this.claveDia(e.fecha)));
-
-    const nuevos = candidatos.filter(c => !yaEsta.has(this.claveDia(c.fecha)));
-
-    if (nuevos.length > 0) {
-      await this.prisma.festivo.createMany({ data: nuevos });
-    }
-
-    return { importados: nuevos.length, omitidos: candidatos.length - nuevos.length };
+    return [...nacionales, ...autonomicos, ...locales].map(f => ({ ...f, anio }));
   }
 
-  async tieneNacionales(anio: number): Promise<boolean> {
-    const count = await this.prisma.festivo.count({
-      where: { anio, ambito: AmbitoFestivo.NACIONAL },
-    });
-    return count > 0;
+  /** Si el ano ya tiene cargado el calendario del centro (nacional + autonomico). */
+  async tieneCalendario(anio: number): Promise<boolean> {
+    const cfg = await this.getConfiguracion();
+    const [nacionales, autonomicos] = await Promise.all([
+      this.prisma.festivo.count({ where: { anio, ambito: AmbitoFestivo.NACIONAL } }),
+      this.prisma.festivo.count({
+        where: { anio, ambito: AmbitoFestivo.AUTONOMICO, ccaa: cfg.ccaaCodigo },
+      }),
+    ]);
+    return nacionales > 0 && autonomicos > 0;
   }
 
-  /** Día natural, para comparar sin que la hora estropee la igualdad. */
-  private claveDia(fecha: Date): string {
-    return `${fecha.getFullYear()}-${fecha.getMonth()}-${fecha.getDate()}`;
+  /** Nombre legible del calendario vigente, para pantallas y para el contrato. */
+  async etiquetaCalendario(): Promise<string> {
+    const cfg = await this.getConfiguracion();
+    return cfg.municipio
+      ? `${nombreCcaa(cfg.ccaaCodigo)} · ${cfg.municipio}`
+      : nombreCcaa(cfg.ccaaCodigo);
   }
 }

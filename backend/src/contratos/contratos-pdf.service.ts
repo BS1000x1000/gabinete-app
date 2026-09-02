@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PdfGeneratorService } from '../common/pdf/pdf-generator.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { AmbitoFestivo } from '@prisma/client';
+import { FestivosService } from '../festivos/festivos.service';
 import {
   buildContratoHtml,
   ContratoTemplateData,
@@ -81,6 +81,7 @@ export class ContratosPdfService {
     private readonly pdfGenerator: PdfGeneratorService,
     private readonly prisma: PrismaService,
     private readonly calendario: CalendarioContratoService,
+    private readonly festivos: FestivosService,
   ) {}
 
   // ── Datos compartidos por los tres documentos ──────────────
@@ -131,20 +132,15 @@ export class ContratosPdfService {
     }));
   }
 
-  /** Festivos aplicables al cliente durante el curso del contrato. */
-  async festivosDelCurso(curso: CursoEscolar, provincia: string) {
-    return this.prisma.festivo.findMany({
-      where: {
-        anio: { in: [curso.anioInicio, curso.anioInicio + 1] },
-        OR: [
-          { ambito: AmbitoFestivo.NACIONAL },
-          { ambito: AmbitoFestivo.AUTONOMICO, ccaa: provincia },
-          { ambito: AmbitoFestivo.LOCAL, provincia },
-        ],
-      },
-      select: { fecha: true, descripcion: true },
-      orderBy: { fecha: 'asc' },
-    });
+  /**
+   * Festivos del centro durante el curso del contrato.
+   *
+   * Ya no toma la provincia del cliente: los festivos son del local, y ese
+   * cruce -texto libre contra texto libre- podia fallar en silencio y sacar el
+   * contrato con una sesion de mas en la tabla del calendario.
+   */
+  async festivosDelCurso(curso: CursoEscolar) {
+    return this.festivos.delCentro([curso.anioInicio, curso.anioInicio + 1]);
   }
 
   /**
@@ -188,7 +184,11 @@ export class ContratosPdfService {
   ): Promise<ContratoTemplateData> {
     const slot = contrato.slots[0] ?? null;
     const curso = this.calendario.cursoDe(contrato.fechaInicio);
-    const festivos = await this.festivosDelCurso(curso, contrato.cliente.provincia);
+    const [festivos, calendarioEtiqueta, cfgCentro] = await Promise.all([
+      this.festivosDelCurso(curso),
+      this.festivos.etiquetaCalendario(),
+      this.festivos.getConfiguracion(),
+    ]);
 
     const calendario = slot
       ? this.calendario.construirTabla(slot.diaSemana, curso, festivos)
@@ -212,6 +212,8 @@ export class ContratosPdfService {
       ciudadFirma: c.ciudad || null,
       calendario,
       cursoEtiqueta: this.calendario.etiquetaCurso(curso),
+      calendarioEtiqueta,
+      calendarioSinMunicipio: !cfgCentro.municipio,
       periodoNavidad: periodos.navidad,
       periodoSemanaSanta: periodos.semanaSanta,
       notas: contrato.notas,

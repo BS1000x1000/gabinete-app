@@ -254,3 +254,78 @@ export class DatosFiscalesDto {
   @MaxLength(200)
   emailFacturacion?: string;
 }
+
+/**
+ * Lo que uno puede cambiar de SI MISMO (`PATCH /trabajadores/me`).
+ *
+ * Existe porque ese endpoint aceptaba `UpdateTrabajadorDto` entero, que incluye
+ * `rolId` y `activo`: cualquier usuario autenticado podia ascenderse a ADMIN
+ * con una sola peticion, y `GET /roles` -abierto a todo autenticado- le daba el
+ * id que necesitaba. `username` y `password` tambien quedan fuera: la
+ * contrasena tiene su propio endpoint, que si verifica la actual.
+ *
+ * Si se anade un campo a `UpdateTrabajadorDto`, hay que decidir a mano si entra
+ * aqui. Es deliberado: una lista blanca que hay que mantener es mas segura que
+ * una herencia que arrastra lo que venga.
+ */
+export class UpdateMeDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  nombre?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  apellidos?: string;
+
+  @IsOptional()
+  @IsEmail()
+  @MaxLength(200)
+  email?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  telefono?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  img?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  numeroColegiado?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  colegioProfesional?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  numeroPoliza?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  direccionProfesional?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  especialidad?: string;
+
+  @IsOptional()
+  @IsString()
+  fechaContratacion?: string;
+
+  @IsOptional()
+  @Matches(/^https:\/\/.+/, {
+    message: 'Debe ser una URL HTTPS válida (ej: https://meet.google.com/abc-defg-hij)',
+  })
+  urlVideollamada?: string;
+}

@@ -112,12 +112,14 @@ const makePrismaMock = () => ({
   trabajador: {
     findUnique: jest.fn(),
   },
-  $transaction: jest.fn((fn: (tx: any) => Promise<any>) => fn({
-    factura: { create: jest.fn().mockResolvedValue(mockFactura()) },
-    contadorFactura: {
-      upsert: jest.fn().mockResolvedValue({ ultimoNumero: 1 }),
-    },
-  })),
+  $transaction: jest.fn((fn: (tx: any) => Promise<any>) =>
+    fn({
+      factura: { create: jest.fn().mockResolvedValue(mockFactura()) },
+      contadorFactura: {
+        upsert: jest.fn().mockResolvedValue({ ultimoNumero: 1 }),
+      },
+    }),
+  ),
 });
 
 // ── Suite ─────────────────────────────────────────────────────────────────────
@@ -126,9 +128,18 @@ describe('FacturasService', () => {
   let service: FacturasService;
   let prisma: ReturnType<typeof makePrismaMock>;
 
-  const r2Mock = { upload: jest.fn().mockResolvedValue(null), getSignedUrl: jest.fn().mockResolvedValue(null), isConfigured: false };
-  const pdfMock = { generarPdf: jest.fn().mockResolvedValue(Buffer.from('pdf')) };
-  const emailMock = { sendFacturaEmail: jest.fn().mockResolvedValue(true), isConfigured: true };
+  const r2Mock = {
+    upload: jest.fn().mockResolvedValue(null),
+    getSignedUrl: jest.fn().mockResolvedValue(null),
+    isConfigured: false,
+  };
+  const pdfMock = {
+    generarPdf: jest.fn().mockResolvedValue(Buffer.from('pdf')),
+  };
+  const emailMock = {
+    sendFacturaEmail: jest.fn().mockResolvedValue(true),
+    isConfigured: true,
+  };
   const auditMock = { registrar: jest.fn().mockResolvedValue(undefined) };
 
   beforeEach(async () => {
@@ -159,12 +170,18 @@ describe('FacturasService', () => {
         },
       };
 
-      const result = await service.asignarNumeroCorrelativo(txMock as any, 'trabajador-1', 2026);
+      const result = await service.asignarNumeroCorrelativo(
+        txMock as any,
+        'trabajador-1',
+        2026,
+      );
 
       expect(result).toEqual({ numero: 3, numeroFormateado: '3/2026' });
       expect(txMock.contadorFactura.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { trabajadorId_anio: { trabajadorId: 'trabajador-1', anio: 2026 } },
+          where: {
+            trabajadorId_anio: { trabajadorId: 'trabajador-1', anio: 2026 },
+          },
           update: { ultimoNumero: { increment: 1 } },
           create: { trabajadorId: 'trabajador-1', anio: 2026, ultimoNumero: 1 },
         }),
@@ -178,7 +195,11 @@ describe('FacturasService', () => {
         },
       };
 
-      const result = await service.asignarNumeroCorrelativo(txMock as any, 'trabajador-1', 2026);
+      const result = await service.asignarNumeroCorrelativo(
+        txMock as any,
+        'trabajador-1',
+        2026,
+      );
 
       expect(result.numero).toBe(1);
       expect(result.numeroFormateado).toBe('1/2026');
@@ -193,7 +214,9 @@ describe('FacturasService', () => {
     prisma.$transaction.mockImplementation(async (fn: any) =>
       fn({
         factura: { create: txCreate },
-        contadorFactura: { upsert: jest.fn().mockResolvedValue({ ultimoNumero: 1 }) },
+        contadorFactura: {
+          upsert: jest.fn().mockResolvedValue({ ultimoNumero: 1 }),
+        },
       }),
     );
     return txCreate;
@@ -231,7 +254,9 @@ describe('FacturasService', () => {
       prisma.factura.findMany.mockResolvedValueOnce([]);
       prisma.$transaction.mockResolvedValueOnce(mockFactura());
       // Segunda vez: ya existe
-      prisma.factura.findMany.mockResolvedValueOnce([{ contratoId: 'contrato-1' }]);
+      prisma.factura.findMany.mockResolvedValueOnce([
+        { contratoId: 'contrato-1' },
+      ]);
 
       await service.generarFacturasMes(2026, 9);
       const segunda = await service.generarFacturasMes(2026, 9);
@@ -250,7 +275,7 @@ describe('FacturasService', () => {
 
       await service.generarFacturasMes(2026, 3);
 
-      const where = (prisma.contratoServicio.findMany as jest.Mock).mock.calls[0][0].where;
+      const where = prisma.contratoServicio.findMany.mock.calls[0][0].where;
       expect(where.estado).toEqual({ in: ['ACTIVO', 'FINALIZADO'] });
     });
 
@@ -258,9 +283,11 @@ describe('FacturasService', () => {
       prisma.contratoServicio.findMany.mockResolvedValue([]);
       prisma.factura.findMany.mockResolvedValue([]);
 
-      await service.generarFacturasMes(2026, 9, { trabajadorId: 'trabajador-7' });
+      await service.generarFacturasMes(2026, 9, {
+        trabajadorId: 'trabajador-7',
+      });
 
-      const where = (prisma.contratoServicio.findMany as jest.Mock).mock.calls[0][0].where;
+      const where = prisma.contratoServicio.findMany.mock.calls[0][0].where;
       expect(where.trabajadorId).toBe('trabajador-7');
     });
 
@@ -300,7 +327,11 @@ describe('FacturasService', () => {
 
       expect(res.creadas).toBe(0);
       expect(res.fallidas).toEqual([
-        { contratoId: 'contrato-1', cliente: 'Pablo Martínez', motivo: 'BD caída' },
+        {
+          contratoId: 'contrato-1',
+          cliente: 'Pablo Martínez',
+          motivo: 'BD caída',
+        },
       ]);
     });
 
@@ -308,11 +339,65 @@ describe('FacturasService', () => {
       prisma.contratoServicio.findMany.mockResolvedValue([]);
       prisma.factura.findMany.mockResolvedValue([]);
 
-      await service.generarFacturasMes(2026, 9, { user: { userId: 'admin-1' } });
+      await service.generarFacturasMes(2026, 9, {
+        user: { userId: 'admin-1' },
+      });
 
       expect(auditMock.registrar).toHaveBeenCalledWith(
-        expect.objectContaining({ evento: 'FACTURA_GENERACION', recurso: '2026-09' }),
+        expect.objectContaining({
+          evento: 'FACTURA_GENERACION',
+          recurso: '2026-09',
+        }),
       );
+    });
+  });
+
+  // ── Datos fiscales del destinatario ────────────────────────────────────────
+
+  describe('datos fiscales del tutor pagador', () => {
+    /**
+     * Una factura sin nombre y NIF del destinatario no es valida, y ademas quema
+     * un numero de la serie correlativa que anular no libera. Se corta antes de
+     * llegar a la transaccion.
+     */
+    it('no emite ni numera si falta el NIF del tutor pagador', async () => {
+      prisma.contratoServicio.findMany.mockResolvedValue([
+        mockContrato({ cliente: mockCliente({ nifTutorPagador: '  ' }) }),
+      ]);
+      prisma.factura.findMany.mockResolvedValue([]);
+
+      const res = await service.generarFacturasMes(2026, 9);
+
+      expect(res.creadas).toBe(0);
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+      expect(res.fallidas).toEqual([
+        {
+          contratoId: 'contrato-1',
+          cliente: 'Pablo Martínez',
+          motivo: expect.stringContaining('NIF del tutor pagador'),
+        },
+      ]);
+    });
+
+    it('un contrato sin datos no impide facturar al resto', async () => {
+      prisma.contratoServicio.findMany.mockResolvedValue([
+        mockContrato({ cliente: mockCliente({ nombreTutorPagador: null }) }),
+        mockContrato({ id: 'contrato-2' }),
+      ]);
+      prisma.factura.findMany.mockResolvedValue([]);
+      prisma.$transaction.mockImplementation(async (fn: any) =>
+        fn({
+          factura: { create: jest.fn().mockResolvedValue(mockFactura()) },
+          contadorFactura: {
+            upsert: jest.fn().mockResolvedValue({ ultimoNumero: 1 }),
+          },
+        }),
+      );
+
+      const res = await service.generarFacturasMes(2026, 9);
+
+      expect(res.creadas).toBe(1);
+      expect(res.fallidas).toHaveLength(1);
     });
   });
 
@@ -348,6 +433,26 @@ describe('FacturasService', () => {
 
       expect(preview.aGenerar).toEqual([]);
       expect(preview.yaFacturadas).toBe(1);
+    });
+
+    it('separa los contratos sin datos fiscales del pagador y no los suma', async () => {
+      prisma.contratoServicio.findMany.mockResolvedValue([
+        mockContrato({ cliente: mockCliente({ nifTutorPagador: null }) }),
+      ]);
+      prisma.factura.findMany.mockResolvedValue([]);
+
+      const preview = await service.previsualizarGeneracionMes(2026, 9);
+
+      expect(preview.aGenerar).toEqual([]);
+      expect(preview.yaFacturadas).toBe(0);
+      expect(preview.importeTotal).toBe(0);
+      expect(preview.bloqueadas).toEqual([
+        {
+          contratoId: 'contrato-1',
+          cliente: 'Pablo Martínez',
+          motivo: expect.stringContaining('NIF del tutor pagador'),
+        },
+      ]);
     });
   });
 
@@ -404,7 +509,7 @@ describe('FacturasService', () => {
 
       await service.findAll(ADMIN_USER);
 
-      const call = (prisma.factura.findMany as jest.Mock).mock.calls[0][0];
+      const call = prisma.factura.findMany.mock.calls[0][0];
       expect(call.where.trabajadorId).toBeUndefined();
     });
 
@@ -413,7 +518,7 @@ describe('FacturasService', () => {
 
       await service.findAll(TERAPEUTA_USER);
 
-      const call = (prisma.factura.findMany as jest.Mock).mock.calls[0][0];
+      const call = prisma.factura.findMany.mock.calls[0][0];
       expect(call.where.trabajadorId).toBe('trabajador-1');
     });
 
@@ -427,7 +532,7 @@ describe('FacturasService', () => {
 
       await service.findAll(ADMIN_USER, { soloMias: true });
 
-      const call = (prisma.factura.findMany as jest.Mock).mock.calls[0][0];
+      const call = prisma.factura.findMany.mock.calls[0][0];
       expect(call.where.trabajadorId).toBe('admin-1');
     });
 
@@ -436,7 +541,7 @@ describe('FacturasService', () => {
 
       await service.findAll(TERAPEUTA_USER, { soloMias: false });
 
-      const call = (prisma.factura.findMany as jest.Mock).mock.calls[0][0];
+      const call = prisma.factura.findMany.mock.calls[0][0];
       expect(call.where.trabajadorId).toBe('trabajador-1');
     });
   });
@@ -447,7 +552,9 @@ describe('FacturasService', () => {
     it('lanza NotFoundException si la factura no existe', async () => {
       prisma.factura.findUnique.mockResolvedValue(null);
 
-      await expect(service.findOne('no-existe', ADMIN_USER)).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('no-existe', ADMIN_USER)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('lanza NotFoundException si terapeuta intenta ver factura de otro', async () => {
@@ -455,7 +562,9 @@ describe('FacturasService', () => {
         mockFactura({ trabajadorId: 'otro-trabajador' }),
       );
 
-      await expect(service.findOne('factura-1', TERAPEUTA_USER)).rejects.toThrow(NotFoundException);
+      await expect(
+        service.findOne('factura-1', TERAPEUTA_USER),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('ADMIN puede ver cualquier factura', async () => {
@@ -474,7 +583,9 @@ describe('FacturasService', () => {
   describe('anular()', () => {
     it('marca la factura como ANULADA', async () => {
       prisma.factura.findUnique.mockResolvedValue(mockFactura());
-      prisma.factura.update.mockResolvedValue(mockFactura({ estado: EstadoFactura.ANULADA }));
+      prisma.factura.update.mockResolvedValue(
+        mockFactura({ estado: EstadoFactura.ANULADA }),
+      );
 
       const result = await service.anular('factura-1', ADMIN_USER);
 
@@ -491,12 +602,16 @@ describe('FacturasService', () => {
         mockFactura({ estado: EstadoFactura.ANULADA }),
       );
 
-      await expect(service.anular('factura-1', ADMIN_USER)).rejects.toThrow(ForbiddenException);
+      await expect(service.anular('factura-1', ADMIN_USER)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it('no incrementa el contador al anular', async () => {
       prisma.factura.findUnique.mockResolvedValue(mockFactura());
-      prisma.factura.update.mockResolvedValue(mockFactura({ estado: EstadoFactura.ANULADA }));
+      prisma.factura.update.mockResolvedValue(
+        mockFactura({ estado: EstadoFactura.ANULADA }),
+      );
 
       await service.anular('factura-1', ADMIN_USER);
 
@@ -510,7 +625,11 @@ describe('FacturasService', () => {
     it('actualiza estado a PAGADA', async () => {
       prisma.factura.findUnique.mockResolvedValue(mockFactura());
       prisma.factura.update.mockResolvedValue(
-        mockFactura({ estado: EstadoFactura.PAGADA, fechaPago: new Date(), metodoPago: 'Bizum' }),
+        mockFactura({
+          estado: EstadoFactura.PAGADA,
+          fechaPago: new Date(),
+          metodoPago: 'Bizum',
+        }),
       );
 
       const dto = { fechaPago: '2026-09-15', metodoPago: 'Bizum' };
@@ -530,7 +649,11 @@ describe('FacturasService', () => {
       );
 
       await expect(
-        service.marcarPagada('factura-1', { fechaPago: '2026-09-15' }, ADMIN_USER),
+        service.marcarPagada(
+          'factura-1',
+          { fechaPago: '2026-09-15' },
+          ADMIN_USER,
+        ),
       ).rejects.toThrow(ForbiddenException);
     });
   });

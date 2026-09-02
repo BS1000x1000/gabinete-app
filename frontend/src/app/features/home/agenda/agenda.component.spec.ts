@@ -177,7 +177,7 @@ describe('AgendaComponent', () => {
           delete: jasmine.createSpy().and.returnValue(of(void 0)),
         } },
         { provide: FestivosService, useValue: {
-          getFestivosParaAgenda: jasmine.createSpy().and.returnValue(of([])),
+          getDelCentro: jasmine.createSpy().and.returnValue(of([])),
         } },
         { provide: VacacionesService, useValue: {
           getMisVacaciones: jasmine.createSpy().and.returnValue(of([])),

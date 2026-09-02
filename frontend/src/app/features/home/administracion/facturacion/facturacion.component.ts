@@ -225,6 +225,22 @@ export default class FacturacionComponent implements OnInit {
   );
 
   /**
+   * Facturas del periodo en curso.
+   *
+   * A la gestoría solo se entregan periodos cerrados: mientras el mes sigue
+   * abierto puede emitirse alguna factura más y el paquete quedaría incompleto.
+   * Se cuentan aparte porque, si no, tener una factura de este mes y leer «todo
+   * entregado» parece un error de la aplicación cuando no lo es.
+   */
+  readonly enPeriodoAbierto = computed(() =>
+    this.facturas().filter(
+      (f) => esComputable(f) && f.periodoFacturado >= periodoDeHoy(),
+    ),
+  );
+
+  readonly periodoEnCurso = periodoDeHoy();
+
+  /**
    * Signal y no campo de instancia: calculado una sola vez en el constructor,
    * una sesión abierta a través de la medianoche del día 1 seguía enseñando los
    * KPIs del mes anterior.

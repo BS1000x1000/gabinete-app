@@ -80,6 +80,21 @@ export class ContratosController {
     return this.contratosService.findByCliente(clienteId, req.user);
   }
 
+  /**
+   * Que clientes tiene el terapeuta cada dia de la semana y a que hora, segun
+   * los contratos vigentes. Alimenta la rejilla de "Mi semana".
+   *
+   * Va ANTES de `@Get(':id')` a proposito: si no, 'carga-semanal' entraria por
+   * la ruta parametrica y se buscaria un contrato con ese id.
+   */
+  @Get('carga-semanal')
+  @Roles(...ROLES_CLINICOS)
+  cargaSemanal(@Req() req: any, @Query('trabajadorId') trabajadorId?: string) {
+    const objetivo = trabajadorId ?? req.user.userId;
+    this.logger.log(`GET /contratos/carga-semanal - trabajador ${objetivo}`);
+    return this.contratosService.cargaSemanal(objetivo, req.user);
+  }
+
   @Get(':id')
   @Roles(...ROLES_CLINICOS)
   findOne(@Param('id') id: string, @Req() req: any) {

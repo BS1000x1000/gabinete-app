@@ -6,15 +6,18 @@ import { ClientesService } from '../../../../../services/cliente.service';
 import { ClienteDataBackend } from '../../../../../interface/cliente-backend.interface';
 import { TIPO_SESION_LABELS, TipoSesion } from '../../../../../interface/sesion.interface';
 
-const DIA_LABELS: Record<string, string> = {
-  LUNES:     'Lun',
-  MARTES:    'Mar',
-  MIERCOLES: 'Mié',
-  JUEVES:    'Jue',
-  VIERNES:   'Vie',
-  SABADO:    'Sáb',
-  DOMINGO:   'Dom',
-};
+/**
+ * Convención 0=Domingo..6=Sábado, la de `DisponibilidadClienteTrabajador` y su
+ * DTO. NO es la ISO 1=Lun..7=Dom de contratos, horarios y "Mi semana": son dos
+ * convenciones distintas conviviendo en el repo, así que este array solo vale
+ * para los horarios de asignación.
+ *
+ * Antes esto era un `Record<string, string>` con claves `LUNES`, `MARTES`… y el
+ * backend devuelve las filas crudas, donde `diaSemana` es un `Int`. El lookup
+ * no acertaba nunca y caía al fallback: se pintaba `1 17:00` en vez de
+ * `Lun 17:00`.
+ */
+const DIA_CORTO = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
 @Component({
   selector: 'app-trabajador-clientes-tab',
@@ -87,10 +90,16 @@ export class TrabajadorClientesTabComponent implements OnInit {
     return `${c.nombre?.charAt(0) ?? ''}${c.apellidos?.charAt(0) ?? ''}`.toUpperCase();
   }
 
+  /**
+   * Estos horarios salen de `DisponibilidadClienteTrabajador`, que desde
+   * 2026-08-31 ya NO manda sobre las sesiones: el horario recurrente lo define
+   * el contrato. Pueden estar vacíos o desfasados. La foto fiable de la semana
+   * está en la pestaña "Mi semana", que lee de `ContratoSlot`.
+   */
   formatHorarios(c: ClienteAsignado): string {
     if (!c.horarios?.length) return '';
     return c.horarios
-      .map((h) => `${DIA_LABELS[h.diaSemana] ?? h.diaSemana} ${h.horaInicio.slice(0, 5)}`)
+      .map((h) => `${DIA_CORTO[h.diaSemana] ?? h.diaSemana} ${h.horaInicio.slice(0, 5)}`)
       .join(' · ');
   }
 

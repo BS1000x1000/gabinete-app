@@ -876,18 +876,28 @@ model EventoParticipante {
   @@map("evento_participantes")
 }
 
-/// Jornada laboral declarada del terapeuta (p. ej. lunes, miercoles y viernes de
-/// 15:00 a 20:00). Convencion ISO 1=Lun..7=Dom, como ContratoSlot y HorarioAdmin.
+/// DISPONIBILIDAD declarada del terapeuta: los dias y horas en los que puede
+/// ofrecer hueco a una familia (p. ej. lunes, miercoles y viernes de 15:00 a
+/// 20:00). Convencion ISO 1=Lun..7=Dom, como ContratoSlot y HorarioAdmin.
 ///
-/// Es INFORMATIVA: nunca bloquea crear ni mover una sesion, solo genera un aviso.
-/// El gabinete a veces necesita meter una sesion a deshora y la app no debe
-/// impedirselo. Siendo los terapeutas autonomos, su horario es suyo: la app lo
-/// usa para avisar de despistes, no para imponer una jornada.
+/// El modelo se llama `HorarioLaboral` por historia, no por significado: nacio
+/// como "jornada laboral", que es el concepto equivocado para un colectivo de
+/// AUTONOMOS. Nadie aqui tiene jornada contratada; lo que si tiene, y necesita
+/// declarar, es cuando acepta clientes. No se renombro a `Disponibilidad`
+/// porque ese nombre ya esta cogido dos veces —`DisponibilidadCliente` y
+/// `DisponibilidadClienteTrabajador`, mas el modulo `disponibilidad`— y un
+/// tercero seria justo la ambiguedad que este esquema evita en otros sitios.
+/// En la UI y en los avisos se llama disponibilidad, que es lo que es.
+///
+/// Es INFORMATIVA: nunca bloquea crear ni mover una sesion, solo genera el
+/// aviso `FUERA_DE_DISPONIBILIDAD`. El gabinete a veces necesita meter una
+/// sesion a deshora y la app no debe impedirselo. El horario del autonomo es
+/// suyo: la app avisa de despistes, no impone un horario.
 ///
 /// Un terapeuta sin ninguna fila aqui no genera ningun aviso.
 ///
 /// No se reutiliza `HorarioAdmin` porque significa lo contrario: aquello son
-/// bloques de tiempo OCUPADO por tareas administrativas dentro de la jornada.
+/// bloques de tiempo OCUPADO por tareas administrativas dentro de esas horas.
 model HorarioLaboral {
   id           String   @id @default(uuid())
   trabajadorId String   @map("id_trabajador")
@@ -1017,15 +1027,47 @@ enum AmbitoFestivo {
   LOCAL
 }
 
+/// Calendario del centro. Fila unica (id fijo "centro").
+///
+/// Los festivos son del CENTRO, no del cliente: un festivo local cierra el
+/// local, no cierra a la familia. Antes se resolvian contra `Cliente.provincia`
+/// -texto libre contra texto libre-, con lo que el ambito LOCAL era en realidad
+/// provincial y no podia distinguir dos municipios de la misma provincia.
+model ConfiguracionCentro {
+  id         String   @id @default("centro")
+  /// Codigo de `festivos/data/calendarios.ts`, no nombre libre. Ej: "MAD".
+  ccaaCodigo String   @map("ccaa_codigo")
+  /// Municipio del centro, tal cual la clave de `LOCALES`. Ej: "Fuenlabrada".
+  municipio  String
+  /// Provincia del centro. Solo se usa para el texto del contrato.
+  provincia  String
+  updatedAt  DateTime @updatedAt @map("ultima_actualizacion")
+
+  @@map("configuracion_centro")
+}
+
 model Festivo {
   id          String        @id @default(uuid())
+  /// Normalizada a las 12:00 UTC en TODOS los caminos de escritura
+  /// (`normalizarDia()` en festivos.service.ts). El @@unique de abajo depende
+  /// de esa normalizacion: dos filas del mismo dia natural con hora distinta no
+  /// colisionarian. 12:00 y no 00:00 para que el dia local siga siendo el mismo
+  /// se ejecute el contenedor en UTC o en Europe/Madrid.
   fecha       DateTime
   descripcion String
   ambito      AmbitoFestivo
-  ccaa        String?
-  provincia   String?
+  /// Codigo de CCAA ("MAD"), no nombre libre. Cadena vacia si NACIONAL.
+  ccaa        String        @default("")
+  /// Municipio, solo si LOCAL. Cadena vacia en otro caso.
+  ///
+  /// Centinela '' y no NULL a proposito: en Postgres varios NULL conviven en un
+  /// indice unico, asi que con columnas nullable el @@unique no impediria el
+  /// duplicado. Con '' si, y `createMany({ skipDuplicates })` empieza a servir
+  /// para algo.
+  municipio   String        @default("")
   anio        Int           @map("anio")
 
+  @@unique([fecha, ccaa, municipio])
   @@index([anio])
   @@index([fecha])
   @@map("festivos")

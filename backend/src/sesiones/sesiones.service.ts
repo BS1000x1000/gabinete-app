@@ -72,9 +72,9 @@ export class SesionesService {
       `Sesion suelta ${dto.tipoSesion} para cliente ${dto.clienteId} el ${dto.fechaHoraInicio}`,
     );
 
-    // Los avisos se calculan pero NO impiden crear: solape, fuera de jornada o
-    // vacaciones se informan y el profesional decide. Se devuelven junto a la
-    // sesion para que la UI los enseñe.
+    // Los avisos se calculan pero NO impiden crear: solape, fuera de la
+    // disponibilidad o vacaciones se informan y el profesional decide. Se
+    // devuelven junto a la sesion para que la UI los enseñe.
     const avisos = await this.horariosLaborales.evaluarAvisos({
       trabajadorId: dto.trabajadorId,
       clienteId:    dto.clienteId,

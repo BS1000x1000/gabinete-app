@@ -1,7 +1,12 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
-import { map } from 'rxjs/operators';
-import { Observable } from 'rxjs';
+import {
+  HttpClient,
+  HttpErrorResponse,
+  HttpParams,
+  HttpResponse,
+} from '@angular/common/http';
+import { catchError, map, switchMap } from 'rxjs/operators';
+import { from, Observable, throwError } from 'rxjs';
 import { environment } from '../../environments/environment.development';
 import {
   Factura,
@@ -135,7 +140,26 @@ export class FacturasService {
           triggerDownload(blob, this.nombreDeLaRespuesta(res, seleccion));
           return { incidencias: Number(res.headers.get('X-Pack-Incidencias') ?? 0) };
         }),
+        // Con `responseType: 'blob'` el cuerpo de un error tambien llega como
+        // Blob, asi que `err.error.message` es `undefined` y el motivo real se
+        // perdia: cualquier fallo se veia como un mensaje generico.
+        catchError((err: HttpErrorResponse) =>
+          from(this.mensajeDeErrorBlob(err)).pipe(
+            switchMap(mensaje => throwError(() => ({ ...err, error: { message: mensaje } }))),
+          ),
+        ),
       );
+  }
+
+  /** Lee el cuerpo de error de una respuesta binaria para sacar su mensaje. */
+  private async mensajeDeErrorBlob(err: HttpErrorResponse): Promise<string | undefined> {
+    if (!(err.error instanceof Blob)) return err.error?.message;
+    try {
+      const texto = await err.error.text();
+      return JSON.parse(texto)?.message ?? texto ?? undefined;
+    } catch {
+      return undefined;
+    }
   }
 
   // ── Entrega a la gestoría ────────────────────────────────────────────────

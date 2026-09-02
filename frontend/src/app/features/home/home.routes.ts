@@ -1,6 +1,7 @@
 import { Route } from '@angular/router';
 import { HomeComponent } from './home.component';
 import { roleGuard } from '../../shared/guards/role.guard';
+import { miFichaGuard } from '../../shared/guards/mi-ficha.guard';
 import {
   ROLES_ADMINISTRACION,
   ROLES_FICHA,
@@ -17,11 +18,18 @@ export default [
       { path: 'agenda',     loadComponent: () => import('./agenda/agenda.component').then(m => m.AgendaComponent) },
       { path: 'listado/:id',loadChildren: () => import('./listado/listado.routes') },
       { path: 'clientes',   loadComponent: () => import('../clientes/clientes.component') },
-      { path: 'estadisticas', loadComponent: () => import('./estadisticas/estadisticas.component').then(m => m.EstadisticasComponent) },
+      // Abierta a todo el que tiene ficha de trabajador, a propósito: los datos
+      // ya vienen acotados por rol desde el backend (`dashboard.controller.ts`
+      // impone el userId propio a quien no sea ADMIN/RECEP). El guard está para
+      // que la lista de roles sea explícita y no se cuele un rol nuevo sin más.
+      { path: 'estadisticas', canActivate: [roleGuard([...ROLES_FICHA])], loadComponent: () => import('./estadisticas/estadisticas.component').then(m => m.EstadisticasComponent) },
       { path: 'trabajadores',     loadComponent: () => import('../trabajadores/trabajadores.component'),          canActivate: [roleGuard([...ROLES_GESTION])] },
       { path: 'trabajadores/:id', loadChildren: () => import('../trabajadores/ficha/trabajador-ficha.routes'), canActivate: [roleGuard([...ROLES_FICHA])] },
-      { path: 'cuenta',     loadComponent: () => import('./cuenta/cuenta.component') },
-      { path: 'ajustes',    redirectTo: 'cuenta', pathMatch: 'full' },
+      // "Mi cuenta" era una pantalla entera para un solo campo, la contraseña,
+      // que ahora vive en la pestaña Acceso de la propia ficha. Las dos rutas se
+      // conservan como redirección: estaban en el menú del avatar.
+      { path: 'cuenta',     canActivate: [miFichaGuard('acceso')], children: [] },
+      { path: 'ajustes',    canActivate: [miFichaGuard('acceso')], children: [] },
       {
         path: 'administracion',
         canActivate: [roleGuard([...ROLES_ADMINISTRACION])],

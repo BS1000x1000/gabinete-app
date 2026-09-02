@@ -9,9 +9,10 @@ import { PdfModule } from '../common/pdf/pdf.module';
 import { StorageService } from '../common/storage/storage.service';
 import { CalendarioContratoService } from '../expediente/calendario-contrato.service';
 import { ExpedienteModule } from '../expediente/expediente.module';
+import { FestivosModule } from '../festivos/festivos.module';
 
 @Module({
-  imports: [PrismaModule, PdfModule, ExpedienteModule],
+  imports: [PrismaModule, PdfModule, ExpedienteModule, FestivosModule],
   controllers: [ContratosController],
   providers: [
     ContratosService,

@@ -84,7 +84,8 @@ export interface ClienteAsignado {
   apellidos: string;
   tipoTerapia: TipoSesion;
   activo: boolean;
-  horarios?: { diaSemana: string; horaInicio: string; horaFin: string }[];
+  /** `diaSemana` es un Int con la convención 0=Dom..6=Sáb, NO la ISO 1..7. */
+  horarios?: { diaSemana: number; horaInicio: string; horaFin: string }[];
 }
 
 interface WrappedResponse<T> {
@@ -136,6 +137,7 @@ export class TrabajadorService {
     return this.http.patch<WrappedResponse<Trabajador>>(`${this.api}/${id}`, payload);
   }
 
+
   desactivarTrabajador(id: string) {
     return this.http.delete<WrappedResponse<any>>(`${this.api}/${id}`);
   }
@@ -152,6 +154,11 @@ export class TrabajadorService {
     return this.http.get<WrappedResponse<ClienteAsignado[]>>(`${this.api}/${id}/clientes`);
   }
 
+  /**
+   * Perfil propio. `PATCH /trabajadores/:id` es ADMIN-only, asi que un clinico
+   * en su propia ficha veia el boton "Editar" y se comia un 403 al guardar.
+   * Este metodo existia y no lo llamaba ningun componente.
+   */
   updateMe(payload: UpdateMePayload) {
     return this.http.patch<WrappedResponse<Trabajador>>(`${this.api}/me`, payload);
   }

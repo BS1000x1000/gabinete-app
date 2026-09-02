@@ -11,7 +11,8 @@ import { StorageService } from '../common/storage/storage.service';
 import { FacturasPdfService } from './facturas-pdf.service';
 import { MarcarPagadaDto } from './dto/marcar-pagada.dto';
 import { CrearFacturaPuntualDto } from './dto/crear-factura-puntual.dto';
-import { toNum } from './facturas.utils';
+import { motivoSinDatosFiscales, toNum } from './facturas.utils';
+import { tipoSesionLabel } from '../common/constants/tipo-sesion';
 import { EmailService } from '../common/email/email.service';
 import { AuditService } from '../auth/audit.service';
 import { facturaInclude, FacturaCompleta } from './facturas.include';
@@ -37,6 +38,12 @@ export interface PreviewGeneracion {
   aGenerar: ContratoAFacturar[];
   /** Contratos del periodo que ya tienen factura: no se tocan. */
   yaFacturadas: number;
+  /**
+   * Contratos que NO se van a facturar por faltar los datos fiscales del tutor
+   * pagador. Se enseñan antes de generar para que se puedan completar: si no,
+   * el usuario solo se enteraba al abrir el libro y ver la columna NIF vacia.
+   */
+  bloqueadas: FalloGeneracion[];
   importeTotal: number;
 }
 
@@ -68,7 +75,6 @@ export interface ResultadoGeneracion {
  * empresa; ese dia esto pasa a depender del tipo de receptor, no a desaparecer.
  */
 const RETENCION_IRPF_PARTICULARES = 0;
-
 
 @Injectable()
 export class FacturasService {
@@ -131,7 +137,15 @@ export class FacturasService {
           },
         },
         cliente: {
-          select: { id: true, nombre: true, apellidos: true },
+          select: {
+            id: true,
+            nombre: true,
+            apellidos: true,
+            // El destinatario fiscal. Se trae aqui para poder bloquear antes de
+            // quemar un numero de la serie correlativa.
+            nombreTutorPagador: true,
+            nifTutorPagador: true,
+          },
         },
       },
       orderBy: { createdAt: 'asc' },
@@ -166,25 +180,51 @@ export class FacturasService {
     const ultimoDia = new Date(anio, mes, 0, 23, 59, 59);
     const periodoFacturado = this.formatPeriodo(anio, mes);
 
-    const contratos = await this.contratosDelPeriodo(primerDia, ultimoDia, opts?.trabajadorId);
-    const yaFacturados = await this.contratosYaFacturados(periodoFacturado, contratos);
+    const contratos = await this.contratosDelPeriodo(
+      primerDia,
+      ultimoDia,
+      opts?.trabajadorId,
+    );
+    const yaFacturados = await this.contratosYaFacturados(
+      periodoFacturado,
+      contratos,
+    );
 
-    const aGenerar = contratos
-      .filter((c) => !yaFacturados.has(c.id))
-      .map((c) => ({
+    const pendientes = contratos.filter((c) => !yaFacturados.has(c.id));
+
+    const aGenerar: ContratoAFacturar[] = [];
+    const bloqueadas: FalloGeneracion[] = [];
+
+    for (const c of pendientes) {
+      const motivo = motivoSinDatosFiscales(c.cliente);
+      if (motivo) {
+        bloqueadas.push({
+          contratoId: c.id,
+          cliente: this.nombreCliente(c.cliente),
+          motivo,
+        });
+        continue;
+      }
+      aGenerar.push({
         contratoId: c.id,
-        cliente: `${c.cliente.nombre} ${c.cliente.apellidos}`,
+        cliente: this.nombreCliente(c.cliente),
         trabajador: `${c.trabajador.nombre} ${c.trabajador.apellidos}`,
         tipoSesion: c.tipoSesion as string,
         importe: toNum(c.cuotaMensual),
-      }));
+      });
+    }
 
     return {
       periodo: periodoFacturado,
       aGenerar,
-      yaFacturadas: contratos.length - aGenerar.length,
+      yaFacturadas: contratos.length - pendientes.length,
+      bloqueadas,
       importeTotal: aGenerar.reduce((s, c) => s + c.importe, 0),
     };
+  }
+
+  private nombreCliente(c: { nombre: string; apellidos: string }): string {
+    return `${c.nombre} ${c.apellidos}`;
   }
 
   private async contratosYaFacturados(
@@ -199,7 +239,11 @@ export class FacturasService {
       },
       select: { contratoId: true },
     });
-    return new Set(existentes.map((f) => f.contratoId).filter((id): id is string => id !== null));
+    return new Set(
+      existentes
+        .map((f) => f.contratoId)
+        .filter((id): id is string => id !== null),
+    );
   }
 
   /**
@@ -226,24 +270,48 @@ export class FacturasService {
       year: 'numeric',
     });
 
-    const contratos = await this.contratosDelPeriodo(primerDia, ultimoDia, opts?.trabajadorId);
-    const yaFacturados = await this.contratosYaFacturados(periodoFacturado, contratos);
+    const contratos = await this.contratosDelPeriodo(
+      primerDia,
+      ultimoDia,
+      opts?.trabajadorId,
+    );
+    const yaFacturados = await this.contratosYaFacturados(
+      periodoFacturado,
+      contratos,
+    );
 
     const pendientes = contratos.filter((c) => !yaFacturados.has(c.id));
     const fallidas: FalloGeneracion[] = [];
     const nuevas: FacturaCompleta[] = [];
 
     for (const contrato of pendientes) {
+      // Antes de nada, los datos fiscales del destinatario. Una factura sin
+      // nombre y NIF del tutor pagador no es una factura valida, y ademas quema
+      // un numero de la serie correlativa que ya no se libera al anularla.
+      const sinDatos = motivoSinDatosFiscales(contrato.cliente);
+      if (sinDatos) {
+        fallidas.push({
+          contratoId: contrato.id,
+          cliente: this.nombreCliente(contrato.cliente),
+          motivo: sinDatos,
+        });
+        continue;
+      }
+
       try {
         nuevas.push(
-          await this.crearFacturaDesdeContrato(contrato, mesNombre, periodoFacturado),
+          await this.crearFacturaDesdeContrato(
+            contrato,
+            mesNombre,
+            periodoFacturado,
+          ),
         );
       } catch (err: any) {
         // El fallo se recoge en vez de perderse en el log: quien lanza la
         // generación tiene que ver qué no salió, no solo cuántas salieron.
         fallidas.push({
           contratoId: contrato.id,
-          cliente: `${contrato.cliente.nombre} ${contrato.cliente.apellidos}`,
+          cliente: this.nombreCliente(contrato.cliente),
           motivo: err?.message ?? String(err),
         });
         this.logger.error(
@@ -303,7 +371,9 @@ export class FacturasService {
           } catch (err) {
             // No corta la generación: la factura existe y el cron de
             // reconciliación reintentará el PDF.
-            this.logger.error(`Error archivando PDF factura ${factura.id}: ${err}`);
+            this.logger.error(
+              `Error archivando PDF factura ${factura.id}: ${err}`,
+            );
           }
         }
       },
@@ -332,7 +402,10 @@ export class FacturasService {
     await this.archivarPdfsEnLote(pendientes);
 
     const recuperadas = await this.prisma.factura.count({
-      where: { id: { in: pendientes.map((f) => f.id) }, urlPdfR2: { not: null } },
+      where: {
+        id: { in: pendientes.map((f) => f.id) },
+        urlPdfR2: { not: null },
+      },
     });
     this.logger.log(
       `Reconciliación PDFs: ${recuperadas}/${pendientes.length} archivadas`,
@@ -356,7 +429,7 @@ export class FacturasService {
     const retencionPct = RETENCION_IRPF_PARTICULARES;
     const retencionImporte = (importe * retencionPct) / 100;
     const total = importe - retencionImporte;
-    const concepto = `Cuota mensual de ${contrato.tipoSesion.toLowerCase()} — ${mesNombre}`;
+    const concepto = `Cuota mensual de ${tipoSesionLabel(contrato.tipoSesion).toLowerCase()} — ${mesNombre}`;
 
     // La serie correlativa es la del año en que se EXPIDE, no la del periodo que
     // se factura. Numerar por el año del periodo hacía que recuperar 2025-03
@@ -400,7 +473,9 @@ export class FacturasService {
 
   private async archivarPdfEnR2(factura: FacturaCompleta): Promise<void> {
     if (!this.r2.isConfigured) {
-      this.logger.warn(`R2 no configurado — PDF factura ${factura.id} no archivado`);
+      this.logger.warn(
+        `R2 no configurado — PDF factura ${factura.id} no archivado`,
+      );
       return;
     }
     const buffer = await this.pdfService.generarPdf(factura);
@@ -422,7 +497,10 @@ export class FacturasService {
     return this.pdfService.generarPdf(factura);
   }
 
-  async regenerarPdf(facturaId: string, user: { userId: string; rol: string }): Promise<void> {
+  async regenerarPdf(
+    facturaId: string,
+    user: { userId: string; rol: string },
+  ): Promise<void> {
     const factura = await this.findOneOrThrow(facturaId, user);
     await this.archivarPdfEnR2(factura);
   }
@@ -477,7 +555,8 @@ export class FacturasService {
       include: facturaInclude,
     });
 
-    if (!factura) throw new NotFoundException(`Factura ${facturaId} no encontrada`);
+    if (!factura)
+      throw new NotFoundException(`Factura ${facturaId} no encontrada`);
 
     if (user.rol !== 'ADMIN' && factura.trabajadorId !== user.userId) {
       throw new NotFoundException(`Factura ${facturaId} no encontrada`);
@@ -494,7 +573,9 @@ export class FacturasService {
     const factura = await this.findOneOrThrow(facturaId, user);
 
     if (factura.estado === EstadoFactura.ANULADA) {
-      throw new ForbiddenException('No se puede marcar como pagada una factura anulada');
+      throw new ForbiddenException(
+        'No se puede marcar como pagada una factura anulada',
+      );
     }
 
     const actualizada = await this.prisma.factura.update({
@@ -564,6 +645,20 @@ export class FacturasService {
       throw new NotFoundException(`Trabajador ${trabajadorId} no encontrado`);
     }
 
+    // La otra puerta de emision. Misma exigencia que la generacion por periodo:
+    // sin destinatario fiscal completo no se expide ni se numera.
+    const cliente = await this.prisma.cliente.findUnique({
+      where: { id: dto.clienteId },
+      select: { nombreTutorPagador: true, nifTutorPagador: true },
+    });
+    if (!cliente) {
+      throw new NotFoundException(`Cliente ${dto.clienteId} no encontrado`);
+    }
+    const sinDatos = motivoSinDatosFiscales(cliente);
+    if (sinDatos) {
+      throw new BadRequestException(sinDatos);
+    }
+
     const anio = new Date(dto.fechaEmision).getFullYear();
     const retencionPct = RETENCION_IRPF_PARTICULARES;
     const retencionImporte = (dto.importe * retencionPct) / 100;
@@ -600,7 +695,9 @@ export class FacturasService {
     });
 
     this.archivarPdfEnR2(factura).catch((err) =>
-      this.logger.error(`Error generando PDF factura puntual ${factura.id}: ${err}`),
+      this.logger.error(
+        `Error generando PDF factura puntual ${factura.id}: ${err}`,
+      ),
     );
 
     return factura;
@@ -629,7 +726,9 @@ export class FacturasService {
       if (ok) enviados++;
     }
 
-    this.logger.log(`Emails factura ${periodoFacturado}: ${enviados}/${facturas.length} enviados`);
+    this.logger.log(
+      `Emails factura ${periodoFacturado}: ${enviados}/${facturas.length} enviados`,
+    );
     return enviados;
   }
 
@@ -648,7 +747,9 @@ export class FacturasService {
     const emailDestino = factura.cliente.emailFacturacion ?? null;
 
     if (!emailDestino) {
-      this.logger.warn(`Factura ${factura.id}: cliente sin email — no se envía`);
+      this.logger.warn(
+        `Factura ${factura.id}: cliente sin email — no se envía`,
+      );
       return false;
     }
 
@@ -660,7 +761,9 @@ export class FacturasService {
       `${factura.trabajador.nombre} ${factura.trabajador.apellidos}`;
 
     const pdfBuffer = await this.pdfService.generarPdf(factura).catch((err) => {
-      this.logger.error(`Error generando PDF para email factura ${factura.id}: ${err}`);
+      this.logger.error(
+        `Error generando PDF para email factura ${factura.id}: ${err}`,
+      );
       return null;
     });
     if (!pdfBuffer) return false;

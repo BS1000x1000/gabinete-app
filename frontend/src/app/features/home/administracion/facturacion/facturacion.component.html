@@ -426,6 +426,18 @@
                 </table>
               </div>
             </div>
+          } @else if (enPeriodoAbierto().length) {
+            <!-- No es «todo entregado»: es que el periodo sigue abierto. -->
+            <app-estado-vacio
+              icono="bi-hourglass-split"
+              [titulo]="'El periodo en curso todavía no ha cerrado'"
+              [descripcion]="
+                enPeriodoAbierto().length +
+                (enPeriodoAbierto().length === 1
+                  ? ' factura de ' : ' facturas de ') +
+                periodoLabel(periodoEnCurso) +
+                '. Se podrán entregar cuando acabe el mes: mientras siga abierto puede ' +
+                'emitirse alguna más y el paquete saldría incompleto.'" />
           } @else {
             <app-estado-vacio
               icono="bi-check2-circle"
@@ -652,13 +664,35 @@
 
         <!-- Previsualización: qué se emitiría, antes de emitir nada -->
         @if (!genCargando() && genPreview(); as prev) {
+          <!--
+            Contratos que no se pueden facturar por faltar el destinatario fiscal.
+            Va antes del resumen: es lo que hay que resolver, y si se deja para
+            después solo se descubre al abrir el libro con la columna NIF vacía.
+          -->
+          @if (prev.bloqueadas.length) {
+            <div class="adm-alert adm-alert-warning mb-3">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>
+              <strong>{{ prev.bloqueadas.length }}</strong>
+              {{ prev.bloqueadas.length === 1 ? 'contrato no se facturará' : 'contratos no se facturarán' }}
+              por faltar los datos fiscales del tutor pagador. Complétalos en la ficha
+              del cliente (pestaña Perfil) y vuelve a previsualizar.
+            </div>
+            <ul class="adm-fallos mb-3">
+              @for (b of prev.bloqueadas; track b.contratoId) {
+                <li><strong>{{ b.cliente }}</strong> — {{ b.motivo }}</li>
+              }
+            </ul>
+          }
+
           @if (!prev.aGenerar.length) {
             <app-estado-vacio
               icono="bi-check2-circle"
               titulo="No hay nada que generar"
               [descripcion]="prev.yaFacturadas
                 ? prev.yaFacturadas + ' contrato(s) de este periodo ya tienen factura.'
-                : 'Ningún contrato estaba vigente en este periodo.'" />
+                : prev.bloqueadas.length
+                  ? 'Los contratos del periodo están a la espera de los datos fiscales del tutor pagador.'
+                  : 'Ningún contrato estaba vigente en este periodo.'" />
           } @else {
             <div class="adm-preview-resumen">
               Se emitirán <strong>{{ prev.aGenerar.length }}</strong>

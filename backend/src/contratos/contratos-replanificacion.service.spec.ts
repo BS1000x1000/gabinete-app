@@ -3,6 +3,7 @@ import { BadRequestException, ConflictException, NotFoundException } from '@nest
 import { EstadoContrato, EstadoSesion } from '@prisma/client';
 import { ContratosReplanificacionService } from './contratos-replanificacion.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { FestivosService } from '../festivos/festivos.service';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
@@ -16,7 +17,7 @@ const mkPrisma = () => ({
     updateMany: jest.fn(),
     createMany: jest.fn(),
   },
-  festivo: { findMany: jest.fn().mockResolvedValue([]) },
+
   periodoVacaciones: { findMany: jest.fn().mockResolvedValue([]) },
   $transaction: jest.fn(),
 });
@@ -44,13 +45,16 @@ const userAdmin = { userId: 'admin-1', rol: 'ADMIN' };
 describe('ContratosReplanificacionService', () => {
   let svc: ContratosReplanificacionService;
   let prisma: ReturnType<typeof mkPrisma>;
+  let festivos: { delCentro: jest.Mock };
 
   beforeEach(async () => {
     prisma = mkPrisma();
+    festivos = { delCentro: jest.fn().mockResolvedValue([]) };
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ContratosReplanificacionService,
         { provide: PrismaService, useValue: prisma },
+        { provide: FestivosService, useValue: festivos },
       ],
     }).compile();
     svc = module.get(ContratosReplanificacionService);
@@ -116,8 +120,8 @@ describe('ContratosReplanificacionService', () => {
     });
 
     it('omite los festivos y los cuenta aparte', async () => {
-      prisma.festivo.findMany.mockResolvedValue([
-        { fecha: new Date('2026-09-04T00:00:00'), descripcion: 'Fiesta local', ambito: 'LOCAL' },
+      festivos.delCentro.mockResolvedValue([
+        { fecha: new Date('2026-09-04T00:00:00'), descripcion: 'Fiesta local' },
       ]);
       prisma.contratoServicio.findUnique.mockResolvedValue(
         mkContrato({ fechaFin: new Date('2026-09-06T23:59:59') }),

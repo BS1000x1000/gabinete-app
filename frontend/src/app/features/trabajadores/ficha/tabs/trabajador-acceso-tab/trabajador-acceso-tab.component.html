@@ -49,8 +49,98 @@
         </div>
       </div>
 
+      <!-- Card — Contraseña ─────────────────────────────────────
+           Vivía sola en /home/cuenta, una pantalla entera para un
+           único campo. Aquí es donde toca: "Acceso" es la cuenta.
+           Uno mismo verifica su contraseña actual; un ADMIN
+           restablece la de otro sin conocerla. -->
+      <div class="perfil-card trab-edit-card" *ngIf="esPropioUsuario() || puedeGestionarCuenta()">
+        <div class="perfil-card-hdr">
+          <span class="perfil-card-icon" style="background: #e8e4f8; color: #5b4fb8;">
+            <i class="bi bi-key-fill"></i>
+          </span>
+          <h3 class="perfil-card-title">
+            {{ esPropioUsuario() ? 'Cambiar contraseña' : 'Restablecer contraseña' }}
+          </h3>
+        </div>
+        <div class="perfil-card-body">
+
+          <p class="text-muted small mb-3" *ngIf="!esPropioUsuario()">
+            Se establece una contraseña nueva sin necesidad de conocer la actual.
+            Comunícasela a la persona por un canal seguro.
+          </p>
+
+          <div class="row g-3">
+            <div class="col-md-4" *ngIf="esPropioUsuario()">
+              <label class="form-label form-label-sm">Contraseña actual</label>
+              <div class="input-group input-group-sm">
+                <input
+                  [type]="mostrarPassword().actual ? 'text' : 'password'"
+                  class="form-control"
+                  autocomplete="current-password"
+                  [value]="formPassword().passwordActual"
+                  (input)="setPassword('passwordActual', $any($event.target).value)"
+                />
+                <button class="btn btn-outline-secondary" type="button" (click)="toggleMostrarPassword('actual')">
+                  <i class="bi" [class.bi-eye]="!mostrarPassword().actual" [class.bi-eye-slash]="mostrarPassword().actual"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label form-label-sm">Nueva contraseña</label>
+              <div class="input-group input-group-sm">
+                <input
+                  [type]="mostrarPassword().nueva ? 'text' : 'password'"
+                  class="form-control"
+                  autocomplete="new-password"
+                  [value]="formPassword().passwordNueva"
+                  (input)="setPassword('passwordNueva', $any($event.target).value)"
+                />
+                <button class="btn btn-outline-secondary" type="button" (click)="toggleMostrarPassword('nueva')">
+                  <i class="bi" [class.bi-eye]="!mostrarPassword().nueva" [class.bi-eye-slash]="mostrarPassword().nueva"></i>
+                </button>
+              </div>
+              <span class="form-text">Mínimo 8 caracteres.</span>
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label form-label-sm">Repetir contraseña</label>
+              <div class="input-group input-group-sm">
+                <input
+                  [type]="mostrarPassword().confirmar ? 'text' : 'password'"
+                  class="form-control"
+                  autocomplete="new-password"
+                  [value]="formPassword().confirmar"
+                  (input)="setPassword('confirmar', $any($event.target).value)"
+                />
+                <button class="btn btn-outline-secondary" type="button" (click)="toggleMostrarPassword('confirmar')">
+                  <i class="bi" [class.bi-eye]="!mostrarPassword().confirmar" [class.bi-eye-slash]="mostrarPassword().confirmar"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="errorPassword()" class="alert alert-danger py-2 mt-3 mb-0">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ errorPassword() }}
+          </div>
+
+          <button
+            class="btn btn-primary btn-sm mt-3"
+            type="button"
+            (click)="cambiarPassword()"
+            [disabled]="guardandoPassword()"
+          >
+            <span *ngIf="guardandoPassword()" class="spinner-border spinner-border-sm me-1"></span>
+            <i *ngIf="!guardandoPassword()" class="bi bi-check-lg me-1"></i>
+            {{ esPropioUsuario() ? 'Cambiar contraseña' : 'Restablecer contraseña' }}
+          </button>
+
+        </div>
+      </div>
+
       <!-- Card — Rol -->
-      <div class="perfil-card trab-edit-card" *ngIf="!esPropioUsuario()">
+      <div class="perfil-card trab-edit-card" *ngIf="puedeGestionarCuenta()">
         <div class="perfil-card-hdr">
           <span class="perfil-card-icon" style="background: #dde6ec; color: #3a5c74;">
             <i class="bi bi-person-gear"></i>
@@ -84,7 +174,7 @@
     </div>
 
     <!-- Zona peligrosa — desactivar/activar cuenta -->
-    <div class="mt-4" *ngIf="!esPropioUsuario()">
+    <div class="mt-4" *ngIf="puedeGestionarCuenta()">
       <div class="trab-section-hdr mb-3">
         <span class="trab-section-title text-danger">
           <i class="bi bi-exclamation-triangle me-2"></i>Zona peligrosa

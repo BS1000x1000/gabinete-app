@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { TrabajadorController } from './trabajador.controller';
 import { TrabajadorService } from './trabajador.service';
 import { TipoSesion } from '@prisma/client';
@@ -129,6 +129,10 @@ describe('TrabajadorController', () => {
   });
 
   // ── asignarCliente ────────────────────────────────────────────────────────
+  const reqAdmin  = { user: { userId: 'admin-1', rol: 'ADMIN' } };
+  const reqPropio = { user: { userId: 'trabajador-1', rol: 'PEDAGOGO' } };
+  const reqAjeno  = { user: { userId: 'otro-1', rol: 'PEDAGOGO' } };
+
   describe('asignarCliente()', () => {
     it('asigna cliente con tipo de terapia', async () => {
       const expected = { id: 'asignacion-1' };
@@ -138,12 +142,32 @@ describe('TrabajadorController', () => {
         'trabajador-1',
         'cliente-1',
         { tipoTerapia: TipoSesion.PEDAGOGIA },
+        reqAdmin,
       );
 
       expect(service.asignarCliente).toHaveBeenCalledWith(
         'trabajador-1', 'cliente-1', TipoSesion.PEDAGOGIA,
       );
       expect(result).toEqual(expected);
+    });
+
+    // No habia ninguna comprobacion: cualquier autenticado podia mover la
+    // cartera de clientes de otro terapeuta.
+    it('rechaza asignar clientes a la ficha de otro', async () => {
+      await expect(
+        controller.asignarCliente(
+          'trabajador-1', 'cliente-1', { tipoTerapia: TipoSesion.PEDAGOGIA }, reqAjeno,
+        ),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(service.asignarCliente).not.toHaveBeenCalled();
+    });
+
+    it('permite asignar en la ficha propia', async () => {
+      service.asignarCliente.mockResolvedValue({ id: 'a' });
+      await controller.asignarCliente(
+        'trabajador-1', 'cliente-1', { tipoTerapia: TipoSesion.PEDAGOGIA }, reqPropio,
+      );
+      expect(service.asignarCliente).toHaveBeenCalled();
     });
   });
 
@@ -153,10 +177,17 @@ describe('TrabajadorController', () => {
       const expected = { message: 'Desasignado' };
       service.desasignarCliente.mockResolvedValue(expected);
 
-      const result = await controller.desasignarCliente('trabajador-1', 'cliente-1');
+      const result = await controller.desasignarCliente('trabajador-1', 'cliente-1', reqAdmin);
 
       expect(service.desasignarCliente).toHaveBeenCalledWith('trabajador-1', 'cliente-1');
       expect(result).toEqual(expected);
+    });
+
+    it('rechaza desasignar de la ficha de otro', async () => {
+      await expect(
+        controller.desasignarCliente('trabajador-1', 'cliente-1', reqAjeno),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(service.desasignarCliente).not.toHaveBeenCalled();
     });
   });
 

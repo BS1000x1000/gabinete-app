@@ -10,6 +10,7 @@ import {
   UpdateContratoPayload,
   SlotPayload,
   PreviewReplanificacion,
+  CargaSemanalDia,
 } from '../interface/contrato.interface';
 
 interface WrappedResponse<T> { data: T; }
@@ -40,6 +41,20 @@ export class ContratosService {
     return this.http
       .get<WrappedResponse<ContratoServicio[]>>(this.apiUrl, { params })
       .pipe(map(res => (res.data ?? res) as ContratoServicio[]));
+  }
+
+  /**
+   * Qué clientes tiene un terapeuta cada día de la semana. Alimenta la rejilla
+   * de "Mi semana". Sin `trabajadorId` el backend devuelve la del que llama;
+   * la ajena solo la ve un ADMIN.
+   */
+  getCargaSemanal(trabajadorId?: string) {
+    const params = trabajadorId
+      ? new HttpParams().set('trabajadorId', trabajadorId)
+      : undefined;
+    return this.http
+      .get<WrappedResponse<CargaSemanalDia[]>>(`${this.apiUrl}/carga-semanal`, { params })
+      .pipe(map(res => (res.data ?? res) as CargaSemanalDia[]));
   }
 
   getContrato(id: string) {

@@ -14,7 +14,7 @@ import { NuevaSesionModalService } from '../../../services/nueva-sesion-modal.se
 import { SesionesService } from '../../../services/sesiones.service';
 import { ClientesService } from '../../../services/cliente.service';
 import { TrabajadorService } from '../../../services/trabajadores.service';
-import { TipoSesion, TIPO_SESION_LABELS } from '../../../interface/sesion.interface';
+import { TipoSesion, TIPO_SESION_LABELS, AvisoSesion } from '../../../interface/sesion.interface';
 import { ClienteDataBackend } from '../../../interface/cliente-backend.interface';
 
 @Component({
@@ -39,6 +39,25 @@ export class NuevaSesionModalComponent implements OnDestroy {
   isSaving     = signal(false);
   saveSuccess  = signal(false);
   saveError    = signal<string | null>(null);
+
+  /**
+   * Avisos devueltos al crear (solape, fuera de jornada, vacaciones, festivo).
+   * La sesión ya está creada cuando se rellenan: son informativos.
+   */
+  avisos = signal<AvisoSesion[]>([]);
+
+  readonly AVISO_ICONO: Record<AvisoSesion['tipo'], string> = {
+    FESTIVO:                 'bi-calendar2-x',
+    VACACIONES:              'bi-umbrella',
+    FUERA_DE_DISPONIBILIDAD: 'bi-clock-history',
+    SOLAPE_TERAPEUTA:        'bi-people',
+    SOLAPE_CLIENTE:          'bi-person-exclamation',
+  };
+
+  cerrarTrasAvisos(): void {
+    this.avisos.set([]);
+    this.modalSvc.close();
+  }
 
   private saveTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
@@ -113,9 +132,19 @@ export class NuevaSesionModalComponent implements OnDestroy {
     this.sesionesSvc.createSesion(dto)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: () => {
-          this.saveSuccess.set(true);
+        next: (sesion) => {
           this.isSaving.set(false);
+
+          // Con avisos NO se cierra solo: la sesión queda creada -avisar no es
+          // bloquear- pero cerrar el modal a los 1,4 s los haría invisibles, que
+          // es justo lo que llevaba pasando.
+          const avisos = sesion?.avisos ?? [];
+          if (avisos.length > 0) {
+            this.avisos.set(avisos);
+            return;
+          }
+
+          this.saveSuccess.set(true);
           this.saveTimeoutId = setTimeout(() => {
             this.saveSuccess.set(false);
             this.modalSvc.close();

@@ -336,3 +336,280 @@
   border-radius: 0.4rem;
   padding: 0.45rem 0.75rem;
 }
+
+// ============================================================
+// CALENDARIO DEL CENTRO
+// ============================================================
+//
+// La cabecera declara, en una frase, que dias cierra el centro. Es la unica
+// entrada de datos que decide el calendario entero: antes eran dos campos de
+// texto libre que se cruzaban contra la provincia del cliente, y un festivo mal
+// escrito desaparecia sin decir nada.
+//
+// El estado de alerta es deliberadamente visible: la pantalla tiene que
+// confesar lo que NO sabe, porque un festivo local que falta se traduce en un
+// contrato con una sesion de mas.
+
+.cal-centro {
+  border: 1px solid $primary-light;
+  border-left: 3px solid $primary;
+  border-radius: $border-radius-lg;
+  background: $primary-ultra-light;
+  padding: $spacing-smd $spacing-md;
+  margin-bottom: $spacing-lg;
+
+  &--alerta {
+    border-color: rgba($warning, 0.35);
+    border-left-color: $warning;
+    background: $warning-light;
+  }
+}
+
+.cal-centro__main {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: $spacing-smd;
+}
+
+.cal-centro__label {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-2xs;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: $gray-700;
+
+  i { color: $primary; }
+
+  .cal-centro--alerta & i { color: $warning; }
+}
+
+.cal-centro__selects {
+  display: flex;
+  align-items: center;
+  gap: $spacing-2xs;
+  flex-wrap: wrap;
+}
+
+// Se lee como parte de la frase, no como un formulario: sin caja hasta que se
+// interactua con el. La decision se toma una vez y se consulta muchas.
+.cal-centro__select {
+  appearance: auto;
+  border: 1px solid transparent;
+  background: rgba($white, 0.75);
+  border-radius: 0.4rem;
+  padding: 0.28rem 0.5rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: $primary;
+  cursor: pointer;
+  max-width: 15rem;
+  transition: border-color 0.15s, background 0.15s;
+
+  &:hover:not(:disabled) { border-color: $primary-light; background: $white; }
+
+  &:focus {
+    outline: none;
+    border-color: $primary;
+    background: $white;
+    box-shadow: 0 0 0 3px rgba($primary, 0.12);
+  }
+
+  &:disabled { opacity: 0.6; cursor: wait; }
+
+  .cal-centro--alerta & {
+    color: $warning-dark;
+    &:hover:not(:disabled) { border-color: rgba($warning, 0.4); }
+    &:focus { border-color: $warning; box-shadow: 0 0 0 3px rgba($warning, 0.15); }
+  }
+}
+
+.cal-centro__sep {
+  color: $gray-400;
+  font-weight: 700;
+}
+
+.cal-centro__spin {
+  color: $primary;
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.cal-centro__aviso,
+.cal-centro__error {
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-2xs;
+  margin: $spacing-smd 0 0;
+  padding-top: $spacing-smd;
+  border-top: 1px solid rgba($warning, 0.25);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: $warning-dark;
+
+  i { flex-shrink: 0; margin-top: 0.1rem; }
+}
+
+.cal-centro__error {
+  border-top-color: rgba($danger, 0.25);
+  color: $danger;
+}
+
+// ── Subtitulo del bloque de festivos ─────────────────────────
+
+.festivos-title-sub {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: $gray-500;
+  padding-left: $spacing-sm;
+  margin-left: $spacing-xs;
+  border-left: 1px solid $gray-300;
+}
+
+// ============================================================
+// PREVISUALIZACION DE LA IMPORTACION
+// ============================================================
+//
+// Inline y no en modal, a proposito: hay que poder cotejarla con la tabla que
+// ya esta debajo -y con el boletin- sin perder ninguna de las dos de vista.
+
+.festivos-preview {
+  border: 1px solid $primary-light;
+  border-radius: $border-radius-lg;
+  overflow: hidden;
+  margin-bottom: $spacing-md;
+  box-shadow: $shadow-card;
+}
+
+.festivos-preview__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+  padding: 0.65rem 1rem;
+  background: $primary-ultra-light;
+  border-bottom: 1px solid $primary-light;
+  font-size: 0.85rem;
+  color: $gray-800;
+}
+
+.festivos-preview__nota {
+  color: $gray-500;
+  font-size: 0.8rem;
+}
+
+.festivos-preview__actions {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.festivos-preview__list {
+  list-style: none;
+  margin: 0;
+  padding: 0.35rem 0;
+  max-height: 17rem;
+  overflow-y: auto;
+  background: $white;
+
+  li {
+    display: grid;
+    grid-template-columns: 6.5rem 1fr auto;
+    align-items: center;
+    gap: $spacing-sm;
+    padding: 0.32rem 1rem;
+    font-size: 0.82rem;
+
+    &:hover { background: $primary-ultra-light; }
+  }
+}
+
+.festivos-preview__fecha {
+  color: $gray-700;
+  font-variant-numeric: tabular-nums;
+
+  em {
+    font-style: normal;
+    color: $gray-500;
+    font-size: 0.75rem;
+    margin-left: 0.2rem;
+  }
+}
+
+.festivos-preview__desc { color: $gray-800; }
+
+// ── Resultado de la importacion ──────────────────────────────
+
+.festivos-resultado {
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-sm;
+  padding: 0.7rem 1rem;
+  margin-bottom: $spacing-md;
+  border-radius: $border-radius-lg;
+  background: rgba($success, 0.08);
+  color: darken($success, 12%);
+  font-size: 0.82rem;
+  line-height: 1.5;
+
+  &--aviso {
+    background: $warning-light;
+    color: $warning-dark;
+  }
+
+  i { flex-shrink: 0; margin-top: 0.15rem; }
+}
+
+.festivos-resultado__linea { margin-top: 0.2rem; }
+
+// ============================================================
+// TABLA — columnas nuevas
+// ============================================================
+
+.festivos-td-fecha { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.festivos-td-acciones { white-space: nowrap; text-align: right; }
+
+// El dia de la semana es la columna que de verdad se consulta: decide que
+// familias pierden sesion. En fin de semana el festivo no quita nada, y se
+// atenua para que la lectura sea inmediata.
+.festivos-dia {
+  display: inline-block;
+  min-width: 2.4rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: $gray-700;
+
+  &--finde {
+    color: $gray-400;
+    font-weight: 500;
+  }
+}
+
+.festivos-del-btn--danger:hover { color: $danger; background: rgba($danger, 0.08); }
+
+// Un festivo cargado que no pertenece al calendario vigente. Se conserva -puede
+// volver a aplicar si el centro cambia de municipio- pero se deja claro que hoy
+// no cuenta, en vez de mezclarlo con los que si.
+.festivos-row--inactiva {
+  opacity: 0.55;
+
+  td { font-style: italic; }
+}
+
+.festivos-fuera {
+  display: inline-block;
+  margin-left: $spacing-2xs;
+  padding: 0.1rem 0.4rem;
+  border-radius: 0.3rem;
+  background: rgba($gray-500, 0.12);
+  color: $gray-600;
+  font-size: 0.68rem;
+  font-weight: 700;
+  font-style: normal;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}

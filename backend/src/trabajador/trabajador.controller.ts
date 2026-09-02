@@ -16,7 +16,7 @@ import {
   Req,
 } from '@nestjs/common';
 import { TrabajadorService } from './trabajador.service';
-import { CreateTrabajadorDto, UpdateTrabajadorDto, DatosFiscalesDto } from './dto/trabajador.dto';
+import { CreateTrabajadorDto, UpdateTrabajadorDto, UpdateMeDto, DatosFiscalesDto } from './dto/trabajador.dto';
 import { AdminSetPasswordDto } from './dto/admin-set-password.dto';
 import { TipoSesion } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -60,8 +60,14 @@ export class TrabajadorController {
     return trabajador;
   }
 
+  /**
+   * Perfil propio. Toma `UpdateMeDto` y NO `UpdateTrabajadorDto`: ese incluye
+   * `rolId` y `activo`, con lo que cualquier usuario autenticado podia
+   * ascenderse a ADMIN de una sola peticion -y `GET /roles`, abierto a todo
+   * autenticado, le daba el id que necesitaba-.
+   */
   @Patch('me')
-  async updateMe(@Req() req: any, @Body() dto: UpdateTrabajadorDto) {
+  async updateMe(@Req() req: any, @Body() dto: UpdateMeDto) {
     this.logger.log(`PATCH /trabajadores/me - userId: ${req.user.userId}`);
     return this.trabajadorService.update(req.user.userId, dto);
   }
@@ -100,13 +106,21 @@ export class TrabajadorController {
     return this.trabajadorService.getClientesAsignados(id);
   }
 
+  /**
+   * Asignar y desasignar exigen el mismo permiso que LEER la lista
+   * (`GET :id/clientes`, mas arriba): gestion, o uno sobre si mismo. No tenian
+   * ninguna comprobacion, asi que cualquier usuario autenticado con acceso a la
+   * ficha podia mover la cartera de clientes de otro terapeuta.
+   */
   @Post(':trabajadorId/clientes/:clienteId')
   @HttpCode(HttpStatus.CREATED)
   async asignarCliente(
     @Param('trabajadorId') trabajadorId: string,
     @Param('clienteId') clienteId: string,
     @Body() body: { tipoTerapia: TipoSesion },
+    @Req() req: any,
   ) {
+    this.assertGestionOPropio(req, trabajadorId);
     this.logger.log(`Asignando cliente ${clienteId} al trabajador ${trabajadorId}`);
     return this.trabajadorService.asignarCliente(
       trabajadorId, 
@@ -120,9 +134,18 @@ export class TrabajadorController {
   async desasignarCliente(
     @Param('trabajadorId') trabajadorId: string,
     @Param('clienteId') clienteId: string,
+    @Req() req: any,
   ) {
+    this.assertGestionOPropio(req, trabajadorId);
     this.logger.log(`Desasignando cliente ${clienteId} del trabajador ${trabajadorId}`);
     return this.trabajadorService.desasignarCliente(trabajadorId, clienteId);
+  }
+
+  /** ROLES_GESTION ve y toca cualquier ficha; el resto, solo la suya. */
+  private assertGestionOPropio(req: any, trabajadorId: string): void {
+    if (!ROLES_GESTION.includes(req.user?.rol) && req.user?.userId !== trabajadorId) {
+      throw new ForbiddenException('No tienes permiso sobre este trabajador');
+    }
   }
 
   @Patch(':id/datos-fiscales')

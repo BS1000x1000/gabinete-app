@@ -12,6 +12,7 @@ import {
   MiDiaResponse,
   EstadisticasAvanzadas,
 } from '../interface/dashboard.interface';
+import { HorasTrabajadasResponse } from '../interface/evento-agenda.interface';
 
 // ✅ NUEVO: Interface para respuestas envueltas
 interface WrappedResponse<T> {
@@ -168,13 +169,18 @@ export class DashboardService {
       .pipe(map((res) => res.data || res));
   }
 
-  getHorasHistoricas<T>(desde: Date, hasta: Date, trabajadorId?: string): Observable<T> {
+  /** Horas por semana del periodo: la sección de jornada de Estadísticas. */
+  getHorasHistoricas(
+    desde: Date,
+    hasta: Date,
+    trabajadorId?: string,
+  ): Observable<HorasTrabajadasResponse> {
     let params = new HttpParams()
       .set('desde', desde.toISOString())
       .set('hasta', hasta.toISOString());
     if (trabajadorId) params = params.set('trabajadorId', trabajadorId);
     return this.http
-      .get<WrappedResponse<T>>(`${this.api}/horas-trabajadas`, { params })
+      .get<WrappedResponse<HorasTrabajadasResponse>>(`${this.api}/horas-trabajadas`, { params })
       .pipe(map((res) => res.data));
   }
 

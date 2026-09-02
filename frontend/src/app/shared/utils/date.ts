@@ -6,9 +6,15 @@ export function isoToHHMM(iso: string): string {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
+/**
+ * Minutos a "2h 30m". Por debajo de la hora se omite el "0h": una actividad de
+ * 45 minutos se lee "45m", no "0h 45m". `estadisticas` tenia su propia copia de
+ * esta funcion solo por esa diferencia.
+ */
 export function formatMinutosHoras(minutos: number): string {
   const h = Math.floor(minutos / 60);
   const m = minutos % 60;
+  if (h === 0) return `${m}m`;
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 

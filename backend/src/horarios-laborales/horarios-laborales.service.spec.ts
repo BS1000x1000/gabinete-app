@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { HorariosLaboralesService } from './horarios-laborales.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { FestivosService } from '../festivos/festivos.service';
 
 const mkPrisma = () => ({
   horarioLaboral: {
@@ -28,37 +29,43 @@ const base = {
 describe('HorariosLaboralesService', () => {
   let svc: HorariosLaboralesService;
   let prisma: ReturnType<typeof mkPrisma>;
+  let festivos: { delCentro: jest.Mock };
 
   beforeEach(async () => {
     prisma = mkPrisma();
+    festivos = { delCentro: jest.fn().mockResolvedValue([]) };
     const module: TestingModule = await Test.createTestingModule({
-      providers: [HorariosLaboralesService, { provide: PrismaService, useValue: prisma }],
+      providers: [
+        HorariosLaboralesService,
+        { provide: PrismaService, useValue: prisma },
+        { provide: FestivosService, useValue: festivos },
+      ],
     }).compile();
     svc = module.get(HorariosLaboralesService);
   });
 
   describe('evaluarAvisos()', () => {
-    it('no avisa de nada si el terapeuta no tiene jornada declarada', async () => {
+    it('no avisa de nada si el terapeuta no tiene disponibilidad declarada', async () => {
       // Avisar aquí sería ruido para quien aún no la ha configurado
       expect(await svc.evaluarAvisos(base)).toEqual([]);
     });
 
-    it('no avisa si la sesión cae dentro de la jornada', async () => {
+    it('no avisa si la sesión cae dentro de la disponibilidad', async () => {
       prisma.horarioLaboral.findMany.mockResolvedValue([
         { diaSemana: 3, horaInicio: '15:00', horaFin: '20:00', activo: true },
       ]);
       expect(await svc.evaluarAvisos(base)).toEqual([]);
     });
 
-    it('avisa si la sesión cae fuera de la jornada', async () => {
+    it('avisa si la sesión cae fuera de la disponibilidad', async () => {
       prisma.horarioLaboral.findMany.mockResolvedValue([
         { diaSemana: 3, horaInicio: '09:00', horaFin: '14:00', activo: true },
       ]);
       const avisos = await svc.evaluarAvisos(base);
-      expect(avisos.map((a) => a.tipo)).toContain('FUERA_DE_JORNADA');
+      expect(avisos.map((a) => a.tipo)).toContain('FUERA_DE_DISPONIBILIDAD');
     });
 
-    it('consulta la jornada del día ISO correcto', async () => {
+    it('consulta la disponibilidad del día ISO correcto', async () => {
       await svc.evaluarAvisos(base);
       // Miércoles es 3 en ISO, no 2 como daría un getDay() sin convertir
       expect(prisma.horarioLaboral.findMany.mock.calls[0][0].where.diaSemana).toBe(3);
@@ -114,6 +121,35 @@ describe('HorariosLaboralesService', () => {
       expect(avisos.map((a) => a.tipo)).toContain('VACACIONES');
     });
 
+    /**
+     * El tipo 'FESTIVO' llevaba declarado en `AvisoSesion` desde el principio y
+     * `evaluarAvisos` no lo emitía nunca: poner una sesión el 25 de diciembre no
+     * decía absolutamente nada.
+     */
+    it('avisa si ese día es festivo del centro, con el nombre del festivo', async () => {
+      festivos.delCentro.mockResolvedValue([
+        { fecha: new Date('2026-09-02T12:00:00Z'), descripcion: 'Ntra. Sra. de Belén' },
+      ]);
+      const avisos = await svc.evaluarAvisos(base);
+      expect(avisos).toContainEqual({
+        tipo: 'FESTIVO',
+        mensaje: 'Ese día es festivo (Ntra. Sra. de Belén).',
+      });
+    });
+
+    it('no avisa por un festivo de otro día', async () => {
+      festivos.delCentro.mockResolvedValue([
+        { fecha: new Date('2026-09-03T12:00:00Z'), descripcion: 'Otro día' },
+      ]);
+      const avisos = await svc.evaluarAvisos(base);
+      expect(avisos.map((a) => a.tipo)).not.toContain('FESTIVO');
+    });
+
+    it('pregunta por el calendario del centro, no por el municipio del cliente', async () => {
+      await svc.evaluarAvisos(base);
+      expect(festivos.delCentro).toHaveBeenCalledWith([2026]);
+    });
+
     // La garantía de que avisar no es bloquear
     it('nunca lanza excepción, por muchos avisos que haya', async () => {
       prisma.horarioLaboral.findMany.mockResolvedValue([
@@ -140,18 +176,37 @@ describe('HorariosLaboralesService', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
-    // La jornada de un autónomo es suya
-    it('un terapeuta no puede editar la jornada de otro', async () => {
+    // La disponibilidad de un autónomo es suya
+    it('un terapeuta no puede editar la disponibilidad de otro', async () => {
       await expect(
         svc.create('otro-tra', { diaSemana: 3, horaInicio: '09:00', horaFin: '14:00' }, userPropio),
       ).rejects.toThrow(ForbiddenException);
     });
 
-    it('un ADMIN sí puede', async () => {
-      prisma.horarioLaboral.create.mockResolvedValue({ id: 'h1' });
+    /**
+     * Ni siquiera un ADMIN escribe la disponibilidad de otro. Mismo criterio que
+     * ya imponían los bloques de administración —`HorariosAdminService.create`
+     * usa siempre el `userId` de quien llama— y el que la UI daba por hecho con
+     * `puedeEditar`. Antes aquí el ADMIN sí podía: las dos mitades de "Mi
+     * semana" tenían reglas distintas.
+     */
+    it('un ADMIN tampoco escribe la disponibilidad de otro', async () => {
       await expect(
         svc.create('otro-tra', { diaSemana: 3, horaInicio: '09:00', horaFin: '14:00' }, { userId: 'a', rol: 'ADMIN' }),
-      ).resolves.toMatchObject({ id: 'h1' });
+      ).rejects.toThrow(ForbiddenException);
+      expect(prisma.horarioLaboral.create).not.toHaveBeenCalled();
+    });
+
+    it('un ADMIN sí puede leer la disponibilidad de otro', async () => {
+      await expect(
+        svc.findByTrabajador('otro-tra', { userId: 'a', rol: 'ADMIN' }),
+      ).resolves.toEqual([]);
+    });
+
+    it('un terapeuta no puede leer la disponibilidad de otro', async () => {
+      await expect(
+        svc.findByTrabajador('otro-tra', userPropio),
+      ).rejects.toThrow(ForbiddenException);
     });
   });
 });

@@ -11,7 +11,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FestivosService } from '../../../../../services/festivos.service';
-import { Festivo } from '../../../../../interface/festivo.interface';
+import { FestivoDelCentro } from '../../../../../interface/festivo.interface';
 import { PeriodoVacaciones } from '../../../../../interface/vacaciones.interface';
 
 interface DiaCalendario {
@@ -38,7 +38,7 @@ export class VacPickerComponent implements OnInit {
   readonly rangoChange = output<{ fechaInicio: string; fechaFin: string } | null>();
 
   private mesMostrado = signal(new Date());
-  private festivosCargados = signal<Festivo[]>([]);
+  private festivosCargados = signal<FestivoDelCentro[]>([]);
   private aniosCargados = new Set<number>();
 
   readonly rangoInicio = signal<string | null>(null);
@@ -199,13 +199,15 @@ export class VacPickerComponent implements OnInit {
   private cargarFestivos(): void {
     const anio = this.mesMostrado().getFullYear();
     if (this.aniosCargados.has(anio)) return;
-    this.festivosSvc.getFestivosParaAgenda(anio)
+    this.festivosSvc.getDelCentro(anio)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: festivos => {
           this.aniosCargados.add(anio);
+          // `del-centro` ya no devuelve el año como campo; se deriva de la
+          // fecha, que es de donde salía de todos modos.
           this.festivosCargados.update(existing => [
-            ...existing.filter(f => f.anio !== anio),
+            ...existing.filter(f => new Date(f.fecha).getFullYear() !== anio),
             ...festivos,
           ]);
         },

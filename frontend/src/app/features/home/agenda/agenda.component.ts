@@ -46,7 +46,7 @@ import {
   TipoEvento,
 } from '../../../interface/evento-agenda.interface';
 import { FestivosService } from '../../../services/festivos.service';
-import { Festivo } from '../../../interface/festivo.interface';
+import { FestivoDelCentro } from '../../../interface/festivo.interface';
 import { TIPO_COLOR, TIPO_COLOR_POR_DEFECTO } from '../../../interface/contrato.interface';
 import { DashboardService } from '../../../services/dashboard.service';
 import { RegistroDrawerService } from '../../../services/registro-drawer.service';
@@ -147,12 +147,14 @@ export class AgendaComponent implements OnInit {
   /** Menu desplegable "+ Nuevo" de la barra superior. */
   menuNuevoAbierto = signal(false);
 
-  // Festivos y vacaciones en agenda
-  private festivosAgenda = signal<Festivo[]>([]);
+  // Festivos y vacaciones en agenda.
+  // Son los del CENTRO: antes se pedían todos los del año sin filtrar ámbito,
+  // así que un festivo local de otro municipio se pintaba para todo el mundo.
+  private festivosAgenda = signal<FestivoDelCentro[]>([]);
   private festivosAnioCargado = signal<number | null>(null);
 
   readonly festivosPorFecha = computed(() => {
-    const map = new Map<string, Festivo>();
+    const map = new Map<string, FestivoDelCentro>();
     for (const f of this.festivosAgenda()) {
       map.set(f.fecha.split('T')[0], f);
     }
@@ -180,7 +182,7 @@ export class AgendaComponent implements OnInit {
 
   private cargarFestivosAnio(anio: number): void {
     if (this.festivosAnioCargado() === anio) return;
-    this.festivosSvc.getFestivosParaAgenda(anio)
+    this.festivosSvc.getDelCentro(anio)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(festivos => {
         this.festivosAgenda.set(festivos);
