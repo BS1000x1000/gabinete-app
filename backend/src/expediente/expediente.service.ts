@@ -19,6 +19,7 @@ import {
 } from '../contratos/contratos-pdf.service';
 import { CONTRATO_PDF_INCLUDE } from '../contratos/contratos.include';
 import { buildContratoHtml } from '../contratos/templates/contrato.template';
+import type { DocumentoImprimible } from '../common/documentos/documento-base';
 import { ConsentimientosService } from '../consentimientos/consentimientos.service';
 import { FirmaExpedienteDto } from '../consentimientos/dto/consentimiento.dto';
 import * as PlantillaContrato from '../contratos/templates/contrato.template';
@@ -121,8 +122,8 @@ export class ExpedienteService {
         user,
       );
 
-      const html = this.htmlDe(def.categoria, datos);
-      const buffer = await this.pdf.generatePdf(html);
+      const doc = this.documentoDe(def.categoria, datos);
+      const buffer = await this.pdf.generatePdf(doc.html, doc.opcionesPdf);
 
       await this.documentos.create(
         {
@@ -153,7 +154,10 @@ export class ExpedienteService {
     return { generados, omitidos, faltantes };
   }
 
-  private htmlDe(categoria: CategoriaDocumento, datos: any): string {
+  private documentoDe(
+    categoria: CategoriaDocumento,
+    datos: any,
+  ): DocumentoImprimible {
     switch (categoria) {
       case CategoriaDocumento.CONTRATO:
         return buildContratoHtml(datos);
@@ -242,7 +246,8 @@ export class ExpedienteService {
     await this.assertAccesoCliente(contrato.clienteId, user);
 
     const datos = await this.contratosPdf.construirDatos(contrato as any);
-    const buffer = await this.pdf.generatePdf(this.htmlDe(categoria, datos));
+    const doc = this.documentoDe(categoria, datos);
+    const buffer = await this.pdf.generatePdf(doc.html, doc.opcionesPdf);
 
     return { buffer, nombreFichero: def.fichero };
   }

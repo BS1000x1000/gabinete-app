@@ -243,6 +243,7 @@ export class ContratosPdfService {
     this.logger.log(
       `Generando PDF de contrato para ${datos.menor.nombreCompleto} (${datos.calendario.length} meses de calendario)`,
     );
-    return this.pdfGenerator.generatePdf(buildContratoHtml(datos));
+    const doc = buildContratoHtml(datos);
+    return this.pdfGenerator.generatePdf(doc.html, doc.opcionesPdf);
   }
 }

@@ -5,6 +5,7 @@ import {
   esc,
   hueco,
   Profesional,
+  DocumentoImprimible,
 } from '../../common/documentos/documento-base';
 
 /**
@@ -27,7 +28,7 @@ export interface ConsentimientoInformadoData {
 
 export function buildConsentimientoInformadoHtml(
   d: ConsentimientoInformadoData,
-): string {
+): DocumentoImprimible {
   const p = d.profesional;
   const t1 = d.tutores[0] ?? { nombreCompleto: '', nif: null };
   const t2 = d.tutores[1] ?? { nombreCompleto: '', nif: null };

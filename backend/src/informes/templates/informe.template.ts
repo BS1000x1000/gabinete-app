@@ -5,6 +5,24 @@
 import { escapeHtml } from '../../common/utils/html.utils';
 import { GAS_NIVEL, GAS_ACTIVO } from '../../common/marca/paleta';
 import { LOGO_BASE64 } from '../../common/marca/logo';
+import type { DocumentoImprimible } from '../../common/documentos/documento-base';
+
+/**
+ * La franja verde que corona cada pagina.
+ *
+ * Va como encabezado de pagina y no en el cuerpo. En el cuerpo era un
+ * `position: fixed`, que Chrome repinta en todas las paginas pero sin reservar
+ * sitio en ninguna: desde la segunda se pintaba sobre los primeros 5px del
+ * texto. Aqui vive en el margen superior, coronando la pagina: es el sitio que
+ * Chrome reserva para el encabezado y el unico donde la franja no compite con
+ * el contenido. Ojo con `height:100%` aqui dentro — la caja del encabezado es
+ * mas alta que el margen, asi que estirarse a ella devuelve la franja al area
+ * de texto, que es el fallo que esto viene a arreglar.
+ */
+const BARRA_SUPERIOR = `
+  <div style="box-sizing:border-box;width:100%;margin:0;padding:0;line-height:0">
+    <div style="width:100%;height:5px;background:#2d4a3e;-webkit-print-color-adjust:exact;print-color-adjust:exact"></div>
+  </div>`;
 
 export interface GasNivel {
   nivel: number;
@@ -102,7 +120,9 @@ function buildGasTableHtml(niveles: GasNivel[], nivelActual: number): string {
     </table>`;
 }
 
-export function buildInformeHtml(datos: InformeTemplateData): string {
+export function buildInformeHtml(
+  datos: InformeTemplateData,
+): DocumentoImprimible {
   const esSeguimiento = datos.tipo === 'SEGUIMIENTO';
   const esAlta = datos.tipo === 'ALTA';
   const subtitulo = esSeguimiento ? 'INFORME DE SEGUIMIENTO' : esAlta ? 'INFORME DE ALTA' : 'INFORME INICIAL';
@@ -278,7 +298,7 @@ export function buildInformeHtml(datos: InformeTemplateData): string {
     </div>`;
 
   // ── HTML final ──────────────────────────────────────────────
-  return `<!DOCTYPE html>
+  const html = `<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -293,17 +313,6 @@ export function buildInformeHtml(datos: InformeTemplateData): string {
       color: #23322b;
       line-height: 1.65;
       padding: 0 4mm;
-    }
-
-    /* ── Thin gradient bar on every page (fixed) ── */
-    .page-stripe {
-      position: fixed;
-      top: 0; left: -6mm; right: -6mm;
-      height: 5px;
-      background: linear-gradient(90deg, #2d4a3e 0%, #2d4a3e 100%);
-      print-color-adjust: exact;
-      -webkit-print-color-adjust: exact;
-      z-index: 999;
     }
 
     /* ── Masthead ── */
@@ -525,9 +534,6 @@ export function buildInformeHtml(datos: InformeTemplateData): string {
 </head>
 <body>
 
-  <!-- Thin gradient stripe (repeats every page via fixed) -->
-  <div class="page-stripe"></div>
-
   <!-- ══ MASTHEAD ══════════════════════════════════════════════ -->
   <div class="masthead">
     <!-- Decorative rings -->
@@ -593,4 +599,6 @@ export function buildInformeHtml(datos: InformeTemplateData): string {
 
 </body>
 </html>`;
+
+  return { html, opcionesPdf: { headerTemplate: BARRA_SUPERIOR } };
 }

@@ -106,6 +106,15 @@ describe('ExpedienteService', () => {
         CategoriaDocumento.CONSENTIMIENTO_INFORMADO,
         CategoriaDocumento.CONSENTIMIENTO_DATOS,
       ]);
+
+      // El membrete va como encabezado de pagina, no dentro del HTML: sin
+      // estas opciones se repetiria comiendose la primera linea desde la
+      // segunda pagina.
+      for (const [html, opciones] of pdf.generatePdf.mock.calls) {
+        expect(html).not.toContain('class="membrete"');
+        expect(opciones?.headerTemplate).toBeDefined();
+        expect(opciones?.margin?.top).toBeDefined();
+      }
     });
 
     it('los marca como generados y guarda la version de plantilla', async () => {

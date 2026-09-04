@@ -174,6 +174,26 @@ export class ContratosController {
    * prefirmada (el binario va directo desde Object Storage al navegador); si no,
    * se genera al vuelo con Puppeteer como se ha hecho siempre.
    */
+  /**
+   * Enlace de descarga del PDF. Devuelve una URL, no el fichero: la del bucket
+   * si el contrato ya tiene firmado, y si no la de `:id/pdf`.
+   *
+   * Va ANTES de `@Get(':id/pdf')` para que la ruta mas especifica gane.
+   */
+  @Get(':id/pdf/descarga')
+  @Roles(...ROLES_CLINICOS)
+  async getUrlDescargaPdf(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: any,
+  ) {
+    this.logger.log(`GET /contratos/${id}/pdf/descarga`);
+    return this.contratosService.getUrlDescargaPdf(id, req.user);
+  }
+
+  /**
+   * El binario. `@Res()` evita el ResponseInterceptor, que envolveria el PDF
+   * en JSON.
+   */
   @Get(':id/pdf')
   @Roles(...ROLES_CLINICOS)
   async getPdf(
@@ -183,15 +203,10 @@ export class ContratosController {
   ) {
     this.logger.log(`GET /contratos/${id}/pdf`);
 
-    const urlFirmado = await this.contratosService.getUrlDocumentoFirmado(id, req.user);
-    if (urlFirmado) {
-      return res.redirect(urlFirmado);
-    }
-
-    const buffer = await this.contratosService.generarPdf(id, req.user);
+    const { buffer, nombre } = await this.contratosService.getPdf(id, req.user);
     res.set({
       'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="contrato-${id}.pdf"`,
+      'Content-Disposition': `attachment; filename="${nombre}"`,
       'Content-Length': String(buffer.length),
     });
     res.end(buffer);

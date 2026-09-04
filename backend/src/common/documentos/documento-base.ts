@@ -1,5 +1,6 @@
 import { escapeHtml } from '../utils/html.utils';
 import { LOGO_BASE64 } from '../marca/logo';
+import type { OpcionesPdf } from '../pdf/pdf-generator.service';
 
 /**
  * Chapa comun de los tres documentos del expediente inicial.
@@ -46,48 +47,6 @@ export const ESTILOS_BASE = `
     background: #fff;
     line-height: 1.5;
   }
-
-  /* El membrete se repite en cada pagina impresa: Chrome reproduce los
-     elementos 'fixed' en todas ellas. Es como se comporta el original de Word. */
-  .membrete {
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    background: #fff;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-  .membrete-fila {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    border: 1px solid #c2cdc3;
-    border-radius: 4px;
-    padding: 8px 12px;
-  }
-  .membrete-logo { width: 42px; flex-shrink: 0; }
-  .membrete-logo img { width: 100%; display: block; }
-  .membrete-datos { margin-left: auto; text-align: right; line-height: 1.4; }
-  .membrete-datos .nombre { font-weight: 700; font-size: 11.5px; color: #23322b; }
-  .membrete-datos .linea { font-size: 9.5px; color: #556d62; }
-
-  .membrete-titulo {
-    margin-top: 5px;
-    background: #e3eae0;
-    border: 1px solid #c2cdc3;
-    border-radius: 3px;
-    padding: 5px 12px;
-    font-size: 10.5px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: #2d4a3e;
-    text-align: center;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-
-  /* Deja sitio al membrete fijo. */
-  .cuerpo { padding-top: 86px; }
 
   h2.clausula {
     font-size: 10.5px;
@@ -189,22 +148,57 @@ export const ESTILOS_BASE = `
     -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 `;
 
-/** Membrete fijo: logo, identidad de la profesional y titulo del documento. */
-export function membrete(titulo: string, p: Profesional): string {
+/**
+ * Altura reservada arriba para el membrete.
+ *
+ * Medido: Chrome empieza a pintar el encabezado a 0,53 cm del borde del papel
+ * y el membrete mide 2,47 cm, o sea que acaba sobre los 3,0 cm. Lo que se pase
+ * de este margen Chrome lo RECORTA sin avisar, asi que los 4 mm que sobran son
+ * el colchon para que un email largo o un nombre en dos lineas no se corten.
+ * Si el membrete crece de verdad, hay que subir esto con el.
+ */
+export const MARGEN_SUPERIOR_MEMBRETE = '3.4cm';
+
+/**
+ * Membrete como encabezado de pagina: logo, identidad de la profesional y
+ * titulo del documento.
+ *
+ * Va en el margen de la pagina (`headerTemplate` de Puppeteer), no en el
+ * cuerpo, que es lo unico que hace que reserve sitio en TODAS las paginas y no
+ * solo en la primera. A cambio, Chrome lo renderiza en un documento aparte que
+ * no ve el CSS de la pagina: de ahi que los estilos vayan en linea, que cada
+ * nodo con texto declare su `font-size` (el heredado ahi vale 0) y que los
+ * fondos lleven `print-color-adjust`.
+ */
+export function membreteHeaderTemplate(titulo: string, p: Profesional): string {
   const colegiada = p.numeroColegiado
     ? `Pedagoga colegiada Nº ${esc(p.numeroColegiado)}`
     : 'Pedagoga colegiada';
+  const exacto = '-webkit-print-color-adjust:exact;print-color-adjust:exact';
+  // El encabezado ocupa el ancho del papel, no el del contenido: el padding
+  // lateral lo alinea con el cuerpo, que se imprime con margenes de 1,5 cm.
+  const marco =
+    `box-sizing:border-box;width:100%;padding:0 1.5cm;margin:0;` +
+    `font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:#23322b;${exacto}`;
+  const fila =
+    `box-sizing:border-box;display:flex;align-items:center;gap:14px;` +
+    `border:1px solid #c2cdc3;border-radius:4px;padding:8px 12px;background:#fff;${exacto}`;
+  const tit =
+    `box-sizing:border-box;margin-top:5px;background:#e3eae0;` +
+    `border:1px solid #c2cdc3;border-radius:3px;padding:5px 12px;font-size:10.5px;` +
+    `font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#2d4a3e;` +
+    `text-align:center;line-height:1.5;${exacto}`;
   return `
-  <div class="membrete">
-    <div class="membrete-fila">
-      <div class="membrete-logo"><img src="${LOGO_BASE64}" alt=""></div>
-      <div class="membrete-datos">
-        <div class="nombre">${esc(p.nombreCompleto)}</div>
-        <div class="linea">${colegiada}</div>
-        <div class="linea">${esc(p.email)}</div>
+  <div style="${marco}">
+    <div style="${fila}">
+      <div style="width:42px;flex-shrink:0"><img src="${LOGO_BASE64}" alt="" style="width:100%;display:block"></div>
+      <div style="margin-left:auto;text-align:right;line-height:1.4">
+        <div style="font-weight:700;font-size:11.5px;color:#23322b">${esc(p.nombreCompleto)}</div>
+        <div style="font-size:9.5px;color:#556d62">${colegiada}</div>
+        <div style="font-size:9.5px;color:#556d62">${esc(p.email)}</div>
       </div>
     </div>
-    <div class="membrete-titulo">${esc(titulo)}</div>
+    <div style="${tit}">${esc(titulo)}</div>
   </div>`;
 }
 
@@ -230,14 +224,27 @@ export function bloqueFirmas(nombreProfesional: string): string {
   </div>`;
 }
 
+/**
+ * Un documento listo para imprimir: el HTML del cuerpo y las opciones con las
+ * que hay que llevarlo al PDF.
+ *
+ * Van juntos a proposito. El titulo aparece en el encabezado, que ya no forma
+ * parte del HTML, y la altura del margen depende de ese encabezado: separarlos
+ * obligaria a repetir el titulo en dos sitios y a mantener el margen a mano.
+ */
+export interface DocumentoImprimible {
+  html: string;
+  opcionesPdf: OpcionesPdf;
+}
+
 /** Envuelve el cuerpo en el documento completo. */
 export function documento(
   titulo: string,
   p: Profesional,
   cuerpo: string,
   estilosExtra = '',
-): string {
-  return `<!DOCTYPE html>
+): DocumentoImprimible {
+  const html = `<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
@@ -247,10 +254,16 @@ ${estilosExtra}
 </style>
 </head>
 <body>
-${membrete(titulo, p)}
 <div class="cuerpo">
 ${cuerpo}
 </div>
 </body>
 </html>`;
+  return {
+    html,
+    opcionesPdf: {
+      margin: { top: MARGEN_SUPERIOR_MEMBRETE },
+      headerTemplate: membreteHeaderTemplate(titulo, p),
+    },
+  };
 }

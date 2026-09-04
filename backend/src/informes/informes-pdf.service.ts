@@ -71,8 +71,8 @@ export class InformesPdfService {
 
     // ── 5. Generar PDF con Puppeteer ───────────────────────────────────────
     this.logger.log(`📄 Generando PDF para informe ${informeId}`);
-    const html = buildInformeHtml(datos);
-    return this.pdfGenerator.generatePdf(html);
+    const doc = buildInformeHtml(datos);
+    return this.pdfGenerator.generatePdf(doc.html, doc.opcionesPdf);
   }
 
   calcularEdad(fechaNacimiento: Date | string): {

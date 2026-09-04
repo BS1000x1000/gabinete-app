@@ -5,6 +5,7 @@ import {
   esc,
   hueco,
   Profesional,
+  DocumentoImprimible,
 } from '../../common/documentos/documento-base';
 
 /**
@@ -90,7 +91,9 @@ function filaCalendario(f: FilaCalendarioTemplate): string {
     </tr>`;
 }
 
-export function buildContratoHtml(d: ContratoTemplateData): string {
+export function buildContratoHtml(
+  d: ContratoTemplateData,
+): DocumentoImprimible {
   const p = d.profesional;
 
   const diaTexto = d.diaSemana ? (DIA_LABEL[d.diaSemana] ?? null) : null;

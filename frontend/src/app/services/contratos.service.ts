@@ -3,7 +3,6 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { map, tap } from 'rxjs/operators';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment.development';
-import { triggerDownload } from '../shared/utils/download.utils';
 import {
   ContratoServicio,
   CreateContratoPayload,
@@ -126,10 +125,24 @@ export class ContratosService {
       );
   }
 
+  /**
+   * Descarga el PDF del contrato: el firmado si ya lo hay, y si no el generado.
+   *
+   * Pide primero la URL y luego la abre, igual que `DocumentosService.abrir`.
+   * Antes se traia el binario por XHR contra `:id/pdf`, que redirigia a la URL
+   * prefirmada cuando habia contrato firmado: la peticion seguia la redireccion
+   * hasta Object Storage, otro origen sin cabeceras CORS, y la descarga moria.
+   */
   descargarPdf(id: string): Observable<void> {
     return this.http
-      .get(`${this.apiUrl}/${id}/pdf`, { responseType: 'blob' })
-      .pipe(map(blob => triggerDownload(blob, `contrato-${id}.pdf`)));
+      .get<WrappedResponse<{ url: string; nombre: string; firmado: boolean }>>(
+        `${this.apiUrl}/${id}/pdf/descarga`,
+      )
+      .pipe(
+        map(res => (res.data ?? res) as { url: string }),
+        tap(d => window.open(d.url, '_blank', 'noopener,noreferrer')),
+        map(() => void 0),
+      );
   }
 
   clearContratosCliente() {

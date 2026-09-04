@@ -502,33 +502,90 @@ export class ContratosService {
   }
 
   /**
-   * URL prefirmada del PDF firmado, o null si este contrato no tiene ninguno
-   * (en ese caso el controlador genera el PDF al vuelo, como siempre).
+   * Enlace de descarga del PDF del contrato: el firmado si ya lo hay, y si no
+   * el generado. Mismo contrato con el frontend que `documentos`: siempre una
+   * URL que abrir, nunca un binario.
+   *
+   * Antes esto era un `res.redirect()` a la URL prefirmada dentro del propio
+   * `:id/pdf`, que el frontend consume por XHR esperando un blob. La peticion
+   * seguia la redireccion hasta Object Storage —otro origen, sin cabeceras
+   * CORS—, asi que la descarga del contrato firmado iba a fallar en cuanto
+   * hubiera bucket. En local no se veia porque sin `SCW_*` no hay
+   * `storageKeyFirmado` y esa rama no se pisa nunca.
    */
-  async getUrlDocumentoFirmado(id: string, user: { userId: string; rol: string }) {
-    const contrato = await this.prisma.contratoServicio.findUnique({ where: { id } });
+  async getUrlDescargaPdf(
+    id: string,
+    user: { userId: string; rol: string },
+  ): Promise<{ url: string; nombre: string; firmado: boolean }> {
+    const contrato = await this.prisma.contratoServicio.findUnique({
+      where: { id },
+    });
     if (!contrato) throw new NotFoundException(`Contrato ${id} no encontrado`);
     this.checkAcceso(contrato, user);
 
-    if (!contrato.storageKeyFirmado) return null;
+    const firmado = !!contrato.storageKeyFirmado;
 
-    if (!this.storage.isConfigured) {
-      throw new ServiceUnavailableException(
-        'El almacenamiento de ficheros no esta configurado (faltan variables SCW_*).',
-      );
+    if (contrato.storageKeyFirmado) {
+      if (!this.storage.isConfigured) {
+        throw new ServiceUnavailableException(
+          'El almacenamiento de ficheros no esta configurado (faltan variables SCW_*).',
+        );
+      }
+
+      // Con bucket real el binario va del almacenamiento al navegador sin pasar
+      // por el contenedor. En el modo local no hay URL prefirmada: lo sirve la
+      // API, igual que en `documentos`.
+      if (!this.storage.sirveDesdeApi) {
+        const url = await this.storage.getSignedUrl(
+          contrato.storageKeyFirmado,
+          300,
+        );
+        if (!url) {
+          throw new ServiceUnavailableException(
+            'No se ha podido generar el enlace de descarga',
+          );
+        }
+        return { url, nombre: `contrato-firmado-${id}.pdf`, firmado };
+      }
     }
 
-    return this.storage.getSignedUrl(contrato.storageKeyFirmado, 300);
+    return {
+      url: `/api/contratos/${id}/pdf`,
+      nombre: `contrato-${id}.pdf`,
+      firmado,
+    };
   }
 
-  async generarPdf(id: string, user: { userId: string; rol: string }): Promise<Buffer> {
+  /**
+   * El PDF del contrato en binario: el firmado si lo hay, y si no el generado
+   * al vuelo. Devolver el generado cuando existe uno firmado entregaria el
+   * borrador haciendolo pasar por el documento bueno.
+   */
+  async getPdf(
+    id: string,
+    user: { userId: string; rol: string },
+  ): Promise<{ buffer: Buffer; nombre: string }> {
     const contrato = await this.prisma.contratoServicio.findUnique({
       where: { id },
       include: CONTRATO_PDF_INCLUDE,
     });
     if (!contrato) throw new NotFoundException(`Contrato ${id} no encontrado`);
     this.checkAcceso(contrato, user);
-    return this.pdfService.generarPdf(contrato);
+
+    if (contrato.storageKeyFirmado) {
+      const buffer = await this.storage.download(contrato.storageKeyFirmado);
+      if (!buffer) {
+        throw new NotFoundException(
+          `El PDF firmado del contrato ${id} no esta en el almacenamiento`,
+        );
+      }
+      return { buffer, nombre: `contrato-firmado-${id}.pdf` };
+    }
+
+    return {
+      buffer: await this.pdfService.generarPdf(contrato),
+      nombre: `contrato-${id}.pdf`,
+    };
   }
 
   private checkAcceso(

@@ -11,7 +11,9 @@
 import { writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { PrismaClient } from '@prisma/client';
-import puppeteer from 'puppeteer';
+
+import { PdfGeneratorService } from '../src/common/pdf/pdf-generator.service';
+import type { DocumentoImprimible } from '../src/common/documentos/documento-base';
 
 import { CONTRATO_PDF_INCLUDE } from '../src/contratos/contratos.include';
 import { ContratosPdfService } from '../src/contratos/contratos-pdf.service';
@@ -62,21 +64,10 @@ async function main() {
     console.log(`  ${f.mes} ${f.anio}: ${f.diasTexto}   | ${obs}`);
   }
 
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'],
-    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
-  });
-  const aPdf = async (html: string, fichero: string) => {
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'networkidle0', timeout: 30_000 });
-    const buf = await page.pdf({
-      format: 'A4',
-      printBackground: true,
-      margin: { top: '1.4cm', bottom: '1.4cm', left: '1.5cm', right: '1.5cm' },
-    });
+  const pdf = new PdfGeneratorService();
+  const aPdf = async (doc: DocumentoImprimible, fichero: string) => {
+    const buf = await pdf.generatePdf(doc.html, doc.opcionesPdf);
     writeFileSync(join(salida, fichero), buf);
-    await page.close();
     console.log(`  ${fichero} (${(buf.length / 1024).toFixed(0)} KB)`);
   };
 
@@ -101,7 +92,6 @@ async function main() {
     'REAL_consentimiento-datos.pdf',
   );
 
-  await browser.close();
   await prisma.$disconnect();
   console.log(`\nListo en: ${salida}`);
 }

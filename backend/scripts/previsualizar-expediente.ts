@@ -8,13 +8,15 @@
  */
 import { writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
-import puppeteer from 'puppeteer';
-
+import { PdfGeneratorService } from '../src/common/pdf/pdf-generator.service';
 import { buildContratoHtml } from '../src/contratos/templates/contrato.template';
 import { buildConsentimientoInformadoHtml } from '../src/expediente/templates/consentimiento-informado.template';
 import { buildConsentimientoDatosHtml } from '../src/expediente/templates/consentimiento-datos.template';
 import { CalendarioContratoService } from '../src/expediente/calendario-contrato.service';
-import { Profesional } from '../src/common/documentos/documento-base';
+import {
+  Profesional,
+  DocumentoImprimible,
+} from '../src/common/documentos/documento-base';
 
 const salida = process.argv[2] ?? join(process.cwd(), 'tmp-expediente');
 mkdirSync(salida, { recursive: true });
@@ -65,28 +67,19 @@ async function main() {
   const calendario = new CalendarioContratoService();
   const curso = { anioInicio: 2026 };
 
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'],
-    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
-  });
+  // El MISMO servicio que produccion: con otros margenes, lo que se ve aqui
+  // no es lo que sale del gabinete.
+  const pdf = new PdfGeneratorService();
 
-  const aPdf = async (html: string, fichero: string) => {
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'networkidle0', timeout: 30_000 });
-    const buffer = await page.pdf({
-      format: 'A4',
-      printBackground: true,
-      margin: { top: '1.4cm', bottom: '1.4cm', left: '1.5cm', right: '1.5cm' },
-    });
+  const aPdf = async (doc: DocumentoImprimible, fichero: string) => {
+    const buffer = await pdf.generatePdf(doc.html, doc.opcionesPdf);
     writeFileSync(join(salida, fichero), buffer);
-    await page.close();
     console.log(`  ${fichero}  (${(buffer.length / 1024).toFixed(0)} KB)`);
   };
 
   for (const [diaISO, nombre] of [[1, 'lunes'], [5, 'viernes']] as const) {
     const filas = calendario.construirTabla(diaISO, curso, FESTIVOS);
-    const html = buildContratoHtml({
+    const doc = buildContratoHtml({
       profesional: PROFESIONAL,
       tutores: TUTORES,
       menor: { nombreCompleto: MENOR.nombreCompleto, fechaNacimiento: MENOR.fechaNacimiento },
@@ -103,7 +96,7 @@ async function main() {
       periodoSemanaSanta: calendario.textoPeriodosSinServicio(curso, FESTIVOS).semanaSanta,
       notas: null,
     });
-    await aPdf(html, `CONTRATO_${nombre}.pdf`);
+    await aPdf(doc, `CONTRATO_${nombre}.pdf`);
     console.log(
       `    sesiones efectivas del curso: ${calendario.totalSesiones(filas)}`,
     );
@@ -129,7 +122,6 @@ async function main() {
     'CONSENTIMIENTO_DATOS.pdf',
   );
 
-  await browser.close();
   console.log(`\nListo en: ${salida}`);
 }
 
