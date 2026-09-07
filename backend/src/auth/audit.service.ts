@@ -17,7 +17,14 @@ export type AuditEvento =
   | 'FACTURA_GENERACION'
   /// Entrega de un paquete de facturas a la gestoria. Salen datos personales
   /// hacia un tercero: queda registrado quien, que y cuando.
-  | 'FACTURA_ENTREGA_GESTORIA';
+  | 'FACTURA_ENTREGA_GESTORIA'
+  /// Acceso a documentacion clinica del expediente (subida, descarga, enlace
+  /// prefirmado o borrado). La accion concreta va en `metadata.accion`.
+  /// Se auditaba la lectura de la ficha pero no la del documento, que es donde
+  /// esta el informe medico escaneado.
+  | 'ACCESO_DOCUMENTO'
+  /// Acceso a un informe clinico (lectura del PDF o cambio de estado).
+  | 'ACCESO_INFORME';
 
 @Injectable()
 export class AuditService {

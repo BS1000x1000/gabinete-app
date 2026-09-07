@@ -29,6 +29,7 @@ import { CreateDocumentoDto, UpdateDocumentoDto } from './dto/documento.dto';
 // Interfaz pura: en una firma decorada debe ir como `import type` (isolatedModules + emitDecoratorMetadata)
 import type { FicheroSubido } from './dto/documento.dto';
 import { MulterExceptionFilter } from '../common/filters/multer-exception.filter';
+import { AuditService } from '../auth/audit.service';
 
 /**
  * Documentación externa del expediente del cliente (informes médicos, escolares,
@@ -42,7 +43,29 @@ import { MulterExceptionFilter } from '../common/filters/multer-exception.filter
 export class DocumentosController {
   private readonly logger = new Logger(DocumentosController.name);
 
-  constructor(private readonly documentosService: DocumentosService) {}
+  constructor(
+    private readonly documentosService: DocumentosService,
+    private readonly audit: AuditService,
+  ) {}
+
+  /**
+   * Deja constancia de quien toca un documento del expediente.
+   *
+   * La lectura de la ficha (`GET /clientes/:id`) si se auditaba, pero el
+   * documento —donde esta el informe medico escaneado— no: ni al subirlo, ni al
+   * pedir el enlace de descarga, ni al borrarlo. `AuditService` nunca bloquea la
+   * operacion principal (se traga sus propios errores).
+   */
+  private rastro(accion: string, documentoId: string, req: any) {
+    this.audit.registrar({
+      evento: 'ACCESO_DOCUMENTO',
+      userId: req.user?.userId,
+      username: req.user?.username,
+      ip: req.ip,
+      recurso: documentoId,
+      metadata: { accion },
+    });
+  }
 
   @Post()
   @Roles(...ROLES_CLINICOS, 'RECEP')
@@ -59,7 +82,9 @@ export class DocumentosController {
     this.logger.log(
       `POST /documentos - Cliente: ${dto.clienteId} - Categoría: ${dto.categoria}`,
     );
-    return this.documentosService.create(dto, fichero, req.user);
+    const creado = await this.documentosService.create(dto, fichero, req.user);
+    this.rastro('SUBIDA', creado.id, req);
+    return creado;
   }
 
   @Get('cliente/:clienteId')
@@ -75,7 +100,11 @@ export class DocumentosController {
   @Get(':id/descarga')
   async getUrlDescarga(@Param('id') id: string, @Req() req: any) {
     this.logger.log(`GET /documentos/${id}/descarga`);
-    return this.documentosService.getUrlDescarga(id, req.user);
+    const url = await this.documentosService.getUrlDescarga(id, req.user);
+    // El enlace prefirmado deja el fichero accesible sin volver a pasar por la
+    // API: el momento auditable es este, no la descarga en si.
+    this.rastro('ENLACE_DESCARGA', id, req);
+    return url;
   }
 
   /**
@@ -126,6 +155,8 @@ export class DocumentosController {
   @HttpCode(HttpStatus.OK)
   async remove(@Param('id') id: string, @Req() req: any) {
     this.logger.warn(`DELETE /documentos/${id}`);
-    return this.documentosService.remove(id, req.user);
+    const resultado = await this.documentosService.remove(id, req.user);
+    this.rastro('BORRADO', id, req);
+    return resultado;
   }
 }

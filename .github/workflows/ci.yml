@@ -8,6 +8,12 @@ on:
     branches:
       - main
 
+# Este workflow solo lee el repo y ejecuta tests. Sin declararlo, el
+# GITHUB_TOKEN hereda los permisos por defecto del repositorio, que suelen ser
+# de escritura.
+permissions:
+  contents: read
+
 jobs:
   test:
     name: Unit + E2E tests
@@ -65,6 +71,12 @@ jobs:
       - name: Run E2E tests
         run: npm run test:e2e -- --forceExit
 
+      # La app trata datos de salud de menores y no habia ningun control de
+      # seguridad en CI. Falla solo ante vulnerabilidades altas o criticas en
+      # dependencias de produccion, para que sea una senal y no ruido.
+      - name: Auditoria de dependencias (backend)
+        run: npm audit --omit=dev --audit-level=high
+
   frontend:
     name: Frontend — build + tests
     runs-on: ubuntu-latest
@@ -96,3 +108,6 @@ jobs:
       # que es lo que hace falta dentro del runner.
       - name: Tests unitarios
         run: npx ng test --watch=false --browsers=ChromeHeadlessCI
+
+      - name: Auditoria de dependencias (frontend)
+        run: npm audit --omit=dev --audit-level=high

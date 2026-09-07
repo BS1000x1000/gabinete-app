@@ -1,10 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { ClientesController } from './clientes.controller';
 import { ClientesService } from './clientes.service';
 import { AuditService } from '../auth/audit.service';
 import { ConsentimientosService } from '../consentimientos/consentimientos.service';
 import { DocumentosService } from '../documentos/documentos.service';
+import { AccesoClienteService } from '../common/acceso/acceso-cliente.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TipoSesion } from '@prisma/client';
 
@@ -18,6 +19,10 @@ const mockCliente = (overrides: Record<string, any> = {}) => ({
   dni: '12345678A',
   activo: true,
   ...overrides,
+});
+
+const makeAccesoMock = () => ({
+  assertAcceso: jest.fn().mockResolvedValue(undefined),
 });
 
 const makeClientesServiceMock = () => ({
@@ -47,9 +52,11 @@ const makeClientesServiceMock = () => ({
 describe('ClientesController', () => {
   let controller: ClientesController;
   let service: ReturnType<typeof makeClientesServiceMock>;
+  let acceso: ReturnType<typeof makeAccesoMock>;
 
   beforeEach(async () => {
     service = makeClientesServiceMock();
+    acceso = makeAccesoMock();
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ClientesController],
@@ -66,6 +73,7 @@ describe('ClientesController', () => {
           },
         },
         { provide: DocumentosService, useValue: { create: jest.fn() } },
+        { provide: AccesoClienteService, useValue: acceso },
       ],
     })
       .overrideGuard(JwtAuthGuard)
@@ -185,12 +193,22 @@ describe('ClientesController', () => {
       const actualizado = mockCliente({ nombre: 'Ana María' });
       service.update.mockResolvedValue(actualizado);
 
-      const result = await controller.update('cliente-1', dto as any);
+      const result = await controller.update('cliente-1', dto as any, mockReq() as any);
 
       // Sin trabajadorId: el PATCH ya no escribe el consentimiento, asi que no
       // hay nada que atribuir a nadie.
       expect(service.update).toHaveBeenCalledWith('cliente-1', dto);
       expect(result).toEqual(actualizado);
+    });
+
+    it('comprueba el acceso al cliente antes de escribir', async () => {
+      acceso.assertAcceso.mockRejectedValueOnce(new ForbiddenException());
+
+      await expect(
+        controller.update('cliente-ajeno', { nombre: 'X' } as any, mockReq() as any),
+      ).rejects.toThrow(ForbiddenException);
+
+      expect(service.update).not.toHaveBeenCalled();
     });
   });
 
@@ -199,7 +217,7 @@ describe('ClientesController', () => {
     it('elimina el cliente y devuelve la respuesta formateada', async () => {
       service.remove.mockResolvedValue(undefined);
 
-      const result = await controller.remove('cliente-1');
+      const result = await controller.remove('cliente-1', mockReq() as any);
 
       expect(service.remove).toHaveBeenCalledWith('cliente-1');
       expect(result).toMatchObject({
@@ -221,7 +239,7 @@ describe('ClientesController', () => {
       const expected = { id: 'asignacion-1' };
       service.asignarTrabajador.mockResolvedValue(expected);
 
-      const result = await controller.asignarTrabajador('cliente-1', body);
+      const result = await controller.asignarTrabajador('cliente-1', body, mockReq() as any);
 
       expect(service.asignarTrabajador).toHaveBeenCalledWith(
         'cliente-1',
@@ -239,7 +257,11 @@ describe('ClientesController', () => {
       const expected = { message: 'Asignación eliminada' };
       service.desasignarTrabajador.mockResolvedValue(expected);
 
-      const result = await controller.desasignarTrabajador('cliente-1', 'asignacion-1');
+      const result = await controller.desasignarTrabajador(
+        'cliente-1',
+        'asignacion-1',
+        mockReq() as any,
+      );
 
       expect(service.desasignarTrabajador).toHaveBeenCalledWith('cliente-1', 'asignacion-1');
       expect(result).toEqual(expected);

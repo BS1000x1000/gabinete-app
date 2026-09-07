@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrioridadNotif, TipoNotificacion } from '@prisma/client';
 import { NotificacionesSseService } from './notificaciones-sse.service';
@@ -48,11 +48,23 @@ export class NotificacionesService {
     });
   }
 
-  async marcarLeida(id: string) {
-    return this.prisma.notificacion.update({
-      where: { id },
+  /**
+   * Marca leida UNA notificacion, y solo si es del propio trabajador.
+   *
+   * Antes actualizaba por id a secas, asi que cualquier usuario podia marcar o
+   * descartar las notificaciones de otro. Se usa `updateMany` porque el filtro
+   * (id + trabajadorId) no es una clave unica y `update` no lo admite.
+   */
+  async marcarLeida(id: string, trabajadorId?: string) {
+    const where = trabajadorId ? { id, trabajadorId } : { id };
+    const { count } = await this.prisma.notificacion.updateMany({
+      where,
       data: { leida: true, fechaLectura: new Date() },
     });
+    if (count === 0) {
+      throw new NotFoundException(`Notificación ${id} no encontrada`);
+    }
+    return { id, leida: true };
   }
 
   async marcarTodasLeidas(trabajadorId: string) {
@@ -62,11 +74,17 @@ export class NotificacionesService {
     });
   }
 
-  async descartar(id: string) {
-    return this.prisma.notificacion.update({
-      where: { id },
+  /** Descarta UNA notificacion, y solo si es del propio trabajador. */
+  async descartar(id: string, trabajadorId?: string) {
+    const where = trabajadorId ? { id, trabajadorId } : { id };
+    const { count } = await this.prisma.notificacion.updateMany({
+      where,
       data: { descartada: true },
     });
+    if (count === 0) {
+      throw new NotFoundException(`Notificación ${id} no encontrada`);
+    }
+    return { id, descartada: true };
   }
 
   /**

@@ -3,18 +3,27 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { PrismaClient, TipoSesion } from '@prisma/client';
+import { CategoriaDocumento, PrismaClient, TipoSesion } from '@prisma/client';
 import { ClienteWithRelations, clienteInclude, WHERE_NOT_DELETED } from './clientes.types';
 import { ROLES_GESTION } from '../roles/roles.constants';
 import { CreateClienteDto } from './dto/create-cliente.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { StorageService } from '../common/storage/storage.service';
+import { AccesoClienteService } from '../common/acceso/acceso-cliente.service';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 @Injectable()
 export class ClientesService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(ClientesService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly acceso: AccesoClienteService,
+    private readonly storage: StorageService,
+  ) {}
 
   /**
    * Terapia por defecto segun el rol de quien da de alta al cliente.
@@ -960,27 +969,12 @@ export class ClientesService {
    * terapeuta solo los clientes que tiene asignados. Publico porque el
    * controlador lo necesita antes de delegar en `ConsentimientosService`.
    */
+  /** Delega en la comprobacion compartida (`AccesoClienteService`). */
   async assertAccesoCliente(
     clienteId: string,
     user?: { userId: string; rol: string },
   ): Promise<void> {
-    const cliente = await this.prisma.cliente.findFirst({
-      where: { id: clienteId, ...WHERE_NOT_DELETED },
-      select: { id: true },
-    });
-    if (!cliente) {
-      throw new NotFoundException(`Cliente ${clienteId} no encontrado`);
-    }
-
-    if (!user || user.rol === 'ADMIN' || user.rol === 'RECEP') return;
-
-    const asignacion = await this.prisma.clienteTrabajador.findFirst({
-      where: { clienteId, trabajadorId: user.userId, activo: true },
-      select: { id: true },
-    });
-    if (!asignacion) {
-      throw new ForbiddenException('No tienes acceso a la ficha de este cliente');
-    }
+    await this.acceso.assertAcceso(clienteId, user, 'la ficha de este cliente');
   }
 
   // ── DATOS PAGADOR (FACTURACIÓN) ──────────────────────────
@@ -1004,12 +998,50 @@ export class ClientesService {
 
   // ── ANONIMIZACION (Art. 17 RGPD + Ley 41/2002) ───────────
 
+  /**
+   * Anonimiza la ficha manteniendo la historia clinica.
+   *
+   * QUE BORRA: identificativos del menor, datos sanitarios y escolares, los
+   * familiares (terceros), el historial de consentimientos y los PDF del
+   * expediente (contrato y consentimientos), tanto la fila como el objeto del
+   * bucket.
+   *
+   * QUE CONSERVA A PROPOSITO: informes, registros diarios, sesiones y
+   * evaluaciones GAS, ligados al mismo `clienteId`. La Ley 41/2002 obliga a
+   * conservar la historia clinica, asi que borrarlos aqui seria ilegal. La
+   * consecuencia es que esto es **seudonimizacion**, no anonimizacion en el
+   * sentido del considerando 26: quien conserve una copia de los datos fiscales
+   * podria reidentificar. Es una decision que debe ratificar el asesor de
+   * proteccion de datos, no el codigo.
+   *
+   * La traza de que hubo consentimiento no se pierde al borrar las filas: queda
+   * en `AuditLog` (evento CONSENTIMIENTO_RGPD, con version del texto y
+   * firmantes), que esta fuera del alcance de este borrado.
+   */
   async anonimizarCliente(clienteId: string) {
     const cliente = await this.prisma.cliente.findFirst({ where: { id: clienteId } });
     if (!cliente) throw new NotFoundException(`Cliente ${clienteId} no encontrado`);
     if (!cliente.deletedAt) throw new BadRequestException(`El cliente debe estar eliminado (soft delete) antes de anonimizar`);
 
     const anonId = clienteId.slice(0, 8);
+
+    // Los papeles del expediente identifican a la familia y acompañan al
+    // consentimiento que se borra a continuacion: dejarlos en el bucket era
+    // quedarse con el PDF firmado despues de destruir el registro que acredita
+    // la firma, que es justo la combinacion inversa de la deseable.
+    const documentosExpediente = await this.prisma.documentoCliente.findMany({
+      where: {
+        clienteId,
+        categoria: {
+          in: [
+            CategoriaDocumento.CONTRATO,
+            CategoriaDocumento.CONSENTIMIENTO_INFORMADO,
+            CategoriaDocumento.CONSENTIMIENTO_DATOS,
+          ],
+        },
+      },
+      select: { id: true, storageKey: true },
+    });
 
     await this.prisma.$transaction([
       // Anonimizar datos identificativos del cliente
@@ -1026,17 +1058,41 @@ export class ClientesService {
           idCarpetaDrive: null,
           consentimientoRgpd: false,
           consentimientoFecha: null,
+          consentimientoTrabajadorId: null,
         },
       }),
       // Eliminar datos sanitarios (especial categoría Art. 9)
       this.prisma.sanitario.deleteMany({ where: { clienteId } }),
       // Eliminar datos escolares (adaptaciones y apoyos revelan necesidades del menor)
       this.prisma.escolar.deleteMany({ where: { clienteId } }),
+      // ORDEN IMPORTANTE: los consentimientos ANTES que los familiares.
+      // `ConsentimientoFirmante.familiar` es una relacion requerida sin
+      // `onDelete`, o sea Restrict: borrando primero los familiares, la fila
+      // puente seguia apuntandolos y Postgres tumbaba la transaccion entera.
+      // Es decir, la anonimizacion fallaba exactamente en los clientes que si
+      // habian firmado el consentimiento, que son los del flujo normal.
+      // Los firmantes caen en cascada al borrar el consentimiento.
+      this.prisma.consentimientoRgpd.deleteMany({ where: { clienteId } }),
       // Eliminar familiares (datos de terceros)
       this.prisma.familiar.deleteMany({ where: { clienteId } }),
-      // Eliminar historial de consentimientos
-      this.prisma.consentimientoRgpd.deleteMany({ where: { clienteId } }),
+      // Y los papeles del expediente que los identifican
+      this.prisma.documentoCliente.deleteMany({
+        where: { id: { in: documentosExpediente.map((d) => d.id) } },
+      }),
     ]);
+
+    // Fuera de la transaccion: el bucket no participa en ella. Si un borrado
+    // falla se registra y se sigue — la alternativa seria dejar la ficha a
+    // medio anonimizar, que es peor.
+    for (const doc of documentosExpediente) {
+      try {
+        await this.storage.delete(doc.storageKey);
+      } catch (err) {
+        this.logger.error(
+          `No se pudo borrar del bucket ${doc.storageKey} al anonimizar ${clienteId}: ${err?.message}`,
+        );
+      }
+    }
 
     return { message: `Cliente ${clienteId} anonimizado correctamente`, anonimizadoEn: new Date().toISOString() };
   }

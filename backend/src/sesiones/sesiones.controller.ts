@@ -23,13 +23,17 @@ import { RolesGuard } from 'src/roles/roles.guard';
 import { Roles } from 'src/roles/roles.decorator';
 import { ROLES_CLINICOS } from 'src/roles/roles.constants';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
+import { AccesoClienteService } from 'src/common/acceso/acceso-cliente.service';
 
 @Controller('sesiones')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class SesionesController {
   private readonly logger = new Logger(SesionesController.name);
 
-  constructor(private readonly sesionesService: SesionesService) {}
+  constructor(
+    private readonly sesionesService: SesionesService,
+    private readonly acceso: AccesoClienteService,
+  ) {}
 
   // ==========================================
   // 🔥 RUTAS ESPECÍFICAS PRIMERO (SIN :id)
@@ -125,8 +129,12 @@ export class SesionesController {
   async findByCliente(
     @Param('clienteId') clienteId: string,
     @Query() pagination: PaginationDto,
+    @Req() req: any,
   ) {
     this.logger.log(`GET /sesiones/cliente/${clienteId}`);
+    // El resto del controlador si pasaba el usuario; este endpoint no, asi que
+    // servia la agenda de cualquier menor a cualquier autenticado.
+    await this.acceso.assertAcceso(clienteId, req.user, 'las sesiones de este cliente');
     return this.sesionesService.findByCliente(clienteId, pagination);
   }
 

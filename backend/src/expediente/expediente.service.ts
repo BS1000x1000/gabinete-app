@@ -11,6 +11,7 @@ import {
   OrigenDocumento,
 } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { AccesoClienteService } from '../common/acceso/acceso-cliente.service';
 import { DocumentosService } from '../documentos/documentos.service';
 import { PdfGeneratorService } from '../common/pdf/pdf-generator.service';
 import {
@@ -69,6 +70,7 @@ export class ExpedienteService {
     private readonly pdf: PdfGeneratorService,
     private readonly contratosPdf: ContratosPdfService,
     private readonly consentimientos: ConsentimientosService,
+    private readonly acceso: AccesoClienteService,
   ) {}
 
   // ============================================================
@@ -256,19 +258,15 @@ export class ExpedienteService {
    * Mismo criterio de acceso que `documentos`: gestion lo ve todo; un terapeuta,
    * solo los clientes que tiene asignados.
    */
+  /**
+   * Delega en la comprobacion compartida. Esta copia no comprobaba siquiera que
+   * el cliente existiera ni que no estuviera dado de baja.
+   */
   private async assertAccesoCliente(
     clienteId: string,
     user: UsuarioPeticion,
   ): Promise<void> {
-    if (user.rol === 'ADMIN' || user.rol === 'RECEP') return;
-
-    const asignado = await this.prisma.clienteTrabajador.findFirst({
-      where: { clienteId, trabajadorId: user.userId, activo: true },
-      select: { id: true },
-    });
-    if (!asignado) {
-      throw new ForbiddenException('No tienes acceso a este cliente');
-    }
+    await this.acceso.assertAcceso(clienteId, user, 'este cliente');
   }
 
   // ============================================================

@@ -1,2 +1,8 @@
-/docs
+# `docs/` esta fuera del repositorio salvo `docs/legal/`: los documentos de
+# cumplimiento (registro de actividades del art. 30, informe tecnico) necesitan
+# historial —quien cambio que y cuando es parte de su valor probatorio—.
+/docs/*
+!/docs/legal/
 /backend/.almacen-local
+# Paquete de entrega a la consultora (PDF generados, se regeneran con los scripts)
+/entrega-consultora

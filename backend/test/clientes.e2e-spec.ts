@@ -205,8 +205,13 @@ describe('Clientes (e2e)', () => {
   });
 
   // ── DELETE /api/clientes/:id ──────────────────────────────────────────────
+  //
+  // Dar de baja una ficha es ADMIN desde que se cerro el hueco: el endpoint no
+  // tenia ni rol ni auditoria, asi que cualquier autenticado podia borrar la
+  // ficha de cualquier menor sin dejar rastro. El camino feliz con un ADMIN se
+  // prueba en `rbac.e2e-spec.ts`, que es donde viven los tokens por rol.
   describe('DELETE /api/clientes/:id', () => {
-    it('elimina el cliente y devuelve la respuesta formateada', async () => {
+    it('un rol clínico no puede dar de baja una ficha → 403', async () => {
       prisma.cliente.findUnique.mockResolvedValue(testCliente());
       prisma.cliente.update.mockResolvedValue(testCliente());
 
@@ -214,10 +219,8 @@ describe('Clientes (e2e)', () => {
         .delete('/api/clientes/cliente-e2e-1')
         .set('Authorization', `Bearer ${accessToken}`);
 
-      expect(res.status).toBe(200);
-      expect(res.body.data.message).toBe('Cliente eliminado correctamente');
-      expect(res.body.data.id).toBe('cliente-e2e-1');
-      expect(res.body.data.status).toBe('success');
+      expect(res.status).toBe(403);
+      expect(prisma.cliente.update).not.toHaveBeenCalled();
     });
   });
 });

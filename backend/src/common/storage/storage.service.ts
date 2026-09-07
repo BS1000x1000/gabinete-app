@@ -121,6 +121,11 @@ export class StorageService {
         Key: key,
         Body: body,
         ContentType: contentType,
+        // Cifrado en reposo pedido explicitamente en cada objeto. Scaleway cifra
+        // por defecto, pero eso es configuracion del bucket: si alguien la
+        // cambia, esto lo sigue exigiendo. Y ante un auditor, "lo pide el
+        // codigo" se demuestra; "viene por defecto" hay que creerselo.
+        ServerSideEncryption: 'AES256',
       }),
     );
 

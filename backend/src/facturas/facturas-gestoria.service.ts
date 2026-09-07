@@ -21,8 +21,17 @@ import { toNum } from './facturas.utils';
  */
 const MAX_ADJUNTO_BYTES = 20 * 1024 * 1024;
 
-/** Cuanto vive el enlace de descarga que se manda cuando el zip no cabe. */
-const VIGENCIA_ENLACE_SEGUNDOS = 7 * 24 * 3600;
+/**
+ * Cuanto vive el enlace de descarga que se manda cuando el zip no cabe.
+ *
+ * Es una URL prefirmada, es decir SIN autenticacion: quien tenga el enlace se
+ * baja el paquete de facturas. Estuvo en 7 dias, que es mucho mas de lo que
+ * tarda una gestoria en abrir un correo y no se sostiene al lado de los 300 s
+ * que dura el enlace de un documento clinico. 48 h deja margen para un fin de
+ * semana sin dejar el fichero accesible una semana entera desde cualquier
+ * bandeja de entrada por la que haya pasado el mensaje.
+ */
+const VIGENCIA_ENLACE_SEGUNDOS = 48 * 3600;
 
 export interface PreviewEnvio {
   destinatario: { nombre: string | null; email: string | null };

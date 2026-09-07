@@ -1,7 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { FichajeService } from './fichaje.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { AccesoClienteService } from '../common/acceso/acceso-cliente.service';
 
 const mkPrisma = () => ({
   cliente:{findUnique:jest.fn()},
@@ -14,9 +15,11 @@ const mkPrisma = () => ({
 
 describe('FichajeService', () => {
   let svc, prisma;
+  let acceso: { assertAcceso: jest.Mock };
   beforeEach(async () => {
     prisma = mkPrisma();
-    const m = await Test.createTestingModule({providers:[FichajeService,{provide:PrismaService,useValue:prisma}]}).compile();
+    acceso = { assertAcceso: jest.fn().mockResolvedValue(undefined) };
+    const m = await Test.createTestingModule({providers:[FichajeService,{provide:PrismaService,useValue:prisma},{provide:AccesoClienteService,useValue:acceso}]}).compile();
     svc = m.get(FichajeService);
   });
 
@@ -88,7 +91,27 @@ describe('FichajeService', () => {
   });
 
   describe('findByCliente()', () => {
-    it('NotFound si cliente no existe', async()=>{ prisma.cliente.findUnique.mockResolvedValue(null); await expect(svc.findByCliente('cx')).rejects.toThrow(NotFoundException); });
+    it('NotFound si cliente no existe', async()=>{
+      // La existencia (y el soft-delete) los comprueba ya AccesoClienteService.
+      acceso.assertAcceso.mockRejectedValueOnce(new NotFoundException());
+      await expect(svc.findByCliente('cx')).rejects.toThrow(NotFoundException);
+    });
+    it('no devuelve registros de un cliente que no se tiene asignado', async()=>{
+      acceso.assertAcceso.mockRejectedValueOnce(new ForbiddenException());
+      await expect(
+        svc.findByCliente('c-ajeno', {}, {userId:'t9',rol:'PEDAGOGO'}),
+      ).rejects.toThrow(ForbiddenException);
+      expect(prisma.registroDiario.findMany).not.toHaveBeenCalled();
+    });
+    it('los registros de otro profesional solo los ve un ADMIN', async()=>{
+      prisma.registroDiario.findMany.mockResolvedValue([]);
+      await expect(
+        svc.findByTrabajador('otro-t', {userId:'t9',rol:'PEDAGOGO'}),
+      ).rejects.toThrow(ForbiddenException);
+      await expect(
+        svc.findByTrabajador('otro-t', {userId:'a1',rol:'ADMIN'}),
+      ).resolves.toBeDefined();
+    });
     it('devuelve registros del cliente paginados', async()=>{
       prisma.cliente.findUnique.mockResolvedValue({id:'c1'});
       const registros=[{id:'rd1'},{id:'rd2'}];

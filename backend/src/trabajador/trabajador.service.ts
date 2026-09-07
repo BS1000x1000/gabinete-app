@@ -13,7 +13,9 @@ import { TipoSesion } from '@prisma/client';
 
 @Injectable()
 export class TrabajadorService {
-  private readonly SALT_ROUNDS = 10;
+  // OWASP recomienda >= 12 para bcrypt con hardware actual. El coste solo se
+  // paga en login y cambio de contrasena, no en cada peticion.
+  private readonly SALT_ROUNDS = 12;
 
   constructor(private readonly prisma: PrismaService) {}
 

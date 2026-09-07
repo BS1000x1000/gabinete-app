@@ -1,4 +1,5 @@
 import {
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -8,11 +9,31 @@ import { EtiquetaRegistro } from '@prisma/client';
 import { diaDesdeIso } from '../common/fecha/dia.utils';
 import { CreateRegistroDiarioDto, ObjetivoTrabajadoDto, UpdateRegistroDiarioDto } from './dto/create-registro.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { AccesoClienteService } from '../common/acceso/acceso-cliente.service';
 import { PaginationDto } from '../common/dto/pagination.dto';
 
 @Injectable()
 export class FichajeService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly acceso: AccesoClienteService,
+  ) {}
+
+  /**
+   * Comprueba el acceso al cliente al que pertenece un registro.
+   *
+   * Va SIEMPRE fuera del try/catch de cada metodo: esos catch reconvierten todo
+   * lo que no sea NotFound en un 500, asi que un 403 lanzado dentro saldria como
+   * error de servidor.
+   */
+  private async assertAccesoRegistro(id: string, user?: { userId: string; rol: string }) {
+    const registro = await this.prisma.registroDiario.findUnique({
+      where: { id },
+      select: { clienteId: true },
+    });
+    if (!registro) throw new NotFoundException('Registro diario no encontrado');
+    await this.acceso.assertAcceso(registro.clienteId, user, 'los registros de este cliente');
+  }
 
   private buildEtiquetas(etiquetas?: EtiquetaRegistro[]): EtiquetaRegistro[] {
     const base = etiquetas ?? [];
@@ -40,7 +61,14 @@ export class FichajeService {
   async create(
     dto: CreateRegistroDiarioDto,
     trabajadorId: string,
+    user?: { userId: string; rol: string },
   ): Promise<any> {
+    await this.acceso.assertAcceso(
+      dto.clienteId,
+      user,
+      'los registros de este cliente',
+    );
+
     try {
       const cliente = await this.prisma.cliente.findUnique({
         where: { id: dto.clienteId },
@@ -104,7 +132,13 @@ export class FichajeService {
   }
 
   /* ---------- UPDATE ---------- */
-  async update(id: string, dto: UpdateRegistroDiarioDto): Promise<any> {
+  async update(
+    id: string,
+    dto: UpdateRegistroDiarioDto,
+    user?: { userId: string; rol: string },
+  ): Promise<any> {
+    await this.assertAccesoRegistro(id, user);
+
     const { contenido, objetivosGeneralesTrabajados, etiquetas, fechaRegistro, proximaSesion } = dto;
     try {
       const registro = await this.prisma.registroDiario.findUnique({ where: { id } });
@@ -152,11 +186,16 @@ export class FichajeService {
   /* ---------- READ (por Cliente) ---------- */
   // Pagina a proposito: antes traia el historial entero sin tope, con un include
   // anidado a tres niveles, y crecia sin limite con los anos de tratamiento.
-  async findByCliente(clienteId: string, pagination: PaginationDto = {}) {
-    try {
-      const cliente = await this.prisma.cliente.findUnique({ where: { id: clienteId } });
-      if (!cliente) throw new NotFoundException('Cliente no encontrado');
+  async findByCliente(
+    clienteId: string,
+    pagination: PaginationDto = {},
+    user?: { userId: string; rol: string },
+  ) {
+    // Filtraba solo por clienteId: cualquier rol clinico leia la narrativa
+    // clinica de cualquier menor, estuviera o no asignado.
+    await this.acceso.assertAcceso(clienteId, user, 'los registros de este cliente');
 
+    try {
       const { page = 1, limit = 100 } = pagination;
       const skip = (page - 1) * limit;
       const where = { clienteId };
@@ -185,7 +224,15 @@ export class FichajeService {
   }
 
   /* ---------- READ (por Trabajador) ---------- */
-  async findByTrabajador(trabajadorId: string): Promise<any[]> {
+  async findByTrabajador(
+    trabajadorId: string,
+    user?: { userId: string; rol: string },
+  ): Promise<any[]> {
+    // Los registros de otro profesional solo los ve un ADMIN.
+    if (user && user.rol !== 'ADMIN' && user.userId !== trabajadorId) {
+      throw new ForbiddenException('No tienes acceso a los registros de otro profesional');
+    }
+
     try {
       return await this.prisma.registroDiario.findMany({
         where: { trabajadorId },
@@ -203,7 +250,9 @@ export class FichajeService {
   }
 
   /* ---------- READ (por ID) ---------- */
-  async findOne(id: string): Promise<any> {
+  async findOne(id: string, user?: { userId: string; rol: string }): Promise<any> {
+    await this.assertAccesoRegistro(id, user);
+
     try {
       const registro = await this.prisma.registroDiario.findUnique({
         where: { id },
@@ -224,7 +273,9 @@ export class FichajeService {
   }
 
   /* ---------- DELETE ---------- */
-  async remove(id: string): Promise<void> {
+  async remove(id: string, user?: { userId: string; rol: string }): Promise<void> {
+    await this.assertAccesoRegistro(id, user);
+
     try {
       const registro = await this.prisma.registroDiario.findUnique({ where: { id } });
       if (!registro) throw new NotFoundException('Registro diario no encontrado');

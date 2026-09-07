@@ -7,6 +7,7 @@ import { DocumentosService } from '../documentos/documentos.service';
 import { PdfGeneratorService } from '../common/pdf/pdf-generator.service';
 import { ContratosPdfService } from '../contratos/contratos-pdf.service';
 import { ConsentimientosService } from '../consentimientos/consentimientos.service';
+import { AccesoClienteService } from '../common/acceso/acceso-cliente.service';
 
 const USER = { userId: 'trab-1', rol: 'ADMIN' };
 
@@ -49,6 +50,7 @@ describe('ExpedienteService', () => {
   let pdf: any;
   let contratosPdf: any;
   let consentimientos: any;
+  let acceso: { assertAcceso: jest.Mock };
 
   beforeEach(async () => {
     prisma = {
@@ -78,6 +80,7 @@ describe('ExpedienteService', () => {
       registrar: jest.fn().mockResolvedValue({ id: 'cons-1' }),
       assertTutoresLegales: jest.fn().mockResolvedValue(['fam-1']),
     };
+    acceso = { assertAcceso: jest.fn().mockResolvedValue(undefined) };
 
     const mod = await Test.createTestingModule({
       providers: [
@@ -87,6 +90,7 @@ describe('ExpedienteService', () => {
         { provide: PdfGeneratorService, useValue: pdf },
         { provide: ContratosPdfService, useValue: contratosPdf },
         { provide: ConsentimientosService, useValue: consentimientos },
+        { provide: AccesoClienteService, useValue: acceso },
       ],
     }).compile();
 
@@ -390,7 +394,8 @@ describe('ExpedienteService', () => {
     });
 
     it('un terapeuta sin el cliente asignado no puede previsualizar', async () => {
-      prisma.clienteTrabajador.findFirst.mockResolvedValue(null);
+      // El criterio esta en AccesoClienteService; aqui se prueba la delegacion.
+      acceso.assertAcceso.mockRejectedValueOnce(new ForbiddenException());
 
       await expect(
         service.vistaPrevia('contrato-1', CategoriaDocumento.CONTRATO, {

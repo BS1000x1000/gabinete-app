@@ -16,6 +16,7 @@ import {
 } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../common/storage/storage.service';
+import { AccesoClienteService } from '../common/acceso/acceso-cliente.service';
 import {
   CreateDocumentoDto,
   UpdateDocumentoDto,
@@ -80,6 +81,7 @@ export class DocumentosService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly storage: StorageService,
+    private readonly acceso: AccesoClienteService,
   ) {}
 
   // ============================================================
@@ -90,26 +92,16 @@ export class DocumentosService {
    * ADMIN y RECEP ven todos los expedientes; el resto solo los clientes
    * que tienen asignados y activos. Mismo criterio que `clientes` e `informes`.
    */
+  /**
+   * Delega en la comprobacion compartida. Esta copia no filtraba el soft-delete,
+   * asi que la documentacion de un cliente dado de baja seguia siendo legible.
+   */
   private async assertAccesoCliente(clienteId: string, user?: UsuarioPeticion) {
-    const cliente = await this.prisma.cliente.findUnique({
-      where: { id: clienteId },
-      select: { id: true },
-    });
-    if (!cliente) {
-      throw new NotFoundException(`Cliente con ID ${clienteId} no encontrado`);
-    }
-
-    if (!user || user.rol === 'ADMIN' || user.rol === 'RECEP') return;
-
-    const asignacion = await this.prisma.clienteTrabajador.findFirst({
-      where: { clienteId, trabajadorId: user.userId, activo: true },
-      select: { id: true },
-    });
-    if (!asignacion) {
-      throw new ForbiddenException(
-        'No tienes acceso a la documentación de este cliente',
-      );
-    }
+    await this.acceso.assertAcceso(
+      clienteId,
+      user,
+      'la documentación de este cliente',
+    );
   }
 
   // ============================================================

@@ -113,20 +113,55 @@ export class InformesService {
   // LISTAR INFORMES
   // ============================================================
 
-  async findAll(pagination: PaginationDto = {}) {
+  /**
+   * Filtro de visibilidad de informes, unico para todas las lecturas: RECEP solo
+   * ve los cerrados; un terapeuta, solo los que redacto el. Estaba copiado en
+   * findByCliente y findOne, y faltaba por completo en findAll.
+   */
+  private scopeInforme(user?: { userId: string; rol: string }) {
+    if (user?.rol === 'RECEP') {
+      return { estado: { in: [EstadoInforme.FINALIZADO, EstadoInforme.ENVIADO] } };
+    }
+    if (user && user.rol !== 'ADMIN') {
+      return { trabajadorId: user.userId };
+    }
+    return {};
+  }
+
+  /**
+   * Lanza si el usuario no puede tocar este informe. No trae el include: es una
+   * comprobacion de acceso, no una lectura.
+   */
+  private async assertAcceso(id: string, user?: { userId: string; rol: string }) {
+    const visible = await this.prisma.informe.findFirst({
+      where: { id, ...this.scopeInforme(user) },
+      select: { id: true },
+    });
+    if (!visible) {
+      throw new NotFoundException(`Informe con ID ${id} no encontrado`);
+    }
+  }
+
+  async findAll(
+    pagination: PaginationDto = {},
+    user?: { userId: string; rol: string },
+  ) {
     const { page = 1, limit = 50 } = pagination;
     const skip = (page - 1) * limit;
 
     this.logger.log(`Obteniendo informes (page=${page}, limit=${limit})`);
 
+    const where = this.scopeInforme(user);
+
     const [data, total] = await Promise.all([
       this.prisma.informe.findMany({
+        where,
         include: informeInclude,
         orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
       }),
-      this.prisma.informe.count(),
+      this.prisma.informe.count({ where }),
     ]);
 
     return { data, total, page, limit };
@@ -147,13 +182,7 @@ export class InformesService {
       );
     }
 
-    const where: any = { clienteId };
-
-    if (user?.rol === 'RECEP') {
-      where.estado = { in: [EstadoInforme.FINALIZADO, EstadoInforme.ENVIADO] };
-    } else if (user && user.rol !== 'ADMIN') {
-      where.trabajadorId = user.userId;
-    }
+    const where: any = { clienteId, ...this.scopeInforme(user) };
 
     return this.prisma.informe.findMany({
       where,
@@ -174,12 +203,7 @@ export class InformesService {
   async findOne(id: string, user?: { userId: string; rol: string }) {
     this.logger.log(`Buscando informe con ID: ${id}`);
 
-    const where: any = { id };
-    if (user?.rol === 'RECEP') {
-      where.estado = { in: [EstadoInforme.FINALIZADO, EstadoInforme.ENVIADO] };
-    } else if (user && user.rol !== 'ADMIN') {
-      where.trabajadorId = user.userId;
-    }
+    const where: any = { id, ...this.scopeInforme(user) };
 
     const informe = await this.prisma.informe.findFirst({
       where,
@@ -197,8 +221,14 @@ export class InformesService {
   // ACTUALIZAR INFORME
   // ============================================================
 
-  async update(id: string, dto: UpdateInformeDto) {
+  async update(
+    id: string,
+    dto: UpdateInformeDto,
+    user?: { userId: string; rol: string },
+  ) {
     this.logger.log(`Actualizando informe: ${id}`);
+
+    await this.assertAcceso(id, user);
 
     const informe = await this.prisma.informe.findUnique({ where: { id } });
     if (!informe) {
@@ -263,8 +293,10 @@ export class InformesService {
   // FINALIZAR INFORME (regenera el snapshot GAS antes de cerrar)
   // ============================================================
 
-  async finalizar(id: string) {
+  async finalizar(id: string, user?: { userId: string; rol: string }) {
     this.logger.log(`Finalizando informe: ${id}`);
+
+    await this.assertAcceso(id, user);
 
     const informe = await this.prisma.informe.findUnique({ where: { id } });
     if (!informe) {
@@ -333,7 +365,10 @@ export class InformesService {
       );
     }
 
-    const url = await this.storage.getSignedUrl(informe.urlDocumentoFinal);
+    // 5 minutos, igual que los documentos del expediente: un informe clinico
+    // merece la misma ventana que el resto de la documentacion del menor, no los
+    // 15 minutos que traia el valor por defecto.
+    const url = await this.storage.getSignedUrl(informe.urlDocumentoFinal, 300);
     if (!url) {
       throw new InternalServerErrorException('Storage no está configurado correctamente.');
     }
@@ -345,8 +380,10 @@ export class InformesService {
   // ELIMINAR INFORME
   // ============================================================
 
-  async remove(id: string) {
+  async remove(id: string, user?: { userId: string; rol: string }) {
     this.logger.warn(`Eliminando informe: ${id}`);
+
+    await this.assertAcceso(id, user);
 
     const informe = await this.prisma.informe.findUnique({ where: { id } });
     if (!informe) {

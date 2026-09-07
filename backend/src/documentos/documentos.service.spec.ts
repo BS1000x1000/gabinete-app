@@ -8,6 +8,7 @@ import {
 import { DocumentosService, TAMANO_MAX_BYTES } from './documentos.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../common/storage/storage.service';
+import { AccesoClienteService } from '../common/acceso/acceso-cliente.service';
 import { FicheroSubido } from './dto/documento.dto';
 
 // ── Mock helpers ──────────────────────────────────────────────────────────────
@@ -50,15 +51,18 @@ describe('DocumentosService', () => {
   let svc: DocumentosService;
   let prisma: ReturnType<typeof mkPrisma>;
   let storage: ReturnType<typeof mkStorage>;
+  let acceso: { assertAcceso: jest.Mock };
 
   const build = async (storageMock = mkStorage()) => {
     prisma = mkPrisma();
     storage = storageMock;
+    acceso = { assertAcceso: jest.fn().mockResolvedValue(undefined) };
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         DocumentosService,
         { provide: PrismaService, useValue: prisma },
         { provide: StorageService, useValue: storage },
+        { provide: AccesoClienteService, useValue: acceso },
       ],
     }).compile();
     svc = module.get(DocumentosService);
@@ -122,11 +126,27 @@ describe('DocumentosService', () => {
     });
 
     it('impide subir a un cliente no asignado al terapeuta', async () => {
-      prisma.clienteTrabajador.findFirst.mockResolvedValue(null);
+      // La comprobacion vive en AccesoClienteService (ver su propio spec); aqui
+      // lo que se prueba es que este modulo la consulta y respeta su veto.
+      acceso.assertAcceso.mockRejectedValueOnce(new ForbiddenException());
 
       await expect(svc.create(dtoBase, mkFichero(), userPedagogo)).rejects.toThrow(
         ForbiddenException,
       );
+      expect(acceso.assertAcceso).toHaveBeenCalledWith(
+        'c1',
+        userPedagogo,
+        expect.any(String),
+      );
+    });
+
+    it('no sube nada al bucket si el acceso se deniega', async () => {
+      acceso.assertAcceso.mockRejectedValueOnce(new ForbiddenException());
+
+      await expect(
+        svc.create(dtoBase, mkFichero(), userPedagogo),
+      ).rejects.toThrow(ForbiddenException);
+      expect(storage.upload).not.toHaveBeenCalled();
     });
   });
 
@@ -134,7 +154,7 @@ describe('DocumentosService', () => {
 
   describe('findByCliente()', () => {
     it('lanza NotFoundException si el cliente no existe', async () => {
-      prisma.cliente.findUnique.mockResolvedValue(null);
+      acceso.assertAcceso.mockRejectedValueOnce(new NotFoundException());
 
       await expect(svc.findByCliente('nope', userAdmin)).rejects.toThrow(NotFoundException);
     });

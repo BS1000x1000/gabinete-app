@@ -74,3 +74,16 @@ export const createPrismaMock = () => {
 
   return mocks;
 };
+
+/**
+ * Da por buena la comprobacion de acceso al cliente (`AccesoClienteService`).
+ *
+ * Desde que los endpoints que reciben un `clienteId` por la URL comprueban que
+ * quien pide tiene ese cliente asignado, un mock vacio devuelve 404: no hay
+ * cliente. Los tests que ejercitan el camino feliz declaran con esto que el
+ * usuario si tiene acceso, en vez de repetir dos `mockResolvedValue` sueltos.
+ */
+export const permitirAccesoCliente = (prisma: PrismaMock, clienteId = 'cliente-e2e-1') => {
+  prisma.cliente.findFirst.mockResolvedValue({ id: clienteId });
+  prisma.clienteTrabajador.findFirst.mockResolvedValue({ id: 'ct-e2e-1' });
+};

@@ -64,7 +64,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     }
 
     this.logger.error(
-      `${request.method} ${request.url} - Status: ${status} - Message: ${message}`,
+      `${request.method} ${urlSegura(request.url)} - Status: ${status} - Message: ${message}`,
       exception instanceof Error ? exception.stack : String(exception),
     );
 
@@ -77,4 +77,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
       path: request.url,
     });
   }
+}
+
+/**
+ * Quita de la URL los parametros que puedan llevar credenciales antes de
+ * escribirla en el log. `?token=` ya no se acepta como via de autenticacion,
+ * pero un log es para siempre y esto cuesta tres lineas.
+ */
+export function urlSegura(url: string): string {
+  return url.replace(/([?&](?:token|access_token|api_key)=)[^&]*/gi, '$1[REDACTADO]');
 }

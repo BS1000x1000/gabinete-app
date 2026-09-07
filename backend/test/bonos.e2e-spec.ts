@@ -4,7 +4,7 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import * as bcrypt from 'bcrypt';
 import { createTestApp } from './helpers/create-app';
-import { createPrismaMock, PrismaMock } from './helpers/prisma-mock';
+import { createPrismaMock, permitirAccesoCliente, PrismaMock } from './helpers/prisma-mock';
 
 const TEST_HASH = bcrypt.hashSync('Test123!', 1);
 
@@ -77,6 +77,7 @@ describe('Bonos (e2e)', () => {
     });
 
     it('devuelve la lista de bonos del cliente', async () => {
+      permitirAccesoCliente(prisma);
       const bonos = [testBono(), testBono({ id: 'bono-e2e-2', estado: 'CONSUMIDO' })];
       prisma.bono.findMany.mockResolvedValue(bonos);
 
@@ -96,6 +97,7 @@ describe('Bonos (e2e)', () => {
     const CLIENTE_UUID = '550e8400-e29b-41d4-a716-446655440001';
 
     it('crea un bono y devuelve 201', async () => {
+      permitirAccesoCliente(prisma, CLIENTE_UUID);
       prisma.bono.findFirst.mockResolvedValue(null); // sin bono activo previo
       prisma.bono.create.mockResolvedValue(testBono({ clienteId: CLIENTE_UUID }));
 
@@ -110,6 +112,7 @@ describe('Bonos (e2e)', () => {
     });
 
     it('devuelve 409 si ya existe bono activo para el cliente', async () => {
+      permitirAccesoCliente(prisma, CLIENTE_UUID);
       prisma.bono.findFirst.mockResolvedValue(testBono()); // bono activo existente
 
       const res = await request(app.getHttpServer())

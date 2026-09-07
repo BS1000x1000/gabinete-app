@@ -3,6 +3,8 @@ import { ConflictException, NotFoundException, BadRequestException } from '@nest
 import { TipoSesion } from '@prisma/client';
 import { ClientesService } from './clientes.service';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { AccesoClienteService } from '../common/acceso/acceso-cliente.service';
+import { StorageService } from '../common/storage/storage.service';
 
 const mkC = (o={}) => ({id:"c1",nombre:"Ana",apellidos:"Garcia",dni:"12A",activo:true,colegioId:null,deletedAt:null,...o});
 const mkT = (o={}) => ({id:"t1",nombre:"Luis",apellidos:"Perez",...o});
@@ -13,19 +15,24 @@ const mkP = () => ({
   clienteTrabajador:{findFirst:jest.fn(),create:jest.fn(),delete:jest.fn()},
   clienteObjetivo:{findFirst:jest.fn(),findMany:jest.fn(),create:jest.fn(),update:jest.fn(),count:jest.fn()},
   objetivoGeneral:{findMany:jest.fn(),findUnique:jest.fn()},
-  familiar:{findFirst:jest.fn(),create:jest.fn(),update:jest.fn(),delete:jest.fn()},
-  sanitario:{findUnique:jest.fn(),create:jest.fn(),update:jest.fn()},
+  familiar:{findFirst:jest.fn(),create:jest.fn(),update:jest.fn(),delete:jest.fn(),deleteMany:jest.fn()},
+  sanitario:{findUnique:jest.fn(),create:jest.fn(),update:jest.fn(),deleteMany:jest.fn()},
   sesion:{findMany:jest.fn()},registroDiario:{count:jest.fn()},
   registroDiarioObjetivo:{groupBy:jest.fn(),count:jest.fn(),findFirst:jest.fn()},
   disponibilidadClienteTrabajador:{deleteMany:jest.fn(),createMany:jest.fn()},
+  escolar:{findUnique:jest.fn(),create:jest.fn(),update:jest.fn(),deleteMany:jest.fn()},
+  documentoCliente:{findMany:jest.fn(),deleteMany:jest.fn()},
+  consentimientoRgpd:{deleteMany:jest.fn()},
   $transaction:jest.fn(),
 });
 
 describe('ClientesService', () => {
   let svc, prisma;
+  let storage: { delete: jest.Mock };
   beforeEach(async () => {
     prisma = mkP();
-    const m = await Test.createTestingModule({providers:[ClientesService,{provide:PrismaService,useValue:prisma}]}).compile();
+    storage = { delete: jest.fn().mockResolvedValue(undefined) };
+    const m = await Test.createTestingModule({providers:[ClientesService,{provide:PrismaService,useValue:prisma},{ provide: AccesoClienteService, useValue: { assertAcceso: jest.fn() } },{ provide: StorageService, useValue: storage }]}).compile();
     svc = m.get(ClientesService);
   });
 
@@ -152,5 +159,77 @@ describe('ClientesService', () => {
 
   describe('findAll()', () => {
     it('pagina resultados y devuelve total', async()=>{ prisma.cliente.findMany.mockResolvedValue([mkC(),mkC({id:'c2'})]); prisma.cliente.count.mockResolvedValue(25); const r=await svc.findAll(undefined,{page:2,limit:10}); expect(r.total).toBe(25); expect(r.page).toBe(2); expect(r.data).toHaveLength(2); });
+  });
+
+  describe('anonimizarCliente()', () => {
+    const borrado = () => mkC({ deletedAt: new Date('2026-09-01') });
+
+    beforeEach(() => {
+      prisma.$transaction.mockResolvedValue([]);
+      prisma.documentoCliente.findMany.mockResolvedValue([]);
+    });
+
+    it('exige soft-delete previo', async () => {
+      prisma.cliente.findFirst.mockResolvedValue(mkC());
+      await expect(svc.anonimizarCliente('c1')).rejects.toThrow(BadRequestException);
+    });
+
+    // Este es el bug que se arreglo. `ConsentimientoFirmante.familiar` es una
+    // relacion requerida sin onDelete (= Restrict), asi que borrar los
+    // familiares antes que los consentimientos tumbaba la transaccion entera
+    // por violacion de clave ajena. En la practica: la anonimizacion fallaba
+    // justo en los clientes que SI habian firmado, que son los del flujo
+    // normal. El orden del array de $transaction es el orden de ejecucion.
+    it('borra los consentimientos ANTES que los familiares', async () => {
+      prisma.cliente.findFirst.mockResolvedValue(borrado());
+
+      await svc.anonimizarCliente('c1');
+
+      const consentimientos = prisma.consentimientoRgpd.deleteMany.mock.invocationCallOrder[0];
+      const familiares = prisma.familiar.deleteMany.mock.invocationCallOrder[0];
+      expect(consentimientos).toBeLessThan(familiares);
+    });
+
+    it('borra del bucket los PDF del expediente, no solo su fila', async () => {
+      prisma.cliente.findFirst.mockResolvedValue(borrado());
+      prisma.documentoCliente.findMany.mockResolvedValue([
+        { id: 'd1', storageKey: 'clientes/c1/documentos/aaa.pdf' },
+        { id: 'd2', storageKey: 'clientes/c1/documentos/bbb.pdf' },
+      ]);
+
+      await svc.anonimizarCliente('c1');
+
+      expect(storage.delete).toHaveBeenCalledWith('clientes/c1/documentos/aaa.pdf');
+      expect(storage.delete).toHaveBeenCalledWith('clientes/c1/documentos/bbb.pdf');
+      expect(prisma.documentoCliente.deleteMany).toHaveBeenCalledWith({
+        where: { id: { in: ['d1', 'd2'] } },
+      });
+    });
+
+    // Un fallo del bucket no puede dejar la ficha a medio anonimizar.
+    it('si el bucket falla, la anonimizacion se completa igual', async () => {
+      prisma.cliente.findFirst.mockResolvedValue(borrado());
+      prisma.documentoCliente.findMany.mockResolvedValue([
+        { id: 'd1', storageKey: 'clientes/c1/documentos/aaa.pdf' },
+      ]);
+      storage.delete.mockRejectedValueOnce(new Error('bucket caido'));
+
+      await expect(svc.anonimizarCliente('c1')).resolves.toMatchObject({
+        anonimizadoEn: expect.any(String),
+      });
+    });
+
+    // Ley 41/2002: la historia clinica se conserva. Que esto sea entonces
+    // seudonimizacion y no anonimizacion esta dicho en el doc-comment y va al
+    // informe para que lo ratifique el asesor.
+    it('no toca informes ni registros diarios', async () => {
+      prisma.cliente.findFirst.mockResolvedValue(borrado());
+
+      await svc.anonimizarCliente('c1');
+
+      const tocados = prisma.$transaction.mock.calls[0][0];
+      expect(tocados).toHaveLength(6);
+      expect(prisma.registroDiario.count).not.toHaveBeenCalled();
+    });
   });
 });

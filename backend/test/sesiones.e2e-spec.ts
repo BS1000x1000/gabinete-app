@@ -5,7 +5,7 @@ import request from 'supertest';
 import * as bcrypt from 'bcrypt';
 import { EstadoSesion, TipoSesion } from '@prisma/client';
 import { createTestApp } from './helpers/create-app';
-import { createPrismaMock, PrismaMock } from './helpers/prisma-mock';
+import { createPrismaMock, permitirAccesoCliente, PrismaMock } from './helpers/prisma-mock';
 
 const TEST_HASH = bcrypt.hashSync('Test123!', 1);
 
@@ -74,6 +74,7 @@ describe('Sesiones (e2e)', () => {
     });
 
     it('devuelve las sesiones del cliente paginadas', async () => {
+      permitirAccesoCliente(prisma);
       const sesiones = [testSesion(), testSesion({ id: 'sesion-e2e-2' })];
       prisma.sesion.findMany.mockResolvedValue(sesiones);
       prisma.sesion.count.mockResolvedValue(2);
@@ -91,6 +92,7 @@ describe('Sesiones (e2e)', () => {
     });
 
     it('respeta page y limit de la query', async () => {
+      permitirAccesoCliente(prisma);
       prisma.sesion.findMany.mockResolvedValue([testSesion()]);
       prisma.sesion.count.mockResolvedValue(500);
 

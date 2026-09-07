@@ -105,9 +105,11 @@ describe('NotificacionesController', () => {
       const leida = mockNotif({ leida: true });
       service.marcarLeida.mockResolvedValue(leida);
 
-      const result = await controller.marcarLeida('notif-1');
+      const result = await controller.marcarLeida('notif-1', { user: { sub: 'trabajador-1' } } as any);
 
-      expect(service.marcarLeida).toHaveBeenCalledWith('notif-1');
+      // Pasa tambien el trabajador: marcar por id a secas permitia tocar la
+      // notificacion de otro.
+      expect(service.marcarLeida).toHaveBeenCalledWith('notif-1', 'trabajador-1');
       expect(result.leida).toBe(true);
     });
   });
@@ -118,9 +120,9 @@ describe('NotificacionesController', () => {
       const descartada = mockNotif({ descartada: true });
       service.descartar.mockResolvedValue(descartada);
 
-      const result = await controller.descartar('notif-1');
+      const result = await controller.descartar('notif-1', { user: { sub: 'trabajador-1' } } as any);
 
-      expect(service.descartar).toHaveBeenCalledWith('notif-1');
+      expect(service.descartar).toHaveBeenCalledWith('notif-1', 'trabajador-1');
       expect(result.descartada).toBe(true);
     });
   });

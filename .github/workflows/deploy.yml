@@ -10,6 +10,11 @@ env:
   NAMESPACE: ${{ secrets.SCW_REGISTRY_NAMESPACE }}
   IMAGE_NAME: gabinete-backend
 
+# El job de despliegue tiene todos los secretos de infraestructura. No necesita
+# escribir en el repositorio.
+permissions:
+  contents: read
+
 jobs:
   build-and-deploy:
     name: Build, push and deploy
@@ -38,9 +43,24 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      # Binario de una release fijada y verificado por checksum, no
+      # `curl ... master | sh`. Este job tiene TODOS los secretos de despliegue y
+      # ejecutaba a ciegas un script descargado de la rama principal de un
+      # tercero: lo que se ejecutara dependia de como estuviera `master` ese dia.
+      # Al subir de version hay que actualizar tambien el SHA256, que sale del
+      # fichero SHA256SUMS de la propia release.
       - name: Install Scaleway CLI
+        env:
+          SCW_CLI_VERSION: 2.62.0
+          SCW_CLI_SHA256: 7638c385c1a43a5d9022a63791769fd464e14314032a51411726f062f3053e67
         run: |
-          curl -s https://raw.githubusercontent.com/scaleway/scaleway-cli/master/scripts/get.sh | sh
+          set -euo pipefail
+          url="https://github.com/scaleway/scaleway-cli/releases/download/v${SCW_CLI_VERSION}/scaleway-cli_${SCW_CLI_VERSION}_linux_amd64"
+          curl -fsSL -o scw "$url"
+          echo "${SCW_CLI_SHA256}  scw" | sha256sum --check --status
+          chmod +x scw
+          sudo mv scw /usr/local/bin/scw
+          scw version
 
       - name: Deploy to Scaleway Serverless Container
         env:

@@ -10,17 +10,23 @@ import {
   HttpCode,
   HttpStatus,
   Logger,
+  UseGuards,
 } from '@nestjs/common';
 import { AreasDesarrolloService } from './areas-desarrollo.service';
 import { CreateAreaDesarrolloDto, UpdateAreaDesarrolloDto } from './dto/area-desarrollo.dto';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/roles/roles.guard';
+import { Roles } from 'src/roles/roles.decorator';
 
 @Controller('areas-desarrollo')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class AreasDesarrolloController {
   private readonly logger = new Logger(AreasDesarrolloController.name);
 
   constructor(private readonly areasDesarrolloService: AreasDesarrolloService) {}
 
   @Post()
+  @Roles('ADMIN')
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() createAreaDto: CreateAreaDesarrolloDto) {
     this.logger.log(`Creando área de desarrollo: ${createAreaDto.nombre}`);
@@ -28,6 +34,7 @@ export class AreasDesarrolloController {
   }
 
   @Post('seed')
+  @Roles('ADMIN')
   @HttpCode(HttpStatus.CREATED)
   async seed() {
     this.logger.log('Creando áreas de desarrollo por defecto');
@@ -48,6 +55,7 @@ export class AreasDesarrolloController {
   }
 
   @Patch(':id')
+  @Roles('ADMIN')
   async update(
     @Param('id') id: string,
     @Body() updateAreaDto: UpdateAreaDesarrolloDto,
@@ -57,6 +65,7 @@ export class AreasDesarrolloController {
   }
 
   @Delete(':id')
+  @Roles('ADMIN')
   @HttpCode(HttpStatus.OK)
   async remove(@Param('id') id: string) {
     this.logger.warn(`Eliminando área de desarrollo: ${id}`);

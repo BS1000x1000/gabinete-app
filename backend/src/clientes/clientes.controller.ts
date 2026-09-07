@@ -41,6 +41,7 @@ import {
 } from 'src/documentos/documentos.service';
 import type { FicheroSubido } from 'src/documentos/dto/documento.dto';
 import { MulterExceptionFilter } from 'src/common/filters/multer-exception.filter';
+import { AccesoClienteService } from 'src/common/acceso/acceso-cliente.service';
 import {
   CategoriaDocumento,
   EstadoFirmaDocumento,
@@ -57,6 +58,7 @@ export class ClientesController {
     private readonly auditService: AuditService,
     private readonly consentimientos: ConsentimientosService,
     private readonly documentos: DocumentosService,
+    private readonly acceso: AccesoClienteService,
   ) {}
 
   // ========================================
@@ -76,6 +78,7 @@ export class ClientesController {
    * POST /api/clientes
    */
   @Post()
+  @Roles(...ROLES_CLINICOS, 'RECEP')
   @HttpCode(HttpStatus.CREATED)
   async create(
     @Body() createClienteDto: CreateClienteDto,
@@ -194,8 +197,10 @@ export class ClientesController {
       tipoTerapia: TipoSesion;
       horarios: { diaSemana: number; horaInicio: string; horaFin: string }[];
     },
+    @Req() req: any,
   ) {
     this.logger.log(`🎯 POST /api/clientes/${id}/asignar-trabajador`);
+    await this.acceso.assertAcceso(id, req.user);
     return this.clientesService.asignarTrabajador(
       id,
       body.trabajadorId,
@@ -213,10 +218,12 @@ export class ClientesController {
   async desasignarTrabajador(
     @Param('clienteId') clienteId: string,
     @Param('asignacionId') asignacionId: string,
+    @Req() req: any,
   ) {
     this.logger.log(
       `🎯 DELETE /api/clientes/${clienteId}/asignaciones/${asignacionId}`,
     );
+    await this.acceso.assertAcceso(clienteId, req.user);
     return this.clientesService.desasignarTrabajador(clienteId, asignacionId);
   }
 
@@ -233,10 +240,12 @@ export class ClientesController {
     body: {
       horarios: { diaSemana: number; horaInicio: string; horaFin: string }[];
     },
+    @Req() req: any,
   ) {
     this.logger.log(
       `🕐 PATCH /api/clientes/${clienteId}/asignaciones/${asignacionId}/horarios`,
     );
+    await this.acceso.assertAcceso(clienteId, req.user);
     return this.clientesService.actualizarHorariosAsignacion(
       clienteId,
       asignacionId,
@@ -247,8 +256,13 @@ export class ClientesController {
   // ── FAMILIARES ────────────────────────────────────────────
   @Post(':id/familiares')
   @HttpCode(HttpStatus.CREATED)
-  async crearFamiliar(@Param('id') id: string, @Body() body: any) {
+  async crearFamiliar(
+    @Param('id') id: string,
+    @Body() body: any,
+    @Req() req: any,
+  ) {
     this.logger.log(`👨‍👩‍👧 POST /api/clientes/${id}/familiares`);
+    await this.acceso.assertAcceso(id, req.user);
     return this.clientesService.crearFamiliar(id, body);
   }
 
@@ -257,8 +271,10 @@ export class ClientesController {
     @Param('id') id: string,
     @Param('familiarId') familiarId: string,
     @Body() body: any,
+    @Req() req: any,
   ) {
     this.logger.log(`👨‍👩‍👧 PATCH /api/clientes/${id}/familiares/${familiarId}`);
+    await this.acceso.assertAcceso(id, req.user);
     return this.clientesService.updateFamiliar(id, familiarId, body);
   }
 
@@ -267,31 +283,48 @@ export class ClientesController {
   async eliminarFamiliar(
     @Param('id') id: string,
     @Param('familiarId') familiarId: string,
+    @Req() req: any,
   ) {
     this.logger.log(`👨‍👩‍👧 DELETE /api/clientes/${id}/familiares/${familiarId}`);
+    await this.acceso.assertAcceso(id, req.user);
     return this.clientesService.eliminarFamiliar(id, familiarId);
   }
 
   // ── SANITARIO ─────────────────────────────────────────────
   @Patch(':id/sanitario')
   @Roles(...ROLES_CLINICOS)
-  async updateSanitario(@Param('id') id: string, @Body() body: any) {
+  async updateSanitario(
+    @Param('id') id: string,
+    @Body() body: any,
+    @Req() req: any,
+  ) {
     this.logger.log(`🏥 PATCH /api/clientes/${id}/sanitario`);
+    await this.acceso.assertAcceso(id, req.user);
     return this.clientesService.updateSanitario(id, body);
   }
 
   // ── ESCOLAR ───────────────────────────────────────────────
   @Patch(':id/escolar')
   @Roles(...ROLES_CLINICOS)
-  async updateEscolar(@Param('id') id: string, @Body() body: any) {
+  async updateEscolar(
+    @Param('id') id: string,
+    @Body() body: any,
+    @Req() req: any,
+  ) {
     this.logger.log(`🎓 PATCH /api/clientes/${id}/escolar`);
+    await this.acceso.assertAcceso(id, req.user);
     return this.clientesService.updateEscolar(id, body);
   }
 
   // ── COLEGIO ───────────────────────────────────────────────
   @Patch(':id/colegio')
-  async updateColegio(@Param('id') id: string, @Body() body: any) {
+  async updateColegio(
+    @Param('id') id: string,
+    @Body() body: any,
+    @Req() req: any,
+  ) {
     this.logger.log(`🏫 PATCH /api/clientes/${id}/colegio`);
+    await this.acceso.assertAcceso(id, req.user);
     return this.clientesService.updateColegio(id, body);
   }
 
@@ -472,11 +505,16 @@ export class ClientesController {
 
   /**
    * GET /api/clientes/:id/export
-   * Exportación completa de datos personales del cliente (RGPD Art. 20 — portabilidad)
-   * Solo ADMIN o RECEP pueden solicitar la exportación
+   * Exportación completa de datos personales del cliente (RGPD Art. 20 — portabilidad).
+   *
+   * ADMIN y nadie más. Estaba en ROLES_GESTION, y el volcado incluye `sanitario`,
+   * `escolar` y los registros diarios completos — justo lo que el módulo
+   * `registros` le niega a RECEP por rol. Era la vía para leer por JSON lo que la
+   * pantalla no enseña. Atender una solicitud de portabilidad es además una
+   * actuación del responsable del tratamiento, no una tarea de mostrador.
    */
   @Get(':id/export')
-  @Roles(...ROLES_GESTION)
+  @Roles('ADMIN')
   async exportarDatos(@Param('id') id: string, @Req() req: any) {
     this.logger.log(`📤 GET /api/clientes/${id}/export`);
     this.auditService.registrar({
@@ -524,19 +562,36 @@ export class ClientesController {
   async update(
     @Param('id') id: string,
     @Body() updateClienteDto: Partial<CreateClienteDto>,
+    @Req() req: any,
   ): Promise<ClienteWithRelations> {
     this.logger.log(`📋 PATCH /api/clientes/${id}`);
+    await this.acceso.assertAcceso(id, req.user);
     return this.clientesService.update(id, updateClienteDto);
   }
 
   /**
-   * DELETE /api/clientes/:id
+   * DELETE /api/clientes/:id — baja logica (soft-delete) de la ficha.
+   *
+   * ADMIN, y deja traza. No tenia ni rol ni auditoria: cualquier usuario
+   * autenticado podia dar de baja la ficha de cualquier menor sin dejar rastro
+   * de quien lo hizo. Es una actuacion sobre historia clinica (Ley 41/2002), del
+   * mismo orden que anonimizar, que si estaba restringida.
    */
   @Delete(':id')
+  @Roles('ADMIN')
   @HttpCode(HttpStatus.OK)
-  async remove(@Param('id') id: string) {
+  async remove(@Param('id') id: string, @Req() req: any) {
     this.logger.warn(`📋 DELETE /api/clientes/${id}`);
     await this.clientesService.remove(id);
+
+    this.auditService.registrar({
+      evento: 'ACCESO_FICHA',
+      userId: req.user?.userId,
+      username: req.user?.username,
+      ip: req.ip,
+      recurso: id,
+      metadata: { accion: 'BAJA_CLIENTE' },
+    });
 
     return {
       message: 'Cliente eliminado correctamente',

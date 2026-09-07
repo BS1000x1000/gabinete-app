@@ -765,6 +765,40 @@ findAll(@Req() req: any) {
 }
 ```
 
+### Acceso a un cliente: `AccesoClienteService`, y solo ese
+
+**Si un endpoint recibe un `clienteId` (o cualquier id del que se pueda derivar uno), tiene que
+llamar a `common/acceso/acceso-cliente.service.ts` → `assertAcceso(clienteId, user, recurso?)`.**
+Es un módulo global (`AccesoModule`): no hay que importarlo, solo inyectarlo.
+
+La comprobación estaba copiada en `clientes`, `documentos` y `expediente` —y **ausente** en
+`export`—, y las copias **no eran iguales**: las de `documentos` y `expediente` no filtraban el
+soft-delete, así que la documentación clínica de un cliente dado de baja seguía siendo legible. Al
+unificarlas ese agujero se cerró de paso. No escribas una quinta copia; su lógica se prueba en
+`acceso-cliente.service.spec.ts` y los módulos que la consumen solo prueban que delegan.
+
+Dos trampas al aplicarla:
+
+- **En `fichaje` va FUERA del `try/catch`.** Esos catch reconvierten en 500 todo lo que no sea
+  `NotFound`, así que un 403 lanzado dentro sale como error de servidor.
+- **En `gas` va como guard** (`gas/guards/acceso-objetivo-gas.guard.ts`), no endpoint por endpoint:
+  todas sus rutas cuelgan de `clienteObjetivoId` y así no se olvida al añadir una nueva.
+
+> **`RolesGuard` es fail-open a propósito** (`roles.guard.ts`): un endpoint con
+> `@UseGuards(JwtAuthGuard, RolesGuard)` pero **sin** `@Roles()` queda abierto a cualquier
+> autenticado. Fue la causa de fondo de una tanda entera de fugas corregidas el 2026-09-07. Mientras
+> siga así, **declara siempre `@Roles`**, aunque la lista sean todos los roles: escribirlo es lo que
+> hace explícita la decisión.
+
+### Auditoría: qué deja rastro
+
+`AuditService.registrar()` nunca bloquea la operación principal (se traga sus errores). Eventos:
+acceso/cierre de sesión e intentos fallidos (con IP), cambio de contraseña, `ACCESO_FICHA` (lectura,
+baja `BAJA_CLIENTE`, anonimización y export del art. 20), `CONSENTIMIENTO_RGPD`, los tres de
+facturación, y **`ACCESO_DOCUMENTO` / `ACCESO_INFORME`**, que cubren subida, enlace de descarga,
+borrado de documentos y descarga de informes clínicos. Si añades un camino por el que salga
+documentación clínica, audítalo: es lo que el RAT promete.
+
 ### Bootstrap: overflow horizontal from `.row` negative margins
 
 `.row.g-*` applies negative margins that cause horizontal scroll inside flex containers.

@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { SesionesController } from './sesiones.controller';
 import { SesionesService } from './sesiones.service';
+import { AccesoClienteService } from '../common/acceso/acceso-cliente.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { EstadoSesion, TipoSesion } from '@prisma/client';
 
@@ -44,7 +45,10 @@ describe('SesionesController', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [SesionesController],
-      providers: [{ provide: SesionesService, useValue: service }],
+      providers: [
+        { provide: SesionesService, useValue: service },
+        { provide: AccesoClienteService, useValue: { assertAcceso: jest.fn() } },
+      ],
     })
       .overrideGuard(JwtAuthGuard)
       .useValue({ canActivate: () => true })
@@ -143,7 +147,7 @@ describe('SesionesController', () => {
       const pagina = { data: [mockSesion()], total: 1, page: 1, limit: 100 };
       service.findByCliente.mockResolvedValue(pagina);
 
-      const result = await controller.findByCliente('cliente-1', { page: 1, limit: 100 });
+      const result = await controller.findByCliente('cliente-1', { page: 1, limit: 100 }, mockReq() as any);
 
       expect(service.findByCliente).toHaveBeenCalledWith('cliente-1', { page: 1, limit: 100 });
       expect(result).toEqual(pagina);

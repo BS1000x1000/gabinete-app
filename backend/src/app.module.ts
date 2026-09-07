@@ -9,6 +9,7 @@ import { TrabajadorModule } from './trabajador/trabajador.module';
 import { AuthModule } from './auth/auth.module';
 import { FichajeModule } from './fichaje/fichaje.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { AccesoModule } from './common/acceso/acceso.module';
 import { SesionesModule } from './sesiones/sesiones.module';
 import { DisponibilidadModule } from './disponibilidad/disponibilidad.module';
 import { RolesModule } from './roles/roles.module';
@@ -45,6 +46,7 @@ import { FacturasModule } from './facturas/facturas.module';
     ]),
     ScheduleModule.forRoot(),
     PrismaModule,
+    AccesoModule,
     ClientesModule,
     DisponibilidadModule,
     SesionesModule,

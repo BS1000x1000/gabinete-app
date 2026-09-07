@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BonosController } from './bonos.controller';
 import { BonosService } from './bonos.service';
+import { AccesoClienteService } from '../common/acceso/acceso-cliente.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 // ── Mock factory ─────────────────────────────────────────────────────────────
@@ -24,16 +25,23 @@ const makeBonosServiceMock = () => ({
 });
 
 // ── Suite ────────────────────────────────────────────────────────────────────
+const mockReq = (userId = 'trabajador-1', rol = 'ADMIN') => ({ user: { userId, rol } });
+
 describe('BonosController', () => {
   let controller: BonosController;
   let service: ReturnType<typeof makeBonosServiceMock>;
+  let acceso: { assertAcceso: jest.Mock };
 
   beforeEach(async () => {
+    acceso = { assertAcceso: jest.fn().mockResolvedValue(undefined) };
     service = makeBonosServiceMock();
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [BonosController],
-      providers: [{ provide: BonosService, useValue: service }],
+      providers: [
+        { provide: BonosService, useValue: service },
+        { provide: AccesoClienteService, useValue: acceso },
+      ],
     })
       .overrideGuard(JwtAuthGuard)
       .useValue({ canActivate: () => true })
@@ -49,7 +57,7 @@ describe('BonosController', () => {
       const bono = mockBono();
       service.create.mockResolvedValue(bono);
 
-      const result = await controller.create(dto as any);
+      const result = await controller.create(dto as any, mockReq() as any);
 
       expect(service.create).toHaveBeenCalledWith(dto);
       expect(result).toEqual(bono);
@@ -62,7 +70,7 @@ describe('BonosController', () => {
       const bonos = [mockBono(), mockBono({ id: 'bono-2', estado: 'CONSUMIDO' })];
       service.findByCliente.mockResolvedValue(bonos);
 
-      const result = await controller.findByCliente('cliente-1');
+      const result = await controller.findByCliente('cliente-1', mockReq() as any);
 
       expect(service.findByCliente).toHaveBeenCalledWith('cliente-1');
       expect(result).toEqual(bonos);

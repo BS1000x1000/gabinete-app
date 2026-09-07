@@ -27,7 +27,10 @@ export class JwtFlexGuard implements CanActivate {
     const cookieToken = req.cookies?.access_token as string | undefined;
     const authHeader = req.headers?.authorization as string | undefined;
     const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
-    const token = cookieToken ?? bearerToken ?? (req.query?.token as string | undefined);
+    // Se acepto `?token=` mientras el SSE no podia mandar cookies. Desde que el
+    // frontend conecta con `withCredentials` (notificaciones.service.ts) esa via
+    // no la usa nadie, y un JWT en la query acaba en logs y proxies.
+    const token = cookieToken ?? bearerToken;
 
     if (!token) throw new UnauthorizedException();
 
@@ -45,6 +48,14 @@ export class JwtFlexGuard implements CanActivate {
       });
       if (revocado) throw new UnauthorizedException('Token revocado');
     }
+
+    // Y que el usuario siga de alta. `JwtStrategy` ya lo comprobaba en cada
+    // peticion; aqui no, asi que una baja conservaba su canal SSE abierto.
+    const usuario = await this.prisma.trabajador.findUnique({
+      where: { id: payload.sub },
+      select: { activo: true },
+    });
+    if (!usuario?.activo) throw new UnauthorizedException();
 
     req.user = {
       sub: payload.sub,

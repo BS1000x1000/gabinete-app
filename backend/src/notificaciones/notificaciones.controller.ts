@@ -31,13 +31,13 @@ export class NotificacionesController {
   }
 
   @Patch(':id/leer')
-  marcarLeida(@Param('id') id: string) {
-    return this.notificacionesSvc.marcarLeida(id);
+  marcarLeida(@Param('id') id: string, @Request() req: any) {
+    return this.notificacionesSvc.marcarLeida(id, req.user.sub);
   }
 
   @Patch(':id/descartar')
-  descartar(@Param('id') id: string) {
-    return this.notificacionesSvc.descartar(id);
+  descartar(@Param('id') id: string, @Request() req: any) {
+    return this.notificacionesSvc.descartar(id, req.user.sub);
   }
 
   @Sse('stream')

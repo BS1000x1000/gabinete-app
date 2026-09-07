@@ -23,6 +23,7 @@ import { ROLES_CLINICOS } from '../roles/roles.constants';
 import { CreateInformeDto, UpdateInformeDto } from './dto/informe.dto';
 import { InformesService } from './informes.service';
 import { InformesPdfService } from './informes-pdf.service';
+import { AuditService } from '../auth/audit.service';
 
 @Controller('informes')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -32,6 +33,7 @@ export class InformesController {
   constructor(
     private readonly informesService: InformesService,
     private readonly informePdfService: InformesPdfService,
+    private readonly audit: AuditService,
   ) {}
 
   // ==========================================
@@ -39,9 +41,9 @@ export class InformesController {
   // ==========================================
 
   @Get()
-  async findAll(@Query() pagination: PaginationDto) {
+  async findAll(@Query() pagination: PaginationDto, @Req() req: any) {
     this.logger.log('GET /informes');
-    return this.informesService.findAll(pagination);
+    return this.informesService.findAll(pagination, req.user);
   }
 
   @Post()
@@ -78,8 +80,25 @@ export class InformesController {
   async descargarPdf(
     @Param('id') id: string,
     @Res() res: Response,           // ← Ahora tipado correctamente con Express Response
+    @Req() req: any,
   ) {
     this.logger.log(`📄 GET /api/informes/${id}/pdf`);
+
+    // El PDF lleva el informe clinico entero, asi que pasa por el mismo filtro
+    // que la lectura. Antes se generaba solo con el id: con el id a mano,
+    // cualquier autenticado se lo descargaba.
+    await this.informesService.findOne(id, req.user);
+
+    // Un informe clinico completo saliendo de la aplicacion es exactamente el
+    // acceso que hay que poder reconstruir despues.
+    this.audit.registrar({
+      evento: 'ACCESO_INFORME',
+      userId: req.user?.userId,
+      username: req.user?.username,
+      ip: req.ip,
+      recurso: id,
+      metadata: { accion: 'DESCARGA_PDF' },
+    });
 
     const buffer = await this.informePdfService.generarPdf(id);
 
@@ -110,23 +129,27 @@ export class InformesController {
 
   @Patch(':id')
   @Roles(...ROLES_CLINICOS)
-  async update(@Param('id') id: string, @Body() updateDto: UpdateInformeDto) {
+  async update(
+    @Param('id') id: string,
+    @Body() updateDto: UpdateInformeDto,
+    @Req() req: any,
+  ) {
     this.logger.log(`PATCH /informes/${id}`);
-    return this.informesService.update(id, updateDto);
+    return this.informesService.update(id, updateDto, req.user);
   }
 
   @Patch(':id/finalizar')
   @Roles(...ROLES_CLINICOS)
-  async finalizar(@Param('id') id: string) {
+  async finalizar(@Param('id') id: string, @Req() req: any) {
     this.logger.log(`PATCH /informes/${id}/finalizar`);
-    return this.informesService.finalizar(id);
+    return this.informesService.finalizar(id, req.user);
   }
 
   @Delete(':id')
   @Roles(...ROLES_CLINICOS)
   @HttpCode(HttpStatus.OK)
-  async remove(@Param('id') id: string) {
+  async remove(@Param('id') id: string, @Req() req: any) {
     this.logger.warn(`DELETE /informes/${id}`);
-    return this.informesService.remove(id);
+    return this.informesService.remove(id, req.user);
   }
 }

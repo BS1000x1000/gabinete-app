@@ -17,6 +17,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../roles/roles.guard';
 import { Roles } from '../roles/roles.decorator';
 import { ROLES_CLINICOS } from '../roles/roles.constants';
+import { AccesoObjetivoGasGuard } from './guards/acceso-objetivo-gas.guard';
 import { SetDescripcionesNivelesDto, UpdateDescripcionNivelDto, CreateEvaluacionGASDto } from './dto/gas.dto';
 import { GasService } from './gas.service';
 
@@ -28,7 +29,7 @@ import { GasService } from './gas.service';
 // nexo entre un cliente y un objetivo general concreto.
 
 @Controller('gas')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, AccesoObjetivoGasGuard)
 @Roles(...ROLES_CLINICOS)
 export class GasController {
   private readonly logger = new Logger(GasController.name);

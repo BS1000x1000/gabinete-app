@@ -252,6 +252,51 @@ describe('RBAC (e2e)', () => {
     });
   });
 
+  // ── Baja de ficha de cliente (solo ADMIN) ────────────────────────────────
+  //
+  // `DELETE /api/clientes/:id` no tenia `@Roles` ni scoping ni auditoria:
+  // cualquier usuario autenticado daba de baja la ficha de cualquier menor. Es
+  // una actuacion sobre historia clinica (Ley 41/2002), del mismo orden que
+  // anonimizar, que si estaba restringida a ADMIN.
+
+  describe('/api/clientes/:id (DELETE) — solo ADMIN', () => {
+    it('PEDAGOGO: → 403', async () => {
+      const res = await request(app.getHttpServer())
+        .delete('/api/clientes/cliente-1')
+        .set('Authorization', `Bearer ${tokenPedagogo}`);
+
+      expect(res.status).toBe(403);
+    });
+
+    it('RECEP: → 403', async () => {
+      const res = await request(app.getHttpServer())
+        .delete('/api/clientes/cliente-1')
+        .set('Authorization', `Bearer ${tokenRecep}`);
+
+      expect(res.status).toBe(403);
+    });
+
+    it('ADMIN: → 200 y deja traza en el audit log', async () => {
+      prisma.cliente.findUnique.mockResolvedValue({ id: 'cliente-1' });
+      prisma.cliente.update.mockResolvedValue({ id: 'cliente-1' });
+
+      const res = await request(app.getHttpServer())
+        .delete('/api/clientes/cliente-1')
+        .set('Authorization', `Bearer ${tokenAdmin}`);
+
+      expect(res.status).toBe(200);
+      expect(prisma.auditLog.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            evento: 'ACCESO_FICHA',
+            recurso: 'cliente-1',
+            metadata: expect.objectContaining({ accion: 'BAJA_CLIENTE' }),
+          }),
+        }),
+      );
+    });
+  });
+
   // ── Dashboard — estadísticas generales (solo ROLES_GESTION) ──────────────
 
   describe('/api/dashboard/estadisticas-generales — solo ROLES_GESTION', () => {
@@ -741,6 +786,55 @@ describe('RBAC (e2e)', () => {
         '/api/informes/cliente/c1',
       );
       expect(res.status).toBe(401);
+    });
+
+    // `areas-desarrollo` era el unico controlador de negocio sin `@UseGuards`:
+    // el CRUD entero del catalogo clinico, DELETE incluido, respondia a
+    // cualquiera desde internet sin autenticarse.
+    it('GET /api/areas-desarrollo sin token → 401', async () => {
+      const res = await request(app.getHttpServer()).get('/api/areas-desarrollo');
+      expect(res.status).toBe(401);
+    });
+
+    it('DELETE /api/areas-desarrollo/:id sin token → 401', async () => {
+      const res = await request(app.getHttpServer()).delete(
+        '/api/areas-desarrollo/area-1',
+      );
+      expect(res.status).toBe(401);
+    });
+
+    it('POST /api/areas-desarrollo/seed sin token → 401', async () => {
+      const res = await request(app.getHttpServer()).post(
+        '/api/areas-desarrollo/seed',
+      );
+      expect(res.status).toBe(401);
+    });
+  });
+
+  // ── Exportaciones: el clienteId de la URL no bastaba ──────────────────────
+  //
+  // `/export` solo llevaba JwtAuthGuard y no comprobaba el cliente contra quien
+  // pedia: cualquier autenticado se bajaba en XLSX/PDF el historial de sesiones
+  // de cualquier menor, y `GET /export/bonos` los bonos del gabinete entero.
+
+  describe('/api/export — acotado por cliente asignado', () => {
+    it('PEDAGOGO sin el cliente asignado → 403', async () => {
+      prisma.cliente.findFirst.mockResolvedValue({ id: 'cliente-ajeno' });
+      prisma.clienteTrabajador.findFirst.mockResolvedValue(null);
+
+      const res = await request(app.getHttpServer())
+        .get('/api/export/sesiones/cliente-ajeno?formato=excel')
+        .set('Authorization', `Bearer ${tokenPedagogo}`);
+
+      expect(res.status).toBe(403);
+    });
+
+    it('el listado global de bonos es de gestión: PEDAGOGO → 403', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/export/bonos?formato=excel')
+        .set('Authorization', `Bearer ${tokenPedagogo}`);
+
+      expect(res.status).toBe(403);
     });
   });
 });

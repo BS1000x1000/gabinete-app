@@ -25,20 +25,20 @@ export class AuthService {
   /**
    * Validar credenciales del usuario (usado por LocalStrategy)
    */
-  async validateUser(body: LoginDto) {
+  async validateUser(body: LoginDto, ip?: string) {
     try {
       const user = await this.trabajadorService.findByUsername(body.username);
 
       if (!user) {
         this.logger.warn(`Intento de login fallido: usuario ${body.username} no encontrado`);
-        this.auditService.registrar({ evento: 'LOGIN_FAIL', username: body.username, metadata: { motivo: 'usuario_no_encontrado' } });
+        this.auditService.registrar({ evento: 'LOGIN_FAIL', username: body.username, ip, metadata: { motivo: 'usuario_no_encontrado' } });
         return null;
       }
 
       // Verificar que el usuario está activo
       if (!user.activo) {
         this.logger.warn(`Intento de login con usuario desactivado: ${body.username}`);
-        this.auditService.registrar({ evento: 'LOGIN_FAIL', username: body.username, userId: user.id, metadata: { motivo: 'usuario_desactivado' } });
+        this.auditService.registrar({ evento: 'LOGIN_FAIL', username: body.username, userId: user.id, ip, metadata: { motivo: 'usuario_desactivado' } });
         return null;
       }
 
@@ -49,7 +49,7 @@ export class AuthService {
 
       if (!matchResult) {
         this.logger.warn(`Intento de login fallido: contraseña incorrecta para ${body.username}`);
-        this.auditService.registrar({ evento: 'LOGIN_FAIL', username: body.username, userId: user.id, metadata: { motivo: 'contrasena_incorrecta' } });
+        this.auditService.registrar({ evento: 'LOGIN_FAIL', username: body.username, userId: user.id, ip, metadata: { motivo: 'contrasena_incorrecta' } });
         return null;
       }
 
@@ -102,7 +102,7 @@ export class AuthService {
     return {
       access_token: token,
       token_type: 'Bearer',
-      expires_in: '8h',
+      expires_in: '2h',
       user: {
         id: user.id,
         username: user.username,

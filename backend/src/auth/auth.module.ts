@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import { AuditService } from "./audit.service";
+import { TokensCronService } from "./tokens-cron.service";
 import { TrabajadorService } from "src/trabajador/trabajador.service";
 import { LocalStrategy } from "./strategies/local.strategy";
 import { PassportModule } from "@nestjs/passport";
@@ -20,7 +21,7 @@ import { NotificacionesModule } from "src/notificaciones/notificaciones.module";
         TrabajadorModule,
         NotificacionesModule,
     ],
-    providers: [AuthService, AuditService, TrabajadorService, LocalStrategy, JwtStrategy],
+    providers: [AuthService, AuditService, TokensCronService, TrabajadorService, LocalStrategy, JwtStrategy],
     controllers: [AuthController],
     exports: [AuditService],
 })

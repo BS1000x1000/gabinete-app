@@ -11,12 +11,43 @@ import helmet from 'helmet';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const cookieParser = require('cookie-parser');
 
-async function bootstrap() {
-  const REQUIRED_ENV = ['DATABASE_URL', 'SECRET', 'FRONTEND_URL'];
-  const missing = REQUIRED_ENV.filter((key) => !process.env[key]);
+/**
+ * Comprobaciones de arranque.
+ *
+ * En produccion se exige ademas la configuracion de Object Storage: sin ella
+ * `StorageService` arranca en modo `none` y el archivado de PDF de informes se
+ * queda en un `warn` silencioso. Un contenedor que arranca "bien" y no persiste
+ * documentos clinicos es peor que uno que no arranca.
+ */
+function comprobarEntorno(): void {
+  const isProd = process.env.NODE_ENV === 'production';
+
+  const requeridas = ['DATABASE_URL', 'SECRET', 'FRONTEND_URL'];
+  if (isProd) {
+    requeridas.push('SCW_ACCESS_KEY', 'SCW_SECRET_KEY', 'SCW_BUCKET_NAME');
+  }
+
+  const missing = requeridas.filter((key) => !process.env[key]);
   if (missing.length > 0) {
     throw new Error(`Variables de entorno obligatorias no definidas: ${missing.join(', ')}`);
   }
+
+  // `SECRET` firma todas las sesiones: comprobar que existe no basta.
+  if (isProd && (process.env.SECRET as string).length < 32) {
+    throw new Error('SECRET debe tener al menos 32 caracteres en producción');
+  }
+
+  // El cifrado en transito contra la BD dependia por completo de que la cadena
+  // estuviera bien escrita a mano, sin que nada lo comprobara.
+  if (isProd && !/[?&]sslmode=/.test(process.env.DATABASE_URL as string)) {
+    throw new Error(
+      'DATABASE_URL debe declarar sslmode (p. ej. ?sslmode=require) en producción',
+    );
+  }
+}
+
+async function bootstrap() {
+  comprobarEntorno();
 
   const app = await NestFactory.create(AppModule);
 

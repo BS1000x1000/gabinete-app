@@ -40,44 +40,49 @@ export class FichajeController {
       this.logger.log(`Con ${createDto.objetivosGeneralesTrabajados.length} objetivos trabajados`);
       this.logger.log(`Objetivo: ${createDto.objetivosGeneralesTrabajados}`);
     }
-    return this.fichajeService.create(createDto, trabajadorId);
+    return this.fichajeService.create(createDto, trabajadorId, req.user);
   }
 
   @Get('cliente/:clienteId')
   async findByCliente(
     @Param('clienteId') clienteId: string,
     @Query() pagination: PaginationDto,
+    @Req() req: any,
   ) {
     this.logger.log(`Obteniendo registros del cliente: ${clienteId}`);
-    return this.fichajeService.findByCliente(clienteId, pagination);
+    return this.fichajeService.findByCliente(clienteId, pagination, req.user);
   }
 
   @Get('trabajador/:trabajadorId')
-  async findByTrabajador(@Param('trabajadorId') trabajadorId: string) {
+  async findByTrabajador(
+    @Param('trabajadorId') trabajadorId: string,
+    @Req() req: any,
+  ) {
     this.logger.log(`Obteniendo registros del trabajador: ${trabajadorId}`);
-    return this.fichajeService.findByTrabajador(trabajadorId);
+    return this.fichajeService.findByTrabajador(trabajadorId, req.user);
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string, @Req() req: any) {
     this.logger.log(`Buscando registro con ID: ${id}`);
-    return this.fichajeService.findOne(id);
+    return this.fichajeService.findOne(id, req.user);
   }
 
   @Patch(':id')
   async update(
     @Param('id') id: string,
     @Body() updateDto: UpdateRegistroDiarioDto,
+    @Req() req: any,
   ) {
     this.logger.log(`Actualizando registro: ${id}`);
-    return this.fichajeService.update(id, updateDto);
+    return this.fichajeService.update(id, updateDto, req.user);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
-  async remove(@Param('id') id: string) {
+  async remove(@Param('id') id: string, @Req() req: any) {
     this.logger.warn(`Eliminando registro: ${id}`);
-    await this.fichajeService.remove(id);
+    await this.fichajeService.remove(id, req.user);
     return {
       message: 'Registro eliminado correctamente',
       id,
