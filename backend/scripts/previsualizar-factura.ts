@@ -18,7 +18,7 @@ mkdirSync(salida, { recursive: true });
 const HTML = buildFacturaHtml({
   nombreFiscal: 'Belén Palacios Aguirre',
   nifFiscal: '47461696-T',
-  direccionFiscal: 'Calle María Moliner Nº4 P²3ºC',
+  direccionFiscal: 'Calle María Moliner nº 4, portal 2, 3º C',
   codigoPostalFiscal: '28942',
   ciudadFiscal: 'Fuenlabrada',
   provinciaFiscal: 'Madrid',

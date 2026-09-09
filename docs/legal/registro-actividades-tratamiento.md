@@ -1,11 +1,12 @@
 # Registro de Actividades de Tratamiento
 ## Art. 30 Reglamento (UE) 2016/679 — RGPD
 
-> **Responsable del tratamiento**: [NOMBRE O RAZÓN SOCIAL DEL GABINETE]  
-> **NIF/CIF**: [NIF/CIF]  
-> **Dirección**: [DIRECCIÓN COMPLETA]  
-> **Teléfono**: [TELÉFONO]  
-> **Email de contacto**: [EMAIL]  
+> **Responsable del tratamiento**: Belén Palacios Aguirre — profesional autónoma  
+> **NIF**: 47461696-T  
+> **Domicilio profesional**: Calle María Moliner nº 4, portal 2, 3º C · 28942 Fuenlabrada (Madrid)  
+> **Email de contacto y ejercicio de derechos**: belen.depedagogia@gmail.com  
+> **Nº de colegiada**: 48698 — Colegio Oficial de Doctores y Licenciados en Filosofía y Letras y en
+> Ciencias de la Comunidad de Madrid  
 > **Fecha de creación**: Abril 2026  
 > **Fecha de última revisión**: 7 de septiembre de 2026  
 >
@@ -18,7 +19,7 @@
 > —declaraban el stack de marzo de 2026 (Neon Tech, Cloudflare R2), descartado en
 > junio a favor de Scaleway— y se añaden los tratamientos 4 (facturación, con la
 > gestoría como encargada) y 5 (automatización, previsto). Detalle técnico y
-> evidencias en `docs/legal/informe-tecnico-rgpd.md`.
+> evidencias en el **Informe técnico de protección de datos** que acompaña a este registro.
 
 ---
 

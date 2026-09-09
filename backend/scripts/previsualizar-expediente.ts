@@ -27,7 +27,7 @@ const PROFESIONAL: Profesional = {
   numeroColegiado: '48698',
   colegioProfesional:
     'Colegio Oficial de Doctores y Licenciados en Filosofía y Letras y en Ciencias de la Comunidad de Madrid',
-  direccionProfesional: 'Calle María Moliner, Fuenlabrada, 28942 Madrid',
+  direccionProfesional: 'Calle María Moliner nº 4, portal 2, 3º C, 28942 Fuenlabrada (Madrid)',
   email: 'belen.depedagogia@gmail.com',
   numeroPoliza: '2008265',
 };
@@ -71,8 +71,28 @@ async function main() {
   // no es lo que sale del gabinete.
   const pdf = new PdfGeneratorService();
 
+  /**
+   * Banda de aviso al principio del documento.
+   *
+   * Los datos de la familia son inventados, pero el papel sale exactamente igual
+   * que el real: nombre del menor, fecha de nacimiento y dos tutores. Sin este
+   * aviso, quien lo reciba —una asesoria de proteccion de datos, por ejemplo—
+   * tiene motivos para pensar que le estan mandando el expediente de una menor
+   * de verdad. Se inyecta aqui y no en la plantilla: los documentos reales no
+   * deben llevarlo.
+   */
+  const BANDA_EJEMPLO = `
+    <div style="border:2pt solid #8a6018; background:#f0ead8; color:#8a6018;
+                padding:8pt 12pt; margin-bottom:14pt; border-radius:4pt;
+                font-family:Helvetica,Arial,sans-serif; font-size:9pt;
+                text-align:center; font-weight:bold;">
+      DOCUMENTO DE EJEMPLO — datos de familia ficticios<br>
+      <span style="font-weight:normal;">Generado para revisión de la plantilla. No corresponde a ninguna familia real.</span>
+    </div>`;
+
   const aPdf = async (doc: DocumentoImprimible, fichero: string) => {
-    const buffer = await pdf.generatePdf(doc.html, doc.opcionesPdf);
+    const html = doc.html.replace(/(<body[^>]*>)/i, `$1${BANDA_EJEMPLO}`);
+    const buffer = await pdf.generatePdf(html, doc.opcionesPdf);
     writeFileSync(join(salida, fichero), buffer);
     console.log(`  ${fichero}  (${(buffer.length / 1024).toFixed(0)} KB)`);
   };

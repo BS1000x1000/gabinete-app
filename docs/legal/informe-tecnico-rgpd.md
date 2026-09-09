@@ -1,15 +1,14 @@
 # Informe técnico de protección de datos
 
 **Aplicación de gestión del Gabinete Pedagógico**
+
 Documento de apoyo para la consultoría externa de protección de datos
 
-| | |
-|---|---|
-| **Destinatario** | Empresa externa responsable del cumplimiento RGPD |
-| **Emite** | Responsable técnico del desarrollo (*tech leader*) |
-| **Fecha** | 7 de septiembre de 2026 |
-| **Estado del sistema** | Pre-producción. **No hay ningún dato real cargado** |
-| **Rama verificada** | `develop` |
+- **Destinatario:** empresa externa responsable del cumplimiento RGPD
+- **Emite:** responsable técnico del desarrollo (*tech leader*)
+- **Fecha:** 7 de septiembre de 2026
+- **Estado del sistema:** pre-producción. **No hay ningún dato real cargado**
+- **Rama verificada:** `develop`
 
 ---
 
@@ -83,10 +82,17 @@ incorporación de una segunda persona sin rehacer el sistema.
 
 ### 1.1 Responsable del tratamiento
 
-- **Responsable:** `[PENDIENTE: nombre y apellidos]` — profesional autónoma, ejerciendo de forma
-  individual. Es también la **única usuaria** del sistema (§1.0).
-- **NIF y domicilio profesional:** `[PENDIENTE]`
-- **Contacto para el ejercicio de derechos:** `[PENDIENTE]`
+- **Responsable:** Belén Palacios Aguirre — profesional autónoma, ejerciendo de forma individual. Es
+  también la **única usuaria** del sistema (§1.0).
+- **NIF:** 47461696-T
+- **Domicilio profesional:** Calle María Moliner nº 4, portal 2, 3º C · 28942 Fuenlabrada (Madrid)
+- **Nº de colegiada:** 48698 — Colegio Oficial de Doctores y Licenciados en Filosofía y Letras y en
+  Ciencias de la Comunidad de Madrid
+- **Contacto para el ejercicio de derechos:** belen.depedagogia@gmail.com
+
+> *Sobre el teléfono:* no se declara ninguno a propósito. El Art. 30.1.a pide «datos de contacto», y
+> el domicilio profesional más el correo lo son. Está previsto contratar una línea móvil profesional
+> para no exponer la personal; cuando exista se añadirá aquí y en la política de privacidad.
 
 > **Cuestión para ustedes, ahora más concreta:** siendo profesional individual, ¿aplica la excepción
 > del **art. 34 LOPDGDD** (exención de designar delegado de protección de datos) y en qué términos?
@@ -773,13 +779,18 @@ la integración continua.
 
 ## 11. Documentación que acompaña a este informe
 
-1. **Contrato de prestación de servicios** (PDF de muestra con datos ficticios)
-2. **Consentimiento informado para la intervención** (PDF de muestra)
-3. **Consentimiento para el tratamiento de datos personales** (PDF de muestra)
-4. **Registro de actividades de tratamiento** — `docs/legal/registro-actividades-tratamiento.md`
+1. **Registro de actividades de tratamiento** (Art. 30)
+2. **Contrato de prestación de servicios** — dos ejemplos, con distinto día de la semana, para que se
+   vea el cálculo de sesiones efectivas del curso
+3. **Consentimiento informado para la intervención**
+4. **Consentimiento para el tratamiento de datos personales**
 
-Los tres PDF se generan con el mismo código que produce los documentos reales, de modo que lo que
-ustedes revisan es exactamente lo que firmará una familia.
+> **Los cuatro documentos de familia llevan datos ficticios**, y así lo indica una banda de aviso en
+> su primera página. El menor y los tutores que aparecen no existen: el sistema está en
+> pre-producción y no hay ningún expediente real cargado.
+
+Se generan con el mismo código que producirá los documentos reales, de modo que lo que ustedes
+revisan es exactamente el papel que firmará una familia.
 
 ---
 
@@ -787,11 +798,12 @@ ustedes revisan es exactamente lo que firmará una familia.
 
 ### Para la titular del gabinete
 
-1. Nombre, NIF y domicilio profesional para la identificación del responsable (§1.1).
-2. Canal de contacto para el ejercicio de derechos, que debe figurar en la política de privacidad.
-3. Contrato de encargo con la asesoría fiscal (§3.6).
-4. Rotación de la credencial señalada en §8.7.
-5. Aclarar dónde se guardan las imágenes que menciona el consentimiento (§7.5).
+1. Contrato de encargo con la asesoría fiscal (§3.6). **Bloqueante** antes de la primera entrega con
+   datos reales.
+2. Rotación de la credencial señalada en §8.7.
+3. Aclarar dónde se guardan las imágenes que menciona el consentimiento (§7.5).
+4. Añadir el teléfono profesional a este informe y a la política de privacidad cuando se contrate la
+   línea (§1.1).
 
 ### Para la consultoría
 
