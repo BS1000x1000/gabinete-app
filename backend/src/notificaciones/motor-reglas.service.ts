@@ -2,6 +2,21 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificacionesService } from './notificaciones.service';
 
+/**
+ * Solo los campos del cliente que necesita la regla 13.
+ *
+ * El resto de reglas de este fichero reciben `cliente: any`, que es de donde
+ * salen sus ~150 avisos de `no-unsafe-member-access`. Tipar la firma entera
+ * arrastraria todo el fichero; tipar lo que usa una regla concreta no cuesta
+ * nada y evita sumar mas.
+ */
+type ClienteParaEmailFacturacion = {
+  id: string;
+  nombre: string;
+  apellidos: string;
+  emailFacturacion: string | null;
+};
+
 @Injectable()
 export class MotorReglasService {
   private readonly logger = new Logger(MotorReglasService.name);
@@ -66,6 +81,9 @@ export class MotorReglasService {
       this._reglaSesionSinBono(trabajadorId, cliente, now, baseUrl),
       this._reglaConsentimientoRgpdPendiente(trabajadorId, cliente, baseUrl),
       this._reglaSinRegistrosRecientes(trabajadorId, cliente, now, baseUrl),
+      // Va aqui y no como rama de primer nivel (a diferencia de la regla 12):
+      // habla de UN cliente concreto, no del autonomo.
+      this._reglaSinEmailFacturacion(trabajadorId, cliente, now, baseUrl),
     ]);
   }
 
@@ -446,6 +464,84 @@ export class MotorReglasService {
       referenciaId: cliente.id,
       trabajadorId,
     });
+  }
+
+  // ─── Regla 13: cliente sin email de facturación ──────────────────────────
+  /**
+   * `Cliente.emailFacturacion` es el UNICO destinatario posible de una factura.
+   * No hay respaldo al email del contacto principal, y es deliberado: la factura
+   * lleva el nombre y el NIF del tutor pagador, y mandarla al correo de otro
+   * progenitor es justo lo que no debe pasar.
+   *
+   * Sin ese campo la factura se emite igual, **quema un numero de la serie
+   * correlativa que no se libera** —ni al anular, que deja el hueco a proposito—
+   * y se queda sin enviar para siempre, hoy sin avisar a nadie: `enviarEmailFactura`
+   * sale con un warn que solo se ve en los logs.
+   *
+   * Prioridad **ALTA**, no URGENTE ni MEDIA: impide cobrar y tiene una
+   * consecuencia irreversible (el numero quemado), asi que esta por encima del
+   * mantenimiento administrativo que vive en MEDIA (`FACTURAS_SIN_ENTREGAR`,
+   * `INFORME_EN_BORRADOR`); pero no hay nada clinico ni legalmente perentorio en
+   * juego —URGENTE esta reservado a la deuda vencida y al informe inicial
+   * ausente— y se arregla escribiendo un campo en el perfil.
+   */
+  private async _reglaSinEmailFacturacion(
+    trabajadorId: string,
+    cliente: ClienteParaEmailFacturacion,
+    now: Date,
+    baseUrl: string,
+  ) {
+    if (cliente.emailFacturacion) return;
+
+    // Sin contrato que facture, el email de facturacion no hace falta y el aviso
+    // seria ruido: no todos los clientes pagan por factura (quedan los bonos).
+    // La consulta va DESPUES del corte por email, asi que solo se paga por los
+    // pocos clientes a los que les falta el dato.
+    if (!(await this._tieneContratoFacturable(cliente.id, now))) return;
+
+    await this.notificacionesSvc.crearSiNoExiste({
+      tipo: 'CLIENTE_SIN_EMAIL_FACTURACION',
+      prioridad: 'ALTA',
+      titulo: `Falta el email de facturación — ${cliente.nombre} ${cliente.apellidos}`,
+      mensaje:
+        'Este cliente tiene un contrato en vigor pero no tiene email de facturación. ' +
+        'La factura se emitirá igual y consumirá un número de la serie correlativa ' +
+        '(que no se libera ni anulándola), pero no se podrá enviar a la familia. ' +
+        'Añádelo en el perfil, en los datos del tutor pagador.',
+      accionUrl: `${baseUrl}/perfil`,
+      reglaOrigen: 'CLIENTE_SIN_EMAIL_FACTURACION',
+      clienteId: cliente.id,
+      referenciaId: cliente.id,
+      trabajadorId,
+    });
+  }
+
+  /**
+   * Mismo criterio que `FacturasService.contratosDelPeriodo`, aplicado al mes en
+   * curso: `FINALIZADO` entra a proposito junto a `ACTIVO` porque el estado se
+   * evalua hoy y no en el periodo, asi que un contrato que acaba de cerrarse
+   * todavia factura el mes que cubre su ventana de fechas. `BORRADOR` y
+   * `SUSPENDIDO` no facturan.
+   */
+  private async _tieneContratoFacturable(
+    clienteId: string,
+    now: Date,
+  ): Promise<boolean> {
+    const anio = now.getFullYear();
+    const mes = now.getMonth();
+    const primerDia = new Date(Date.UTC(anio, mes, 1, 0, 0, 0, 0));
+    const ultimoDia = new Date(Date.UTC(anio, mes + 1, 0, 23, 59, 59, 999));
+
+    const contrato = await this.prisma.contratoServicio.findFirst({
+      where: {
+        clienteId,
+        estado: { in: ['ACTIVO', 'FINALIZADO'] },
+        fechaInicio: { lte: ultimoDia },
+        OR: [{ fechaFin: null }, { fechaFin: { gte: primerDia } }],
+      },
+      select: { id: true },
+    });
+    return contrato !== null;
   }
 
   // ─── Utilidad ─────────────────────────────────────────────────────────────

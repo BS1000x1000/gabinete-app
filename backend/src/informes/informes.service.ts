@@ -351,6 +351,51 @@ export class InformesService {
     this.logger.log(`PDF archivado en Storage — key: ${key}`);
   }
 
+  /**
+   * Reintenta el archivado de los informes finalizados que se quedaron sin PDF.
+   *
+   * `archivarPdfEnStorage` se llama fire-and-forget al finalizar: si Puppeteer
+   * falla o Object Storage no responde, el informe queda `FINALIZADO` con
+   * `urlDocumentoFinal = null` y nadie lo reintentaba. El agujero se ve al
+   * pedir el PDF, que lanza un 404 — meses después, y sobre documentación
+   * clínica que se supone archivada.
+   *
+   * Mismo patrón que `FacturasService.reconciliarPdfsPendientes`: tope de 50
+   * por pasada, los más antiguos primero, y un fallo individual solo se loguea
+   * para que no arrastre a los demás.
+   */
+  async reconciliarArchivadosPendientes(limite = 50): Promise<number> {
+    // Sin Storage no hay nada que reintentar: `archivarPdfEnStorage` sería un
+    // no-op y esto solo gastaría Chromium.
+    if (!this.storage.isConfigured) return 0;
+
+    const pendientes = await this.prisma.informe.findMany({
+      where: { estado: EstadoInforme.FINALIZADO, urlDocumentoFinal: null },
+      select: { id: true },
+      orderBy: { createdAt: 'asc' },
+      take: limite,
+    });
+    if (!pendientes.length) return 0;
+
+    let recuperados = 0;
+    for (const informe of pendientes) {
+      try {
+        await this.archivarPdfEnStorage(informe.id);
+        recuperados++;
+      } catch (err) {
+        this.logger.error(
+          `Reconciliación informe ${informe.id}: ` +
+            (err instanceof Error ? err.message : String(err)),
+        );
+      }
+    }
+
+    this.logger.log(
+      `Reconciliación informes: ${recuperados}/${pendientes.length} archivados`,
+    );
+    return recuperados;
+  }
+
   // ============================================================
   // URL FIRMADA PARA EL PDF ARCHIVADO EN R2
   // ============================================================

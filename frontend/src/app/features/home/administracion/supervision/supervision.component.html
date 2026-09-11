@@ -130,6 +130,90 @@
       }
     }
 
+    <!-- Tareas programadas: el rastro que dejan los crons -->
+    <section class="adm-tareas">
+      <div class="adm-tareas-head">
+        <h6 class="adm-tareas-title">
+          <i class="bi bi-clock-history me-2"></i>Tareas programadas
+        </h6>
+
+        @if (tareasConProblema() > 0) {
+          <span class="adm-tareas-alerta">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+            {{ tareasConProblema() }} sin resolver
+          </span>
+        }
+
+        <button
+          type="button"
+          class="adm-tareas-refresco"
+          [disabled]="tareasCargando()"
+          (click)="cargarTareas()"
+          title="Volver a consultar el estado">
+          <i class="bi bi-arrow-clockwise"></i>
+          <span class="visually-hidden">Actualizar tareas programadas</span>
+        </button>
+      </div>
+
+      @if (tareasError()) {
+        <p class="adm-tareas-error">
+          <i class="bi bi-exclamation-octagon me-1"></i>{{ tareasError() }}
+        </p>
+      } @else if (filasTareas().length) {
+        <div class="adm-table-wrap">
+          <table class="adm-table adm-tareas-table">
+            <thead>
+              <tr>
+                <th>Tarea</th>
+                <th>Estado</th>
+                <th>Última ejecución</th>
+                <th>Resultado</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (t of filasTareas(); track t.tarea) {
+                <tr [class.is-alerta]="t.alerta">
+                  <td class="adm-tarea-nombre">{{ t.nombre }}</td>
+                  <td>
+                    <span class="adm-badge adm-badge-tarea-{{ t.badge }}">
+                      {{ t.estadoLabel }}
+                    </span>
+                  </td>
+                  <td class="adm-tarea-cuando">
+                    @if (t.inicio) {
+                      <span class="adm-tarea-relativa">{{ hace(t.inicio) }}</span>
+                      <span class="adm-tarea-exacta">
+                        {{ t.inicio | date: 'dd/MM/yyyy HH:mm' }}
+                      </span>
+                    } @else {
+                      <span class="adm-tarea-jamas">No consta ninguna ejecución</span>
+                    }
+                  </td>
+                  <td>
+                    @if (t.error) {
+                      <span class="adm-tarea-fallo" [title]="t.error">{{ t.error }}</span>
+                    } @else if (t.omitida) {
+                      <span class="adm-tarea-omitida" [title]="t.motivo ?? ''">
+                        <i class="bi bi-dash-circle me-1"></i>Sin trabajo que hacer
+                      </span>
+                    } @else if (t.resumen.length) {
+                      <span class="adm-tarea-chips">
+                        @for (e of t.resumen; track e.clave) {
+                          <span class="adm-tarea-chip">{{ e.clave }} <b>{{ e.valor }}</b></span>
+                        }
+                      </span>
+                    } @else {
+                      <span class="adm-tarea-vacio">—</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+
   </div>
 </div>
 

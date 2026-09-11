@@ -47,7 +47,7 @@ Stack: **Angular 19** (frontend) + **NestJS 11** (backend) + **Prisma 5** + **Po
 Serverless Container (backend) + Object Storage (ficheros) + Transactional Email. Frontend Angular
 en **Cloudflare Pages**. CI/CD por **GitHub Actions** (push a `main` → build → registry → redeploy).
 
-**Current state (2026-09)**: clinical nucleus complete and **tests green** — backend 517 unit + 60 E2E con Postgres real, frontend **450 unit** (estaban 40 en rojo hasta el 2026-09-03; ver §Deuda saldada). Code hardening done: n8n removed, Dockerfile built & image pushed to Scaleway registry, Object Storage persistence for report PDFs implemented, rate limiting + Helmet + CORS-to-FRONTEND_URL in place, CI workflow with Postgres service. **Infra in progress on Scaleway**: account + billing alert + DPA validated + HDS question sent; Container Registry + image; Object Storage bucket (`gabinete-archivos`). **Pending**: create the managed DB + the Serverless Container (≈6 July), then activate the deploy pipeline. No domain yet. See `CONTEXTO_…md` §14 for the live deployment status.
+**Current state (2026-09-09)**: clinical nucleus complete and **tests green** — backend 634 unit + 96 E2E con Postgres real, frontend **450 unit** (estaban 40 en rojo hasta el 2026-09-03; ver §Deuda saldada). Code hardening done: n8n removed, Dockerfile built & image pushed to Scaleway registry, Object Storage persistence for report PDFs implemented, rate limiting + Helmet + CORS-to-FRONTEND_URL in place, CI workflow with Postgres service. **Infra in progress on Scaleway**: account + billing alert + DPA validated + HDS question sent; Container Registry + image; Object Storage bucket (`gabinete-archivos`). **Pending**: create the managed DB + the Serverless Container (≈6 July), then activate the deploy pipeline. No domain yet. See `CONTEXTO_…md` §14 for the live deployment status.
 
 ---
 
@@ -59,8 +59,8 @@ en **Cloudflare Pages**. CI/CD por **GitHub Actions** (push a `main` → build �
 npm run start:dev        # Dev server with watch (port 3000)
 npm run build            # Production build
 npm run lint             # ESLint with auto-fix
-npm test                 # Jest unit tests (469 passing)
-npm run test:e2e         # E2E tests (supertest) — 60 passing
+npm test                 # Jest unit tests (634 passing, 49 suites)
+npm run test:e2e         # E2E tests (supertest) — 96 passing, 7 suites
 npm run test:cov         # Coverage report
 npx jest src/foo/foo.spec.ts   # Single spec file
 ```
@@ -116,6 +116,7 @@ Standard pattern: `module → controller → service → dto/types`. All DB acce
 | `vacaciones` | Periodos de ausencia por trabajador. Rechaza rangos que incluyan festivos del centro. |
 | `roles` | Role CRUD. |
 | `health` | Health check endpoint. |
+| `tareas` | **Rastro de las tareas programadas** (`common/tareas/`, `@Global()`). `EjecucionTareaService.ejecutar()` envuelve cada cron y deja una fila `EjecucionTarea`. Los identificadores salen de la constante `TAREAS`, nunca de cadenas sueltas. `GET /tareas/ejecuciones` (ADMIN) alimenta el panel de Supervisión. Ver §Tareas programadas. |
 
 > **Object Storage:** `StorageService` (Scaleway S3-compatible) está implementado y el módulo
 > `informes` archiva el PDF del informe finalizado (`archivarPdfEnStorage()`), guardando la clave en
@@ -719,8 +720,10 @@ SECRET=<jwt-secret>
 **Producción (variables del contenedor):** ver la **hoja completa en `CONTEXTO_…md` §18**.
 Imprescindibles para arrancar: `DATABASE_URL` (`...?sslmode=require`), `SECRET` (generar nueva, no
 reutilizar la local), `FRONTEND_URL`. Object Storage: `SCW_ACCESS_KEY`, `SCW_SECRET_KEY`,
-`SCW_BUCKET_NAME` (`gabinete-archivos`), `SCW_REGION` (`fr-par`). Email (hoy Resend, a migrar a TEM):
-`RESEND_API_KEY`, `EMAIL_FROM`. Puppeteer: `PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium`,
+`SCW_BUCKET_NAME` (`gabinete-archivos`), `SCW_REGION` (`fr-par`). Email (**Scaleway TEM**, migrado 2026-09-09):
+`SCW_TEM_PROJECT_ID`, `SCW_TEM_SECRET_KEY`, `EMAIL_FROM` (+ `SCW_TEM_HOST` / `SCW_TEM_PORT`,
+opcionales). Sin ellas el email queda en no-op y la app arranca igual: TEM exige dominio
+verificado y todavia no hay dominio. Puppeteer: `PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium`,
 `PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true`. `NODE_ENV=production`. `PORT` la inyecta Scaleway.
 **Nunca en el repo ni en imágenes Docker** — van en Scaleway Secret Manager / variables del contenedor.
 
@@ -738,8 +741,8 @@ asignado se cubre con lo que ya existe o con NestJS nativo:
   **Aviso RGPD:** lleva datos del menor (Art. 9) — si el LLM es US, usar modelo UE o anonimizar.
 - **Alertas de bono vacío / recordatorios internos:** son **una regla más en el motor existente**
   (`notificaciones/motor-reglas.service.ts`), no un servicio aparte.
-- **Recordatorios de sesión por email:** vía el servicio de email desde NestJS (hoy Resend; a migrar
-  a Scaleway TEM — ver blocker de email y `CONTEXTO_…md` §17).
+- **Recordatorios de sesión por email:** vía el servicio de email desde NestJS (Scaleway TEM desde
+  2026-09-09).
 - **Recordatorios por WhatsApp (si algún día):** llamada a la API de WhatsApp Business **desde
   NestJS**; integración puntual, no justifica un servicio always-on.
 - **Fiabilidad de tareas:** empezar con una tabla `informes_jobs` (estado + reintentos). Diferir
@@ -864,8 +867,8 @@ Complex form sections use a shared `ClienteDrawerComponent` with sections: `pers
 ## Testing
 
 ### Backend — current state
-- **Unit**: 469 tests, 34 suites — all green. Jest + @nestjs/testing.
-- **E2E**: 60 tests, 6 suites — all green. supertest + Jest. `test/helpers/create-app.ts` + `test/helpers/prisma-mock.ts`. `ThrottlerGuard` overridden in `create-app.ts`. CI (`ci.yml`) runs a real Postgres service + `prisma migrate deploy` before the suite.
+- **Unit**: 634 tests, 49 suites — all green. Jest + @nestjs/testing.
+- **E2E**: 96 tests, 7 suites — all green. supertest + Jest. `test/helpers/create-app.ts` + `test/helpers/prisma-mock.ts`. `ThrottlerGuard` overridden in `create-app.ts`. CI (`ci.yml`) runs a real Postgres service + `prisma migrate deploy` before the suite.
 
 ### Controller spec pattern
 ```typescript
@@ -936,6 +939,38 @@ Legacy URL redirects still active in `listado.routes.ts` (e.g. `/cliente → /pe
 - Cruce de versiones Prisma: cliente/CLI `5.22.0` vs `@prisma/adapter-pg` `^7.4.0` — revisar coherencia
 - Tests con `--forceExit` (handle abierto, prob. pool de Prisma) — cerrar en origen
 
+### Deuda saldada (2026-09-09)
+
+- **El contenedor no habría arrancado nunca.** El Dockerfile lanza `node dist/main`, pero el build
+  dejaba la salida en `dist/src/main.js`. Causa: `tsconfig.build.json` no declaraba `include`, así
+  que TypeScript deducía la raíz común de todo lo que compilaba y, como `prisma/seed.ts` y
+  `scripts/*.ts` viven fuera de `src/`, esa raíz pasaba a ser la del proyecto y todo bajaba un nivel.
+  `ci.yml` no lo detecta porque compila pero **nunca ejecuta la imagen**. Arreglado con
+  `"include": ["src/**/*"]`; de paso los scripts de desarrollo dejan de viajar en la imagen.
+  > Al añadir un `.ts` fuera de `src/`, comprobar que `dist/main.js` sigue existiendo.
+
+- **Los crons dejan rastro en BD.** Antes el único testigo era el log del contenedor, que en
+  Serverless no sobrevive al redespliegue: un cron que dejara de dispararse no lo notaba nadie. Las
+  seis tareas van ahora envueltas en `EjecucionTareaService`. El panel de Supervisión lista las
+  tareas **desde la constante `TAREAS`, no desde las filas**, para que una que no se haya ejecutado
+  nunca —el peor caso, y el que no deja rastro en ninguna parte— salga igualmente.
+
+- **La carrera del día 1 de facturación.** El envío filtraba por `urlPdfR2 != null`: si el archivado
+  del PDF fallaba a las 02:00, la factura se quedaba fuera del envío de las 09:00 y, aunque la
+  reconciliación de las 03:00 se lo pusiera al día siguiente, el cron **no volvía hasta el mes
+  siguiente**. Esa factura no se enviaba nunca salvo reenvío manual. El cron de email pasa a diario
+  (`0 9 * * *`) y reconcilia los PDF pendientes antes de enviar.
+
+- **Dos fallos silenciosos del email.** `enviar()` daba por enviado todo lo que no lanzara excepción,
+  aunque el servidor rechazara al destinatario — y con ese booleano se marca `emailEnviado: true`,
+  que no se reintenta. Y el tope de adjunto solo lo miraba el pack de gestoría; ahora vive en
+  `enviar()`, así que ningún camino puede saltárselo.
+
+- **Los tests estaban en rojo y CLAUDE.md decía que no.** 7 fallos en
+  `contratos-replanificacion.service.spec.ts`, con fixtures de fechas fijas de la primera semana de
+  septiembre contra el `new Date()` real: **se pusieron rojos solos el 7 de septiembre de 2026**. Se
+  congeló el reloj del spec (solo `Date`, no los timers, que colgarían las promesas).
+
 ### Deuda saldada (2026-09-03)
 
 - **La suite de frontend estaba en rojo y ahora está en verde** (450 en verde, 0 fallos). Los 40
@@ -1001,11 +1036,11 @@ Legacy URL redirects still active in `listado.routes.ts` (e.g. `/cliente → /pe
 ### Pending before production
 1. **Crear infra Scaleway:** Managed PostgreSQL (DB-DEV-S, PITR, Red Privada) + Serverless Container (paso 8 y 9). *Aquí arranca el coste.*
 2. **Activar pipeline:** rellenar secretos en GitHub (`SCW_*`, IDs) + `SCW_CONTAINER_ID`; **proteger `main`** (ruleset que exija el check de `ci.yml`).
-3. **Email — migrar de Resend a Scaleway TEM** — `email.service.ts` usa hoy **Resend (EE.UU.)** vía `RESEND_API_KEY`/`EMAIL_FROM`. **Decisión: migrar a TEM** (europeo) por coherencia de soberanía (los informes a familias pueden llevar datos del Art. 9 del menor). Tarea de código, aparte del despliegue; TEM requiere dominio verificado → se hará junto con la automatización del resumen mensual, a la vuelta del viaje. En pruebas, email en modo no-op. Ver `CONTEXTO_…md` §17.
+3. ~~**Email — migrar de Resend a Scaleway TEM**~~ ✅ **HECHO 2026-09-09.** `email.service.ts` usa SMTP de TEM (`smtp.tem.scaleway.com`) vía `nodemailer`. Falta **verificar el dominio en TEM** para poder activarlo: sin las variables sigue en no-op.
 4. **TODO (a) — REQUIRED_ENV gateado a producción:** añadir `SCW_ACCESS_KEY`, `SCW_BUCKET_NAME` y la clave de email al `REQUIRED_ENV` de `main.ts`, gateado a `NODE_ENV === 'production'`, para que el arranque del contenedor falle de forma visible si falta la config de Object Storage o email en prod, sin romper el dev local. Convierte el archivado silencioso (`StorageService` no-op) en un fallo ruidoso.
-5. **TODO (b) — job de reconciliación de informes archivados:** cron que busque `Informe` con `estado = FINALIZADO` y `urlDocumentoFinal = null` y reintente `archivarPdfEnStorage()`. Cierra el hueco del archivado fire-and-forget (hoy un error solo se loguea).
+5. ~~**TODO (b) — job de reconciliación de informes archivados**~~ ✅ **HECHO 2026-09-09.** `informes/informes-cron.service.ts`, diario a las 05:00, con `reconciliarArchivadosPendientes()`.
 6. **MFA** para profesionales (auth hoy es solo JWT 2h + RBAC).
-7. **RGPD para datos reales:** resolver HDS con Scaleway + DPIA + restauración de backup probada antes del primer dato real de un menor.
+7. **RGPD para datos reales:** DPIA + restauración de backup probada antes del primer dato real de un menor. (**HDS descartado**: es certificación francesa y el tratamiento es español.)
 
 ### Medium-term roadmap
 - **Hito K** — Billing/cobros module: payment tracking per bono, debt view per family. Currently managed externally (likely spreadsheet)

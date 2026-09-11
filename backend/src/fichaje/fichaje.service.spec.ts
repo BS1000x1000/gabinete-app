@@ -3,6 +3,8 @@ import { NotFoundException, BadRequestException, ForbiddenException } from '@nes
 import { FichajeService } from './fichaje.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AccesoClienteService } from '../common/acceso/acceso-cliente.service';
+import { diaDesdeIso } from '../common/fecha/dia.utils';
+import { QueryRegistrosClienteDto } from './dto/query-registros.dto';
 
 const mkPrisma = () => ({
   cliente:{findUnique:jest.fn()},
@@ -14,7 +16,10 @@ const mkPrisma = () => ({
 });
 
 describe('FichajeService', () => {
-  let svc, prisma;
+  // Tipados a proposito: sin tipo son `any`, y sobre `any` ninguna asercion
+  // comprueba nada — ni el compilador avisa si cambia una firma del servicio.
+  let svc: FichajeService;
+  let prisma: ReturnType<typeof mkPrisma>;
   let acceso: { assertAcceso: jest.Mock };
   beforeEach(async () => {
     prisma = mkPrisma();
@@ -74,7 +79,10 @@ describe('FichajeService', () => {
   });
 
   describe('update()', () => {
-    it('NotFound si registro no existe', async()=>{ prisma.registroDiario.findUnique.mockResolvedValue(null); await expect(svc.update('rx','contenido')).rejects.toThrow(NotFoundException); });
+    // El DTO va como objeto, no como string suelto: al tipar `svc` el compilador
+    // destapo que este test pasaba un `string` donde va un UpdateRegistroDiarioDto.
+    // Pasaba igual porque el 404 salta antes de mirar el cuerpo.
+    it('NotFound si registro no existe', async()=>{ prisma.registroDiario.findUnique.mockResolvedValue(null); await expect(svc.update('rx',{contenido:'contenido'})).rejects.toThrow(NotFoundException); });
     it('BadRequest si objetivo no existe en update', async()=>{
       prisma.registroDiario.findUnique.mockResolvedValue({id:'rd1'});
       prisma.objetivoGeneral.findMany.mockResolvedValue([]);
@@ -131,6 +139,121 @@ describe('FichajeService', () => {
         expect.objectContaining({ skip: 40, take: 20 }),
       );
       expect(r.total).toBe(120);
+    });
+
+    // ── Filtro por periodo ────────────────────────────────────────────────
+    //
+    // Aqui es donde se cuela el desfase de un dia: `fechaRegistro` guarda el DIA
+    // a las 12:00 UTC, asi que el rango tiene que construirse con esos mismos
+    // mediodias. Parsear con `new Date("2026-10-01")` da la medianoche UTC y
+    // dejaria el primer dia del rango fuera.
+    describe('filtro por periodo (desde / hasta)', () => {
+      type WhereRegistros = {
+        clienteId: string;
+        fechaRegistro?: { gte?: Date; lte?: Date };
+      };
+
+      const conRango = async (
+        filtros: QueryRegistrosClienteDto,
+      ): Promise<WhereRegistros> => {
+        prisma.registroDiario.findMany.mockResolvedValue([]);
+        prisma.registroDiario.count.mockResolvedValue(0);
+        await svc.findByCliente('c1', filtros);
+        const [args] = prisma.registroDiario.findMany.mock.calls[0] as [
+          { where: WhereRegistros },
+        ];
+        return args.where;
+      };
+
+      /** El rango del where, exigiendo que exista. */
+      const rangoDe = (where: WhereRegistros) => {
+        if (!where.fechaRegistro) {
+          throw new Error('Se esperaba filtro de fecha');
+        }
+        return where.fechaRegistro;
+      };
+
+      it('sin desde ni hasta no filtra por fecha', async () => {
+        const where = await conRango({});
+        expect(where).toEqual({ clienteId: 'c1' });
+      });
+
+      it('traduce el rango a los mediodias UTC de los dos dias', async () => {
+        const rango = rangoDe(
+          await conRango({ desde: '2026-10-01', hasta: '2026-10-31' }),
+        );
+        expect(rango.gte).toEqual(new Date(Date.UTC(2026, 9, 1, 12, 0, 0, 0)));
+        expect(rango.lte).toEqual(new Date(Date.UTC(2026, 9, 31, 12, 0, 0, 0)));
+      });
+
+      it('los dos dias frontera caen DENTRO del rango, y sus vecinos fuera', async () => {
+        const { gte, lte } = rangoDe(
+          await conRango({ desde: '2026-10-01', hasta: '2026-10-31' }),
+        ) as { gte: Date; lte: Date };
+
+        // Un registro guardado tal y como lo escribe `create()`.
+        const guardado = (dia: string) => diaDesdeIso(dia);
+
+        expect(guardado('2026-10-01') >= gte).toBe(true); // primer dia: dentro
+        expect(guardado('2026-10-31') <= lte).toBe(true); // ultimo dia: dentro
+        expect(guardado('2026-09-30') >= gte).toBe(false); // vispera: fuera
+        expect(guardado('2026-11-01') <= lte).toBe(false); // siguiente: fuera
+      });
+
+      it('admite solo desde, o solo hasta', async () => {
+        const soloDesde = await conRango({ desde: '2026-10-01' });
+        expect(rangoDe(soloDesde)).toEqual({
+          gte: new Date(Date.UTC(2026, 9, 1, 12, 0, 0, 0)),
+        });
+
+        prisma.registroDiario.findMany.mockClear();
+        const soloHasta = await conRango({ hasta: '2026-10-31' });
+        expect(rangoDe(soloHasta)).toEqual({
+          lte: new Date(Date.UTC(2026, 9, 31, 12, 0, 0, 0)),
+        });
+      });
+
+      it('el count usa el mismo where que la consulta', async () => {
+        const where = await conRango({
+          desde: '2026-10-01',
+          hasta: '2026-10-31',
+        });
+        expect(prisma.registroDiario.count).toHaveBeenCalledWith({ where });
+      });
+
+      it('el rango convive con la paginacion', async () => {
+        prisma.registroDiario.findMany.mockResolvedValue([]);
+        prisma.registroDiario.count.mockResolvedValue(0);
+        await svc.findByCliente('c1', {
+          page: 2,
+          limit: 10,
+          desde: '2026-10-01',
+          hasta: '2026-10-31',
+        });
+        expect(prisma.registroDiario.findMany).toHaveBeenCalledWith(
+          expect.objectContaining({ skip: 10, take: 10 }),
+        );
+      });
+
+      it('BadRequest si desde es posterior a hasta', async () => {
+        await expect(
+          svc.findByCliente('c1', { desde: '2026-10-31', hasta: '2026-10-01' }),
+        ).rejects.toThrow(BadRequestException);
+        expect(prisma.registroDiario.findMany).not.toHaveBeenCalled();
+      });
+
+      it('el 403 y el 400 no se disfrazan de 500', async () => {
+        // Los catch de este servicio convierten en 500 todo lo que no sea
+        // NotFound, asi que el acceso y la validacion del rango van fuera.
+        acceso.assertAcceso.mockRejectedValueOnce(new ForbiddenException());
+        await expect(
+          svc.findByCliente(
+            'c-ajeno',
+            { desde: '2026-10-01' },
+            { userId: 't9', rol: 'PEDAGOGO' },
+          ),
+        ).rejects.toThrow(ForbiddenException);
+      });
     });
   });
 

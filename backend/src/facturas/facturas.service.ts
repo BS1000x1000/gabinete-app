@@ -1010,7 +1010,17 @@ export class FacturasService {
   }
 
   private async enviarEmailFactura(factura: FacturaCompleta): Promise<boolean> {
-    if (!this.emailService.isConfigured) return false;
+    if (!this.emailService.isConfigured) {
+      // Sin este aviso, el unico rastro era `Emails factura 2026-09: 0/12
+      // enviados`, que se parece demasiado a "no habia nada que enviar". Con el
+      // servicio de email sin configurar no sale NINGUNA factura, y eso hay que
+      // poder distinguirlo de un mes tranquilo.
+      this.logger.error(
+        `Factura ${factura.numeroFormateado}: el servicio de email no está ` +
+          'configurado — no se envía ninguna factura',
+      );
+      return false;
+    }
 
     const emailDestino = factura.cliente.emailFacturacion ?? null;
 

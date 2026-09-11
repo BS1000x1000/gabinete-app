@@ -4,6 +4,22 @@ import { EstadoContrato } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ContratosService } from './contratos.service';
 import { LOCK_VENTANA_MOVIL } from './contratos.constants';
+import {
+  EjecucionTareaService,
+  TAREAS,
+} from '../common/tareas/ejecucion-tarea.service';
+
+/** Lo que devuelve una pasada de la ventana móvil. */
+export interface ResultadoVentana {
+  procesados: number;
+  creadas: number;
+  fallidos: string[];
+  /** `true` cuando otra instancia tenía el advisory lock y esta no hizo nada. */
+  omitida?: boolean;
+}
+
+/** Por qué una pasada no hizo nada. Se guarda en el resumen de la ejecución. */
+const MOTIVO_LOCK = 'otra instancia tenía el advisory lock';
 
 /**
  * Empuja la ventana móvil de generación de sesiones.
@@ -19,6 +35,7 @@ export class ContratosCronService implements OnModuleInit {
   constructor(
     private readonly prisma: PrismaService,
     private readonly contratosService: ContratosService,
+    private readonly tareas: EjecucionTareaService,
   ) {}
 
   /**
@@ -43,7 +60,17 @@ export class ContratosCronService implements OnModuleInit {
    */
   @Cron('0 3 1 * *', { timeZone: 'Europe/Madrid' })
   async cronExtenderVentana(): Promise<void> {
-    await this.extenderVentana('cron mensual');
+    await this.tareas.ejecutar(TAREAS.CONTRATOS_VENTANA, async () => {
+      const r = await this.extenderVentana('cron mensual');
+      // `fallidos` se cuenta, no se copia: son ids de contrato y el resumen es
+      // un recuento, no un volcado. El detalle ya está en el log.
+      return {
+        procesados: r.procesados,
+        creadas: r.creadas,
+        fallidos: r.fallidos.length,
+        ...(r.omitida ? { omitida: true, motivo: MOTIVO_LOCK } : {}),
+      };
+    });
   }
 
   /**
@@ -52,11 +79,11 @@ export class ContratosCronService implements OnModuleInit {
    * Un contrato con datos raros no puede impedir que los demás generen, así que
    * cada uno va en su propio try/catch.
    */
-  async extenderVentana(origen: string): Promise<{ procesados: number; creadas: number; fallidos: string[] }> {
+  async extenderVentana(origen: string): Promise<ResultadoVentana> {
     const lock = await this.tomarLock();
     if (!lock) {
       this.logger.log(`Extension de ventana (${origen}) omitida: otra instancia la esta ejecutando`);
-      return { procesados: 0, creadas: 0, fallidos: [] };
+      return { procesados: 0, creadas: 0, fallidos: [], omitida: true };
     }
 
     try {

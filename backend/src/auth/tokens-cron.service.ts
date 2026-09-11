@@ -1,6 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
+import {
+  EjecucionTareaService,
+  TAREAS,
+} from '../common/tareas/ejecucion-tarea.service';
 
 /**
  * Purga de la lista negra de tokens.
@@ -19,23 +23,36 @@ import { PrismaService } from '../prisma/prisma.service';
 export class TokensCronService {
   private readonly logger = new Logger(TokensCronService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly tareas: EjecucionTareaService,
+  ) {}
 
   /** Cada dia a las 04:00, fuera de la ventana de los crones de facturacion. */
   @Cron('0 4 * * *', { timeZone: 'Europe/Madrid' })
+  async cronPurgarTokens(): Promise<void> {
+    await this.tareas.ejecutar(TAREAS.TOKENS_PURGAR, async () => {
+      const purgados = await this.purgarTokensCaducados();
+      return { purgados };
+    });
+  }
+
+  /**
+   * El trabajo, separado del cron: asi se puede llamar a mano y probarlo sin
+   * pasar por la contabilidad de ejecuciones.
+   *
+   * Ya no se traga sus errores. Antes devolvia 0 tanto si no habia nada que
+   * purgar como si la BD estaba caida, dos cosas muy distintas que quedaban
+   * iguales; ahora el fallo sube a `EjecucionTareaService`, que lo guarda como
+   * `ERROR` y sigue sin tumbar el proceso.
+   */
   async purgarTokensCaducados(): Promise<number> {
-    try {
-      const { count } = await this.prisma.tokenRevocado.deleteMany({
-        where: { expiresAt: { lt: new Date() } },
-      });
-      if (count > 0) {
-        this.logger.log(`Purgados ${count} tokens revocados ya caducados`);
-      }
-      return count;
-    } catch (err) {
-      // Es mantenimiento: que falle no puede tumbar el proceso.
-      this.logger.error(`Error al purgar tokens revocados: ${err?.message}`);
-      return 0;
+    const { count } = await this.prisma.tokenRevocado.deleteMany({
+      where: { expiresAt: { lt: new Date() } },
+    });
+    if (count > 0) {
+      this.logger.log(`Purgados ${count} tokens revocados ya caducados`);
     }
+    return count;
   }
 }

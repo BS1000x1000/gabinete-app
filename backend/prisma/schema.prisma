@@ -727,6 +727,7 @@ enum TipoNotificacion {
   CONSENTIMIENTO_RGPD_PENDIENTE
   SIN_REGISTROS_RECIENTES
   FACTURAS_SIN_ENTREGAR
+  CLIENTE_SIN_EMAIL_FACTURACION
 }
 
 enum PrioridadNotif {
@@ -1243,4 +1244,47 @@ model AuditLog {
   @@index([evento])
   @@index([createdAt])
   @@map("audit_log")
+}
+
+// ============================================================
+// TAREAS PROGRAMADAS
+// ============================================================
+
+/// Rastro en BD de cada pasada de un cron.
+///
+/// Hasta ahora la unica forma de saber si una tarea programada habia corrido era
+/// mirar los logs del contenedor, que en Serverless no sobreviven al
+/// redespliegue: un cron que dejara de dispararse no lo notaria nadie hasta que
+/// faltase una factura. `EnvioGestoria` ya resolvia esto para su caso concreto;
+/// esto lo generaliza a las seis tareas.
+///
+/// Una fila que se queda en EN_CURSO es informacion, no basura: significa que la
+/// tarea arranco y el proceso murio antes de terminar.
+model EjecucionTarea {
+  id String @id @default(uuid())
+
+  /// Identificador estable de la tarea, no el nombre del metodo:
+  /// 'facturas.generar', 'facturas.email', 'facturas.reconciliar',
+  /// 'facturas.gestoria', 'contratos.ventana', 'tokens.purgar',
+  /// 'informes.reconciliar'.
+  /// Es lo que agrupa el historial de una misma tarea.
+  tarea String
+
+  inicio DateTime        @default(now())
+  fin    DateTime?
+  estado EstadoEjecucion @default(EN_CURSO)
+
+  /// Recuento libre de lo que hizo la pasada, con forma distinta en cada tarea.
+  /// Ej.: { creadas: 3, omitidas: 1, fallidas: ["contrato-x"] }
+  resumen Json?
+  error   String? @db.Text
+
+  @@index([tarea, inicio])
+  @@map("ejecuciones_tarea")
+}
+
+enum EstadoEjecucion {
+  EN_CURSO
+  OK
+  ERROR
 }

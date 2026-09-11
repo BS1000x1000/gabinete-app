@@ -13,8 +13,10 @@ import { FacturaCompleta } from './facturas.include';
 import { toNum } from './facturas.utils';
 
 /**
- * Tope de adjunto. Resend corta en 40 MB por mensaje y el contenido viaja en
- * base64, asi que el binario util son ~28 MB. Por encima se manda el libro en
+ * Tope de adjunto. Scaleway TEM corta en 50 MB por mensaje y el contenido viaja
+ * en base64, asi que el binario util son ~37 MB. El tope de aqui es mas bajo a
+ * proposito, por debajo de los 25 MB que corta `EmailService`. Por encima se
+ * manda el libro en
  * Excel y un enlace de descarga en vez del zip entero: el servicio de email se
  * traga los fallos devolviendo `false`, asi que un adjunto pasado de tamaño se
  * perderia en silencio.

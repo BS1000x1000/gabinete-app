@@ -10,6 +10,8 @@ import { AuthModule } from './auth/auth.module';
 import { FichajeModule } from './fichaje/fichaje.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { AccesoModule } from './common/acceso/acceso.module';
+import { TareasModule } from './common/tareas/tareas.module';
+import { EmailModule } from './common/email/email.module';
 import { SesionesModule } from './sesiones/sesiones.module';
 import { DisponibilidadModule } from './disponibilidad/disponibilidad.module';
 import { RolesModule } from './roles/roles.module';
@@ -47,6 +49,8 @@ import { FacturasModule } from './facturas/facturas.module';
     ScheduleModule.forRoot(),
     PrismaModule,
     AccesoModule,
+    TareasModule,
+    EmailModule,
     ClientesModule,
     DisponibilidadModule,
     SesionesModule,

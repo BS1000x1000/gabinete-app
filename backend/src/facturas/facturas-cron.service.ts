@@ -3,6 +3,10 @@ import { Cron } from '@nestjs/schedule';
 import { FacturasService } from './facturas.service';
 import { AuditService } from '../auth/audit.service';
 import { FacturasGestoriaService } from './facturas-gestoria.service';
+import {
+  EjecucionTareaService,
+  TAREAS,
+} from '../common/tareas/ejecucion-tarea.service';
 
 /**
  * Que periodo toca facturar el dia 1 del mes en que se ejecuta el cron, o `null`
@@ -31,6 +35,10 @@ export function periodoQueTocaFacturar(hoy: Date): {
   return { anio, mes };
 }
 
+/** Por que julio no se emite hoy. Se guarda en el resumen de la ejecucion. */
+const MOTIVO_JULIO =
+  'julio no se emite el dia 1: se factura el 1 de agosto, ya cerrado y prorrateado';
+
 @Injectable()
 export class FacturasCronService {
   private readonly logger = new Logger(FacturasCronService.name);
@@ -39,73 +47,89 @@ export class FacturasCronService {
     private readonly facturasService: FacturasService,
     private readonly audit: AuditService,
     private readonly gestoria: FacturasGestoriaService,
+    private readonly tareas: EjecucionTareaService,
   ) {}
 
   // Día 1 de cada mes a las 02:00 (hora Madrid) — genera facturas del mes
   @Cron('0 2 1 * *', { timeZone: 'Europe/Madrid' })
   async cronGenerarFacturasMes(): Promise<void> {
-    const objetivo = periodoQueTocaFacturar(new Date());
-    if (!objetivo) {
-      this.logger.log(
-        'Cron generación facturas: hoy no toca emitir ' +
-          '(julio se factura el 1 de agosto, ya cerrado y prorrateado).',
-      );
-      return;
-    }
-    const { anio, mes } = objetivo;
-    const periodo = `${anio}-${String(mes).padStart(2, '0')}`;
-    this.logger.log(`Cron generación facturas iniciado para ${periodo}`);
+    await this.tareas.ejecutar(TAREAS.FACTURAS_GENERAR, async () => {
+      const objetivo = periodoQueTocaFacturar(new Date());
+      // Que hoy no toque emitir tambien se registra: sin fila, "no se genero
+      // julio" y "el cron no se disparo en julio" se ven exactamente igual.
+      if (!objetivo) return { omitida: true, motivo: MOTIVO_JULIO };
 
-    // `generarFacturasMes` ya escribe su propio `FACTURA_GENERACION`; aquí solo
-    // se captura el fallo total, que antes no dejaba ni rastro: si el contenedor
-    // estaba reiniciándose a las 02:00 del día 1, el mes no se generaba y nadie
-    // se enteraba hasta que faltaban las facturas.
-    try {
-      const resultado = await this.facturasService.generarFacturasMes(
-        anio,
-        mes,
-      );
-      this.logger.log(
-        `Cron generación facturas completado: ${resultado.creadas} creadas, ` +
-          `${resultado.fallidas.length} fallidas`,
-      );
-    } catch (err: any) {
-      this.logger.error(
-        `Cron generación facturas ABORTADO para ${periodo}: ${err}`,
-      );
-      await this.audit.registrar({
-        evento: 'FACTURA_GENERACION',
-        recurso: periodo,
-        metadata: { origen: 'cron', error: err?.message ?? String(err) },
-      });
-    }
+      const { anio, mes } = objetivo;
+      const periodo = formatPeriodo(anio, mes);
+      this.logger.log(`Cron generación facturas iniciado para ${periodo}`);
+
+      try {
+        const resultado = await this.facturasService.generarFacturasMes(
+          anio,
+          mes,
+        );
+        return {
+          periodo,
+          creadas: resultado.creadas,
+          omitidas: resultado.omitidas,
+          fallidas: resultado.fallidas.length,
+        };
+      } catch (err) {
+        // El fallo total queda en `EjecucionTarea`, pero el rastro de
+        // AuditLog se mantiene aparte: `FACTURA_GENERACION` es traza RGPD de
+        // quien emitio que, no telemetria de si el cron corrio.
+        await this.audit.registrar({
+          evento: 'FACTURA_GENERACION',
+          recurso: periodo,
+          metadata: {
+            origen: 'cron',
+            error: err instanceof Error ? err.message : String(err),
+          },
+        });
+        throw err;
+      }
+    });
   }
 
-  // Día 1 de cada mes a las 09:00 (hora Madrid) — envía emails con PDF adjunto
-  // El delay de 7h da margen para detectar fallos del cron de generación antes de enviar
-  @Cron('0 9 1 * *', { timeZone: 'Europe/Madrid' })
+  /**
+   * Envío de las facturas del periodo por email. **Diario**, no solo el día 1.
+   *
+   * Antes era `0 9 1 * *` y eso abría una carrera con el archivado del PDF: el
+   * envío filtra por `urlPdfR2 != null`, así que una factura cuyo PDF falló a
+   * las 02:00 no se enviaba a las 09:00, y aunque la reconciliación de las
+   * 03:00 le pusiera el PDF al día siguiente, el cron de envío ya no volvía
+   * hasta el mes siguiente: esa factura no salía nunca salvo reenvío manual.
+   *
+   * Ejecutarlo a diario es seguro: `enviarEmailsPendientes` filtra por
+   * `emailEnviado: false` y por el periodo que devuelve `periodoQueTocaFacturar`,
+   * así que ni reenvía lo ya enviado ni toca facturas de meses cerrados.
+   *
+   * Las 09:00 y no las 02:30 se conservan a propósito: dan margen a mirar la
+   * generación de la madrugada antes de que salga nada hacia las familias.
+   */
+  @Cron('0 9 * * *', { timeZone: 'Europe/Madrid' })
   async cronEnviarEmailsFacturas(): Promise<void> {
-    // El mismo periodo que generó el cron de las 02:00, o no habría nada que
-    // enviar: el 1 de agosto se mandan las facturas de julio, no las de agosto.
-    const objetivo = periodoQueTocaFacturar(new Date());
-    if (!objetivo) {
-      this.logger.log('Cron email facturas: hoy no toca enviar.');
-      return;
-    }
-    const { anio, mes } = objetivo;
-    const periodo = `${anio}-${String(mes).padStart(2, '0')}`;
-    this.logger.log(`Cron email facturas iniciado para ${periodo}`);
-    try {
+    await this.tareas.ejecutar(TAREAS.FACTURAS_EMAIL, async () => {
+      // El mismo periodo que generó el cron del día 1, o no habría nada que
+      // enviar: en agosto se mandan las facturas de julio, no las de agosto.
+      const objetivo = periodoQueTocaFacturar(new Date());
+      if (!objetivo) return { omitida: true, motivo: MOTIVO_JULIO };
+
+      const { anio, mes } = objetivo;
+      const periodo = formatPeriodo(anio, mes);
+
+      // Recuperar aquí los PDF que falten evita depender de que ya hayan pasado
+      // las 03:00: sin esto, una factura generada esta madrugada sin PDF se
+      // quedaría fuera del envío de hoy por unas horas de diferencia.
+      const recuperadas =
+        await this.facturasService.reconciliarPdfsPendientes();
+
       const enviados = await this.facturasService.enviarEmailsPendientes(
         anio,
         mes,
       );
-      this.logger.log(
-        `Cron email facturas completado: ${enviados} emails enviados`,
-      );
-    } catch (err: any) {
-      this.logger.error(`Cron email facturas ABORTADO para ${periodo}: ${err}`);
-    }
+      return { periodo, recuperadas, enviados };
+    });
   }
 
   /**
@@ -119,15 +143,11 @@ export class FacturasCronService {
    */
   @Cron('0 3 * * *', { timeZone: 'Europe/Madrid' })
   async cronReconciliarPdfs(): Promise<void> {
-    try {
+    await this.tareas.ejecutar(TAREAS.FACTURAS_RECONCILIAR, async () => {
       const recuperadas =
         await this.facturasService.reconciliarPdfsPendientes();
-      if (recuperadas > 0) {
-        this.logger.log(`Cron reconciliación PDFs: ${recuperadas} recuperadas`);
-      }
-    } catch (err) {
-      this.logger.error(`Cron reconciliación PDFs falló: ${err}`);
-    }
+      return { recuperadas };
+    });
   }
 
   /**
@@ -142,13 +162,13 @@ export class FacturasCronService {
    */
   @Cron('0 7 5 * *', { timeZone: 'Europe/Madrid' })
   async cronEntregaGestoria(): Promise<void> {
-    try {
+    await this.tareas.ejecutar(TAREAS.FACTURAS_GESTORIA, async () => {
       const entregados = await this.gestoria.entregarPeriodicas();
-      if (entregados > 0) {
-        this.logger.log(`Cron gestoria: ${entregados} entregas enviadas`);
-      }
-    } catch (err) {
-      this.logger.error(`Cron gestoria falló: ${err}`);
-    }
+      return { entregados };
+    });
   }
+}
+
+function formatPeriodo(anio: number, mes: number): string {
+  return `${anio}-${String(mes).padStart(2, '0')}`;
 }

@@ -6,8 +6,13 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { SetDescripcionesNivelesDto, UpdateDescripcionNivelDto, CreateEvaluacionGASDto } from './dto/gas.dto';
-
+import { diaDesdeIso } from '../common/fecha/dia.utils';
+import {
+  SetDescripcionesNivelesDto,
+  UpdateDescripcionNivelDto,
+  CreateEvaluacionGASDto,
+  QueryEvolucionGasDto,
+} from './dto/gas.dto';
 
 @Injectable()
 export class GasService {
@@ -298,6 +303,131 @@ export class GasService {
       nivelesDefinidos: clienteObjetivo.descripcionesNiveles.length === 5,
       niveles: clienteObjetivo.descripcionesNiveles,
       historial: clienteObjetivo.evaluaciones,
+    };
+  }
+
+  // ============================================================
+  // EVOLUCIÓN DE UN CLIENTE EN UN PERIODO
+  // (base de los resúmenes automáticos por periodo)
+  // ============================================================
+
+  /**
+   * Rango sobre `EvaluacionGAS.fecha`, inclusivo por los dos extremos.
+   *
+   * Ojo: `fecha` **no** sigue la convencion de dia a las 12:00 UTC del proyecto
+   * (`createEvaluacion` guarda `new Date(dto.fecha)`, o la hora exacta si no se
+   * manda fecha), asi que aqui no vale comparar mediodias: hay que abrir el dia
+   * entero. Se hace en UTC —00:00:00.000 a 23:59:59.999— y no en hora local para
+   * que el resultado no dependa de si el contenedor corre en UTC o en
+   * Europe/Madrid.
+   *
+   * El parseo se apoya en `diaDesdeIso`, que recorta a `YYYY-MM-DD` **sin pasar
+   * por `new Date(iso)`** (ese lee la medianoche UTC y reintroduce el desfase de
+   * un dia) y ya valida el formato; sobre su mediodia se abre el dia completo.
+   */
+  private buildRangoFechas(desde?: string, hasta?: string) {
+    const rango: { gte?: Date; lte?: Date } = {};
+    if (desde) {
+      const d = diaDesdeIso(desde);
+      d.setUTCHours(0, 0, 0, 0);
+      rango.gte = d;
+    }
+    if (hasta) {
+      const h = diaDesdeIso(hasta);
+      h.setUTCHours(23, 59, 59, 999);
+      rango.lte = h;
+    }
+    if (rango.gte && rango.lte && rango.gte > rango.lte) {
+      throw new BadRequestException(
+        'El rango de fechas es invalido: "desde" es posterior a "hasta"',
+      );
+    }
+    return Object.keys(rango).length ? rango : null;
+  }
+
+  /**
+   * Evaluaciones GAS de TODOS los objetivos de un cliente en un periodo.
+   *
+   * Antes esto exigia N peticiones a `getHistorialEvaluaciones` (una por
+   * objetivo) y filtrar el periodo en el navegador, que es justo lo que impedia
+   * preguntar "como evoluciono este nino en octubre".
+   *
+   * Devuelve el objetivo, su area y los descriptores de nivel junto a las
+   * evaluaciones porque un nivel GAS suelto no significa nada: "+1" solo se lee
+   * contra el texto que define el +1 de ESE objetivo para ESE nino.
+   *
+   * **El control de acceso no vive aqui**: lo hace `AccesoObjetivoGasGuard`
+   * antes de entrar, delegando en `AccesoClienteService.assertAcceso`, que es la
+   * unica comprobacion de acceso a un menor del proyecto.
+   */
+  async getEvolucionCliente(
+    clienteId: string,
+    query: QueryEvolucionGasDto = {},
+  ) {
+    const rango = this.buildRangoFechas(query.desde, query.hasta);
+
+    this.logger.log(
+      `Evolución GAS de cliente ${clienteId} [${query.desde ?? '—'} … ${query.hasta ?? '—'}]`,
+    );
+
+    const objetivos = await this.prisma.clienteObjetivo.findMany({
+      where: {
+        clienteId,
+        ...(query.incluirInactivos ? {} : { activo: true }),
+      },
+      include: {
+        objetivoGeneral: { include: { areaDesarrollo: true } },
+        descripcionesNiveles: { orderBy: { nivel: 'asc' } },
+        evaluaciones: {
+          // El filtro va en el include y no en un `findMany` aparte para que
+          // un objetivo sin evaluaciones en el periodo siga saliendo: "no se
+          // evaluo" es informacion, no una fila que sobra.
+          ...(rango && { where: { fecha: rango } }),
+          orderBy: { fecha: 'asc' },
+        },
+      },
+      orderBy: { fechaAsignacion: 'asc' },
+    });
+
+    const objetivosSalida = objetivos.map((co) => {
+      const evaluaciones = co.evaluaciones;
+      const primera = evaluaciones[0] ?? null;
+      const ultima = evaluaciones[evaluaciones.length - 1] ?? null;
+
+      return {
+        clienteObjetivoId: co.id,
+        objetivoGeneralId: co.objetivoGeneralId,
+        objetivo: co.objetivoGeneral.titulo,
+        descripcionObjetivo: co.objetivoGeneral.descripcion,
+        area: co.objetivoGeneral.areaDesarrollo.nombre,
+        areaColor: co.objetivoGeneral.areaDesarrollo.color,
+        activo: co.activo,
+        fechaAsignacion: co.fechaAsignacion,
+        // Estado a dia de hoy, fuera del periodo: es el campo desnormalizado.
+        nivelActual: co.nivelGASActual,
+        fechaUltimaEvaluacion: co.fechaUltimaEvaluacion,
+        nivelesDefinidos: co.descripcionesNiveles.length === 5,
+        niveles: co.descripcionesNiveles,
+        // Movimiento DENTRO del periodo pedido: primera y ultima evaluacion del
+        // rango, y la diferencia entre ambas. Es lo que resume "como fue el mes".
+        nivelInicioPeriodo: primera?.nivel ?? null,
+        nivelFinPeriodo: ultima?.nivel ?? null,
+        variacion: primera && ultima ? ultima.nivel - primera.nivel : null,
+        totalEvaluaciones: evaluaciones.length,
+        evaluaciones,
+      };
+    });
+
+    return {
+      clienteId,
+      desde: query.desde ?? null,
+      hasta: query.hasta ?? null,
+      totalObjetivos: objetivosSalida.length,
+      totalEvaluaciones: objetivosSalida.reduce(
+        (acc, o) => acc + o.totalEvaluaciones,
+        0,
+      ),
+      objetivos: objetivosSalida,
     };
   }
 }

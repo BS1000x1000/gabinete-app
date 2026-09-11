@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   ParseIntPipe,
   HttpCode,
   HttpStatus,
@@ -18,15 +19,29 @@ import { RolesGuard } from '../roles/roles.guard';
 import { Roles } from '../roles/roles.decorator';
 import { ROLES_CLINICOS } from '../roles/roles.constants';
 import { AccesoObjetivoGasGuard } from './guards/acceso-objetivo-gas.guard';
-import { SetDescripcionesNivelesDto, UpdateDescripcionNivelDto, CreateEvaluacionGASDto } from './dto/gas.dto';
+import {
+  SetDescripcionesNivelesDto,
+  UpdateDescripcionNivelDto,
+  CreateEvaluacionGASDto,
+  QueryEvolucionGasDto,
+} from './dto/gas.dto';
 import { GasService } from './gas.service';
 
-// Todas las rutas están agrupadas bajo el ClienteObjetivo:
+// Casi todas las rutas están agrupadas bajo el ClienteObjetivo:
 //
 //   /gas/objetivo/:clienteObjetivoId/...
 //
 // Esto es consistente con el schema: el ClienteObjetivo es el
 // nexo entre un cliente y un objetivo general concreto.
+//
+// La excepción es la lectura por periodo, que cruza TODOS los objetivos de un
+// cliente y por eso cuelga del cliente:
+//
+//   /gas/cliente/:clienteId/evaluaciones
+//
+// `AccesoObjetivoGasGuard` cubre las dos formas: con `clienteObjetivoId`
+// traduce a su cliente, con `clienteId` lo usa tal cual, y en ambos casos
+// delega en `AccesoClienteService.assertAcceso`.
 
 @Controller('gas')
 @UseGuards(JwtAuthGuard, RolesGuard, AccesoObjetivoGasGuard)
@@ -51,6 +66,29 @@ export class GasController {
   ) {
     this.logger.log(`GET /gas/objetivo/${clienteObjetivoId}`);
     return this.gasService.getResumenObjetivo(clienteObjetivoId);
+  }
+
+  // ============================================================
+  // EVOLUCIÓN DE UN CLIENTE EN UN PERIODO
+  // ============================================================
+
+  /**
+   * GET /gas/cliente/:clienteId/evaluaciones?desde=&hasta=&incluirInactivos=
+   *
+   * Evaluaciones de TODOS los objetivos del cliente en un rango de días
+   * (`YYYY-MM-DD`, inclusivo por los dos extremos), con el objetivo, su área y
+   * los descriptores de nivel. Sin rango devuelve el histórico completo.
+   *
+   * Es la base de los resúmenes automáticos por periodo: antes había que pedir
+   * el historial objetivo a objetivo y filtrar el periodo en el navegador.
+   */
+  @Get('cliente/:clienteId/evaluaciones')
+  async getEvolucionCliente(
+    @Param('clienteId') clienteId: string,
+    @Query() query: QueryEvolucionGasDto,
+  ) {
+    this.logger.log(`GET /gas/cliente/${clienteId}/evaluaciones`);
+    return this.gasService.getEvolucionCliente(clienteId, query);
   }
 
   // ============================================================

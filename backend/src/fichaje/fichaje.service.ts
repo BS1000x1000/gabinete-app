@@ -10,7 +10,7 @@ import { diaDesdeIso } from '../common/fecha/dia.utils';
 import { CreateRegistroDiarioDto, ObjetivoTrabajadoDto, UpdateRegistroDiarioDto } from './dto/create-registro.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { AccesoClienteService } from '../common/acceso/acceso-cliente.service';
-import { PaginationDto } from '../common/dto/pagination.dto';
+import { QueryRegistrosClienteDto } from './dto/query-registros.dto';
 
 @Injectable()
 export class FichajeService {
@@ -183,22 +183,59 @@ export class FichajeService {
     }
   }
 
+  /**
+   * Rango de dias sobre `fechaRegistro`, **inclusivo por los dos extremos**.
+   *
+   * `fechaRegistro` guarda un DIA a las 12:00 UTC (ver `common/fecha/dia.utils`),
+   * asi que el rango se construye con los mismos mediodias y no con medianoches:
+   * `gte` el mediodia del dia `desde` y `lte` el mediodia del dia `hasta` dejan
+   * dentro los dos dias frontera, que es justo donde se cuela el desfase de un
+   * dia si se parsea con `new Date(iso)` — ese lee la medianoche UTC, que en
+   * Madrid ya es la vispera.
+   *
+   * No se usa `hasta + 'T23:59:59'` (como en `export.service`) a proposito: aqui
+   * no hay instantes que recoger despues del mediodia, y el mediodia exacto es
+   * lo unico que este campo escribe.
+   */
+  private buildRangoDias(desde?: string, hasta?: string) {
+    const rango: { gte?: Date; lte?: Date } = {};
+    if (desde) rango.gte = diaDesdeIso(desde);
+    if (hasta) rango.lte = diaDesdeIso(hasta);
+    if (rango.gte && rango.lte && rango.gte > rango.lte) {
+      throw new BadRequestException(
+        'El rango de fechas es invalido: "desde" es posterior a "hasta"',
+      );
+    }
+    return Object.keys(rango).length ? rango : null;
+  }
+
   /* ---------- READ (por Cliente) ---------- */
   // Pagina a proposito: antes traia el historial entero sin tope, con un include
   // anidado a tres niveles, y crecia sin limite con los anos de tratamiento.
+  //
+  // `desde`/`hasta` acotan por periodo en la BD. Antes no existian: el frontend
+  // pedia `?limit=500` y filtraba en memoria, lo que ademas rompe en cuanto un
+  // cliente pasa de 500 registros.
   async findByCliente(
     clienteId: string,
-    pagination: PaginationDto = {},
+    filtros: QueryRegistrosClienteDto = {},
     user?: { userId: string; rol: string },
   ) {
     // Filtraba solo por clienteId: cualquier rol clinico leia la narrativa
     // clinica de cualquier menor, estuviera o no asignado.
     await this.acceso.assertAcceso(clienteId, user, 'los registros de este cliente');
 
+    // Fuera del try: los catch de este servicio reconvierten en 500 todo lo que
+    // no sea NotFound, y un rango invalido es un 400.
+    const rangoDias = this.buildRangoDias(filtros.desde, filtros.hasta);
+
     try {
-      const { page = 1, limit = 100 } = pagination;
+      const { page = 1, limit = 100 } = filtros;
       const skip = (page - 1) * limit;
-      const where = { clienteId };
+      const where = {
+        clienteId,
+        ...(rangoDias && { fechaRegistro: rangoDias }),
+      };
 
       const [data, total] = await Promise.all([
         this.prisma.registroDiario.findMany({

@@ -47,6 +47,39 @@ describe('ContratosReplanificacionService', () => {
   let prisma: ReturnType<typeof mkPrisma>;
   let festivos: { delCentro: jest.Mock };
 
+  // Los fixtures son de la primera semana de septiembre de 2026 y el servicio
+  // compara contra "manana" usando el reloj real: estos tests se pusieron en rojo
+  // solos el 7 de septiembre de 2026, cuando el contrato de los fixtures paso a
+  // estar terminado. Congelar la fecha es lo que los vuelve deterministas.
+  //
+  // Se finge SOLO `Date`: fingir tambien los timers colgaria las promesas del
+  // servicio.
+  beforeAll(() => {
+    jest.useFakeTimers({
+      doNotFake: [
+        'nextTick',
+        'queueMicrotask',
+        'setImmediate',
+        'clearImmediate',
+        'setTimeout',
+        'clearTimeout',
+        'setInterval',
+        'clearInterval',
+        'performance',
+        'requestAnimationFrame',
+        'cancelAnimationFrame',
+        'requestIdleCallback',
+        'cancelIdleCallback',
+        'hrtime',
+      ],
+    });
+    jest.setSystemTime(new Date('2026-09-01T09:00:00'));
+  });
+
+  afterAll(() => {
+    jest.useRealTimers();
+  });
+
   beforeEach(async () => {
     prisma = mkPrisma();
     festivos = { delCentro: jest.fn().mockResolvedValue([]) };

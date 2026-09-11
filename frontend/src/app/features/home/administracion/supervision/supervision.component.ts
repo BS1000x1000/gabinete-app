@@ -12,6 +12,15 @@ import {
   ResultadoGeneracion,
 } from '../../../../interface/factura.interface';
 import { ContratoServicio } from '../../../../interface/contrato.interface';
+import { TareasService } from '../../../../services/tareas.service';
+import {
+  ESTADO_VISTA_BADGE,
+  ESTADO_VISTA_LABEL,
+  EstadoVista,
+  ResumenTareaProgramada,
+  TAREA_LABEL,
+  estadoVista,
+} from '../../../../interface/tarea.interface';
 import {
   OPCIONES_MES,
   esComputable,
@@ -25,6 +34,23 @@ import {
   EstadoErrorComponent,
   EstadoVacioComponent,
 } from '../../../../shared/components/estado-vista/estado-vista.component';
+
+/** Una tarea programada tal y como se pinta en la tabla. */
+interface FilaTarea {
+  tarea: string;
+  nombre: string;
+  estado: EstadoVista;
+  estadoLabel: string;
+  badge: string;
+  /** Estados que piden mirar: ausencia, fallo o proceso muerto por el camino. */
+  alerta: boolean;
+  inicio: string | null;
+  /** La tarea corrió y decidió no hacer nada (julio no se factura, p. ej.). */
+  omitida: boolean;
+  motivo: string | null;
+  resumen: { clave: string; valor: string }[];
+  error: string | null;
+}
 
 interface TrabajadorResumen {
   id: string;
@@ -52,6 +78,7 @@ interface TrabajadorResumen {
 export default class SupervisionComponent implements OnInit {
   private facturasService  = inject(FacturasService);
   private contratosService = inject(ContratosService);
+  private tareasService    = inject(TareasService);
 
   cargando    = signal(false);
   error       = signal<string | null>(null);
@@ -141,7 +168,86 @@ export default class SupervisionComponent implements OnInit {
     return { facturadoMes, cobradoMes, pendienteMes, facturadoAnio };
   });
 
-  ngOnInit(): void { this.cargar(); }
+  // ── Tareas programadas ───────────────────────────────────────────────────
+  /**
+   * Se carga aparte del `forkJoin` principal a propósito: que falle el panel de
+   * tareas no debe dejar en blanco la pantalla de facturación, ni al revés.
+   */
+  tareas         = signal<ResumenTareaProgramada[]>([]);
+  tareasCargando = signal(false);
+  tareasError    = signal<string | null>(null);
+
+  readonly filasTareas = computed<FilaTarea[]>(() =>
+    this.tareas().map(t => {
+      const estado = estadoVista(t);
+      const bruto = t.ultima?.resumen ?? null;
+      return {
+        tarea:       t.tarea,
+        nombre:      TAREA_LABEL[t.tarea] ?? t.tarea,
+        estado,
+        estadoLabel: ESTADO_VISTA_LABEL[estado],
+        badge:       ESTADO_VISTA_BADGE[estado],
+        alerta:      estado === 'NUNCA' || estado === 'ERROR' || estado === 'INTERRUMPIDA',
+        inicio:      t.ultima?.inicio ?? null,
+        omitida:     bruto?.['omitida'] === true,
+        motivo:      typeof bruto?.['motivo'] === 'string' ? bruto['motivo'] : null,
+        resumen:     this.entradasResumen(bruto, ['omitida', 'motivo']),
+        error:       t.ultima?.error ?? null,
+      };
+    }),
+  );
+
+  readonly tareasConProblema = computed(
+    () => this.filasTareas().filter(f => f.alerta).length,
+  );
+
+  cargarTareas(): void {
+    this.tareasCargando.set(true);
+    this.tareasError.set(null);
+    this.tareasService.getResumen()
+      .pipe(finalize(() => this.tareasCargando.set(false)))
+      .subscribe({
+        next:  tareas => this.tareas.set(tareas),
+        error: () => this.tareasError.set('No se pudo leer el estado de las tareas programadas.'),
+      });
+  }
+
+  /**
+   * Aplana el resumen libre de la tarea en pares legibles.
+   *
+   * `excluir` deja fuera las claves que ya tienen su propio hueco en la fila, para
+   * no pintarlas dos veces.
+   */
+  private entradasResumen(
+    resumen: Record<string, unknown> | null,
+    excluir: string[] = [],
+  ): { clave: string; valor: string }[] {
+    if (!resumen) return [];
+    return Object.entries(resumen)
+      .filter(([clave]) => !excluir.includes(clave))
+      .map(([clave, valor]) => ({
+        clave,
+        valor: Array.isArray(valor) ? String(valor.length) : String(valor),
+      }));
+  }
+
+  /**
+   * "hace 3 h". Es lo que hace saltar a la vista que un cron dejó de dispararse:
+   * una fecha absoluta obliga a calcularlo mentalmente.
+   */
+  hace(iso: string): string {
+    const minutos = Math.round((Date.now() - new Date(iso).getTime()) / 60_000);
+    if (minutos < 1)  return 'hace un momento';
+    if (minutos < 60) return `hace ${minutos} min`;
+    const horas = Math.round(minutos / 60);
+    if (horas < 48)   return `hace ${horas} h`;
+    return `hace ${Math.round(horas / 24)} días`;
+  }
+
+  ngOnInit(): void {
+    this.cargar();
+    this.cargarTareas();
+  }
 
   cargar(): void {
     this.cargando.set(true);

@@ -19,6 +19,7 @@ const makeCliente = (overrides: Record<string, any> = {}) => ({
   apellidos: 'García',
   activo: true,
   fechaInicio: daysAgo(60),
+  emailFacturacion: null,
   sesiones: [],
   informes: [],
   bonos: [],
@@ -30,6 +31,13 @@ const makePrismaMock = () => ({
   clienteTrabajador: {
     findMany: jest.fn(),
   },
+  // Las reglas que consultan la BD por su cuenta necesitan mock aunque el test
+  // no las mire: sin el, el `Promise.all` de `_evaluarCliente` rechaza con un
+  // TypeError que `evaluarReglas` se traga, y lo que llegue a ejecutarse de las
+  // demas reglas queda a merced del orden de los microtasks.
+  registroDiario: { findFirst: jest.fn().mockResolvedValue(null) }, // regla 11
+  trabajador: { findUnique: jest.fn().mockResolvedValue(null) }, // regla 12
+  contratoServicio: { findFirst: jest.fn().mockResolvedValue(null) }, // regla 13
 });
 
 const makeNotifMock = () => ({
@@ -380,6 +388,87 @@ describe('MotorReglasService', () => {
 
       expect(notif.crearSiNoExiste).not.toHaveBeenCalledWith(
         expect.objectContaining({ tipo: 'SESION_SIN_BONO' }),
+      );
+    });
+  });
+
+  // ── Regla 13: cliente sin email de facturación ──────────────────────────
+  describe('Regla 13 — CLIENTE_SIN_EMAIL_FACTURACION', () => {
+    // Forma del `where` con el que la regla busca un contrato facturable.
+    // Tipada porque `mock.calls` es `any` y sobre `any` no se comprueba nada.
+    type WhereContrato = {
+      clienteId: string;
+      estado: { in: string[] };
+      fechaInicio: { lte: Date };
+      OR: [{ fechaFin: null }, { fechaFin: { gte: Date } }];
+    };
+
+    it('crea notificación si falta el email y hay contrato facturable', async () => {
+      prisma.contratoServicio.findFirst.mockResolvedValue({ id: 'contrato-1' });
+      await evaluar({ emailFacturacion: null });
+
+      expect(notif.crearSiNoExiste).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tipo: 'CLIENTE_SIN_EMAIL_FACTURACION',
+          prioridad: 'ALTA',
+          clienteId: 'cliente-1',
+          // Un aviso por cliente: `crearSiNoExiste` deduplica por
+          // reglaOrigen + clienteId + referenciaId.
+          referenciaId: 'cliente-1',
+        }),
+      );
+    });
+
+    it('NO crea notificación si el cliente no tiene contrato facturable', async () => {
+      prisma.contratoServicio.findFirst.mockResolvedValue(null);
+      await evaluar({ emailFacturacion: null });
+
+      expect(notif.crearSiNoExiste).not.toHaveBeenCalledWith(
+        expect.objectContaining({ tipo: 'CLIENTE_SIN_EMAIL_FACTURACION' }),
+      );
+    });
+
+    it('NO crea notificación si el email de facturación está puesto', async () => {
+      prisma.contratoServicio.findFirst.mockResolvedValue({ id: 'contrato-1' });
+      await evaluar({ emailFacturacion: 'pagos@familia.test' });
+
+      expect(notif.crearSiNoExiste).not.toHaveBeenCalledWith(
+        expect.objectContaining({ tipo: 'CLIENTE_SIN_EMAIL_FACTURACION' }),
+      );
+      // Y ni siquiera se paga la consulta del contrato.
+      expect(prisma.contratoServicio.findFirst).not.toHaveBeenCalled();
+    });
+
+    it('cuenta ACTIVO y FINALIZADO, y acota por la ventana del mes en curso', async () => {
+      prisma.contratoServicio.findFirst.mockResolvedValue({ id: 'contrato-1' });
+      await evaluar({ emailFacturacion: null });
+
+      const [args] = prisma.contratoServicio.findFirst.mock.calls[0] as [
+        { where: WhereContrato },
+      ];
+      const { where } = args;
+
+      expect(where.clienteId).toBe('cliente-1');
+      // `FINALIZADO` entra a proposito: el estado se evalua hoy, no en el
+      // periodo, asi que un contrato recien cerrado todavia factura el mes que
+      // cubre su ventana. `BORRADOR` y `SUSPENDIDO` no facturan.
+      expect(where.estado).toEqual({ in: ['ACTIVO', 'FINALIZADO'] });
+      // Indefinido (`fechaFin: null`) o cerrado despues del arranque del mes.
+      expect(where.OR[0]).toEqual({ fechaFin: null });
+      expect(where.OR[1].fechaFin.gte).toBeInstanceOf(Date);
+
+      const hoy = new Date();
+      const primerDia = where.OR[1].fechaFin.gte;
+      const ultimoDia = where.fechaInicio.lte;
+      expect(primerDia.getUTCFullYear()).toBe(hoy.getFullYear());
+      expect(primerDia.getUTCMonth()).toBe(hoy.getMonth());
+      expect(primerDia.getUTCDate()).toBe(1);
+      // Ultimo dia del mes en curso: el dia 0 del mes siguiente.
+      expect(ultimoDia.getUTCMonth()).toBe(hoy.getMonth());
+      expect(ultimoDia.getUTCDate()).toBe(
+        new Date(
+          Date.UTC(hoy.getFullYear(), hoy.getMonth() + 1, 0),
+        ).getUTCDate(),
       );
     });
   });

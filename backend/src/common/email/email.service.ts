@@ -1,13 +1,32 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Resend } from 'resend';
+import * as nodemailer from 'nodemailer';
+import type { Transporter, SendMailOptions } from 'nodemailer';
+import type SMTPTransport from 'nodemailer/lib/smtp-transport';
 import { escapeHtml } from '../utils/html.utils';
 
 const DEFAULT_FROM = 'facturacion@gabinete.es';
 
+/** Servidor SMTP de Scaleway Transactional Email (region unica, fr-par). */
+const TEM_HOST_POR_DEFECTO = 'smtp.tem.scaleway.com';
+
 /**
- * Tope de adjuntos por mensaje. Resend corta en 40 MB y el contenido viaja en
- * base64, asi que el binario util son ~28 MB; se deja margen. Antes no habia
- * ninguna comprobacion y un envio pasado de tamaño se perdia en silencio.
+ * 465 = TLS implicito (SMTPS). Es el que se usa por defecto porque no depende de
+ * negociar el cifrado a mitad de conexion: aqui viajan datos de salud de un
+ * menor (RGPD art. 9) y una conexion que se queda en claro no es una opcion.
+ * TEM admite tambien 587 y 2587 (STARTTLS) y 2465 (TLS), por si un proveedor de
+ * red bloquea el 465.
+ */
+const TEM_PUERTO_POR_DEFECTO = 465;
+
+/** Puertos de TEM que hablan TLS desde el primer byte, sin STARTTLS. */
+const PUERTOS_TLS_IMPLICITO = [465, 2465];
+
+/**
+ * Tope de adjuntos por mensaje. TEM corta en 50 MB por email via SMTP contando
+ * el mensaje entero, y el contenido viaja en base64 (~37% de sobrecarga), asi
+ * que el binario util son ~36 MB; se deja margen amplio. Antes esto solo lo
+ * comprobaba el pack de gestoria: una factura con un PDF gigante se perdia en
+ * silencio, y quien llama marcaba `emailEnviado: true` igualmente.
  */
 const MAX_ADJUNTOS_BYTES = 25 * 1024 * 1024;
 
@@ -54,31 +73,75 @@ export interface ExpedienteEmailPayload {
   adjuntos: Adjunto[];
 }
 
+/**
+ * Unico transporte de correo de la aplicacion.
+ *
+ * Habla SMTP contra **Scaleway Transactional Email** (fr-par). Se migro desde
+ * Resend (EE.UU.) por soberania de datos: por aqui salen informes y expedientes
+ * con datos de salud de un menor —RGPD art. 9— y Scaleway ya tiene el DPA
+ * firmado como encargado del tratamiento del resto de la infraestructura.
+ *
+ * SMTP y no la API REST de TEM a proposito: es estandar, portable si el
+ * proveedor cambia otra vez, y se mockea en tests sin inventarse un cliente.
+ *
+ * **Modo no-op.** Sin credenciales el servicio arranca igual, avisa por log y
+ * `enviar()` devuelve `false`. TEM exige dominio verificado y todavia no hay
+ * dominio: la app tiene que poder arrancar y trabajar sin correo.
+ */
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
-  private readonly resend: Resend | null;
+  private readonly transporter: Transporter<SMTPTransport.SentMessageInfo> | null;
   private readonly from: string;
 
   constructor() {
-    const apiKey = process.env.RESEND_API_KEY;
+    // Usuario SMTP = ID del proyecto de Scaleway donde vive el dominio TEM.
+    // Contrasena  = clave secreta de una API key con permiso sobre ese proyecto.
+    const projectId = process.env.SCW_TEM_PROJECT_ID;
+    const secretKey = process.env.SCW_TEM_SECRET_KEY;
+    const host = process.env.SCW_TEM_HOST ?? TEM_HOST_POR_DEFECTO;
+    const port = Number(process.env.SCW_TEM_PORT ?? TEM_PUERTO_POR_DEFECTO);
+
     this.from = process.env.EMAIL_FROM ?? DEFAULT_FROM;
 
-    if (!apiKey) {
+    if (!projectId || !secretKey) {
       this.logger.warn(
-        'EmailService no configurado (falta RESEND_API_KEY). ' +
-          'Los emails no se enviarán hasta que se defina la variable.',
+        'EmailService no configurado (faltan SCW_TEM_PROJECT_ID y/o SCW_TEM_SECRET_KEY). ' +
+          'Los emails no se enviaran hasta que se definan las variables.',
       );
-      this.resend = null;
+      this.transporter = null;
       return;
     }
 
-    this.resend = new Resend(apiKey);
-    this.logger.log(`EmailService listo — from: ${this.from}`);
+    if (!Number.isFinite(port) || port <= 0) {
+      // Un puerto mal escrito dejaria el transporte creado y fallando en cada
+      // envio; mejor caer al modo no-op, que al menos se ve en el arranque.
+      this.logger.error(
+        `SCW_TEM_PORT invalido ("${process.env.SCW_TEM_PORT}"). EmailService queda desactivado.`,
+      );
+      this.transporter = null;
+      return;
+    }
+
+    const tlsImplicito = PUERTOS_TLS_IMPLICITO.includes(port);
+
+    this.transporter = nodemailer.createTransport({
+      host,
+      port,
+      // `secure: true` habla TLS desde el saludo; en los puertos de STARTTLS se
+      // exige la promocion con `requireTLS`, para que nunca se envie en claro.
+      secure: tlsImplicito,
+      requireTLS: !tlsImplicito,
+      auth: { user: projectId, pass: secretKey },
+    });
+
+    this.logger.log(
+      `EmailService listo — ${host}:${port} — from: ${this.from}`,
+    );
   }
 
   get isConfigured(): boolean {
-    return this.resend !== null;
+    return this.transporter !== null;
   }
 
   async sendFacturaEmail(payload: FacturaEmailPayload): Promise<boolean> {
@@ -116,20 +179,14 @@ export class EmailService {
    * `enlaceDescarga` llega cuando el zip no cabia como adjunto: en ese caso solo
    * se adjunta el libro en Excel y los PDF viajan por enlace temporal.
    */
-  async sendPackGestoriaEmail(payload: PackGestoriaEmailPayload): Promise<boolean> {
-    const total = payload.adjuntos.reduce((s, a) => s + a.content.length, 0);
-    if (total > MAX_ADJUNTOS_BYTES) {
-      // Sin esto el proveedor rechaza el mensaje y `enviar` devuelve `false` sin
-      // decir por que: el fallo se veria como "email no enviado" a secas.
-      this.logger.error(
-        `Adjuntos de ${(total / 1024 / 1024).toFixed(1)} MB para ${payload.to}: ` +
-          'por encima del limite del proveedor. No se envia.',
-      );
-      return false;
-    }
-
+  async sendPackGestoriaEmail(
+    payload: PackGestoriaEmailPayload,
+  ): Promise<boolean> {
     const lista = payload.ficheros
-      .map((f) => `<li style="font-family:monospace;font-size:12px;">${escapeHtml(f)}</li>`)
+      .map(
+        (f) =>
+          `<li style="font-family:monospace;font-size:12px;">${escapeHtml(f)}</li>`,
+      )
       .join('');
 
     const bloqueEnlace = payload.enlaceDescarga
@@ -143,7 +200,9 @@ export class EmailService {
       <p>Te envio las facturas emitidas del periodo <strong>${escapeHtml(payload.periodo)}</strong>.</p>
       <ul>
         <li><strong>Emisor:</strong> ${escapeHtml(payload.nombreTrabajador)}${
-          payload.nifTrabajador ? ` (NIF ${escapeHtml(payload.nifTrabajador)})` : ''
+          payload.nifTrabajador
+            ? ` (NIF ${escapeHtml(payload.nifTrabajador)})`
+            : ''
         }</li>
         <li><strong>Facturas:</strong> ${payload.numFacturas}</li>
         <li><strong>Total facturado:</strong> ${payload.totalImporte
@@ -178,26 +237,95 @@ export class EmailService {
     adjuntos: Adjunto[];
     etiquetaLog: string;
   }): Promise<boolean> {
-    if (!this.resend) return false;
+    if (!this.transporter) return false;
+
+    // El tope se comprueba aqui, en el estrangulamiento, y no en cada metodo
+    // publico: asi ningun camino de envio futuro puede saltarselo.
+    const bytes = opts.adjuntos.reduce((s, a) => s + a.content.length, 0);
+    if (bytes > MAX_ADJUNTOS_BYTES) {
+      // Sin esto el proveedor rechaza el mensaje y `enviar` devuelve `false` sin
+      // decir por que: el fallo se veria como "email no enviado" a secas.
+      this.logger.error(
+        `Adjuntos de ${(bytes / 1024 / 1024).toFixed(1)} MB (${opts.etiquetaLog}) para ${opts.to}: ` +
+          'por encima del limite del proveedor. No se envia.',
+      );
+      return false;
+    }
+
+    const mensaje: SendMailOptions = {
+      from: this.from,
+      to: opts.to,
+      replyTo: opts.replyTo,
+      subject: opts.subject,
+      html: opts.html,
+      attachments: opts.adjuntos.map((a) => ({
+        filename: a.filename,
+        content: a.content,
+      })),
+    };
 
     try {
-      await this.resend.emails.send({
-        from: this.from,
-        to: opts.to,
-        replyTo: opts.replyTo,
-        subject: opts.subject,
-        html: opts.html,
-        attachments: opts.adjuntos.map(a => ({
-          filename: a.filename,
-          content: a.content,
-        })),
-      });
+      const info = await this.transporter.sendMail(mensaje);
+      if (!this.fueAceptado(info, opts.etiquetaLog, opts.to)) return false;
+
       this.logger.log(`Email enviado (${opts.etiquetaLog}) a ${opts.to}`);
       return true;
     } catch (err) {
       this.logger.error(`Error enviando email (${opts.etiquetaLog}): ${err}`);
       return false;
     }
+  }
+
+  /**
+   * Un servidor SMTP puede rechazar al destinatario **sin lanzar excepcion**:
+   * nodemailer solo lanza si falla el mensaje entero, y con varios destinatarios
+   * (o con un 4xx temporal) devuelve el rechazo dentro del resultado. Antes se
+   * devolvia `true` en cuanto no saltaba una excepcion, y quien llama marca la
+   * factura como `emailEnviado: true` con ese booleano: una factura que nunca
+   * salio quedaba marcada como enviada y no se reintentaba jamas.
+   */
+  private fueAceptado(
+    info: SMTPTransport.SentMessageInfo,
+    etiquetaLog: string,
+    to: string,
+  ): boolean {
+    const rechazados = info?.rejected ?? [];
+    // `pending` son destinatarios con fallo temporal (4xx): tampoco han salido.
+    const pendientes = info?.pending ?? [];
+
+    if (rechazados.length > 0 || pendientes.length > 0) {
+      this.logger.error(
+        `Email NO entregado (${etiquetaLog}) a ${to} — ` +
+          `rechazados: ${JSON.stringify(rechazados)}, pendientes: ${JSON.stringify(pendientes)}, ` +
+          `respuesta: ${info?.response ?? '(sin respuesta)'}`,
+      );
+      return false;
+    }
+
+    if ((info?.accepted ?? []).length === 0) {
+      this.logger.error(
+        `Email sin destinatarios aceptados (${etiquetaLog}) a ${to} — ` +
+          `respuesta: ${info?.response ?? '(sin respuesta)'}`,
+      );
+      return false;
+    }
+
+    // La respuesta final de SMTP es un codigo de tres digitos; solo el 2xx es
+    // entrega aceptada. Se comprueba solo si viene, porque no todo transporte
+    // la rellena.
+    const respuesta = info?.response;
+    if (
+      typeof respuesta === 'string' &&
+      respuesta.length > 0 &&
+      !respuesta.startsWith('2')
+    ) {
+      this.logger.error(
+        `Email rechazado por el servidor (${etiquetaLog}) a ${to} — respuesta: ${respuesta}`,
+      );
+      return false;
+    }
+
+    return true;
   }
 
   private buildFacturaHtml(p: FacturaEmailPayload): string {
@@ -235,10 +363,7 @@ export class EmailService {
 
   private buildExpedienteHtml(p: ExpedienteEmailPayload): string {
     const lista = p.documentos
-      .map(
-        d =>
-          `<li style="margin-bottom:6px;">${esc(d)}</li>`,
-      )
+      .map((d) => `<li style="margin-bottom:6px;">${esc(d)}</li>`)
       .join('');
 
     return this.envoltorio(

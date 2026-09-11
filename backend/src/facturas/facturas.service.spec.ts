@@ -958,7 +958,7 @@ describe('FacturasService', () => {
       );
     });
 
-    it('no marca emailEnviado si Resend devuelve error', async () => {
+    it('no marca emailEnviado si el envio no sale', async () => {
       const factura = mockFactura({ urlPdfR2: 'facturas/t/2026/1.pdf' });
       prisma.factura.findMany.mockResolvedValue([factura]);
       pdfMock.generarPdf.mockResolvedValue(Buffer.from('pdf'));

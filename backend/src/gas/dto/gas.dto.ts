@@ -2,13 +2,15 @@ import {
   IsInt,
   IsString,
   IsOptional,
+  IsBoolean,
   Min,
   Max,
   IsArray,
+  Matches,
   ValidateNested,
   IsDateString,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 // ============================================================
 // DescripcionNivelGAS
@@ -55,4 +57,40 @@ export class CreateEvaluacionGASDto {
   @IsOptional()
   @IsDateString()
   fecha?: string; // Si no se envía, usa la fecha actual
+}
+
+// ============================================================
+// Evolución GAS de un cliente en un periodo
+// ============================================================
+
+/**
+ * Filtros de `GET /gas/cliente/:clienteId/evaluaciones`.
+ *
+ * `desde` y `hasta` son DIAS (`YYYY-MM-DD`), inclusivos por los dos extremos, y
+ * se exige ese formato pelado en vez de `@IsDateString()` a proposito: aceptar
+ * un ISO completo invita a mandar `...T00:00:00.000Z`, que es la medianoche UTC
+ * y en Madrid ya es la vispera.
+ */
+export class QueryEvolucionGasDto {
+  @IsOptional()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+    message: 'desde debe tener el formato YYYY-MM-DD',
+  })
+  desde?: string;
+
+  @IsOptional()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+    message: 'hasta debe tener el formato YYYY-MM-DD',
+  })
+  hasta?: string;
+
+  /**
+   * Por defecto solo los objetivos activos, que es de lo que habla un resumen de
+   * evolucion. `incluirInactivos=true` los trae todos, para un informe de alta
+   * que sí quiere repasar lo ya cerrado.
+   */
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => value === true || value === 'true')
+  incluirInactivos?: boolean;
 }

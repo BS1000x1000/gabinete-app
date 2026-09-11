@@ -1,4 +1,12 @@
 {
   "extends": "./tsconfig.json",
+  // Sin `include`, tsc deduce la raiz comun de TODO lo que compila. Como
+  // `prisma/seed.ts` y `scripts/*.ts` estan fuera de `src/`, esa raiz pasaba a ser
+  // la del proyecto y la salida quedaba en `dist/src/main.js`, mientras el
+  // Dockerfile arranca con `node dist/main`: el contenedor no llegaba a levantar.
+  // Ninguno de esos ficheros necesita compilarse (el seed corre con `tsx` sobre el
+  // .ts y los scripts son de desarrollo), asi que ademas dejan de viajar en la
+  // imagen de produccion.
+  "include": ["src/**/*"],
   "exclude": ["node_modules", "test", "dist", "**/*spec.ts"]
 }

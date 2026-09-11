@@ -19,7 +19,7 @@ import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/roles/roles.guard';
 import { Roles } from 'src/roles/roles.decorator';
 import { ROLES_CLINICOS } from 'src/roles/roles.constants';
-import { PaginationDto } from 'src/common/dto/pagination.dto';
+import { QueryRegistrosClienteDto } from './dto/query-registros.dto';
 
 @Controller('registros')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -43,14 +43,25 @@ export class FichajeController {
     return this.fichajeService.create(createDto, trabajadorId, req.user);
   }
 
+  /**
+   * GET /registros/cliente/:clienteId?page&limit&desde&hasta
+   *
+   * `desde` y `hasta` son dias (`YYYY-MM-DD`) e incluyen los dos extremos.
+   * Existen para no tener que traerse el historial entero y filtrarlo en el
+   * navegador, que es lo que hacia el frontend con `?limit=500`.
+   */
   @Get('cliente/:clienteId')
   async findByCliente(
     @Param('clienteId') clienteId: string,
-    @Query() pagination: PaginationDto,
+    @Query() filtros: QueryRegistrosClienteDto,
     @Req() req: any,
   ) {
-    this.logger.log(`Obteniendo registros del cliente: ${clienteId}`);
-    return this.fichajeService.findByCliente(clienteId, pagination, req.user);
+    const periodo =
+      filtros.desde || filtros.hasta
+        ? ` [${filtros.desde ?? '—'} … ${filtros.hasta ?? '—'}]`
+        : '';
+    this.logger.log(`Obteniendo registros del cliente: ${clienteId}${periodo}`);
+    return this.fichajeService.findByCliente(clienteId, filtros, req.user);
   }
 
   @Get('trabajador/:trabajadorId')

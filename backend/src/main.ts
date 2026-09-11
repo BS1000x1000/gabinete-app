@@ -18,6 +18,14 @@ const cookieParser = require('cookie-parser');
  * `StorageService` arranca en modo `none` y el archivado de PDF de informes se
  * queda en un `warn` silencioso. Un contenedor que arranca "bien" y no persiste
  * documentos clinicos es peor que uno que no arranca.
+ *
+ * El correo (`SCW_TEM_PROJECT_ID`, `SCW_TEM_SECRET_KEY`, `EMAIL_FROM`) queda
+ * FUERA de las obligatorias a proposito: Scaleway Transactional Email exige un
+ * dominio verificado y todavia no hay dominio, asi que exigirlas hoy impediria
+ * arrancar el contenedor. `EmailService` entra en modo no-op y avisa por log.
+ * TODO: en cuanto el dominio este verificado en TEM, moverlas al bloque
+ * `if (isProd)` de aqui abajo — mientras no se haga, una factura que no sale
+ * por falta de configuracion solo se ve en los logs.
  */
 function comprobarEntorno(): void {
   const isProd = process.env.NODE_ENV === 'production';

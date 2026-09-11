@@ -620,6 +620,36 @@ Pendiente de confirmar con la asesoría el encaje del sistema con la normativa d
 informáticos de facturación. Hoy la anulación de una factura deja hueco en la numeración, y no existe
 factura rectificativa.
 
+### 7.8 Uso de un modelo de lenguaje para redactar borradores
+
+Está previsto —no implementado— que la aplicación redacte automáticamente el borrador de los
+informes de evolución a partir de los registros diarios y de las evaluaciones de objetivos de un
+período. El borrador lo revisa, corrige y firma la profesional antes de que salga a ninguna parte:
+no habría decisión automatizada en el sentido del Art. 22, ni envío sin intervención humana.
+
+El tratamiento implica, aun así, enviar a un tercero texto clínico referido a un menor. Nuestra
+intención es hacerlo con **Scaleway Generative APIs**, el servicio de inferencia del mismo proveedor
+que ya aloja la infraestructura: se procesaría en Francia, bajo el DPA ya firmado, sin transferencia
+internacional, y su política declara retención cero y ausencia de entrenamiento con los datos
+enviados. Aplicaríamos además una seudonimización previa —sustitución del nombre del menor, de los
+familiares y del centro escolar— como medida de minimización, no como argumento para excluir el dato
+del Reglamento.
+
+**Necesitamos que nos digan:**
+
+1. Si el DPA vigente con Scaleway cubre este servicio como subencargado, o hace falta un anexo.
+2. Si basta con reflejar el tratamiento en el registro de actividades, o debe informarse
+   expresamente a las familias.
+3. Si a esta escala procede evaluación de impacto por este tratamiento en concreto.
+4. Y, por si en el futuro se valorase otro proveedor: si aceptan el **enfoque relativo** de
+   anonimidad —el que sostiene el TJUE en el asunto C-413/23, EDPS contra la Junta Única de
+   Resolución, y recogen las directrices del Comité Europeo de Protección de Datos publicadas en
+   2026, según el cual un dato seudonimizado puede no ser dato personal para quien lo recibe sin
+   acceso a los identificadores— **aplicado a texto clínico libre**. Nuestra reserva es técnica y no
+   jurídica: el contenido de los registros lo escribe una persona a mano y no puede garantizarse qué
+   nombres contiene, de modo que no nos parece sostenible afirmar que el receptor no podría
+   reidentificar.
+
 ---
 
 ## 8. Riesgos conocidos y asumidos
@@ -815,6 +845,7 @@ revisan es exactamente el papel que firmará una familia.
 5. Confirmación sobre la exigibilidad del HDS (§5.2).
 6. Validación del texto de los tres documentos que firma la familia (§3.2).
 7. Evaluación de impacto (Art. 35), si procede a esta escala.
+8. Uso de un modelo de lenguaje para redactar borradores de informes (§7.8).
 
 ### Para el equipo técnico, una vez haya criterio
 
